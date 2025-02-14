@@ -1,5 +1,5 @@
 # SolsRNGBot
-## A discord bot to periodically take screenshots of Sol's RNG on roblox, and then send them to a discord bot. It takes screenshots of your screen, your storage, and your inventory.
+## A discord bot to periodically take screenshots of Sol's RNG on roblox, and then send them to a discord bot. It takes screenshots of your screen, your storage, and your inventory and automatically alerts you if you roll a new aura.
 # Features:
 - Periodic screenshots of game, storage, and inventory
 - Autokick prevention

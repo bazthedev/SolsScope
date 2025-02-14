@@ -76,6 +76,8 @@ def reload_settings():
     print(settings)
 
 reload_settings()
+if settings["TOKEN"] == "":
+    exit("You need to add your bot token in the settings.json file")
 get_auras()
 
 with open("auras.json", "r") as f:

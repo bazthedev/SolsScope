@@ -158,5 +158,9 @@
     "#62a0fe": {
         "name" : "Santa Frost",
         "rarity" : "45000000"
+    },
+    "#000000": {
+        "name" : "Unknown Aura",
+        "rarity" : "-"
     }
 }

@@ -11,6 +11,10 @@
         "name" : "Exotic",
         "rarity" : "99999"
     },
+    "#4bff9c": {
+        "name" : "Exotic: Apex",
+        "rarity" : "49999500"
+    },
     "#97a2ff": {
         "name" : "Celestial",
         "rarity" : "350000"
@@ -99,6 +103,10 @@
         "name" : "Sailor",
         "rarity" : "12000000"
     },
+    "#43814e": {
+        "name" : "Sailor: Flying Dutchman",
+        "rarity" : "80000000"
+    },
     "#b1b1b1": {
         "name" : "Stormal: Hurricane",
         "rarity" : "13500000"
@@ -127,6 +135,22 @@
         "name" : "Overseer",
         "rarity" : "45000000"
     },
+    "#5bffb0": {
+        "name" : "Matrix",
+        "rarity" : "50000000"
+    },
+    "#ff1e1d": {
+        "name" : "Matrix: Overdrive",
+        "rarity" : "503000000"
+    },
+    "#3e66d5": {
+        "name" : "Overture",
+        "rarity" : "150000000"
+    },
+    "#6bff6b": {
+        "name" : "Overture: History",
+        "rarity" : "300000000"
+    },
     "#abbeff": {
         "name" : "Symphony",
         "rarity" : "175000000"
@@ -134,6 +158,10 @@
     "#8041ff": {
         "name" : "Impeached",
         "rarity" : "200000000"
+    },
+    "#bdbdbd": {
+        "name" : "Oppression",
+        "rarity" : "220000000"
     },
     "#e7c39d": {
         "name" : "Archangel",
@@ -147,9 +175,33 @@
         "name" : "Atlas",
         "rarity" : "360000000"
     },
+    "#2b54ff": {
+        "name" : "Abyssal Hunter",
+        "rarity" : "400000000"
+    },
     "#ffbd43": {
         "name" : "Gargantua",
         "rarity" : "430000000"
+    },
+    "#ff6250" : {
+        "name" : "Apostolos",
+        "rarity" : "444000000"
+    },
+    "#46e785": {
+        "name" : "Ruins",
+        "rarity" : "500000000"
+    },
+    "#91bbb8": {
+        "name" : "Sovereign",
+        "rarity" : "750000000"
+    },
+    "#5d8bff": {
+        "name" : "Aegis",
+        "rarity" : "825000000"
+    },
+    "#000000": {
+        "name" : "Luminosity",
+        "rarity" : "12000000000"
     },
     "#7f9cff": {
         "name" : "Wonderland",
@@ -158,9 +210,5 @@
     "#62a0fe": {
         "name" : "Santa Frost",
         "rarity" : "45000000"
-    },
-    "#000000": {
-        "name" : "Unknown Aura",
-        "rarity" : "-"
     }
 }

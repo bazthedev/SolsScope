@@ -13,7 +13,7 @@ import requests
 
 def get_auras():
     print("Downloading Aura List")
-    dl = requests.get("https://github.com/bazthedev/SolsRNGBot/raw/refs/heads/main/auras.json")
+    dl = requests.get("https://raw.githubusercontent.com/bazthedev/SolsRNGBot/main/auras.json")
     f = open("auras.json", "wb")
     f.write(dl.content)
     f.close()
@@ -45,7 +45,7 @@ if not os.path.exists("./plugins/"):
 
 if not os.path.exists("./settings.json"):
     x = open("settings.json", "w")
-    x.write('{"TOKEN": "", "__version__" : "1.0.1", "timer" : 1800, "ssnorm" : true, "ssstor" : true, "ssinv" : true, "log_channel_id": 0}')
+    x.write('{"TOKEN": "", "__version__" : "1.0.2", "timer" : 1800, "ssnorm" : true, "ssstor" : true, "ssinv" : true, "log_channel_id": 0}')
     x.close()
 
 now = datetime.now()

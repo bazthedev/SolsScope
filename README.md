@@ -10,6 +10,7 @@
 - Mention on aura roll
 
 # TBA:
+- Biome detection, a biome rarity can be set in the settings, and if a biome with a rarity equal to or above if detected, then a message will be sent.
 - Create a feature request if you want something to be added!
 
 # How to use:

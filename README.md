@@ -8,6 +8,7 @@
 - Custom Plugins to add custom commands
 - Automatic Updating of New Auras
 - Mention on aura roll
+
 # TBA:
 - Create a feature request if you want something to be added!
 
@@ -20,3 +21,7 @@
 6. Add the bot to a server
 7. Run the set_log_channel command in the channel you want the bot to automatically post in
 8. And you are done! You can customize the settings by editing the `settings.json` file or by using some of the built in commands.
+
+# Common Issues:
+- Chromatic is bugged, due to the amount of different colours there is only a very small chance that it will detect the Chromatic cutscene.
+- If you recently updated and you receive errors relating to `settings.json`, then copy the important keys, like TOKEN and log_channel_id, and delete the `settings.json` file. The program will automatically create a new file using the most up to date settings.

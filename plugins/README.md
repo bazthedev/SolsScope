@@ -1,7 +1,7 @@
 # Plugins
 ## A plugin is essentially a discord.py Cog which you can let the bot use
 ## To install a plugin, place the python file inside the plugins folder
-## Make sure that the following code is placed inside the __init__ function of your Cog:
+## Make sure that the following code is placed inside the \_\_init\_\_ function of your Cog:
 ```py
 self.name = type(self).__name__
 self.cfname = f"{self.name.lower()}.json"

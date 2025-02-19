@@ -1,213 +1,177 @@
 {
-    "#d37e93": {
+    "#d37e93,#0e0e0e,#272727": {
         "name" : "Magnetic: Reverse Polarity",
         "rarity" : "1024000"
     },
-    "#fd1011": {
+    "#fd1011,#0e0e0e,#272727": {
         "name" : "Rage: Brawler",
         "rarity" : "1280000"
     },
-    "#38c8d8": {
+    "#38c8d8,#000000,#000000": {
         "name" : "Exotic",
         "rarity" : "99999"
     },
-    "#4bff9c": {
-        "name" : "Exotic: Apex",
-        "rarity" : "49999500"
-    },
-    "#97a2ff": {
+    "#97a2ff,#000000,#000000": {
         "name" : "Celestial",
         "rarity" : "350000"
     },
-    "#9c81bf": {
+    "#9b81be,#0e0e0e,#272727": {
         "name" : "Celestial: Divine",
         "rarity" : "7000000"
     },
-    "#281692": {
+    "#281692,#000000,#000000": {
         "name" : "Kyawthuite",
         "rarity" : "850000"
     },
-    "#6f96ff": {
+    "#6e96ff,#0e0e0e,#272727": {
         "name" : "Arcane",
         "rarity" : "1000000"
     },
-    "#6781ff": {
+    "#6781ff,#04050e,#151a27": {
         "name" : "Arcane: Legacy",
         "rarity" : "15000000"
     },
-    "##5b35ff": {
+    "#5b35ff,#07020d,#0c0427": {
         "name" : "Arcane: Dark",
         "rarity" : "30000000"
     },
-    "#303030": {
+    "#313131,#0e0e0e,#272727": {
         "name" : "Undefined",
         "rarity" : "1111000"
     },
-    "#7941ca": {
+    "#7841ca,#0e0e0e,#272727": {
         "name" : "Astral",
         "rarity" : "1336000"
     },
-    "#5163ff": {
+    "#5163ff,#0e0e0e,#272727": {
         "name" : "Gravitational",
         "rarity" : "2000000"
     },
-    "#4b8aff": {
+    "#4b8bff,#0e0e0e,#272727": {
         "name" : "Virtual",
         "rarity" : "2500000"
     },
-    "#ff5582": {
+    "#ff5582,#0e0e0e,#272727": {
         "name" : "Savior",
         "rarity" : "3200000"
     },
-    "#0e648b": {
+    "#0e648b,#0e0e0e,#272727": {
         "name" : "Poseidon",
         "rarity" : "4000000"
     },
-    "#fffad3": {
+    "#fffad3,#0e0e0e,#272727": {
         "name" : "Zeus",
         "rarity" : "4500000"
     },
-    "#5142ff": {
+    "#5142ff,#0e0e0e,#272727": {
         "name" : "Galaxy",
         "rarity" : "5000000"
     },
-    "#5140ff": {
+    "#513fff,#0e0e0e,#272727": {
         "name" : "Twilight",
         "rarity" : "6000000"
     },
-    "#5c5fff": {
+    "#5b4d9f,#040306,#131020": {
+        "name" : "Twilight: Iridescent Memory",
+        "rarity" : "60000000"
+    },
+    "#5c5fff,#0e0e0e,#272727": {
         "name" : "Origin",
         "rarity" : "6500000"
     },
-    "#772600": {
+    "#772500,#0e0e0e,#272727": {
         "name" : "Hades",
         "rarity" : "6666666"
     },
-    "#8d61ff": {
+    "#8c61ff,#0e0e0e,#272727": {
         "name" : "Hyper-volt",
         "rarity" : "7500000"
     },
-    "#ffffff": {
+    "#ffffff,#0e0e0e,#272727": {
         "name" : "Nihility",
         "rarity" : "9000000"
     },
-    "#ff8080": {
+    "#ff8080,#0e0404,#271e1e": {
         "name" : "Starscourge",
         "rarity" : "10000000"
     },
-    "#99c8ff": {
+    "#99c8ff,#14181c,#182023": {
         "name" : "Starscourge: Radiant",
         "rarity" : "100000000"
     },
-    "#749eff": {
+    "#749eff,#06090e,#121827": {
         "name" : "Sailor",
         "rarity" : "12000000"
     },
-    "#43814e": {
-        "name" : "Sailor: Flying Dutchman",
-        "rarity" : "80000000"
-    },
-    "#b1b1b1": {
+    "#b1b1b1,#0c0c0c,#171717": {
         "name" : "Stormal: Hurricane",
         "rarity" : "13500000"
     },
-    "#fac18b": {
+    "#fbc28b,#0e0905,#241105": {
         "name" : "Sirius",
         "rarity" : "14000000"
     },
-    "#3fff86": {
+    "#da3fff,#0d050e,#1e0427": {
         "name" : "Chromatic",
         "rarity" : "20000000"
     },
-    "#030303": {
+    "#ffffff,#000002,#000001": {
         "name" : "Chromatic: Genesis",
         "rarity" : "99999999"
     },
-    "#d48e43": {
+    "#d69044,#070502,#1c1309": {
         "name" : "Aviator",
         "rarity" : "24000000"
     },
-    "#cfbeff": {
+    "#cfbeff,#0a090e,#242327": {
         "name" : "Ethereal",
         "rarity" : "35000000"
     },
-    "#9dbfff": {
+    "#9dbfff,#080a0e,#192027": {
         "name" : "Overseer",
         "rarity" : "45000000"
     },
-    "#5bffb0": {
-        "name" : "Matrix",
-        "rarity" : "50000000"
-    },
-    "#ff1e1d": {
-        "name" : "Matrix: Overdrive",
-        "rarity" : "503000000"
-    },
-    "#3e66d5": {
-        "name" : "Overture",
-        "rarity" : "150000000"
-    },
-    "#6bff6b": {
-        "name" : "Overture: History",
-        "rarity" : "300000000"
-    },
-    "#abbeff": {
+    "#abbeff,#08080d,#16181e": {
         "name" : "Symphony",
         "rarity" : "175000000"
     },
-    "#8041ff": {
+    "#8041ff,#05010e,#230b52": {
         "name" : "Impeached",
         "rarity" : "200000000"
     },
-    "#bdbdbd": {
-        "name" : "Oppression",
-        "rarity" : "220000000"
-    },
-    "#e7c39d": {
+    "#e7c39d,#1f180f,#2e2415": {
         "name" : "Archangel",
         "rarity" : "250000000"
     },
-    "#d90005": {
+    "#d90005,#0e0000,#310001": {
         "name" : "Bloodlust",
         "rarity" : "300000000"
     },
-    "#ffbe85": {
+    "#ffbe85,#0c0703,#331808": {
         "name" : "Atlas",
         "rarity" : "360000000"
     },
-    "#2b54ff": {
-        "name" : "Abyssal Hunter",
-        "rarity" : "400000000"
-    },
-    "#ffbd43": {
+    "#ffbd43,#1c1104,#311907": {
         "name" : "Gargantua",
         "rarity" : "430000000"
     },
-    "#ff6250" : {
-        "name" : "Apostolos",
-        "rarity" : "444000000"
-    },
-    "#46e785": {
-        "name" : "Ruins",
-        "rarity" : "500000000"
-    },
-    "#91bbb8": {
-        "name" : "Sovereign",
-        "rarity" : "750000000"
-    },
-    "#5d8bff": {
-        "name" : "Aegis",
-        "rarity" : "825000000"
-    },
-    "#c6dffe": {
+    "#000000,#000000,#000000": {
         "name" : "Luminosity",
         "rarity" : "12000000000"
     },
-    "#7f9cff": {
+    "#1b1a47,#020104,#07060b": {
+        "name" : "Innovator",
+        "rarity" : "30000000"
+    },
+    "#ffcf6a,#000000,#000000": {
+        "name" : "Pump",
+        "rarity" : "200000"
+    },
+    "#7f9cff,#050509,#131621": {
         "name" : "Wonderland",
         "rarity" : "12000000"
     },
-    "#62a0fe": {
+    "#62a0fe,#05070b,#251811": {
         "name" : "Santa Frost",
         "rarity" : "45000000"
     }

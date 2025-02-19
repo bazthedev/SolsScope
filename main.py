@@ -19,14 +19,26 @@ def get_auras():
     f.close()
     print("Downloaded Aura List")
 
-def update_settings(settings, timer : int, ssnorm : bool, ssstor : bool, ssinv : bool, log_channel_id : int):
-    settings["timer"] = timer
+def update_settings(settings, ssnorm : bool, ssstor : bool, ssinv : bool, log_channel_id : int):
     settings["ssnorm"] = ssnorm
     settings["ssstor"] = ssstor
     settings["ssinv"] = ssinv
     settings["log_channel_id"] = log_channel_id
     with open("settings.json", "w") as f:
         json.dump(settings, f, indent=4)
+
+def rgb2hex(r,g,b):
+    return "#{:02x}{:02x}{:02x}".format(r,g,b)
+
+def reload_settings():
+    global settings, scr_norm, scr_stor, scr_inv, log_channel_id
+    with open("settings.json", "r") as f:
+        settings = json.load(f)
+    scr_norm = settings["ssnorm"]
+    scr_stor = settings["ssstor"]
+    scr_inv = settings["ssinv"]
+    log_channel_id = settings["log_channel_id"]
+    print(settings)
 
 if not os.path.exists("./scr/"):
     os.mkdir("./scr/")
@@ -40,7 +52,7 @@ if not os.path.exists("./logs/"):
 
 if not os.path.exists("./settings.json"):
     x = open("settings.json", "w")
-    x.write('{"TOKEN": "", "__version__" : "1.0.3", "timer" : 1800, "ssnorm" : true, "ssstor" : true, "ssinv" : true, "log_channel_id": 0, "cd" : "' + str(os.getcwd()).replace("\\", "\\\\") + '", "skip_dl": false, "mention" : true, "mention_id" : 0}')
+    x.write('{"TOKEN": "", "__version__" : "1.0.4", "ssnorm" : true, "ssstor" : true, "ssinv" : true, "log_channel_id": 0, "cd" : "' + str(os.getcwd()).replace("\\", "\\\\") + '", "skip_dl": false, "mention" : true, "mention_id" : 0}')
     x.close()
 
 now = datetime.now()
@@ -53,23 +65,17 @@ default_pos = (1280, 720) # change this to the position of your mouse after shif
 resting_pos = (-942, 604) # change this to a position outside of the game window
 close_pos = (1887, 399) # change this to the position of the X after you open aura or inventory menu
 # These values can be obtained by using the get_mouse_pos.py script, and moving your mouse over the buttons.
+secondary_pos = (564, 401) # You should probably keep these values the same, as adjusting them will break the auras.json file which uses these specific positions to detect colours
+tertiary_pos = (2049, 1118) # You should probably keep these values the same, as adjusting them will break the auras.json file which uses these specific positions to detect colours
 _plugins = []
-
-def rgb2hex(r,g,b):
-    return "#{:02x}{:02x}{:02x}".format(r,g,b)
-
-def reload_settings():
-    global settings, wait_time, scr_norm, scr_stor, scr_inv, log_channel_id
-    with open("settings.json", "r") as f:
-        settings = json.load(f)
-    wait_time = settings["timer"]
-    scr_norm = settings["ssnorm"]
-    scr_stor = settings["ssstor"]
-    scr_inv = settings["ssinv"]
-    log_channel_id = settings["log_channel_id"]
-    print(settings)
-
+local_version = "1.0.4"
 reload_settings()
+
+if settings["__version__"] < local_version:
+    settings["__version__"] = local_version
+    update_settings(settings, scr_norm, scr_stor, scr_inv, log_channel_id)
+    reload_settings()
+
 if settings["TOKEN"] == "":
     exit("You need to add your bot token in the settings.json file")
 if not settings["skip_dl"]:
@@ -79,6 +85,7 @@ with open("auras.json", "r") as f:
     auras = json.load(f)
 
 __version__ = settings["__version__"]
+
 @client.event
 async def on_ready():
     print("Let's go gambling!")
@@ -94,6 +101,8 @@ async def on_ready():
             description=f"Started at {now.strftime("%d/%m/%Y %H:%M:%S")}"
         )
         await log_channel.send(embed=emb)
+        if settings["ssnorm"] or settings["ssstor"] or settings["ssinv"]:
+            await asyncio.sleep(40)
         aura_detection.start()
         print("Started Aura Detection")
     else:
@@ -106,32 +115,20 @@ async def on_command_error(ctx, error):
 
 @client.command()
 @commands.is_owner()
-async def update_timer(ctx, new_time : int):
-    global wait_time, scr_norm, scr_inv, scr_stor, log_channel_id
-    if new_time != wait_time:
-        update_settings(settings, new_time, scr_norm, scr_stor, scr_inv, log_channel_id)
-        reload_settings()
-        await ctx.send("Wait duration has been updated.")
-    else:
-        await ctx.send("Wait duration has not been updated.")
-
-@client.command()
-@commands.is_owner()
 async def set_log_channel(ctx):
     await ctx.send("Updating log channel...")
-    global wait_time, scr_norm, scr_inv, scr_stor, log_channel_id
+    global scr_norm, scr_inv, scr_stor, log_channel_id
     new_log_channel_id = ctx.message.channel.id
-    update_settings(settings, wait_time, scr_norm, scr_stor, scr_inv, new_log_channel_id)
+    update_settings(settings, scr_norm, scr_stor, scr_inv, new_log_channel_id)
     reload_settings()
     await ctx.send(f"Log Channel set to {ctx.message.channel.mention}")
-
 @client.command()
 @commands.is_owner()
 async def set_mention(ctx):
     await ctx.send("Updating user to mention...")
-    global wait_time, scr_norm, scr_inv, scr_stor, log_channel_id
+    global scr_norm, scr_inv, scr_stor, log_channel_id
     settings["mention_id"] = ctx.author.id
-    update_settings(settings, wait_time, scr_norm, scr_stor, scr_inv, log_channel_id)
+    update_settings(settings, scr_norm, scr_stor, scr_inv, log_channel_id)
     reload_settings()
     await ctx.send(f"User to mention is now {ctx.author.mention}")
 
@@ -225,8 +222,12 @@ async def aura_detection():
     px = ImageGrab.grab().load()
     colour = px[default_pos[0], default_pos[1]]
     hex_col = rgb2hex(colour[0], colour[1], colour[2])
+    colour2 = px[secondary_pos[0], secondary_pos[1]]
+    hex_col2 = rgb2hex(colour2[0], colour2[1], colour2[2])
+    colour3 = px[tertiary_pos[0], tertiary_pos[1]]
+    hex_col3 = rgb2hex(colour3[0], colour3[1], colour3[2])
     try:
-        check = auras[hex_col]
+        check = auras[f"{hex_col},{hex_col2},{hex_col3}"]
         aura_detection.stop()
     except KeyError:
         pass
@@ -246,15 +247,17 @@ async def on_aura_detection_cancel():
         px = ImageGrab.grab().load()
         colour = px[default_pos[0], default_pos[1]]
         hex_col = rgb2hex(colour[0], colour[1], colour[2])
-        if os.path.exists("./scr/screenshot_aura.png"):
-            os.remove("./scr/screenshot_aura.png")
-            await asyncio.sleep(2)
+        colour2 = px[secondary_pos[0], secondary_pos[1]]
+        hex_col2 = rgb2hex(colour2[0], colour2[1], colour2[2])
+        colour3 = px[tertiary_pos[0], tertiary_pos[1]]
+        hex_col3 = rgb2hex(colour3[0], colour3[1], colour3[2])
+        await asyncio.sleep(1)
         auraimg = pag.screenshot("./scr/screenshot_aura.png")
         await asyncio.sleep(1)
         up = discord.File("./scr/screenshot_aura.png", filename="aura.png")
         emb = discord.Embed(
-                title = f"Aura Rolled: {auras[hex_col]["name"]}",
-                description = f"Rolled Aura: {auras[hex_col]["name"]}\nWith chances of 1/{auras[hex_col]["rarity"]}\nAt time: {rnow.strftime("%d/%m/%Y %H:%M:%S")}\nDetected Colour: {hex_col}",
+                title = f"Aura Rolled: {auras[f"{hex_col},{hex_col2},{hex_col3}"]["name"]}",
+                description = f"Rolled Aura: {auras[f"{hex_col},{hex_col2},{hex_col3}"]["name"]}\nWith chances of 1/{auras[f"{hex_col},{hex_col2},{hex_col3}"]["rarity"]}\nAt time: {rnow.strftime("%d/%m/%Y %H:%M:%S")}\nDetected Colours: {hex_col}, {hex_col2}, {hex_col3}",
                 colour = discord.Color.from_rgb(colour[0], colour[1], colour[2])
         )
         emb.set_image(url="attachment://aura.png")
@@ -263,7 +266,7 @@ async def on_aura_detection_cancel():
             await log_channel.send(f"<@{settings["mention_id"]}>", embed=emb, file=up)
         else:
             await log_channel.send(embed=emb, file=up)
-        print(f"Rolled Aura: {auras[hex_col]["name"]}\nWith chances of 1/{auras[hex_col]["rarity"]}\nAt time: {rnow.strftime("%d/%m/%Y %H:%M:%S")}\nDetected Colour: {hex_col}")
+        print(f"Rolled Aura: {auras[f"{hex_col},{hex_col2},{hex_col3}"]["name"]}\nWith chances of 1/{auras[f"{hex_col},{hex_col2},{hex_col3}"]["rarity"]}\nAt time: {rnow.strftime("%d/%m/%Y %H:%M:%S")}\nDetected Colours: {hex_col}, {hex_col2}, {hex_col3}")
         await asyncio.sleep(10)
     except Exception as e:
         print(e)

@@ -21,3 +21,4 @@ with open("settings.json", "r") as f:
     settings = json.load(f)
 ```
 ## These allow the code to access the global configuration and the plugin's own configuration.
+## For an example of starting a plugin, please look at `template.py`.

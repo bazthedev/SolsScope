@@ -26,3 +26,4 @@
 # Common Issues:
 - Chromatic is bugged, due to the amount of different colours there is only a very small chance that it will detect the Chromatic cutscene.
 - If you recently updated and you receive errors relating to `settings.json`, then copy the important keys, like TOKEN and log_channel_id, and delete the `settings.json` file. The program will automatically create a new file using the most up to date settings.
+## If you are experiencing issues, please create a new issue so that it can be raised, solved and prevented from happening again.

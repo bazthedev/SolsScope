@@ -10,6 +10,7 @@ from pynput.keyboard import Key
 import asyncio
 from PIL import ImageGrab
 import requests
+import logging
 
 def get_auras():
     print("Downloading Aura List")
@@ -52,7 +53,7 @@ if not os.path.exists("./logs/"):
 
 if not os.path.exists("./settings.json"):
     x = open("settings.json", "w")
-    x.write('{"TOKEN": "", "__version__" : "1.0.4", "ssnorm" : true, "ssstor" : true, "ssinv" : true, "log_channel_id": 0, "cd" : "' + str(os.getcwd()).replace("\\", "\\\\") + '", "skip_dl": false, "mention" : true, "mention_id" : 0}')
+    x.write('{"TOKEN": "", "__version__" : "1.0.5", "ssnorm" : true, "ssstor" : true, "ssinv" : true, "log_channel_id": 0, "cd" : "' + str(os.getcwd()).replace("\\", "\\\\") + '", "skip_dl": false, "mention" : true, "mention_id" : 0}')
     x.close()
 
 now = datetime.now()
@@ -65,10 +66,9 @@ default_pos = (1280, 720) # change this to the position of your mouse after shif
 resting_pos = (-942, 604) # change this to a position outside of the game window
 close_pos = (1887, 399) # change this to the position of the X after you open aura or inventory menu
 # These values can be obtained by using the get_mouse_pos.py script, and moving your mouse over the buttons.
-secondary_pos = (564, 401) # You should probably keep these values the same, as adjusting them will break the auras.json file which uses these specific positions to detect colours
-tertiary_pos = (2049, 1118) # You should probably keep these values the same, as adjusting them will break the auras.json file which uses these specific positions to detect colours
+secondary_pos = (564, 401) # You should probably keep this value the same, as adjusting it will break the auras.json file which uses these specific positions to detect colours
 _plugins = []
-local_version = "1.0.4"
+local_version = "1.0.5"
 reload_settings()
 
 if settings["__version__"] < local_version:
@@ -92,7 +92,7 @@ async def on_ready():
     print(f"Started at {now.strftime("%d/%m/%Y %H:%M:%S")} running version {__version__}")
     await client.change_presence(activity=discord.Game(name=f"bazthedev/SolsRNGBot version {__version__}"))
     keep_alive.start()
-    print("Started keep alive")
+    print("Started Autokick Prevention")
     await asyncio.sleep(15)
     if log_channel_id != 0:
         log_channel = client.get_channel(log_channel_id)
@@ -101,8 +101,6 @@ async def on_ready():
             description=f"Started at {now.strftime("%d/%m/%Y %H:%M:%S")}"
         )
         await log_channel.send(embed=emb)
-        if settings["ssnorm"] or settings["ssstor"] or settings["ssinv"]:
-            await asyncio.sleep(40)
         aura_detection.start()
         print("Started Aura Detection")
     else:
@@ -122,6 +120,7 @@ async def set_log_channel(ctx):
     update_settings(settings, scr_norm, scr_stor, scr_inv, new_log_channel_id)
     reload_settings()
     await ctx.send(f"Log Channel set to {ctx.message.channel.mention}")
+
 @client.command()
 @commands.is_owner()
 async def set_mention(ctx):
@@ -216,6 +215,7 @@ async def keep_alive():
 
 @tasks.loop(seconds=0)
 async def aura_detection():
+    global hex_col, hex_col2, colour, colour2
     if log_channel_id == 0:
         print("You must select a channel ID, you can do this by running the set_log_channel command.")
         return    
@@ -224,13 +224,15 @@ async def aura_detection():
     hex_col = rgb2hex(colour[0], colour[1], colour[2])
     colour2 = px[secondary_pos[0], secondary_pos[1]]
     hex_col2 = rgb2hex(colour2[0], colour2[1], colour2[2])
-    colour3 = px[tertiary_pos[0], tertiary_pos[1]]
-    hex_col3 = rgb2hex(colour3[0], colour3[1], colour3[2])
     try:
-        check = auras[f"{hex_col},{hex_col2},{hex_col3}"]
+        check = auras[f"{hex_col},{hex_col2}"]
         aura_detection.stop()
     except KeyError:
-        pass
+        for k in auras.keys():
+            _ = list(k.split(","))
+            if _[0] == hex_col and _[1] == "#******":
+                hex_col2 = "#******"
+                aura_detection.stop()
     except Exception as e:
         print(e)
 
@@ -242,32 +244,41 @@ async def plugins(ctx):
 
 @aura_detection.after_loop
 async def on_aura_detection_cancel():
+    global hex_col, hex_col2, colour, colour2
     try:
         rnow = datetime.now()
-        px = ImageGrab.grab().load()
-        colour = px[default_pos[0], default_pos[1]]
-        hex_col = rgb2hex(colour[0], colour[1], colour[2])
-        colour2 = px[secondary_pos[0], secondary_pos[1]]
-        hex_col2 = rgb2hex(colour2[0], colour2[1], colour2[2])
-        colour3 = px[tertiary_pos[0], tertiary_pos[1]]
-        hex_col3 = rgb2hex(colour3[0], colour3[1], colour3[2])
         await asyncio.sleep(1)
         auraimg = pag.screenshot("./scr/screenshot_aura.png")
         await asyncio.sleep(1)
         up = discord.File("./scr/screenshot_aura.png", filename="aura.png")
-        emb = discord.Embed(
-                title = f"Aura Rolled: {auras[f"{hex_col},{hex_col2},{hex_col3}"]["name"]}",
-                description = f"Rolled Aura: {auras[f"{hex_col},{hex_col2},{hex_col3}"]["name"]}\nWith chances of 1/{auras[f"{hex_col},{hex_col2},{hex_col3}"]["rarity"]}\nAt time: {rnow.strftime("%d/%m/%Y %H:%M:%S")}\nDetected Colours: {hex_col}, {hex_col2}, {hex_col3}",
-                colour = discord.Color.from_rgb(colour[0], colour[1], colour[2])
-        )
-        emb.set_image(url="attachment://aura.png")
-        log_channel = client.get_channel(log_channel_id)
-        if settings["mention"] and settings["mention_id"] != 0:
-            await log_channel.send(f"<@{settings["mention_id"]}>", embed=emb, file=up)
+        if hex_col2 == "#******":
+            emb = discord.Embed(
+                    title = f"Aura Rolled: {auras[f"{hex_col},{hex_col2}"]["name"]}",
+                    description = f"Rolled Aura: {auras[f"{hex_col},{hex_col2}"]["name"]}\nWith chances of 1/{auras[f"{hex_col},{hex_col2}"]["rarity"]}\nAt time: {rnow.strftime("%d/%m/%Y %H:%M:%S")}\nDetected Colour: {hex_col}",
+                    colour = discord.Color.from_rgb(colour[0], colour[1], colour[2])
+            )
+            emb.set_image(url="attachment://aura.png")
+            log_channel = client.get_channel(log_channel_id)
+            if settings["mention"] and settings["mention_id"] != 0:
+                await log_channel.send(f"<@{settings["mention_id"]}>", embed=emb, file=up)
+            else:
+                await log_channel.send(embed=emb, file=up)
+            print(f"Rolled Aura: {auras[f"{hex_col},{hex_col2}"]["name"]}\nWith chances of 1/{auras[f"{hex_col},{hex_col2}"]["rarity"]}\nAt time: {rnow.strftime("%d/%m/%Y %H:%M:%S")}\nDetected Colour: {hex_col}")
+            await asyncio.sleep(10)
         else:
-            await log_channel.send(embed=emb, file=up)
-        print(f"Rolled Aura: {auras[f"{hex_col},{hex_col2},{hex_col3}"]["name"]}\nWith chances of 1/{auras[f"{hex_col},{hex_col2},{hex_col3}"]["rarity"]}\nAt time: {rnow.strftime("%d/%m/%Y %H:%M:%S")}\nDetected Colours: {hex_col}, {hex_col2}, {hex_col3}")
-        await asyncio.sleep(10)
+            emb = discord.Embed(
+                title = f"Aura Rolled: {auras[f"{hex_col},{hex_col2}"]["name"]}",
+                description = f"Rolled Aura: {auras[f"{hex_col},{hex_col2}"]["name"]}\nWith chances of 1/{auras[f"{hex_col},{hex_col2}"]["rarity"]}\nAt time: {rnow.strftime("%d/%m/%Y %H:%M:%S")}\nDetected Colours: {hex_col}, {hex_col2}",
+                colour = discord.Color.from_rgb(colour[0], colour[1], colour[2])
+            )
+            emb.set_image(url="attachment://aura.png")
+            log_channel = client.get_channel(log_channel_id)
+            if settings["mention"] and settings["mention_id"] != 0:
+                await log_channel.send(f"<@{settings["mention_id"]}>", embed=emb, file=up)
+            else:
+                await log_channel.send(embed=emb, file=up)
+            print(f"Rolled Aura: {auras[f"{hex_col},{hex_col2}"]["name"]}\nWith chances of 1/{auras[f"{hex_col},{hex_col2}"]["rarity"]}\nAt time: {rnow.strftime("%d/%m/%Y %H:%M:%S")}\nDetected Colours: {hex_col}, {hex_col2}")
+            await asyncio.sleep(10)
     except Exception as e:
         print(e)
     finally:

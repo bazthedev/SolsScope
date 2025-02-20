@@ -1,15 +1,31 @@
 {
-    "#d37e93,#0e0e0e": {
-        "name" : "Magnetic: Reverse Polarity",
-        "rarity" : "1024000"
-    },
-    "#fd1011,#0e0e0e": {
-        "name" : "Rage: Brawler",
-        "rarity" : "1280000"
-    },
     "#38c8d8,#000000": {
         "name" : "Exotic",
         "rarity" : "99999"
+    },
+    "#2d2961,#000000": {
+        "name" : "Diaboli: Void",
+        "rarity" : "100400"
+    },
+    "#55991a,#000000": {
+        "name" : "Undead: Devil",
+        "rarity" : "120000"
+    },
+    "#999999,#000000": {
+        "name" : "Comet",
+        "rarity" : "120000"
+    },
+    "#096837,#000000": {
+        "name" : "Jade",
+        "rarity" : "125000"
+    },
+    "#70acb9,#000000": {
+        "name": "Aether",
+        "rarity" : "180000"
+    },
+    "#2556ff,#000000": {
+        "name" : "Bounded",
+        "rarity" : "200000"
     },
     "#97a2ff,#000000": {
         "name" : "Celestial",
@@ -34,10 +50,17 @@
     "#5b35ff,#07020d": {
         "name" : "Arcane: Dark",
         "rarity" : "30000000"
+    },"#d37e93,#0e0e0e": {
+        "name" : "Magnetic: Reverse Polarity",
+        "rarity" : "1024000"
     },
     "#313131,#0e0e0e": {
         "name" : "Undefined",
         "rarity" : "1111000"
+    },
+    "#fd1011,#0e0e0e": {
+        "name" : "Rage: Brawler",
+        "rarity" : "1280000"
     },
     "#7841ca,#0e0e0e": {
         "name" : "Astral",
@@ -45,6 +68,10 @@
     },
     "#5163ff,#0e0e0e": {
         "name" : "Gravitational",
+        "rarity" : "2000000"
+    },
+    "#4d40ff,#0e0e0e": {
+        "name" : "Bounded: Unbound",
         "rarity" : "2000000"
     },
     "#4b8bff,#0e0e0e": {
@@ -59,9 +86,21 @@
         "name" : "Poseidon",
         "rarity" : "4000000"
     },
+    "#a35725,#0e0e0e": {
+        "name" : "Aquatic: Flame",
+        "rarity" : "4000000"
+    },
     "#fffad3,#0e0e0e": {
         "name" : "Zeus",
         "rarity" : "4500000"
+    },
+    "#b37e7a,#0e0e0e": {
+        "name" : "Lunar: Full Moon",
+        "rarity" : "5000000"
+    },
+    "#f2cf17,#0e0e0e" : {
+        "name" : "Solar: Solstice",
+        "rarity" : "5000000"
     },
     "#5142ff,#0e0e0e": {
         "name" : "Galaxy",
@@ -115,7 +154,7 @@
         "name" : "Chromatic",
         "rarity" : "20000000"
     },
-    "#ffffff,#000002": {
+    "#ffffff,#ffffff": {
         "name" : "Chromatic: Genesis",
         "rarity" : "99999999"
     },

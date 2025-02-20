@@ -8,9 +8,9 @@
 - Custom Plugins to add custom commands
 - Automatic Updating of New Auras
 - Mention on aura roll
+- Minimum rarity for ping and send message
 
 # TBA:
-- Minimum rarity for ping and send message
 - Create a feature request if you want something to be added!
 
 # How to use:

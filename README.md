@@ -11,6 +11,7 @@
 - Minimum rarity for ping and send message
 
 # TBA:
+- Automatically adjust the positions that the aura colours are detected based on the size of the screen
 - Create a feature request if you want something to be added!
 
 # How to use:

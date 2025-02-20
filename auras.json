@@ -154,7 +154,7 @@
         "name" : "Chromatic",
         "rarity" : "20000000"
     },
-    "#ffffff,#ffffff": {
+    "#ffffff,#000002": {
         "name" : "Chromatic: Genesis",
         "rarity" : "99999999"
     },

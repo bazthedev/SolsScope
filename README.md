@@ -10,6 +10,7 @@
 - Mention on aura roll
 
 # TBA:
+- Minimum rarity for ping and send message
 - Create a feature request if you want something to be added!
 
 # How to use:

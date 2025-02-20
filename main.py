@@ -10,7 +10,6 @@ from pynput.keyboard import Key
 import asyncio
 from PIL import ImageGrab
 import requests
-import logging
 
 def get_auras():
     print("Downloading Aura List")
@@ -20,11 +19,7 @@ def get_auras():
     f.close()
     print("Downloaded Aura List")
 
-def update_settings(settings, ssnorm : bool, ssstor : bool, ssinv : bool, log_channel_id : int):
-    settings["ssnorm"] = ssnorm
-    settings["ssstor"] = ssstor
-    settings["ssinv"] = ssinv
-    settings["log_channel_id"] = log_channel_id
+def update_settings(settings):
     with open("settings.json", "w") as f:
         json.dump(settings, f, indent=4)
 
@@ -32,13 +27,9 @@ def rgb2hex(r,g,b):
     return "#{:02x}{:02x}{:02x}".format(r,g,b)
 
 def reload_settings():
-    global settings, scr_norm, scr_stor, scr_inv, log_channel_id
+    global settings
     with open("settings.json", "r") as f:
         settings = json.load(f)
-    scr_norm = settings["ssnorm"]
-    scr_stor = settings["ssstor"]
-    scr_inv = settings["ssinv"]
-    log_channel_id = settings["log_channel_id"]
     print(settings)
 
 if not os.path.exists("./scr/"):
@@ -53,7 +44,7 @@ if not os.path.exists("./logs/"):
 
 if not os.path.exists("./settings.json"):
     x = open("settings.json", "w")
-    x.write('{"TOKEN": "", "__version__" : "1.0.5", "ssnorm" : true, "ssstor" : true, "ssinv" : true, "log_channel_id": 0, "cd" : "' + str(os.getcwd()).replace("\\", "\\\\") + '", "skip_dl": false, "mention" : true, "mention_id" : 0}')
+    x.write('{"TOKEN": "", "__version__" : "1.0.6", "log_channel_id": 0, "cd" : "' + str(os.getcwd()).replace("\\", "\\\\") + '", "skip_dl": false, "mention" : true, "mention_id" : 0, "minimum_roll" : "99998", "minimum_ping" : "349999"}')
     x.close()
 
 now = datetime.now()
@@ -68,12 +59,12 @@ close_pos = (1887, 399) # change this to the position of the X after you open au
 # These values can be obtained by using the get_mouse_pos.py script, and moving your mouse over the buttons.
 secondary_pos = (564, 401) # You should probably keep this value the same, as adjusting it will break the auras.json file which uses these specific positions to detect colours
 _plugins = []
-local_version = "1.0.5"
+local_version = "1.0.6"
 reload_settings()
 
 if settings["__version__"] < local_version:
     settings["__version__"] = local_version
-    update_settings(settings, scr_norm, scr_stor, scr_inv, log_channel_id)
+    update_settings(settings)
     reload_settings()
 
 if settings["TOKEN"] == "":
@@ -94,8 +85,8 @@ async def on_ready():
     keep_alive.start()
     print("Started Autokick Prevention")
     await asyncio.sleep(15)
-    if log_channel_id != 0:
-        log_channel = client.get_channel(log_channel_id)
+    if settings["log_channel_id"] != 0:
+        log_channel = client.get_channel(settings["log_channel_id"])
         emb = discord.Embed(
             title="Bot has started",
             description=f"Started at {now.strftime("%d/%m/%Y %H:%M:%S")}"
@@ -115,9 +106,9 @@ async def on_command_error(ctx, error):
 @commands.is_owner()
 async def set_log_channel(ctx):
     await ctx.send("Updating log channel...")
-    global scr_norm, scr_inv, scr_stor, log_channel_id
     new_log_channel_id = ctx.message.channel.id
-    update_settings(settings, scr_norm, scr_stor, scr_inv, new_log_channel_id)
+    settings["log_channel_id"] = new_log_channel_id
+    update_settings(settings)
     reload_settings()
     await ctx.send(f"Log Channel set to {ctx.message.channel.mention}")
 
@@ -125,11 +116,38 @@ async def set_log_channel(ctx):
 @commands.is_owner()
 async def set_mention(ctx):
     await ctx.send("Updating user to mention...")
-    global scr_norm, scr_inv, scr_stor, log_channel_id
     settings["mention_id"] = ctx.author.id
-    update_settings(settings, scr_norm, scr_stor, scr_inv, log_channel_id)
+    update_settings(settings)
     reload_settings()
     await ctx.send(f"User to mention is now {ctx.author.mention}")
+
+@client.command()
+@commands.is_owner()
+async def set_min_roll(ctx, minimum : str):
+    try:
+        int(minimum)
+    except TypeError:
+        await ctx.send("The value provided is not a number")
+        return
+    await ctx.send("Changing minimum roll alert...")
+    settings["minimum_roll"] = minimum
+    update_settings(settings)
+    reload_settings()
+    await ctx.send(f"Minimum roll alert is now {minimum}")
+
+@client.command()
+@commands.is_owner()
+async def set_min_ping(ctx, minimum : str):
+    try:
+        int(minimum)
+    except TypeError:
+        await ctx.send("The value provided is not a number")
+        return
+    await ctx.send("Changing minimum ping alert...")
+    settings["minimum_ping"] = minimum
+    update_settings(settings)
+    reload_settings()
+    await ctx.send(f"Minimum ping alert is now {minimum}")
 
 @client.command()
 @commands.is_owner()
@@ -137,65 +155,54 @@ async def stop(ctx):
     await ctx.send("Manual stop initiated")
     aura_detection.stop()
     keep_alive.stop()
-    await ctx.bot.logout()
+    await client.close()
     print("Aw dang it")
 
 @client.command()
 @commands.is_owner()
-async def manual_scr(ctx):
-    await ctx.send("Taking screenshots, please wait, this will take about 30 seconds.")
-    if settings["ssnorm"]:
-        _mouse.position = resting_pos
+async def storage_scr(ctx):
+    await ctx.send("Taking screenshot of Aura Storage, please wait, this will take a few seconds.")
+    _mouse.position = resting_pos
+    await asyncio.sleep(1)
+    _mouse.click(Button.left)
+    await asyncio.sleep(2)
+    _mouse.position = aura_button_pos
+    await asyncio.sleep(1)
+    _mouse.click(Button.left)
+    await asyncio.sleep(1)
+    _mouse.click(Button.left)
+    await asyncio.sleep(1)
+    if os.path.exists("./scr/screenshot_storage.png"):
+        os.remove("./scr/screenshot_storage.png")
         await asyncio.sleep(1)
-        _mouse.click(Button.left)
+    storimg = pag.screenshot("./scr/screenshot_storage.png")
+    await asyncio.sleep(1)
+    _mouse.click(Button.left)
+    _mouse.position = close_pos
+    await ctx.send(file=discord.File("./scr/screenshot_storage.png"))
+
+@client.command()
+@commands.is_owner()
+async def inv_scr(ctx):
+    await ctx.send("Taking screenshot of inventory, please wait, this will take a few seconds.")
+    _mouse.position = resting_pos
+    await asyncio.sleep(1)
+    _mouse.click(Button.left)
+    await asyncio.sleep(2)
+    _mouse.position = inv_button_pos
+    await asyncio.sleep(1)
+    _mouse.click(Button.left)
+    await asyncio.sleep(1)
+    _mouse.click(Button.left)
+    await asyncio.sleep(1)
+    if os.path.exists("./scr/screenshot_inventory.png"):
+        os.remove("./scr/screenshot_inventory.png")
         await asyncio.sleep(1)
-        _mouse.position = close_pos
-        await asyncio.sleep(1)
-        _mouse.click(Button.left)
-        await asyncio.sleep(1)
-        _mouse.position = close_pos
-        if os.path.exists("./scr/screenshot_normal.png"):
-            os.remove("./scr/screenshot_normal.png")
-        normimg = pag.screenshot("./scr/screenshot_normal.png")
-        await ctx.send(file=discord.File("./scr/screenshot_normal.png"))
-    if settings["ssstor"]:
-        _mouse.position = resting_pos
-        await asyncio.sleep(1)
-        _mouse.click(Button.left)
-        await asyncio.sleep(2)
-        _mouse.position = aura_button_pos
-        await asyncio.sleep(1)
-        _mouse.click(Button.left)
-        await asyncio.sleep(1)
-        _mouse.click(Button.left)
-        await asyncio.sleep(1)
-        if os.path.exists("./scr/screenshot_storage.png"):
-            os.remove("./scr/screenshot_storage.png")
-            await asyncio.sleep(1)
-        storimg = pag.screenshot("./scr/screenshot_storage.png")
-        await asyncio.sleep(1)
-        _mouse.click(Button.left)
-        _mouse.position = close_pos
-        await ctx.send(file=discord.File("./scr/screenshot_storage.png"))
-    if settings["ssinv"]:
-        _mouse.position = resting_pos
-        await asyncio.sleep(1)
-        _mouse.click(Button.left)
-        await asyncio.sleep(2)
-        _mouse.position = inv_button_pos
-        await asyncio.sleep(1)
-        _mouse.click(Button.left)
-        await asyncio.sleep(1)
-        _mouse.click(Button.left)
-        await asyncio.sleep(1)
-        if os.path.exists("./scr/screenshot_inventory.png"):
-            os.remove("./scr/screenshot_inventory.png")
-            await asyncio.sleep(1)
-        storimg = pag.screenshot("./scr/screenshot_inventory.png")
-        await asyncio.sleep(1)
-        _mouse.click(Button.left)
-        _mouse.position = close_pos
-        await ctx.send(file=discord.File("./scr/screenshot_inventory.png"))
+    storimg = pag.screenshot("./scr/screenshot_inventory.png")
+    await asyncio.sleep(1)
+    _mouse.click(Button.left)
+    _mouse.position = close_pos
+    await ctx.send(file=discord.File("./scr/screenshot_inventory.png"))
 
 @tasks.loop(seconds=577)
 async def keep_alive():
@@ -216,7 +223,7 @@ async def keep_alive():
 @tasks.loop(seconds=0)
 async def aura_detection():
     global hex_col, hex_col2, colour, colour2
-    if log_channel_id == 0:
+    if settings["log_channel_id"] == 0:
         print("You must select a channel ID, you can do this by running the set_log_channel command.")
         return    
     px = ImageGrab.grab().load()
@@ -236,53 +243,57 @@ async def aura_detection():
     except Exception as e:
         print(e)
 
-@client.command()
-async def plugins(ctx):
-    await ctx.send("Installed Plugins:")
-    for plu in _plugins:
-        await ctx.send(plu)
-
 @aura_detection.after_loop
 async def on_aura_detection_cancel():
     global hex_col, hex_col2, colour, colour2
     try:
         rnow = datetime.now()
-        await asyncio.sleep(1)
-        auraimg = pag.screenshot("./scr/screenshot_aura.png")
-        await asyncio.sleep(1)
-        up = discord.File("./scr/screenshot_aura.png", filename="aura.png")
-        if hex_col2 == "#******":
-            emb = discord.Embed(
+        if int(auras[f"{hex_col},{hex_col2}"]["rarity"]) > int(settings["minimum_roll"]):
+            await asyncio.sleep(1)
+            auraimg = pag.screenshot("./scr/screenshot_aura.png")
+            await asyncio.sleep(1)
+            up = discord.File("./scr/screenshot_aura.png", filename="aura.png")
+            if hex_col2 == "#******":
+                emb = discord.Embed(
+                        title = f"Aura Rolled: {auras[f"{hex_col},{hex_col2}"]["name"]}",
+                        description = f"Rolled Aura: {auras[f"{hex_col},{hex_col2}"]["name"]}\nWith chances of 1/{auras[f"{hex_col},{hex_col2}"]["rarity"]}\nAt time: {rnow.strftime("%d/%m/%Y %H:%M:%S")}\nDetected Colour: {hex_col}",
+                        colour = discord.Color.from_rgb(colour[0], colour[1], colour[2])
+                )
+                emb.set_image(url="attachment://aura.png")
+                log_channel = client.get_channel(settings["log_channel_id"])
+                if settings["mention"] and settings["mention_id"] != 0 and (int(auras[f"{hex_col},{hex_col2}"]["rarity"]) > int(settings["minimum_ping"])):
+                    await log_channel.send(f"<@{settings["mention_id"]}>", embed=emb, file=up)
+                else:
+                    await log_channel.send(embed=emb, file=up)
+                print(f"Rolled Aura: {auras[f"{hex_col},{hex_col2}"]["name"]}\nWith chances of 1/{auras[f"{hex_col},{hex_col2}"]["rarity"]}\nAt time: {rnow.strftime("%d/%m/%Y %H:%M:%S")}\nDetected Colour: {hex_col}")
+                await asyncio.sleep(12)
+            else:
+                emb = discord.Embed(
                     title = f"Aura Rolled: {auras[f"{hex_col},{hex_col2}"]["name"]}",
-                    description = f"Rolled Aura: {auras[f"{hex_col},{hex_col2}"]["name"]}\nWith chances of 1/{auras[f"{hex_col},{hex_col2}"]["rarity"]}\nAt time: {rnow.strftime("%d/%m/%Y %H:%M:%S")}\nDetected Colour: {hex_col}",
+                    description = f"Rolled Aura: {auras[f"{hex_col},{hex_col2}"]["name"]}\nWith chances of 1/{auras[f"{hex_col},{hex_col2}"]["rarity"]}\nAt time: {rnow.strftime("%d/%m/%Y %H:%M:%S")}\nDetected Colours: {hex_col}, {hex_col2}",
                     colour = discord.Color.from_rgb(colour[0], colour[1], colour[2])
-            )
-            emb.set_image(url="attachment://aura.png")
-            log_channel = client.get_channel(log_channel_id)
-            if settings["mention"] and settings["mention_id"] != 0:
-                await log_channel.send(f"<@{settings["mention_id"]}>", embed=emb, file=up)
-            else:
-                await log_channel.send(embed=emb, file=up)
-            print(f"Rolled Aura: {auras[f"{hex_col},{hex_col2}"]["name"]}\nWith chances of 1/{auras[f"{hex_col},{hex_col2}"]["rarity"]}\nAt time: {rnow.strftime("%d/%m/%Y %H:%M:%S")}\nDetected Colour: {hex_col}")
-            await asyncio.sleep(10)
+                )
+                emb.set_image(url="attachment://aura.png")
+                log_channel = client.get_channel(settings["log_channel_id"])
+                if settings["mention"] and settings["mention_id"] != 0 and (int(auras[f"{hex_col},{hex_col2}"]["rarity"]) > int(settings["minimum_ping"])):
+                    await log_channel.send(f"<@{settings["mention_id"]}>", embed=emb, file=up)
+                else:
+                    await log_channel.send(embed=emb, file=up)
+                print(f"Rolled Aura: {auras[f"{hex_col},{hex_col2}"]["name"]}\nWith chances of 1/{auras[f"{hex_col},{hex_col2}"]["rarity"]}\nAt time: {rnow.strftime("%d/%m/%Y %H:%M:%S")}\nDetected Colours: {hex_col}, {hex_col2}")
+                await asyncio.sleep(12)
         else:
-            emb = discord.Embed(
-                title = f"Aura Rolled: {auras[f"{hex_col},{hex_col2}"]["name"]}",
-                description = f"Rolled Aura: {auras[f"{hex_col},{hex_col2}"]["name"]}\nWith chances of 1/{auras[f"{hex_col},{hex_col2}"]["rarity"]}\nAt time: {rnow.strftime("%d/%m/%Y %H:%M:%S")}\nDetected Colours: {hex_col}, {hex_col2}",
-                colour = discord.Color.from_rgb(colour[0], colour[1], colour[2])
-            )
-            emb.set_image(url="attachment://aura.png")
-            log_channel = client.get_channel(log_channel_id)
-            if settings["mention"] and settings["mention_id"] != 0:
-                await log_channel.send(f"<@{settings["mention_id"]}>", embed=emb, file=up)
-            else:
-                await log_channel.send(embed=emb, file=up)
             print(f"Rolled Aura: {auras[f"{hex_col},{hex_col2}"]["name"]}\nWith chances of 1/{auras[f"{hex_col},{hex_col2}"]["rarity"]}\nAt time: {rnow.strftime("%d/%m/%Y %H:%M:%S")}\nDetected Colours: {hex_col}, {hex_col2}")
-            await asyncio.sleep(10)
+            await asyncio.sleep(12)
     except Exception as e:
         print(e)
     finally:
         aura_detection.restart()
+
+@client.command()
+async def plugins(ctx):
+    await ctx.send("Installed Plugins:")
+    for plu in _plugins:
+        await ctx.send(plu)
 
 for filename in os.listdir("./plugins"):
     if filename.endswith(".py"):

@@ -80,7 +80,7 @@ close_pos = ((1887 * scale_w), (399 * scale_h))
 secondary_pos = ((564 * scale_w), (401 * scale_h))
 _plugins = []
 local_version = "1.0.8"
-default_settings = {"TOKEN": "", "__version__" : "' + local_version + '", "log_channel_id": 0, "cd" : str(os.getcwd()), "skip_dl": False, "mention" : True, "mention_id" : 0, "minimum_roll" : "99998", "minimum_ping" : "349999"}
+default_settings = {"TOKEN": "", "__version__" :  local_version, "log_channel_id": 0, "cd" : str(os.getcwd()), "skip_dl": False, "mention" : True, "mention_id" : 0, "minimum_roll" : "99998", "minimum_ping" : "349999"}
 
 if not os.path.exists("./settings.json"):
     x = open("settings.json", "w")

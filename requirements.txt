@@ -1,5 +1,6 @@
 discord==1.7.3
-pyautogui==0.9.53
+pyautogui
 pynput
 requests
 pillow
+screeninfo

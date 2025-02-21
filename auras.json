@@ -213,5 +213,9 @@
     "#62a0fe,#05070b": {
         "name" : "Santa Frost",
         "rarity" : "45000000"
+    },
+    "#603b28,#040202": {
+        "name" : "Express",
+        "rarity" : "90000000"
     }
 }

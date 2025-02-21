@@ -10,6 +10,7 @@ from pynput.keyboard import Key
 import asyncio
 from PIL import ImageGrab
 import requests
+import screeninfo as si
 
 def get_auras():
     print("Downloading Aura List")
@@ -44,22 +45,27 @@ if not os.path.exists("./logs/"):
 
 if not os.path.exists("./settings.json"):
     x = open("settings.json", "w")
-    x.write('{"TOKEN": "", "__version__" : "1.0.6", "log_channel_id": 0, "cd" : "' + str(os.getcwd()).replace("\\", "\\\\") + '", "skip_dl": false, "mention" : true, "mention_id" : 0, "minimum_roll" : "99998", "minimum_ping" : "349999"}')
+    x.write('{"TOKEN": "", "__version__" : "1.0.7", "log_channel_id": 0, "cd" : "' + str(os.getcwd()).replace("\\", "\\\\") + '", "skip_dl": false, "mention" : true, "mention_id" : 0, "minimum_roll" : "99998", "minimum_ping" : "349999"}')
     x.close()
 
 now = datetime.now()
 client = commands.Bot(commands.when_mentioned, case_insensitive=True)
 _mouse = mouse.Controller()
 _keyboard = keyboard.Controller()
-aura_button_pos = (53, 538) # change this to the position of your Aura Storage button
-inv_button_pos = (67, 732) # change this to the position of your Inventory button
-default_pos = (1280, 720) # change this to the position of your mouse after shiftlocking and unshiftlocking
-resting_pos = (-942, 604) # change this to a position outside of the game window
-close_pos = (1887, 399) # change this to the position of the X after you open aura or inventory menu
-# These values can be obtained by using the get_mouse_pos.py script, and moving your mouse over the buttons.
-secondary_pos = (564, 401) # You should probably keep this value the same, as adjusting it will break the auras.json file which uses these specific positions to detect colours
+screens = si.get_monitors()
+monitor = None
+for mon in screens:
+    if mon.is_primary:
+        monitor = mon
+scale_w = monitor.width / 2560
+scale_h = monitor.height / 1440
+aura_button_pos = ((53 * scale_w), (538 * scale_h))
+inv_button_pos = ((67 * scale_w), (732 * scale_h))
+default_pos = ((1280 * scale_w), (720 * scale_h))
+close_pos = ((1887 * scale_w), (399 * scale_h))
+secondary_pos = ((564 * scale_w), (401 * scale_h))
 _plugins = []
-local_version = "1.0.6"
+local_version = "1.0.7"
 reload_settings()
 
 if settings["__version__"] < local_version:
@@ -162,10 +168,10 @@ async def stop(ctx):
 @commands.is_owner()
 async def storage_scr(ctx):
     await ctx.send("Taking screenshot of Aura Storage, please wait, this will take a few seconds.")
-    _mouse.position = resting_pos
+    _keyboard.press(Key.cmd)
     await asyncio.sleep(1)
-    _mouse.click(Button.left)
-    await asyncio.sleep(2)
+    _keyboard.release(Key.cmd)
+    await asyncio.sleep(1)
     _mouse.position = aura_button_pos
     await asyncio.sleep(1)
     _mouse.click(Button.left)
@@ -185,10 +191,10 @@ async def storage_scr(ctx):
 @commands.is_owner()
 async def inv_scr(ctx):
     await ctx.send("Taking screenshot of inventory, please wait, this will take a few seconds.")
-    _mouse.position = resting_pos
+    _keyboard.press(Key.cmd)
     await asyncio.sleep(1)
-    _mouse.click(Button.left)
-    await asyncio.sleep(2)
+    _keyboard.release(Key.cmd)
+    await asyncio.sleep(1)
     _mouse.position = inv_button_pos
     await asyncio.sleep(1)
     _mouse.click(Button.left)
@@ -206,9 +212,9 @@ async def inv_scr(ctx):
 
 @tasks.loop(seconds=577)
 async def keep_alive():
-    _mouse.position = resting_pos
+    _keyboard.press(Key.cmd)
     await asyncio.sleep(1)
-    _mouse.click(Button.left)
+    _keyboard.release(Key.cmd)
     await asyncio.sleep(1)
     _mouse.position = close_pos
     await asyncio.sleep(1)

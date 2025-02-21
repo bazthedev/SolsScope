@@ -33,6 +33,25 @@ def reload_settings():
         settings = json.load(f)
     print(settings)
 
+def validate_settings():
+    found_keys = []
+    todel = []
+    for k in settings.keys():
+        if k not in valid_settings_keys:
+            todel.append(k)
+            print(f"Invalid key ({k}) detected")
+        else:
+            found_keys.append(k)
+    for _ in todel:
+        del settings[_]
+        print(f"Invalid key ({_}) deleted")
+    for _ in valid_settings_keys:
+        if _ not in found_keys:
+            settings[_] = default_settings[_]
+            print(f"Missing key ({_}) added")
+    update_settings(settings)
+    reload_settings()
+
 if not os.path.exists("./scr/"):
     os.mkdir("./scr/")
 
@@ -42,11 +61,6 @@ if not os.path.exists("./plugins/"):
 
 if not os.path.exists("./logs/"):
     os.mkdir("./logs/")
-
-if not os.path.exists("./settings.json"):
-    x = open("settings.json", "w")
-    x.write('{"TOKEN": "", "__version__" : "1.0.7", "log_channel_id": 0, "cd" : "' + str(os.getcwd()).replace("\\", "\\\\") + '", "skip_dl": false, "mention" : true, "mention_id" : 0, "minimum_roll" : "99998", "minimum_ping" : "349999"}')
-    x.close()
 
 now = datetime.now()
 client = commands.Bot(commands.when_mentioned, case_insensitive=True)
@@ -65,13 +79,27 @@ default_pos = ((1280 * scale_w), (720 * scale_h))
 close_pos = ((1887 * scale_w), (399 * scale_h))
 secondary_pos = ((564 * scale_w), (401 * scale_h))
 _plugins = []
-local_version = "1.0.7"
+local_version = "1.0.8"
+default_settings = {"TOKEN": "", "__version__" : "' + local_version + '", "log_channel_id": 0, "cd" : str(os.getcwd()), "skip_dl": False, "mention" : True, "mention_id" : 0, "minimum_roll" : "99998", "minimum_ping" : "349999"}
+
+if not os.path.exists("./settings.json"):
+    x = open("settings.json", "w")
+    x.write('{}')
+    x.close()
+    with open("settings.json", "w") as f:
+        json.dump(default_settings, f, indent=4)
+
+valid_settings_keys = ["TOKEN", "__version__", "log_channel_id", "cd", "skip_dl", "mention", "mention_id", "minimum_roll", "minimum_ping"]
+
 reload_settings()
 
 if settings["__version__"] < local_version:
     settings["__version__"] = local_version
     update_settings(settings)
     reload_settings()
+
+# Settings integrity check
+validate_settings()
 
 if settings["TOKEN"] == "":
     exit("You need to add your bot token in the settings.json file")

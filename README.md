@@ -48,6 +48,5 @@
 - Sovereign
 - Aegis
 - Luminosity
-- Winter Fantasy
 - Abomitable
 - Atlas: Yuletide

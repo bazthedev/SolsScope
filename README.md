@@ -12,6 +12,7 @@
 - Compatibility with all kinds of monitor sizes
 
 # TBA:
+- An overdrive/history detector (need someone to help get me the cutscene data)
 - Create a feature request if you want something to be added!
 
 # How to use:

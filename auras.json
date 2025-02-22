@@ -214,6 +214,10 @@
         "name" : "Santa Frost",
         "rarity" : "45000000"
     },
+    "#6abffe,#020608": {
+        "name" : "Winter Fantasy",
+        "rarity" : "72000000"
+    },
     "#603b28,#040202": {
         "name" : "Express",
         "rarity" : "90000000"

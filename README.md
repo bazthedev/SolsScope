@@ -33,5 +33,4 @@
 
 # Help with the project:
 ## If anyone has any of the auras listed below and is willing to help add them to the aura database, then please reach out to me!
-- Overture: History
 - Matrix: Reality

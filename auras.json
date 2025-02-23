@@ -3,6 +3,14 @@
         "name" : "Exotic",
         "rarity" : "99999"
     },
+    "#4bff9c,#0a1d13": {
+        "name" : "Exotic: Apex",
+        "rarity" : "49999500"
+    },
+    "#ae4bb5,#270d29": {
+        "name" : "Exotic: Void",
+        "rarity" : "299999999"
+    },
     "#2d2961,#000000": {
         "name" : "Diaboli: Void",
         "rarity" : "100400"
@@ -142,6 +150,10 @@
         "name" : "Sailor",
         "rarity" : "12000000"
     },
+    "#3898b6,#0b1510": {
+        "name" : "Sailor: Flying Dutchman",
+        "rarity" : "800000000"
+    },
     "#b1b1b1,#0c0c0c": {
         "name" : "Stormal: Hurricane",
         "rarity" : "13500000"
@@ -170,6 +182,18 @@
         "name" : "Overseer",
         "rarity" : "45000000"
     },
+    "#5bffb0,#102a1a": {
+        "name" : "Matrix",
+        "rarity" : "50000000"
+    },
+    "#d31e21,#******": {
+        "name" : "Matrix: Overdrive",
+        "rarity" : "503000000"
+    },
+    "#3c66ff,#******": {
+        "name" : "Overture",
+        "rarity" : "150000000"
+    },
     "#abbeff,#030305": {
         "name" : "Symphony",
         "rarity" : "175000000"
@@ -190,13 +214,45 @@
         "name" : "Atlas",
         "rarity" : "360000000"
     },
+    "#0055ff,#000000": {
+        "name" : "Abyssal Hunter",
+        "rarity" : "400000000"
+    },
     "#ffbd43,#******": {
         "name" : "Gargantua",
         "rarity" : "430000000"
     },
-    "#c5defd,#******": {
+    "#ff6250,#******": {
+        "name" : "Apostolos",
+        "rarity" : "444000000"
+    },
+    "#41ff83,#070e08": {
+        "name" : "Ruins",
+        "rarity" : "500000000"
+    },
+    "#94bcb6,#******": {
+        "name" : "Sovereign",
+        "rarity" : "7500000000"
+    },
+    "#3151ff,#******": {
+        "name" : "Aegis",
+        "rarity" : "825000000"
+    },
+    "#c2deff,#040506": {
         "name" : "Luminosity",
         "rarity" : "12000000000"
+    },
+    "#37572f,#******": {
+        "name" : "Glitch",
+        "rarity" : "12000000"
+    },
+    "#bababa,#000000": {
+        "name" : "Oppression",
+        "rarity" : "220000000"
+    },
+    "#3b9aff,#0c1a2a": {
+        "name" : "Shard Surfer",
+        "rarity" : "225000000"
     },
     "#1b1a47,#020104": {
         "name" : "Innovator",
@@ -221,5 +277,13 @@
     "#603b28,#040202": {
         "name" : "Express",
         "rarity" : "90000000"
+    },
+    "#050808,#010404": {
+        "name" : "Abomitable",
+        "rarity" : "120000000"
+    },
+    "#9df2fc,#******": {
+        "name" : "Atlas: Yuletide",
+        "rarity" : "510000000"
     }
 }

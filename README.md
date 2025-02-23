@@ -13,6 +13,7 @@
 - Matrix: Overdrive or Overture: History Detection
 
 # TBA:
+- Auto Purchase from merchant (???) will start only for void coins
 - Create a feature request if you want something to be added!
 
 # How to use:

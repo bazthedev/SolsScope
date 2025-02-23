@@ -33,21 +33,5 @@
 
 # Help with the project:
 ## If anyone has any of the auras listed below and is willing to help add them to the aura database, then please reach out to me!
-- Glitch
-- Exotic: Apex
-- Matrix
-- Sailor: Flying Dutchman
-- Overture
-- Oppression
-- Exotic: Void
 - Overture: History
-- Abyssal Hunter
-- Apostolos
-- Ruins
-- Matrix: Overdrive
 - Matrix: Reality
-- Sovereign
-- Aegis
-- Luminosity
-- Abomitable
-- Atlas: Yuletide

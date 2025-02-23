@@ -194,6 +194,10 @@
         "name" : "Overture",
         "rarity" : "150000000"
     },
+    "#59ff96,#******": {
+        "name": "Overture: History",
+        "rarity" : "300000000"
+    },
     "#abbeff,#030305": {
         "name" : "Symphony",
         "rarity" : "175000000"
@@ -249,6 +253,14 @@
     "#bababa,#000000": {
         "name" : "Oppression",
         "rarity" : "220000000"
+    },
+    "#5343d4,#120c2a": {
+        "name" : "Memory, The Fallen",
+        "rarity" : "100 from Oblivion Potion"
+    },
+    "#510e9e,#080410": {
+        "name" : "Oblivion: The truth seeker",
+        "rarity" : "2000 from Oblivion Potion"
     },
     "#3b9aff,#0c1a2a": {
         "name" : "Shard Surfer",

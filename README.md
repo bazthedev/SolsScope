@@ -27,7 +27,7 @@
 8. And you are done! You can customize the settings by editing the `settings.json` file or by using some of the built in commands.
 
 # Common Issues:
-- Chromatic is bugged, due to the amount of different colours there is only a very small chance that it will detect the Chromatic cutscene.
+- Chromatic does not get detected: Chromatic is bugged, due to the amount of different colours there is only a very small chance that it will detect the Chromatic cutscene.
 - Nothing is working on my dual monitor setup: Make sure that Roblox is open on the monitor you marked as PRIMARY. You can check this by typing "Change my primary display" into the Windows search bar.
 ## If you are experiencing issues, please create a new issue so that it can be raised, solved and prevented from happening again.
 

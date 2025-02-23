@@ -76,10 +76,10 @@ scale_h = monitor.height / 1440
 aura_button_pos = ((53 * scale_w), (538 * scale_h))
 inv_button_pos = ((67 * scale_w), (732 * scale_h))
 default_pos = ((1280 * scale_w), (720 * scale_h))
-close_pos = ((1887 * scale_w), (399 * scale_h))
+close_pos = ((1887 * scale_w), (399 * scale_h)) 
 secondary_pos = ((564 * scale_w), (401 * scale_h))
 _plugins = []
-local_version = "1.0.8"
+local_version = "1.0.9"
 default_settings = {"TOKEN": "", "__version__" :  local_version, "log_channel_id": 0, "cd" : str(os.getcwd()), "skip_dl": False, "mention" : True, "mention_id" : 0, "minimum_roll" : "99998", "minimum_ping" : "349999"}
 
 if not os.path.exists("./settings.json"):
@@ -283,11 +283,93 @@ async def on_aura_detection_cancel():
     try:
         rnow = datetime.now()
         if int(auras[f"{hex_col},{hex_col2}"]["rarity"]) > int(settings["minimum_roll"]):
-            await asyncio.sleep(1)
-            auraimg = pag.screenshot("./scr/screenshot_aura.png")
-            await asyncio.sleep(1)
-            up = discord.File("./scr/screenshot_aura.png", filename="aura.png")
-            if hex_col2 == "#******":
+            if hex_col == "#5bffb0": # overdrive detector
+                await asyncio.sleep(7)
+                px = ImageGrab.grab().load()
+                colour = px[default_pos[0], default_pos[1]]
+                hex_col = rgb2hex(colour[0], colour[1], colour[2])
+                if hex_col == "#5bffb0":
+                    hex_col2 = "#102a1a"
+                    auraimg = pag.screenshot("./scr/screenshot_aura.png")
+                    await asyncio.sleep(1)
+                    up = discord.File("./scr/screenshot_aura.png", filename="aura.png")
+                    emb = discord.Embed(
+                        title = f"Aura Rolled: {auras[f"{hex_col},{hex_col2}"]["name"]}",
+                        description = f"Rolled Aura: {auras[f"{hex_col},{hex_col2}"]["name"]}\nWith chances of 1/{auras[f"{hex_col},{hex_col2}"]["rarity"]}\nAt time: {rnow.strftime("%d/%m/%Y %H:%M:%S")}\nDetected Colours: {hex_col}, {hex_col2}",
+                        colour = discord.Color.from_rgb(colour[0], colour[1], colour[2])
+                    )
+                    emb.set_image(url="attachment://aura.png")
+                    log_channel = client.get_channel(settings["log_channel_id"])
+                    if settings["mention"] and settings["mention_id"] != 0 and (int(auras[f"{hex_col},{hex_col2}"]["rarity"]) > int(settings["minimum_ping"])):
+                        await log_channel.send(f"<@{settings["mention_id"]}>", embed=emb, file=up)
+                    else:
+                        await log_channel.send(embed=emb, file=up)
+                    print(f"Rolled Aura: {auras[f"{hex_col},{hex_col2}"]["name"]}\nWith chances of 1/{auras[f"{hex_col},{hex_col2}"]["rarity"]}\nAt time: {rnow.strftime("%d/%m/%Y %H:%M:%S")}\nDetected Colours: {hex_col}, {hex_col2}")
+                    await asyncio.sleep(12)
+                elif hex_col == "#d31e21":
+                    hex_col2 = "#******"
+                    auraimg = pag.screenshot("./scr/screenshot_aura.png")
+                    await asyncio.sleep(1)
+                    up = discord.File("./scr/screenshot_aura.png", filename="aura.png")
+                    emb = discord.Embed(
+                            title = f"Aura Rolled: {auras[f"{hex_col},{hex_col2}"]["name"]}",
+                            description = f"Rolled Aura: {auras[f"{hex_col},{hex_col2}"]["name"]}\nWith chances of 1/{auras[f"{hex_col},{hex_col2}"]["rarity"]}\nAt time: {rnow.strftime("%d/%m/%Y %H:%M:%S")}\nDetected Colour: {hex_col}",
+                            colour = discord.Color.from_rgb(colour[0], colour[1], colour[2])
+                    )
+                    emb.set_image(url="attachment://aura.png")
+                    log_channel = client.get_channel(settings["log_channel_id"])
+                    if settings["mention"] and settings["mention_id"] != 0 and (int(auras[f"{hex_col},{hex_col2}"]["rarity"]) > int(settings["minimum_ping"])):
+                        await log_channel.send(f"<@{settings["mention_id"]}>", embed=emb, file=up)
+                    else:
+                        await log_channel.send(embed=emb, file=up)
+                    print(f"Rolled Aura: {auras[f"{hex_col},{hex_col2}"]["name"]}\nWith chances of 1/{auras[f"{hex_col},{hex_col2}"]["rarity"]}\nAt time: {rnow.strftime("%d/%m/%Y %H:%M:%S")}\nDetected Colour: {hex_col}")
+                    await asyncio.sleep(12)
+            elif hex_col == "#3c66ff": # history detector
+                await asyncio.sleep(10)
+                px = ImageGrab.grab().load()
+                colour = px[default_pos[0], default_pos[1]]
+                hex_col = rgb2hex(colour[0], colour[1], colour[2])
+                if hex_col == "#59ff96":
+                    hex_col2 = "#******"
+                    auraimg = pag.screenshot("./scr/screenshot_aura.png")
+                    await asyncio.sleep(1)
+                    up = discord.File("./scr/screenshot_aura.png", filename="aura.png")
+                    emb = discord.Embed(
+                            title = f"Aura Rolled: {auras[f"{hex_col},{hex_col2}"]["name"]}",
+                            description = f"Rolled Aura: {auras[f"{hex_col},{hex_col2}"]["name"]}\nWith chances of 1/{auras[f"{hex_col},{hex_col2}"]["rarity"]}\nAt time: {rnow.strftime("%d/%m/%Y %H:%M:%S")}\nDetected Colour: {hex_col}",
+                            colour = discord.Color.from_rgb(colour[0], colour[1], colour[2])
+                    )
+                    emb.set_image(url="attachment://aura.png")
+                    log_channel = client.get_channel(settings["log_channel_id"])
+                    if settings["mention"] and settings["mention_id"] != 0 and (int(auras[f"{hex_col},{hex_col2}"]["rarity"]) > int(settings["minimum_ping"])):
+                        await log_channel.send(f"<@{settings["mention_id"]}>", embed=emb, file=up)
+                    else:
+                        await log_channel.send(embed=emb, file=up)
+                    print(f"Rolled Aura: {auras[f"{hex_col},{hex_col2}"]["name"]}\nWith chances of 1/{auras[f"{hex_col},{hex_col2}"]["rarity"]}\nAt time: {rnow.strftime("%d/%m/%Y %H:%M:%S")}\nDetected Colour: {hex_col}")
+                    await asyncio.sleep(12)
+                else:
+                    hex_col = "#3c66ff"
+                    hex_col2 = "#******"
+                    auraimg = pag.screenshot("./scr/screenshot_aura.png")
+                    await asyncio.sleep(1)
+                    up = discord.File("./scr/screenshot_aura.png", filename="aura.png")
+                    emb = discord.Embed(
+                            title = f"Aura Rolled: {auras[f"{hex_col},{hex_col2}"]["name"]}",
+                            description = f"Rolled Aura: {auras[f"{hex_col},{hex_col2}"]["name"]}\nWith chances of 1/{auras[f"{hex_col},{hex_col2}"]["rarity"]}\nAt time: {rnow.strftime("%d/%m/%Y %H:%M:%S")}\nDetected Colour: {hex_col}",
+                            colour = discord.Color.from_rgb(colour[0], colour[1], colour[2])
+                    )
+                    emb.set_image(url="attachment://aura.png")
+                    log_channel = client.get_channel(settings["log_channel_id"])
+                    if settings["mention"] and settings["mention_id"] != 0 and (int(auras[f"{hex_col},{hex_col2}"]["rarity"]) > int(settings["minimum_ping"])):
+                        await log_channel.send(f"<@{settings["mention_id"]}>", embed=emb, file=up)
+                    else:
+                        await log_channel.send(embed=emb, file=up)
+                    print(f"Rolled Aura: {auras[f"{hex_col},{hex_col2}"]["name"]}\nWith chances of 1/{auras[f"{hex_col},{hex_col2}"]["rarity"]}\nAt time: {rnow.strftime("%d/%m/%Y %H:%M:%S")}\nDetected Colour: {hex_col}")
+                    await asyncio.sleep(12)
+            elif hex_col2 == "#******":
+                auraimg = pag.screenshot("./scr/screenshot_aura.png")
+                await asyncio.sleep(1)
+                up = discord.File("./scr/screenshot_aura.png", filename="aura.png")
                 emb = discord.Embed(
                         title = f"Aura Rolled: {auras[f"{hex_col},{hex_col2}"]["name"]}",
                         description = f"Rolled Aura: {auras[f"{hex_col},{hex_col2}"]["name"]}\nWith chances of 1/{auras[f"{hex_col},{hex_col2}"]["rarity"]}\nAt time: {rnow.strftime("%d/%m/%Y %H:%M:%S")}\nDetected Colour: {hex_col}",
@@ -302,6 +384,9 @@ async def on_aura_detection_cancel():
                 print(f"Rolled Aura: {auras[f"{hex_col},{hex_col2}"]["name"]}\nWith chances of 1/{auras[f"{hex_col},{hex_col2}"]["rarity"]}\nAt time: {rnow.strftime("%d/%m/%Y %H:%M:%S")}\nDetected Colour: {hex_col}")
                 await asyncio.sleep(12)
             else:
+                auraimg = pag.screenshot("./scr/screenshot_aura.png")
+                await asyncio.sleep(1)
+                up = discord.File("./scr/screenshot_aura.png", filename="aura.png")
                 emb = discord.Embed(
                     title = f"Aura Rolled: {auras[f"{hex_col},{hex_col2}"]["name"]}",
                     description = f"Rolled Aura: {auras[f"{hex_col},{hex_col2}"]["name"]}\nWith chances of 1/{auras[f"{hex_col},{hex_col2}"]["rarity"]}\nAt time: {rnow.strftime("%d/%m/%Y %H:%M:%S")}\nDetected Colours: {hex_col}, {hex_col2}",

@@ -22,3 +22,5 @@ with open("settings.json", "r") as f:
 ```
 ## These allow the code to access the global configuration and the plugin's own configuration.
 ## For an example of starting a plugin, please look at [`template.py`](https://github.com/bazthedev/SolsRNGBot/blob/main/plugins/template.py).
+
+## To publish a plugin to this repo, you must reach out to me and send the code in a .txt format, where it will be reviewed before being added.

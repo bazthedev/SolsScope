@@ -35,5 +35,6 @@
 
 
 # Help with the project:
+## If you want to help to implement some features, then please reach out and I would be happy to add you as a contributor to help!
 ## If anyone has any of the auras listed below and is willing to help add them to the aura database, then please reach out to me!
 - Matrix: Reality

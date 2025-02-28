@@ -36,6 +36,7 @@
 - Nothing is working on my dual monitor setup: Make sure that Roblox is open on the monitor you marked as PRIMARY. You can check this by typing "Change my primary display" into the Windows search bar.
 ## If you are experiencing issues, please create a new issue so that it can be raised, solved and prevented from happening again.
 
+# You can read more about how the bot works and the things you can do with it [here](https://github.com/bazthedev/SolsRNGBot/wiki)
 
 # Help with the project:
 ## If you want to help to implement some features, then please reach out and I would be happy to add you as a contributor to help!

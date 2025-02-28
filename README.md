@@ -12,6 +12,7 @@
 - Compatibility with all kinds of monitor sizes
 - Matrix: Overdrive or Overture: History Detection
 - Merchant Detection and sending a screenshot with their stock (Merchant Teleporter is required)
+- Automatic crafting of potions
 
 # TBA:
 - Auto Purchase from merchant (???) will start only for void coins. If you do not have Merchant Teleporter, then this will not work.

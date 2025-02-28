@@ -7,7 +7,7 @@ self.name = type(self).__name__
 self.cfname = f"{self.name.lower()}.json"
 if not os.path.exists(f"./plugins/config/{self.cfname}"):
     x = open(f"./plugins/config/{self.cfname}", "w")
-    x.write('{"__version__" : "1.0.0"}') # this can be changed to add your own custom settings
+    x.write('{"__version__" : "1.0.0", "author" : "your_github_username"}') # This can be changed to add your own custom settings. Also add your username here.
     x.close()
 with open(f"./plugins/config/{self.cfname}", "r") as c:
     self.config = json.load(c)

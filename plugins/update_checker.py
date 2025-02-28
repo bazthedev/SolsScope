@@ -16,7 +16,7 @@ class UpdateChecker(commands.Cog):
         self.cfname = f"{self.name.lower()}.json"
         if not os.path.exists(f"./plugins/config/{self.cfname}"):
             x = open(f"./plugins/config/{self.cfname}", "w")
-            x.write('{"__version__" : "1.0.2", "auto_check" : false, "latest_ver_msg" : true}')
+            x.write('{"__version__" : "1.0.2", "author": "bazthedev", "auto_check" : false, "latest_ver_msg" : true}')
             x.close()
         with open(f"./plugins/config/{self.cfname}", "r") as c:
             self.config = json.load(c)

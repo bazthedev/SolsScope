@@ -14,7 +14,7 @@ class Template(commands.Cog):
         self.cfname = f"{self.name.lower()}.json"
         if not os.path.exists(f"./plugins/config/{self.cfname}"):
             x = open(f"./plugins/config/{self.cfname}", "w")
-            x.write('{"__version__" : "1.0.0"}')
+            x.write('{"__version__" : "1.0.0", "author" : "your_github_username"}')
             x.close()
         with open(f"./plugins/config/{self.cfname}", "r") as c:
             self.config = json.load(c)

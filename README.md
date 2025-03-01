@@ -20,8 +20,7 @@
 # TBA:
 - Auto Purchase from merchant (???) will start only for void coins. If you do not have Merchant Teleporter, then this will not work.
 - Mari/Jester Detection. You will be able to choose to only buy items from Mari, Jester or both.
-- Biome Detection (maybe). I'm going to study Noteab to see how they managed to get theirs working.
-- Auto Pop for Glitch Biome. You will be able to select potions and items you want to pop and how many.
+- Periodic Biome Randomization
 - Create a feature request if you want something to be added!
 
 # Quick Start

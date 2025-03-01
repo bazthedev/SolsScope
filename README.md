@@ -24,14 +24,15 @@
 
 # Quick Start
 1. Download the [latest release](https://github.com/bazthedev/SolsRNGBot/releases/latest)
-2. Install the requirements by running `python -m pip install -r requirements.txt`
-3. Run the main.py file
-4. Create a new Discord Bot and copy its token
-5. Edit the newly created `settings.json` file and paste your discord bot token in the "TOKEN" key.
-6. Run the main.py file again
-7. Add the bot to a server
-8. Run the set_log_channel command in the channel you want the bot to automatically post in
-9. And you are done! You can customize the settings by editing the `settings.json` file or by using some of the built in commands.
+2. Make sure you have Python installed. I am using version 3.12 but you should be able to use any version 3.12 or newer.
+3. Install the requirements by running `python -m pip install -r requirements.txt`
+4. Run the main.py file
+5. Create a new Discord Bot and copy its token
+6. Edit the newly created `settings.json` file and paste your discord bot token in the "TOKEN" key.
+7. Run the main.py file again
+8. Add the bot to a server
+9. Run the set_log_channel command in the channel you want the bot to automatically post in
+10. And you are done! You can customize the settings by editing the `settings.json` file or by using some of the built in commands.
 
 # Common Issues:
 - Chromatic does not get detected: Chromatic is bugged, due to the amount of different colours there is only a very small chance that it will detect the Chromatic cutscene.

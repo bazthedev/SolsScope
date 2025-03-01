@@ -436,7 +436,7 @@ async def glitch_detector():
                 if settings["auto_use_items_in_glitch"][buff]["use"]:
                     to_use.append(buff)
             for item in to_use:
-                    use_item(item, settings["auto_use_items_in_glitch"][item]["amount"], True)
+                    await use_item(item, settings["auto_use_items_in_glitch"][item]["amount"], True)
         else:
             popping = False
     elif previous_biome == "GLITCHED" and latest_hovertext != "GLITCHED":
@@ -538,7 +538,7 @@ async def dreamspace_detector():
                 if settings["auto_use_items_in_dreamspace"][buff]["use"]:
                     to_use.append(buff)
             for item in to_use:
-                    use_item(item, settings["auto_use_items_in_dreamspace"][item]["amount"], True)
+                    await use_item(item, settings["auto_use_items_in_dreamspace"][item]["amount"], True)
         else:
             popping = False
     elif previous_biome == "DREAMSPACE" and latest_hovertext != "DREAMSPACE":

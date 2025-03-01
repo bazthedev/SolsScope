@@ -43,6 +43,6 @@ rblx_logs_dir = os.path.expandvars(r"%localappdata%\\Roblox\\logs")
 latest_hovertext = get_latest_hovertext(rblx_logs_dir)
 
 if latest_hovertext:
-    print(f"Most Recent HoverText: {latest_hovertext}")
+    print(f"Most Recent Biome: {latest_hovertext}")
 else:
-    print("No hoverText found.")
+    print("No Biome found.")

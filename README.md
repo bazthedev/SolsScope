@@ -14,6 +14,8 @@
 - Merchant Detection and sending a screenshot with their stock (Merchant Teleporter is required)
 - Automatic crafting of potions
 - Purchase items from merchant via command
+- Glitch and Dreamspace Biome Detection
+- Auto Pop in Glitch or Dreamspace (untested)
 
 # TBA:
 - Auto Purchase from merchant (???) will start only for void coins. If you do not have Merchant Teleporter, then this will not work.

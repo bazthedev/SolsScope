@@ -4,7 +4,6 @@
 - Manual screenshots of game, storage, and inventory
 - Autokick prevention
 - Aura Detection
-- Sending of Discord Messages to server
 - Custom Plugins to add custom commands
 - Automatic Updating of New Auras
 - Mention on aura roll

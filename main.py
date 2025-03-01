@@ -11,6 +11,10 @@ import asyncio
 from PIL import ImageGrab
 import requests
 import screeninfo as si
+import re
+import glob
+import shutil
+import tempfile
 
 def get_auras():
     print("Downloading Aura List")
@@ -142,6 +146,38 @@ async def use_item(item_name : str, amount : int, close_menu : bool):
         await asyncio.sleep(0.1)
         _mouse.click(Button.left)
 
+def get_latest_hovertext(logs_dir):
+    log_files = glob.glob(os.path.join(logs_dir, "*.log"))
+    if not log_files:
+        return None
+
+    latest_log_file = max(log_files, key=os.path.getctime)
+    try:
+        temp_file = os.path.join(tempfile.gettempdir(), "solsrngbot_biome_detection.log")
+        shutil.copy2(latest_log_file, temp_file)
+    except PermissionError:
+        return None
+
+    json_pattern = re.compile(r'\{.*\}')
+    last_hover_text = None
+
+    try:
+        with open(temp_file, "r", encoding="utf-8") as file:
+            for line in reversed(file.readlines()):
+                match = json_pattern.search(line)
+                if match:
+                    try:
+                        json_data = json.loads(match.group())
+                        hover_text = json_data.get("data", {}).get("largeImage", {}).get("hoverText")
+                        if hover_text:
+                            return hover_text
+                    except json.JSONDecodeError:
+                        continue
+    except Exception:
+        return None
+    
+    return last_hover_text
+
 if not os.path.exists("./scr/"):
     os.mkdir("./scr/")
 
@@ -197,9 +233,16 @@ craft_btn_pos = ((764 * scale_w), (764 * scale_h))
 hp1_pos_potions = ((1064 * scale_w), (840 * scale_h))
 hp1_pos_celestial = ((1064 * scale_w), (1024 * scale_h))
 hp2_pos_potions = ((1064 * scale_w), (910 * scale_h))
+merchant_face_pos_1 = (int(841 * scale_w), int(1056 * scale_h))
+merchant_face_pos_2 = (int(855 * scale_w), int(1063 * scale_h))
+mari_cols = ["#767474", "#767476", "#757474"]
+jester_cols = ["#e2e2e2", "#e0e0e0"]
+rblx_log_dir = os.path.expandvars(r"%localappdata%\\Roblox\\logs")
+previous_biome = None
+popping = False
 _plugins = []
-local_version = "1.1.1"
-default_settings = {"TOKEN": "", "__version__" :  local_version, "log_channel_id": 0, "cd" : str(os.getcwd()), "skip_dl": False, "mention" : True, "mention_id" : 0, "minimum_roll" : "99998", "minimum_ping" : "349999", "reset_aura" : "Glock", "merchant_detection" : True, "ping_merchant" : True, "auto_purchase_items" : {"Void Coin/Lucky Penny" : True}, "auto_craft_mode" : False, "auto_craft_item" : {"Heavenly Potion I" : False, "Heavenly Potion II" : True, "Warp Potion" : False}}
+local_version = "1.1.2"
+default_settings = {"TOKEN": "", "__version__" :  local_version, "log_channel_id": 0, "cd" : str(os.getcwd()), "skip_dl": False, "mention" : True, "mention_id" : 0, "minimum_roll" : "99998", "minimum_ping" : "349999", "reset_aura" : "", "merchant_detection" : True, "ping_mari" : False, "ping_jester" : True, "auto_purchase_items" : {"Void Coin/Lucky Penny" : True}, "glitch_detector" : True, "ping_on_glitch" : True, "pop_in_glitch" : False, "auto_use_items_in_glitch": {"Heavenly Potion II" : {"use" : True, "amount" : 200}, "Fortune Potion III" : {"use" : True, "amount" : 1}, "Lucky Potion" : {"use" : True, "amount" : 10}, "Pumpkin" : {"use" : True, "amount" : 10}, "Haste Potion III" : {"use" : False, "amount" : 1}, "Warp Potion" : {"use" : True, "amount" : 1}, "Mixed Potion" : {"use" : True, "amount" : 10}, "Stella's Candle" : {"use" : True, "amount" : 1}, "Santa Claus Potion" : {"use" : True, "amount" : 5}}, "Hwachae" : {"use" : True}, "dreamspace_detector" : True, "ping_on_dreamspace" : True, "pop_in_dreamspace" : False, "auto_use_items_in_dreamspace" : {"Heavenly Potion II" : {"use" : False, "amount" : 1}, "Fortune Potion III" : {"use" : True, "amount" : 1}, "Lucky Potion" : {"use" : True, "amount" : 10}, "Pumpkin" : {"use" : True, "amount" : 10}, "Haste Potion III" : {"use" : False, "amount" : 1}, "Warp Potion" : {"use" : True, "amount" : 1}, "Mixed Potion" : {"use" : True, "amount" : 10}, "Stella's Candle" : {"use" : True, "amount" : 1}, "Santa Claus Potion" : {"use" : True, "amount" : 5}}, "Hwachae" : {"use" : True}, "auto_craft_mode" : False, "skip_auto_mode_warning" : False, "auto_craft_item" : {"Heavenly Potion I" : False, "Heavenly Potion II" : True, "Warp Potion" : False}}
 auto_purchase = {"Void Coin/Lucky Penny": ["#ff92fe", "#ff9e4e"]}
 
 if not os.path.exists("./settings.json"):
@@ -209,7 +252,7 @@ if not os.path.exists("./settings.json"):
     with open("settings.json", "w") as f:
         json.dump(default_settings, f, indent=4)
 
-valid_settings_keys = ["TOKEN", "__version__", "log_channel_id", "cd", "skip_dl", "mention", "mention_id", "minimum_roll", "minimum_ping", "reset_aura", "merchant_detection", "ping_merchant", "auto_purchase_items", "auto_craft_mode", "auto_craft_item"]
+valid_settings_keys = ["TOKEN", "__version__", "log_channel_id", "cd", "skip_dl", "mention", "mention_id", "minimum_roll", "minimum_ping", "reset_aura", "merchant_detection", "ping_mari", "ping_jester", "auto_purchase_items", "glitch_detector", "ping_on_glitch", "pop_in_glitch", "auto_use_items_in_glitch", "dreamspace_detector", "ping_on_dreamspace", "pop_in_dreamspace", "auto_use_items_in_dreamspace", "auto_craft_mode", "skip_auto_mode_warning", "auto_craft_item"]
 
 reload_settings()
 
@@ -252,8 +295,11 @@ async def on_ready():
             exit("Please select one item from the list")        
         print("[WARNING] Auto Craft Mode is on. You will not be able to use certain features whilst this settings is on.")
         print(f"The item you are automatically crafting is {crafts[0]}")
-        print("Please ensure that you are on the craft screen for the item you want and have selected Auto mode for it in the craft menu. When you have done this, please press enter.")
-        input("")
+        if not settings["skip_auto_mode_warning"]:
+            print("Please ensure that you are on the craft screen for the item you want and have selected Auto mode for it in the craft menu. When you have done this, please press enter.")
+            input("")
+        else:
+            print("Please ensure that you are on the craft screen for the item you want and have selected Auto mode for it in the craft menu.")
         if settings["reset_aura"] != "":
             settings["reset_aura"] = ""
             update_settings(settings)
@@ -266,23 +312,244 @@ async def on_ready():
         print("Started Autokick Prevention")
         await asyncio.sleep(3)
     if settings["log_channel_id"] != 0:
-        log_channel = client.get_channel(settings["log_channel_id"])
-        emb = discord.Embed(
-            title="Bot has started",
-            description=f"Started at {now.strftime("%d/%m/%Y %H:%M:%S")}"
-        )
-        await log_channel.send(embed=emb)
+        if settings["auto_craft_mode"] and not settings["merchant_detection"]:
+            log_channel = client.get_channel(settings["log_channel_id"])
+            emb = discord.Embed(
+                title="Bot has started",
+                description=f"Mode: Auto Craft\nAuto Craft item: {crafts[0]}\nStarted at {now.strftime("%d/%m/%Y %H:%M:%S")}"
+            )
+            emb.set_footer(text=f"bazthedev/SolsRNGBot v{local_version}")
+            await log_channel.send(embed=emb)
+        else:
+            log_channel = client.get_channel(settings["log_channel_id"])
+            emb = discord.Embed(
+                title="Bot has started",
+                description=f"Mode: Normal\nStarted at {now.strftime("%d/%m/%Y %H:%M:%S")}"
+            )
+            emb.set_footer(text=f"bazthedev/SolsRNGBot v{local_version}")
+            await log_channel.send(embed=emb)
         aura_detection.start()
         print("Started Aura Detection")
-        if settings["merchant_detection"] and not settings["auto_craft_mode"]:
+        if settings["glitch_detector"]:
+            glitch_detector.start()
+            print("Started Glitch Biome Detection")
+        if settings["dreamspace_detector"]:
+            dreamspace_detector.start()
+            print("Started Dreamspace Biome Detection")
+        if settings["merchant_detection"]:
             merchant_detection.start()
             print("Started Merchant Detection")
     else:
         print("You must select a channel ID, you can do this by running the set_log_channel command.")
+    
+@tasks.loop(seconds=0)
+async def glitch_detector():
+    rnow = datetime.now()
+    global previous_biome, popping
+    latest_hovertext = get_latest_hovertext(rblx_log_dir)
+    log_channel = client.get_channel(settings["log_channel_id"])
+    if latest_hovertext == "GLITCHED" and previous_biome != "GLITCHED":
+        merchant_detection.stop()
+        previous_biome = latest_hovertext
+        popping = True
+        storimg = pag.screenshot("./scr/screenshot_glitch.png")
+        up = discord.File("./scr/screenshot_glitch.png", filename="glitch.png")
+        print("Glitch biome started")    
+        emb = discord.Embed(
+                title="GLITCH BIOME DETECTED",
+                description=f"A GLITCH biome was detected at {rnow.strftime("%d/%m/%Y %H:%M:%S")}",
+                colour=discord.Colour.from_rgb(101, 255, 101)
+        )
+        if settings["ping_on_glitch"]:
+            await log_channel.send(f"<@{settings["mention_id"]}>",embed=emb, file=up)
+        else:
+            await log_channel.send(embed=emb, file=up)
+        if settings["pop_in_glitch"] and popping:
+            popping = False
+            _keyboard.press(Key.cmd)
+            await asyncio.sleep(0.1)
+            _keyboard.release(Key.cmd)
+            await asyncio.sleep(0.1)
+            _mouse.position = menu_btn_pos
+            await asyncio.sleep(0.1)
+            _mouse.click(Button.left)
+            await asyncio.sleep(0.1)
+            _mouse.click(Button.left)
+            await asyncio.sleep(0.1)
+            _keyboard.press(Key.cmd)
+            await asyncio.sleep(0.1)
+            _keyboard.release(Key.cmd)
+            await asyncio.sleep(0.1)
+            _mouse.position = settings_btn_pos
+            await asyncio.sleep(0.1)
+            _mouse.click(Button.left)
+            await asyncio.sleep(0.1)
+            _mouse.click(Button.left)
+            await asyncio.sleep(0.1)
+            _keyboard.press(Key.cmd)
+            await asyncio.sleep(0.1)
+            _keyboard.release(Key.cmd)
+            await asyncio.sleep(0.1)
+            _mouse.position = rolling_conf_pos
+            await asyncio.sleep(0.1)
+            _mouse.click(Button.left)
+            await asyncio.sleep(0.1)
+            _mouse.click(Button.left)
+            await asyncio.sleep(0.1)
+            _keyboard.press(Key.cmd)
+            await asyncio.sleep(0.1)
+            _keyboard.release(Key.cmd)
+            await asyncio.sleep(0.1)
+            _mouse.position = cutscene_conf_pos
+            await asyncio.sleep(0.1)
+            _mouse.click(Button.left)
+            await asyncio.sleep(0.1)
+            _mouse.click(Button.left)
+            await asyncio.sleep(0.1)
+            _keyboard.press(Key.ctrl)
+            _keyboard.press("a")
+            await asyncio.sleep(0.1)
+            _keyboard.release("a")
+            _keyboard.release(Key.ctrl)
+            await asyncio.sleep(0.1)
+            _keyboard.type("219999999")
+            await asyncio.sleep(0.1)
+            _keyboard.press(Key.cmd)
+            await asyncio.sleep(0.1)
+            _keyboard.release(Key.cmd)
+            await asyncio.sleep(0.1)
+            _mouse.position = close_pos
+            await asyncio.sleep(0.1)
+            _mouse.click(Button.left)
+            await asyncio.sleep(0.1)
+            _mouse.click(Button.left)
+            await asyncio.sleep(0.1)
+            to_use = []
+            for buff in reversed(settings["auto_use_items_in_glitch"].keys()):
+                if settings["auto_use_items_in_glitch"][buff]["use"]:
+                    to_use.append(buff)
+            for item in to_use:
+                    use_item(item, settings["auto_use_items_in_glitch"][item]["amount"], True)
+        else:
+            popping = False
+    elif previous_biome == "GLITCHED" and latest_hovertext != "GLITCHED":
+        previous_biome = None
+        merchant_detection.start()
+        print("Glitch iome ended")
+        emb = discord.Embed(
+                title="Glitch Biome Ended",
+                description=f"A GLITCH biome ended at {rnow.strftime("%d/%m/%Y %H:%M:%S")}",
+                colour=discord.Colour.from_rgb(101, 255, 101)
+        )
+        await log_channel.send(embed=emb)
+        
+
+@tasks.loop(seconds=0)
+async def dreamspace_detector():
+    rnow = datetime.now()
+    global previous_biome, popping
+    latest_hovertext = get_latest_hovertext(rblx_log_dir)
+    log_channel = client.get_channel(settings["log_channel_id"])
+    if latest_hovertext == "DREAMSPACE" and previous_biome != "DREAMSPACE":
+        merchant_detection.stop()
+        previous_biome = latest_hovertext
+        popping = True
+        storimg = pag.screenshot("./scr/screenshot_dreamspace.png")
+        up = discord.File("./scr/screenshot_dreamspace.png", filename="dreamspace.png")
+        print("Dreamspace biome started")    
+        emb = discord.Embed(
+                title="DREAMSPACE BIOME DETECTED",
+                description=f"A DREAMSPACE biome was detected at {rnow.strftime("%d/%m/%Y %H:%M:%S")}",
+                colour=discord.Colour.from_rgb(255, 105, 180)
+        )
+        if settings["ping_on_dreamspace"]:
+            await log_channel.send(f"<@{settings["mention_id"]}>",embed=emb, file=up)
+        else:
+            await log_channel.send(embed=emb, file=up)
+        if settings["pop_in_dreamspace"] and popping:
+            popping = False
+            _keyboard.press(Key.cmd)
+            await asyncio.sleep(0.1)
+            _keyboard.release(Key.cmd)
+            await asyncio.sleep(0.1)
+            _mouse.position = menu_btn_pos
+            await asyncio.sleep(0.1)
+            _mouse.click(Button.left)
+            await asyncio.sleep(0.1)
+            _mouse.click(Button.left)
+            await asyncio.sleep(0.1)
+            _keyboard.press(Key.cmd)
+            await asyncio.sleep(0.1)
+            _keyboard.release(Key.cmd)
+            await asyncio.sleep(0.1)
+            _mouse.position = settings_btn_pos
+            await asyncio.sleep(0.1)
+            _mouse.click(Button.left)
+            await asyncio.sleep(0.1)
+            _mouse.click(Button.left)
+            await asyncio.sleep(0.1)
+            _keyboard.press(Key.cmd)
+            await asyncio.sleep(0.1)
+            _keyboard.release(Key.cmd)
+            await asyncio.sleep(0.1)
+            _mouse.position = rolling_conf_pos
+            await asyncio.sleep(0.1)
+            _mouse.click(Button.left)
+            await asyncio.sleep(0.1)
+            _mouse.click(Button.left)
+            await asyncio.sleep(0.1)
+            _keyboard.press(Key.cmd)
+            await asyncio.sleep(0.1)
+            _keyboard.release(Key.cmd)
+            await asyncio.sleep(0.1)
+            _mouse.position = cutscene_conf_pos
+            await asyncio.sleep(0.1)
+            _mouse.click(Button.left)
+            await asyncio.sleep(0.1)
+            _mouse.click(Button.left)
+            await asyncio.sleep(0.1)
+            _keyboard.press(Key.ctrl)
+            _keyboard.press("a")
+            await asyncio.sleep(0.1)
+            _keyboard.release("a")
+            _keyboard.release(Key.ctrl)
+            await asyncio.sleep(0.1)
+            _keyboard.type("219999999")
+            await asyncio.sleep(0.1)
+            _keyboard.press(Key.cmd)
+            await asyncio.sleep(0.1)
+            _keyboard.release(Key.cmd)
+            await asyncio.sleep(0.1)
+            _mouse.position = close_pos
+            await asyncio.sleep(0.1)
+            _mouse.click(Button.left)
+            await asyncio.sleep(0.1)
+            _mouse.click(Button.left)
+            await asyncio.sleep(0.1)
+            to_use = []
+            for buff in reversed(settings["auto_use_items_in_dreamspace"].keys()):
+                if settings["auto_use_items_in_dreamspace"][buff]["use"]:
+                    to_use.append(buff)
+            for item in to_use:
+                    use_item(item, settings["auto_use_items_in_dreamspace"][item]["amount"], True)
+        else:
+            popping = False
+    elif previous_biome == "DREAMSPACE" and latest_hovertext != "DREAMSPACE":
+        merchant_detection.start()
+        previous_biome = None
+        print("Dreamspace biome ended")
+        emb = discord.Embed(
+                title="Dreamspace Biome Ended",
+                description=f"A DREAMSPACE biome ended at {rnow.strftime("%d/%m/%Y %H:%M:%S")}",
+                colour=discord.Colour.from_rgb(255, 105, 180)
+        )
+        await log_channel.send(embed=emb)
 
 @client.event
 async def on_command_error(ctx, error):
     print(str(error))
+
+
 
 @client.command()
 @commands.is_owner()
@@ -332,6 +599,17 @@ async def set_min_ping(ctx, minimum : str):
     await ctx.send(f"Minimum ping alert is now {minimum}")
 
 @client.command()
+async def mode(ctx):
+    if settings["auto_craft_mode"] and not settings["merchant_detection"]:
+        crafts = []
+        for item in settings["auto_craft_item"]:
+            if settings["auto_craft_item"][item]:
+                crafts.append(item)
+        await ctx.send(f"The bot is currently running in Auto Craft mode, and the item being crafted is: {crafts[0]}")
+    else:
+        await ctx.send("The bot is running in Normal mode.")
+
+@client.command()
 @commands.is_owner()
 async def stop(ctx):
     await ctx.send("Manual stop initiated")
@@ -354,13 +632,30 @@ async def storage_scr(ctx):
     await asyncio.sleep(0.1)
     _mouse.click(Button.left)
     await asyncio.sleep(0.1)
+    _keyboard.press(Key.cmd)
+    await asyncio.sleep(0.1)
+    _keyboard.release(Key.cmd)
+    await asyncio.sleep(0.1)
+    _mouse.position = search_pos
+    await asyncio.sleep(0.1)
+    _mouse.click(Button.left)
+    await asyncio.sleep(0.1)
+    _mouse.click(Button.left)
+    await asyncio.sleep(0.1)
     if os.path.exists("./scr/screenshot_storage.png"):
         os.remove("./scr/screenshot_storage.png")
         await asyncio.sleep(1)
     storimg = pag.screenshot("./scr/screenshot_storage.png")
     await asyncio.sleep(0.1)
-    _mouse.click(Button.left)
+    _keyboard.press(Key.cmd)
+    await asyncio.sleep(0.1)
+    _keyboard.release(Key.cmd)
+    await asyncio.sleep(0.1)
     _mouse.position = close_pos
+    await asyncio.sleep(0.1)
+    _mouse.click(Button.left)
+    await asyncio.sleep(0.1)
+    _mouse.click(Button.left)
     await ctx.send(file=discord.File("./scr/screenshot_storage.png"))
 
 @client.command()
@@ -377,17 +672,40 @@ async def inv_scr(ctx):
     await asyncio.sleep(0.1)
     _mouse.click(Button.left)
     await asyncio.sleep(0.1)
+    _keyboard.press(Key.cmd)
+    await asyncio.sleep(0.1)
+    _keyboard.release(Key.cmd)
+    await asyncio.sleep(0.1)
+    _mouse.position = search_pos
+    await asyncio.sleep(0.1)
+    _mouse.click(Button.left)
+    await asyncio.sleep(0.1)
+    _mouse.click(Button.left)
+    await asyncio.sleep(0.1)
     if os.path.exists("./scr/screenshot_inventory.png"):
         os.remove("./scr/screenshot_inventory.png")
         await asyncio.sleep(1)
     storimg = pag.screenshot("./scr/screenshot_inventory.png")
     await asyncio.sleep(0.1)
-    _mouse.click(Button.left)
+    _keyboard.press(Key.cmd)
+    await asyncio.sleep(0.1)
+    _keyboard.release(Key.cmd)
+    await asyncio.sleep(0.1)
     _mouse.position = close_pos
+    await asyncio.sleep(0.1)
+    _mouse.click(Button.left)
+    await asyncio.sleep(0.1)
+    _mouse.click(Button.left)
     await ctx.send(file=discord.File("./scr/screenshot_inventory.png"))
 
 @client.command()
 async def purchase_item(ctx, item : int):
+    if not settings["merchant_detection"]:
+        await ctx.send("Merchant Detection is disabled. Please enable it to use this feature.")
+        return
+    if settings["auto_craft_mode"]:
+        await ctx.send("Auto Craft mode is enabled. Please disable it to use this feature.")
+        return
     if item > 5 or item < 1:
         await ctx.send("A merchant only sells 5 items at a time")
         return
@@ -603,7 +921,7 @@ async def keep_alive():
     await asyncio.sleep(0.8)
     _keyboard.release(Key.space)
 
-@tasks.loop(seconds=300)
+@tasks.loop(seconds=60)
 async def auto_craft():
     item_to_craft = ""
     for itm in settings["auto_craft_item"]:
@@ -612,23 +930,21 @@ async def auto_craft():
     if item_to_craft == "":
         return
     if item_to_craft == "Heavenly Potion I":
-        _mouse.scroll(0, 10)
+        _keyboard.press(Key.cmd)
+        await asyncio.sleep(0.1)
+        _keyboard.release(Key.cmd)
+        await asyncio.sleep(0.1)
+        _mouse.click(Button.left)
+        await asyncio.sleep(0.1)
+        _keyboard.press("f")
+        await asyncio.sleep(0.1)
+        _keyboard.release("f")
         await asyncio.sleep(0.1)
         _keyboard.press(Key.cmd)
         await asyncio.sleep(0.1)
         _keyboard.release(Key.cmd)
         await asyncio.sleep(0.1)
         _mouse.position = craft_btn_pos
-        await asyncio.sleep(0.1)
-        _mouse.click(Button.left)
-        await asyncio.sleep(0.1)
-        _mouse.click(Button.left)
-        await asyncio.sleep(0.1)
-        _keyboard.press(Key.cmd)
-        await asyncio.sleep(0.1)
-        _keyboard.release(Key.cmd)
-        await asyncio.sleep(0.1)
-        _mouse.position = hp1_pos_potions
         await asyncio.sleep(0.1)
         _mouse.click(Button.left)
         await asyncio.sleep(0.1)
@@ -652,6 +968,16 @@ async def auto_craft():
         await asyncio.sleep(0.1)
         _keyboard.type("100")
         await asyncio.sleep(0.1)
+        _keyboard.press(Key.cmd)
+        await asyncio.sleep(0.1)
+        _keyboard.release(Key.cmd)
+        await asyncio.sleep(0.1)
+        _mouse.position = hp1_pos_potions
+        await asyncio.sleep(0.1)
+        _mouse.click(Button.left)
+        await asyncio.sleep(0.1)
+        _mouse.click(Button.left)
+        await asyncio.sleep(0.1)
         _keyboard.press("d")
         await asyncio.sleep(0.1)
         _keyboard.release("d")
@@ -671,7 +997,25 @@ async def auto_craft():
         _mouse.scroll(0, 10)
         await asyncio.sleep(0.1)
     elif item_to_craft == "Heavenly Potion II":
-        _mouse.scroll(0, 10)
+        _keyboard.press(Key.cmd)
+        await asyncio.sleep(0.1)
+        _keyboard.release(Key.cmd)
+        await asyncio.sleep(0.1)
+        _mouse.click(Button.left)
+        await asyncio.sleep(0.1)
+        _keyboard.press("f")
+        await asyncio.sleep(0.1)
+        _keyboard.release("f")
+        await asyncio.sleep(0.1)
+        _keyboard.press(Key.cmd)
+        await asyncio.sleep(0.1)
+        _keyboard.release(Key.cmd)
+        await asyncio.sleep(0.1)
+        _mouse.position = craft_btn_pos
+        await asyncio.sleep(0.1)
+        _mouse.click(Button.left)
+        await asyncio.sleep(0.1)
+        _mouse.click(Button.left)
         await asyncio.sleep(0.1)
         _keyboard.press(Key.cmd)
         await asyncio.sleep(0.1)
@@ -684,7 +1028,6 @@ async def auto_craft():
         _mouse.click(Button.left)
         await asyncio.sleep(0.1)
         _mouse.click(Button.left)
-        await asyncio.sleep(0.1)
         await asyncio.sleep(0.1)
         _keyboard.release(Key.cmd)
         await asyncio.sleep(0.1)
@@ -711,6 +1054,16 @@ async def auto_craft():
         _keyboard.release(Key.ctrl)
         await asyncio.sleep(0.1)
         _keyboard.type("125")
+        await asyncio.sleep(0.1)
+        _keyboard.press(Key.cmd)
+        await asyncio.sleep(0.1)
+        _keyboard.release(Key.cmd)
+        await asyncio.sleep(0.1)
+        _mouse.position = hp2_pos_potions
+        await asyncio.sleep(0.1)
+        _mouse.click(Button.left)
+        await asyncio.sleep(0.1)
+        _mouse.click(Button.left)
         await asyncio.sleep(0.1)
         _keyboard.press("d")
         await asyncio.sleep(0.1)
@@ -750,9 +1103,15 @@ async def auto_craft():
         await asyncio.sleep(0.1)
         _mouse.scroll(0, 10)
     elif item_to_craft == "Warp Potion":
-        _mouse.scroll(0, 30)
+        _keyboard.press(Key.cmd)
         await asyncio.sleep(0.1)
-        _mouse.scroll(0, 30)
+        _keyboard.release(Key.cmd)
+        await asyncio.sleep(0.1)
+        _mouse.click(Button.left)
+        await asyncio.sleep(0.1)
+        _keyboard.press("f")
+        await asyncio.sleep(0.1)
+        _keyboard.release("f")
         await asyncio.sleep(0.1)
         _keyboard.press(Key.cmd)
         await asyncio.sleep(0.1)
@@ -796,6 +1155,16 @@ async def auto_craft():
         await asyncio.sleep(0.1)
         _keyboard.type("1000")
         await asyncio.sleep(0.1)
+        _keyboard.press(Key.cmd)
+        await asyncio.sleep(0.1)
+        _keyboard.release(Key.cmd)
+        await asyncio.sleep(0.1)
+        _mouse.position = hp1_pos_potions
+        await asyncio.sleep(0.1)
+        _mouse.click(Button.left)
+        await asyncio.sleep(0.1)
+        _mouse.click(Button.left)
+        await asyncio.sleep(0.1)
         _keyboard.press("d")
         await asyncio.sleep(0.1)
         _keyboard.release("d")
@@ -810,7 +1179,9 @@ async def auto_craft():
         await asyncio.sleep(0.1)
         _mouse.click(Button.left)
         await asyncio.sleep(0.1)
-        _mouse.scroll(0, 10)
+        _mouse.scroll(0, 30)
+        await asyncio.sleep(0.1)
+        _mouse.scroll(0, 30)
         await asyncio.sleep(0.1)
     else:
         print("An invalid item has been selected")

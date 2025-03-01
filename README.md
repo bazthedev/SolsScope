@@ -24,7 +24,7 @@
 
 # Quick Start
 1. Download the [latest release](https://github.com/bazthedev/SolsRNGBot/releases/latest)
-2. Install the requirements by running `py -m pip install -r requirements.txt`
+2. Install the requirements by running `python -m pip install -r requirements.txt`
 3. Run the main.py file
 4. Create a new Discord Bot and copy its token
 5. Edit the newly created `settings.json` file and paste your discord bot token in the "TOKEN" key.

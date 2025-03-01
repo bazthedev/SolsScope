@@ -35,7 +35,6 @@ def reload_settings():
     global settings
     with open("settings.json", "r") as f:
         settings = json.load(f)
-    print(settings)
 
 def validate_settings():
     found_keys = []
@@ -184,7 +183,6 @@ if not os.path.exists("./scr/"):
 if not os.path.exists("./plugins/"):
     os.mkdir("./plugins/")
     os.mkdir("./plugins/config/")
-
 now = datetime.now()
 client = commands.Bot(commands.when_mentioned, case_insensitive=True)
 _mouse = mouse.Controller()
@@ -241,9 +239,10 @@ rblx_log_dir = os.path.expandvars(r"%localappdata%\\Roblox\\logs")
 previous_biome = None
 popping = False
 _plugins = []
-local_version = "1.1.2"
-default_settings = {"TOKEN": "", "__version__" :  local_version, "log_channel_id": 0, "cd" : str(os.getcwd()), "skip_dl": False, "mention" : True, "mention_id" : 0, "minimum_roll" : "99998", "minimum_ping" : "349999", "reset_aura" : "", "merchant_detection" : True, "auto_purchase_items" : {"Void Coin/Lucky Penny" : True}, "glitch_detector" : True, "ping_on_glitch" : True, "pop_in_glitch" : False, "auto_use_items_in_glitch": {"Heavenly Potion II" : {"use" : True, "amount" : 200}, "Fortune Potion III" : {"use" : True, "amount" : 1}, "Lucky Potion" : {"use" : True, "amount" : 10}, "Pumpkin" : {"use" : True, "amount" : 10}, "Haste Potion III" : {"use" : False, "amount" : 1}, "Warp Potion" : {"use" : True, "amount" : 1}, "Mixed Potion" : {"use" : True, "amount" : 10}, "Stella's Candle" : {"use" : True, "amount" : 1}, "Santa Claus Potion" : {"use" : True, "amount" : 5}}, "Hwachae" : {"use" : True}, "dreamspace_detector" : True, "ping_on_dreamspace" : True, "pop_in_dreamspace" : False, "auto_use_items_in_dreamspace" : {"Heavenly Potion II" : {"use" : False, "amount" : 1}, "Fortune Potion III" : {"use" : True, "amount" : 1}, "Lucky Potion" : {"use" : True, "amount" : 10}, "Pumpkin" : {"use" : True, "amount" : 10}, "Haste Potion III" : {"use" : False, "amount" : 1}, "Warp Potion" : {"use" : True, "amount" : 1}, "Mixed Potion" : {"use" : True, "amount" : 10}, "Stella's Candle" : {"use" : True, "amount" : 1}, "Santa Claus Potion" : {"use" : True, "amount" : 5}}, "Hwachae" : {"use" : True}, "auto_craft_mode" : False, "skip_auto_mode_warning" : False, "auto_craft_item" : {"Heavenly Potion I" : False, "Heavenly Potion II" : True, "Warp Potion" : False}}
+local_version = "1.1.3"
+default_settings = {"TOKEN": "", "__version__" :  local_version, "log_channel_id": 0, "cd" : str(os.getcwd()), "skip_dl": False, "mention" : True, "mention_id" : 0, "minimum_roll" : "99998", "minimum_ping" : "349999", "reset_aura" : "", "merchant_detection" : True, "auto_purchase_items" : {"Void Coin/Lucky Penny" : True}, "glitch_detector" : True, "ping_on_glitch" : True, "pop_in_glitch" : False, "auto_use_items_in_glitch": {"Heavenly Potion II" : {"use" : True, "amount" : 200}, "Fortune Potion III" : {"use" : True, "amount" : 1}, "Lucky Potion" : {"use" : True, "amount" : 10}, "Pumpkin" : {"use" : True, "amount" : 10}, "Haste Potion III" : {"use" : False, "amount" : 1}, "Warp Potion" : {"use" : True, "amount" : 1}, "Mixed Potion" : {"use" : True, "amount" : 10}, "Stella's Candle" : {"use" : True, "amount" : 1}, "Santa Claus Potion" : {"use" : True, "amount" : 5}}, "Hwachae" : {"use" : True}, "dreamspace_detector" : True, "ping_on_dreamspace" : True, "pop_in_dreamspace" : False, "auto_use_items_in_dreamspace" : {"Heavenly Potion II" : {"use" : False, "amount" : 1}, "Fortune Potion III" : {"use" : True, "amount" : 1}, "Lucky Potion" : {"use" : True, "amount" : 10}, "Pumpkin" : {"use" : True, "amount" : 10}, "Haste Potion III" : {"use" : False, "amount" : 1}, "Warp Potion" : {"use" : True, "amount" : 1}, "Mixed Potion" : {"use" : True, "amount" : 10}, "Stella's Candle" : {"use" : True, "amount" : 1}, "Santa Claus Potion" : {"use" : True, "amount" : 5}}, "Hwachae" : {"use" : True}, "auto_craft_mode" : False, "skip_auto_mode_warning" : False, "auto_craft_item" : {"Heavenly Potion I" : False, "Heavenly Potion II" : True, "Warp Potion" : False}, "auto_biome_randomizer" : False, "auto_strange_controller" : False}
 auto_purchase = {"Void Coin/Lucky Penny": ["#ff92fe", "#ff9e4e"]}
+print(f"Starting SolsRNGBot v{local_version}")
 
 if not os.path.exists("./settings.json"):
     x = open("settings.json", "w")
@@ -252,7 +251,7 @@ if not os.path.exists("./settings.json"):
     with open("settings.json", "w") as f:
         json.dump(default_settings, f, indent=4)
 
-valid_settings_keys = ["TOKEN", "__version__", "log_channel_id", "cd", "skip_dl", "mention", "mention_id", "minimum_roll", "minimum_ping", "reset_aura", "merchant_detection", "auto_purchase_items", "glitch_detector", "ping_on_glitch", "pop_in_glitch", "auto_use_items_in_glitch", "dreamspace_detector", "ping_on_dreamspace", "pop_in_dreamspace", "auto_use_items_in_dreamspace", "auto_craft_mode", "skip_auto_mode_warning", "auto_craft_item"]
+valid_settings_keys = ["TOKEN", "__version__", "log_channel_id", "cd", "skip_dl", "mention", "mention_id", "minimum_roll", "minimum_ping", "reset_aura", "merchant_detection", "auto_purchase_items", "glitch_detector", "ping_on_glitch", "pop_in_glitch", "auto_use_items_in_glitch", "dreamspace_detector", "ping_on_dreamspace", "pop_in_dreamspace", "auto_use_items_in_dreamspace", "auto_craft_mode", "skip_auto_mode_warning", "auto_craft_item", "auto_biome_randomizer", "auto_strange_controller"]
 
 reload_settings()
 
@@ -283,8 +282,8 @@ __version__ = settings["__version__"]
 @client.event
 async def on_ready():
     print("Let's go gambling!")
-    print(f"Started at {now.strftime("%d/%m/%Y %H:%M:%S")} running version {__version__} using local version {local_version}")
-    await client.change_presence(activity=discord.Game(name=f"bazthedev/SolsRNGBot version {local_version}"))
+    print(f"Started at {now.strftime("%d/%m/%Y %H:%M:%S")} running v{__version__} using local version {local_version}")
+    await client.change_presence(activity=discord.Game(name=f"bazthedev/SolsRNGBot v{local_version}"))
     if settings["auto_craft_mode"] and not settings["merchant_detection"]:
         crafts = []
         for item in settings["auto_craft_item"]:
@@ -336,11 +335,19 @@ async def on_ready():
         if settings["dreamspace_detector"]:
             dreamspace_detector.start()
             print("Started Dreamspace Biome Detection")
-        if settings["merchant_detection"]:
-            merchant_detection.start()
-            print("Started Merchant Detection")
     else:
         print("You must select a channel ID, you can do this by running the set_log_channel command.")
+    if settings["auto_biome_randomizer"]:
+        biome_randomizer.start()
+        print("Started Biome Randomizer")
+    if settings["auto_strange_controller"]:
+        await asyncio.sleep(15)
+        strange_controller.start()
+        print("Started Strange Controller")
+    if settings["merchant_detection"]:
+        await asyncio.sleep(15)
+        merchant_detection.start()
+        print("Started Merchant Detection")
     
 @tasks.loop(seconds=0)
 async def glitch_detector():
@@ -549,7 +556,18 @@ async def dreamspace_detector():
 async def on_command_error(ctx, error):
     print(str(error))
 
+@tasks.loop(seconds=2100)
+async def biome_randomizer():
+    await use_item("Biome Random", 1, True)
 
+@tasks.loop(seconds=1200)
+async def strange_controller():
+    await use_item("Strange Control", 1, True)
+
+@client.command()
+async def get_biome(ctx):
+    latest_hovertext = get_latest_hovertext(rblx_log_dir)
+    await ctx.send(f"The current biome is: {latest_hovertext}")
 
 @client.command()
 @commands.is_owner()
@@ -1289,9 +1307,9 @@ async def merchant_detection():
         await asyncio.sleep(0.2)
         up = discord.File("./scr/screenshot_merchant.png", filename="merchant.png")
         emb = discord.Embed(
-                        title = f"Merchant Spawned",
-                        description = f"A merchant selling the following items in the screenshot has been detected at time: {rnow.strftime("%d/%m/%Y %H:%M:%S")}",
-                        colour = discord.Color.from_rgb(255, 255, 255)
+            title = f"Merchant Spawned",
+            description = f"A merchant selling the following items in the screenshot has been detected at time: {rnow.strftime("%d/%m/%Y %H:%M:%S")}",
+            colour = discord.Color.from_rgb(255, 255, 255)
         )
         emb.set_image(url="attachment://merchant.png")
         log_channel = client.get_channel(settings["log_channel_id"])

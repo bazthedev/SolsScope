@@ -16,11 +16,11 @@
 - Purchase items from merchant via command
 - Glitch and Dreamspace Biome Detection
 - Auto Pop in Glitch or Dreamspace (untested)
+- Automatic Biome Randomizer/Strange Controller uses
 
 # TBA:
 - Auto Purchase from merchant (???) will start only for void coins. If you do not have Merchant Teleporter, then this will not work.
 - Mari/Jester Detection. You will be able to choose to only buy items from Mari, Jester or both.
-- Periodic Biome Randomization
 - Create a feature request if you want something to be added!
 
 # Quick Start

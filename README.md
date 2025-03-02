@@ -22,6 +22,9 @@
 - Mari/Jester Detection. You will be able to choose to only buy items from Mari, Jester or both.
 - Create a feature request if you want something to be added!
 
+# Video Guide
+You can watch [this video guide](https://youtu.be/AKva_0biJuk) to help setup the bot.
+
 # Quick Start
 1. Download the [latest release](https://github.com/bazthedev/SolsRNGBot/releases/latest)
 2. Make sure you have Python installed. I am using version 3.12 but you should be able to use any version 3.12 or newer.

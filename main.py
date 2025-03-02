@@ -1445,9 +1445,9 @@ async def merchant_detection():
         _keyboard.release(Key.cmd)
         await asyncio.sleep(settings["global_wait_time"])
         _mouse.click(Button.left)
-        await asyncio.sleep(0.7)
+        await asyncio.sleep(1)
         _keyboard.press("e")
-        await asyncio.sleep(1.7)
+        await asyncio.sleep(2)
         _keyboard.release("e")
         await asyncio.sleep(3)
         px = ImageGrab.grab().load()
@@ -1463,12 +1463,11 @@ async def merchant_detection():
         _keyboard.release(Key.cmd)
         await asyncio.sleep(settings["global_wait_time"])
         _mouse.click(Button.left)
-        await asyncio.sleep(0.4)
+        await asyncio.sleep(0.5)
         merchimg = pag.screenshot(f"{MACROPATH}/scr/screenshot_merchant.png")
         await asyncio.sleep(0.2)
         up = discord.File(f"{MACROPATH}/scr/screenshot_merchant.png", filename="merchant.png")
         _break = False
-        cols = []
         try:
             for y in range(merchant_face_pos_1[1], merchant_face_pos_2[1]):
                 for x in range(merchant_face_pos_1[0], merchant_face_pos_2[0]):
@@ -1476,7 +1475,6 @@ async def merchant_detection():
                         break
                     colour = px[x, y]
                     hex_col = rgb2hex(colour[0], colour[1], colour[2])
-                    cols.append(hex_col)
                     if hex_col in mari_cols:
                         emb = discord.Embed(
                                         title = f"Mari Spawned",
@@ -1507,8 +1505,6 @@ async def merchant_detection():
                         _break = True
                 if _break:
                     break
-            with open("test.json", "w") as f:
-                json.dump(cols, f, indent=4)
         except Exception as e:
             print(e)
     else:

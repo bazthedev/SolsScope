@@ -31,7 +31,7 @@ if not os.path.isfile(f"{MACROPATH}/settings.json"):
 def get_auras():
     print("Downloading Aura List")
     dl = requests.get("https://raw.githubusercontent.com/bazthedev/SolsRNGBot/main/auras.json")
-    f = open("auras.json", "wb")
+    f = open(f"{MACROPATH}/auras.json", "wb")
     f.write(dl.content)
     f.close()
     print("Downloaded Aura List")
@@ -300,7 +300,7 @@ if settings["TOKEN"] == "":
 if not settings["skip_dl"]:
     get_auras()
 
-with open("auras.json", "r") as f:
+with open(f"{MACROPATH}/auras.json", "r") as f:
     auras = json.load(f)
 
 __version__ = settings["__version__"]

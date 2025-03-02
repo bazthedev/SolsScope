@@ -3,7 +3,6 @@ from discord.ext import commands, tasks
 import json
 import os
 import requests
-from colorama import Fore
 
 with open("settings.json", "r") as f:
     settings = json.load(f)
@@ -25,10 +24,10 @@ class UpdateChecker(commands.Cog):
         new_ver_str = new_ver.json()["name"]
 
         if cver < new_ver_str:
-            print(Fore.GREEN + f"[!] A new version has been found ({new_ver_str}), please visit https://github.com/bazthedev/SolsRNGBot/releases/latest to download the newest version." + Fore.RESET)
+            print(f"[!] A new version has been found ({new_ver_str}), please visit https://github.com/bazthedev/SolsRNGBot/releases/latest to download the newest version.")
         else:
             if self.config["latest_ver_msg"]:
-                print(Fore.GREEN + f"[*] You are running the latest version." + Fore.RESET)
+                print(f"[*] You are running the latest version.")
         if self.config["auto_check"]:
             self.check_update_task.start()
             
@@ -39,10 +38,10 @@ class UpdateChecker(commands.Cog):
             new_ver = requests.get(f"https://api.github.com/repos/bazthedev/SolsRNGBot/releases/latest")
             new_ver_str = new_ver.json()["name"]
             if cver < new_ver_str:
-                print(Fore.GREEN + f"[!] A new version has been found ({new_ver_str}), please visit https://github.com/bazthedev/SolsRNGBot/releases/latest to download the newest version." + Fore.RESET)
+                print(f"[!] A new version has been found ({new_ver_str}), please visit https://github.com/bazthedev/SolsRNGBot/releases/latest to download the newest version.")
             else:
                 if self.config["latest_ver_msg"]:
-                    print(Fore.GREEN + f"[*] You are running the latest version." + Fore.RESET)
+                    print(f"[*] You are running the latest version.")
 
     @commands.command()
     async def check_update(self, ctx):

@@ -37,7 +37,7 @@
 # Common Issues:
 - Chromatic does not get detected: Chromatic is bugged, due to the amount of different colours there is only a very small chance that it will detect the Chromatic cutscene.
 - Nothing is working on my dual monitor setup: Make sure that Roblox is open on the monitor you marked as PRIMARY. You can check this by typing "Change my primary display" into the Windows search bar.
-- Microsoft Edge or some app on my Windows menu keeps opening when I use the macro. You can manually fix this by changeing await asynciio.sleep(0.1) to await asyncio.sleep(1). This will be fixed in the next update. You can also adjust your display resolution to a higher value to shrink the size of the start menu.
+- Microsoft Edge or some app on my Windows menu keeps opening when I use the macro. You can customise the time between actions by changing the `global_wait_time` setting in the settings.json file.
 ## If you are experiencing issues, please create a new issue so that it can be raised, solved and prevented from happening again.
 
 # You can read more about how the bot works and the things you can do with it [here](https://github.com/bazthedev/SolsRNGBot/wiki)

@@ -27,6 +27,14 @@
         "name" : "Jade",
         "rarity" : "125000"
     },
+    "#0c0d12,#000000": {
+        "name" : "Spectre",
+        "rarity" : "140000"
+    },
+    "#ffe5a3,#000000" : {
+        "name" : "Jazz",
+        "rarity" : "160000"
+    },
     "#70acb9,#000000": {
         "name": "Aether",
         "rarity" : "180000"
@@ -182,7 +190,7 @@
         "name" : "Overseer",
         "rarity" : "45000000"
     },
-    "#5bffb0,#102a1a": {
+    "#5bffb0,#050e09": {
         "name" : "Matrix",
         "rarity" : "50000000"
     },

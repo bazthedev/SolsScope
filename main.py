@@ -10,16 +10,25 @@ from pynput.keyboard import Key
 import asyncio
 from PIL import ImageGrab
 import requests
+import logging
 import screeninfo as si
 import re
 import glob
 import shutil
 import tempfile
+try:
+    import mousekey as mk
+except ModuleNotFoundError:
+    print("You need to install mousekey, by running pip install mousekey. After pressing any key, this should automatically happen, however if it does not, please run pip install mousekey.")
+    os.system("pause")
+    os.system("py -m pip install mousekey")
+    exit("Mousekey should be installed, try running the macro again now.")
 
+mkey = mk.MouseKey()
 MACROPATH = os.path.expandvars(r"%localappdata%\\Baz's Macro") # Windows Roaming Path
-LOCALVERSION = "1.1.5"
-DEFAULTSETTINGS = {"TOKEN": "", "__version__" :  LOCALVERSION, "log_channel_id": 0, "global_wait_time" : 1, "skip_dl": False, "mention" : True, "mention_id" : 0, "minimum_roll" : "99998", "minimum_ping" : "349999", "reset_aura" : "", "merchant_detection" : True, "send_mari" : True, "ping_mari" : False, "send_jester" : True, "ping_jester" : True, "auto_purchase_items" : {"Void Coin/Lucky Penny" : True}, "glitch_detector" : True, "ping_on_glitch" : True, "pop_in_glitch" : False, "auto_use_items_in_glitch": {"Heavenly Potion II" : {"use" : True, "amount" : 200}, "Fortune Potion III" : {"use" : True, "amount" : 1}, "Lucky Potion" : {"use" : True, "amount" : 10}, "Pumpkin" : {"use" : True, "amount" : 10}, "Haste Potion III" : {"use" : False, "amount" : 1}, "Warp Potion" : {"use" : True, "amount" : 1}, "Mixed Potion" : {"use" : True, "amount" : 10}, "Stella's Candle" : {"use" : True, "amount" : 1}, "Santa Claus Potion" : {"use" : True, "amount" : 5}}, "Hwachae" : {"use" : True}, "dreamspace_detector" : True, "ping_on_dreamspace" : True, "pop_in_dreamspace" : False, "auto_use_items_in_dreamspace" : {"Heavenly Potion II" : {"use" : False, "amount" : 1}, "Fortune Potion III" : {"use" : True, "amount" : 1}, "Lucky Potion" : {"use" : True, "amount" : 10}, "Pumpkin" : {"use" : True, "amount" : 10}, "Haste Potion III" : {"use" : False, "amount" : 1}, "Warp Potion" : {"use" : True, "amount" : 1}, "Mixed Potion" : {"use" : True, "amount" : 10}, "Stella's Candle" : {"use" : True, "amount" : 1}, "Santa Claus Potion" : {"use" : True, "amount" : 5}}, "Hwachae" : {"use" : True}, "auto_craft_mode" : False, "skip_auto_mode_warning" : False, "auto_craft_item" : {"Heavenly Potion I" : False, "Heavenly Potion II" : True, "Warp Potion" : False}, "auto_biome_randomizer" : False, "auto_strange_controller" : False, "edit_settings_mode" : False}
-valid_settings_keys = ["TOKEN", "__version__", "log_channel_id", "global_wait_time", "skip_dl", "mention", "mention_id", "minimum_roll", "minimum_ping", "reset_aura", "merchant_detection", "send_mari", "ping_mari", "send_jester", "ping_jester", "auto_purchase_items", "glitch_detector", "ping_on_glitch", "pop_in_glitch", "auto_use_items_in_glitch", "dreamspace_detector", "ping_on_dreamspace", "pop_in_dreamspace", "auto_use_items_in_dreamspace", "auto_craft_mode", "skip_auto_mode_warning", "auto_craft_item", "auto_biome_randomizer", "auto_strange_controller", "edit_settings_mode"]
+LOCALVERSION = "1.1.6"
+DEFAULTSETTINGS = {"TOKEN": "", "__version__" :  LOCALVERSION, "log_channel_id": 0, "global_wait_time" : 1, "skip_dl": False, "mention" : True, "mention_id" : 0, "minimum_roll" : "99998", "minimum_ping" : "349999", "reset_aura" : "", "merchant_detection" : True, "send_mari" : True, "ping_mari" : False, "send_jester" : True, "ping_jester" : True, "auto_purchase_items" : {"Void Coin/Lucky Penny" : True}, "glitch_detector" : True, "ping_on_glitch" : True, "pop_in_glitch" : False, "auto_use_items_in_glitch": {"Heavenly Potion II" : {"use" : True, "amount" : 200}, "Fortune Potion III" : {"use" : True, "amount" : 1}, "Lucky Potion" : {"use" : True, "amount" : 10}, "Pumpkin" : {"use" : True, "amount" : 10}, "Haste Potion III" : {"use" : False, "amount" : 1}, "Warp Potion" : {"use" : True, "amount" : 1}, "Mixed Potion" : {"use" : True, "amount" : 10}, "Stella's Candle" : {"use" : True, "amount" : 1}, "Santa Claus Potion" : {"use" : True, "amount" : 5}}, "Hwachae" : {"use" : True}, "dreamspace_detector" : True, "ping_on_dreamspace" : True, "pop_in_dreamspace" : False, "auto_use_items_in_dreamspace" : {"Heavenly Potion II" : {"use" : False, "amount" : 1}, "Fortune Potion III" : {"use" : True, "amount" : 1}, "Lucky Potion" : {"use" : True, "amount" : 10}, "Pumpkin" : {"use" : True, "amount" : 10}, "Haste Potion III" : {"use" : False, "amount" : 1}, "Warp Potion" : {"use" : True, "amount" : 1}, "Mixed Potion" : {"use" : True, "amount" : 10}, "Stella's Candle" : {"use" : True, "amount" : 1}, "Santa Claus Potion" : {"use" : True, "amount" : 5}}, "Hwachae" : {"use" : True}, "auto_craft_mode" : False, "skip_auto_mode_warning" : False, "auto_craft_item" : {"Heavenly Potion I" : False, "Heavenly Potion II" : True, "Warp Potion" : False}, "auto_biome_randomizer" : False, "auto_strange_controller" : False, "edit_settings_mode" : False, "failsafe_key" : "ctrl+e"}
+valid_settings_keys = ["TOKEN", "__version__", "log_channel_id", "global_wait_time", "skip_dl", "mention", "mention_id", "minimum_roll", "minimum_ping", "reset_aura", "merchant_detection", "send_mari", "ping_mari", "send_jester", "ping_jester", "auto_purchase_items", "glitch_detector", "ping_on_glitch", "pop_in_glitch", "auto_use_items_in_glitch", "dreamspace_detector", "ping_on_dreamspace", "pop_in_dreamspace", "auto_use_items_in_dreamspace", "auto_craft_mode", "skip_auto_mode_warning", "auto_craft_item", "auto_biome_randomizer", "auto_strange_controller", "edit_settings_mode", "failsafe_key"]
 
 if not os.path.exists(f"{MACROPATH}"):
     os.mkdir(MACROPATH)
@@ -55,15 +64,18 @@ def validate_settings():
         if k not in valid_settings_keys:
             todel.append(k)
             print(f"Invalid setting ({k}) detected")
+            logging.info(f"Invalid setting ({k}) detected")
         else:
             found_keys.append(k)
     for _ in todel:
         del settings[_]
         print(f"Invalid setting ({_}) deleted")
+        logging.info(f"Invalid setting ({_}) deleted")
     for _ in valid_settings_keys:
         if _ not in found_keys:
             settings[_] = DEFAULTSETTINGS[_]
             print(f"Missing setting ({_}) added")
+            logging.info(f"Missing setting ({_}) added")
     update_settings(settings)
     reload_settings()
 
@@ -76,67 +88,17 @@ def migrate_settings():
     reload_settings()
 
 async def use_item(item_name : str, amount : int, close_menu : bool):
-    _keyboard.press(Key.cmd)
+    mkey.left_click_xy_natural(inv_button_pos[0], inv_button_pos[1])
     await asyncio.sleep(settings["global_wait_time"])
-    _keyboard.release(Key.cmd)
+    mkey.left_click_xy_natural(items_pos[0], items_pos[1])
     await asyncio.sleep(settings["global_wait_time"])
-    _mouse.position = inv_button_pos
-    await asyncio.sleep(settings["global_wait_time"])
-    _keyboard.press(Key.cmd)
-    await asyncio.sleep(settings["global_wait_time"])
-    _keyboard.release(Key.cmd)
-    await asyncio.sleep(settings["global_wait_time"])
-    _mouse.click(Button.left)
-    await asyncio.sleep(settings["global_wait_time"])
-    _keyboard.press(Key.cmd)
-    await asyncio.sleep(settings["global_wait_time"])
-    _keyboard.release(Key.cmd)
-    await asyncio.sleep(settings["global_wait_time"])
-    _mouse.position = items_pos
-    await asyncio.sleep(settings["global_wait_time"])
-    _keyboard.press(Key.cmd)
-    await asyncio.sleep(settings["global_wait_time"])
-    _keyboard.release(Key.cmd)
-    await asyncio.sleep(settings["global_wait_time"])
-    _mouse.click(Button.left)
-    await asyncio.sleep(settings["global_wait_time"])
-    _keyboard.press(Key.cmd)
-    await asyncio.sleep(settings["global_wait_time"])
-    _keyboard.release(Key.cmd)
-    await asyncio.sleep(settings["global_wait_time"])
-    _mouse.position = search_pos
-    await asyncio.sleep(settings["global_wait_time"])    
-    _keyboard.press(Key.cmd)
-    await asyncio.sleep(settings["global_wait_time"])
-    _keyboard.release(Key.cmd)
-    await asyncio.sleep(settings["global_wait_time"])
-    _mouse.click(Button.left)
+    mkey.left_click_xy_natural(search_pos[0], search_pos[1])
     await asyncio.sleep(settings["global_wait_time"])
     _keyboard.type(item_name)
+    await asyncio.sleep(settings["global_wait_time"]) 
+    mkey.left_click_xy_natural(query_pos[0], query_pos[1])
     await asyncio.sleep(settings["global_wait_time"])
-    _keyboard.press(Key.cmd)
-    await asyncio.sleep(settings["global_wait_time"])
-    _keyboard.release(Key.cmd)
-    await asyncio.sleep(settings["global_wait_time"])    
-    _mouse.position = query_pos
-    await asyncio.sleep(settings["global_wait_time"])
-    _keyboard.press(Key.cmd)
-    await asyncio.sleep(settings["global_wait_time"])
-    _keyboard.release(Key.cmd)
-    await asyncio.sleep(settings["global_wait_time"])
-    _mouse.click(Button.left)
-    await asyncio.sleep(settings["global_wait_time"])
-    _keyboard.press(Key.cmd)
-    await asyncio.sleep(settings["global_wait_time"])
-    _keyboard.release(Key.cmd)
-    await asyncio.sleep(settings["global_wait_time"])
-    _mouse.position = item_amt_pos
-    await asyncio.sleep(settings["global_wait_time"])
-    _keyboard.press(Key.cmd)
-    await asyncio.sleep(settings["global_wait_time"])
-    _keyboard.release(Key.cmd)
-    await asyncio.sleep(settings["global_wait_time"])
-    _mouse.click(Button.left)
+    mkey.left_click_xy_natural(item_amt_pos[0], item_amt_pos[1])
     await asyncio.sleep(settings["global_wait_time"])
     _keyboard.press(Key.ctrl)
     _keyboard.press("a")
@@ -146,30 +108,11 @@ async def use_item(item_name : str, amount : int, close_menu : bool):
     await asyncio.sleep(settings["global_wait_time"])
     _keyboard.type(str(amount))
     await asyncio.sleep(settings["global_wait_time"])
-    _keyboard.press(Key.cmd)
-    await asyncio.sleep(settings["global_wait_time"])
-    _keyboard.release(Key.cmd)
-    await asyncio.sleep(settings["global_wait_time"])
-    _mouse.position = use_pos
-    await asyncio.sleep(settings["global_wait_time"])
-    _keyboard.press(Key.cmd)
-    await asyncio.sleep(settings["global_wait_time"])
-    _keyboard.release(Key.cmd)
-    await asyncio.sleep(settings["global_wait_time"])
-    _mouse.click(Button.left)
+    mkey.left_click_xy_natural(use_pos[0], use_pos[1])
     await asyncio.sleep(settings["global_wait_time"])
     if close_menu:
-        _keyboard.press(Key.cmd)
+        mkey.left_click_xy_natural(close_pos[0], close_pos[1])
         await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.release(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _mouse.position = close_pos
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.press(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.release(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _mouse.click(Button.left)
 
 def get_latest_hovertext(logs_dir):
     log_files = glob.glob(os.path.join(logs_dir, "*.log"))
@@ -212,6 +155,8 @@ if not os.path.exists(f"{MACROPATH}/plugins/"):
     os.mkdir(f"{MACROPATH}/plugins/")
     os.mkdir(f"{MACROPATH}/plugins/config/")
 
+if not os.path.exists(f"{MACROPATH}/logs/"):
+    os.mkdir(f"{MACROPATH}/logs/")
 
 now = datetime.now()
 client = commands.Bot(commands.when_mentioned, case_insensitive=True, intents=None)
@@ -233,7 +178,7 @@ secondary_pos = ((564 * scale_w), (401 * scale_h))
 query_pos = ((1086 * scale_w), (572 * scale_h))
 equip_pos = ((812 * scale_w), (844 * scale_h))
 use_pos = ((910 * scale_w), (772 * scale_h))
-item_amt_pos = ((756 * scale_w), (773 * scale_h))
+item_amt_pos = ((756 * scale_w), (772 * scale_h))
 items_pos = ((1692 * scale_w), (440 * scale_h)) 
 purchase_btn_pos = ((990 * scale_w), (860 * scale_h))
 quantity_btn_pos = ((910 * scale_w), (796 * scale_h))
@@ -270,7 +215,9 @@ previous_biome = None
 popping = False
 _plugins = []
 auto_purchase = {"Void Coin/Lucky Penny": ["#ff92fe", "#ff9e4e"]}
+logger = logging.Logger("SolsRNGBot logging")
 print(f"Starting SolsRNGBot v{LOCALVERSION}")
+logging.info(f"Starting SolsRNGBot v{LOCALVERSION}")
 
 if not os.path.exists(f"{MACROPATH}/settings.json"):
     x = open(f"{MACROPATH}/settings.json", "w")
@@ -282,6 +229,8 @@ if not os.path.exists(f"{MACROPATH}/settings.json"):
     exit("Opened Macro Settings")
 
 reload_settings()
+
+
 
 if settings["__version__"] < LOCALVERSION:
     settings["__version__"] = LOCALVERSION
@@ -296,6 +245,9 @@ if settings["__version__"] > LOCALVERSION:
         
 # Settings integrity check
 validate_settings()
+
+
+mkey.enable_failsafekill(settings["failsafe_key"])
 
 if settings["edit_settings_mode"]:
     settings["edit_settings_mode"] = False
@@ -318,6 +270,7 @@ __version__ = settings["__version__"]
 async def on_ready():
     print("Let's go gambling!")
     print(f"Started at {now.strftime("%d/%m/%Y %H:%M:%S")} running v{__version__} using local version {LOCALVERSION}")
+    logging.info(f"Started at {now.strftime("%d/%m/%Y %H:%M:%S")} running v{__version__} using local version {LOCALVERSION}")
     await client.change_presence(activity=discord.Game(name=f"bazthedev/SolsRNGBot v{LOCALVERSION}"))
     if settings["auto_craft_mode"] and not settings["merchant_detection"]:
         crafts = []
@@ -344,6 +297,7 @@ async def on_ready():
     else:
         keep_alive.start()
         print("Started Autokick Prevention")
+        logging.info("Started Autokick Prevention")
         await asyncio.sleep(((settings["global_wait_time"] * 7) + 0.7))
     if settings["log_channel_id"] != 0:
         if settings["auto_craft_mode"] and not settings["merchant_detection"]:
@@ -364,26 +318,32 @@ async def on_ready():
             await log_channel.send(embed=emb)
         aura_detection.start()
         print("Started Aura Detection")
+        logging.info("Started Aura Detection")
         if settings["glitch_detector"]:
             glitch_detector.start()
             print("Started Glitch Biome Detection")
+            logging.info("Started Glitch Biome Detection")
         if settings["dreamspace_detector"]:
             dreamspace_detector.start()
             print("Started Dreamspace Biome Detection")
+            logging.info("Started Dreamspace Biome Detection")
     else:
         print("You must select a channel ID, you can do this by running the set_log_channel command.")
     if settings["auto_biome_randomizer"]:
         biome_randomizer.start()
         print("Started Biome Randomizer")
+        logging.info("Started Biome Randomizer")
     if settings["auto_strange_controller"]:
         await asyncio.sleep((settings["global_wait_time"] * 50))
         strange_controller.start()
         print("Started Strange Controller")
+        logging.info("Started Strange Controller")
     if settings["merchant_detection"] and settings["log_channel_id"] != 0:
         if settings["auto_biome_randomizer"] or settings["auto_strange_controller"]:
             await asyncio.sleep((settings["global_wait_time"] * 50))
         merchant_detection.start()
         print("Started Merchant Detection")
+        logging.info("Started Merchant Detection")
     
 @tasks.loop(seconds=0)
 async def glitch_detector():
@@ -409,53 +369,13 @@ async def glitch_detector():
             await log_channel.send(embed=emb, file=up)
         if settings["pop_in_glitch"] and popping:
             popping = False
-            _keyboard.press(Key.cmd)
+            mkey.left_click_xy_natural(menu_btn_pos[0], menu_btn_pos[1])
             await asyncio.sleep(settings["global_wait_time"])
-            _keyboard.release(Key.cmd)
+            mkey.left_click_xy_natural(settings_btn_pos[0], settings_btn_pos[1])
             await asyncio.sleep(settings["global_wait_time"])
-            _mouse.position = menu_btn_pos
+            mkey.left_click_xy_natural(rolling_conf_pos[0], rolling_conf_pos[1])
             await asyncio.sleep(settings["global_wait_time"])
-            _keyboard.press(Key.cmd)
-            await asyncio.sleep(settings["global_wait_time"])
-            _keyboard.release(Key.cmd)
-            await asyncio.sleep(settings["global_wait_time"])
-            _mouse.click(Button.left)
-            await asyncio.sleep(settings["global_wait_time"])
-            _keyboard.press(Key.cmd)
-            await asyncio.sleep(settings["global_wait_time"])
-            _keyboard.release(Key.cmd)
-            await asyncio.sleep(settings["global_wait_time"])
-            _mouse.position = settings_btn_pos
-            await asyncio.sleep(settings["global_wait_time"])
-            _keyboard.press(Key.cmd)
-            await asyncio.sleep(settings["global_wait_time"])
-            _keyboard.release(Key.cmd)
-            await asyncio.sleep(settings["global_wait_time"])
-            _mouse.click(Button.left)
-            await asyncio.sleep(settings["global_wait_time"])
-            _keyboard.press(Key.cmd)
-            await asyncio.sleep(settings["global_wait_time"])
-            _keyboard.release(Key.cmd)
-            await asyncio.sleep(settings["global_wait_time"])
-            _mouse.position = rolling_conf_pos
-            await asyncio.sleep(settings["global_wait_time"])
-            _keyboard.press(Key.cmd)
-            await asyncio.sleep(settings["global_wait_time"])
-            _keyboard.release(Key.cmd)
-            await asyncio.sleep(settings["global_wait_time"])
-            _mouse.click(Button.left)
-            await asyncio.sleep(settings["global_wait_time"])
-            _keyboard.press(Key.cmd)
-            await asyncio.sleep(settings["global_wait_time"])
-            _keyboard.release(Key.cmd)
-            await asyncio.sleep(settings["global_wait_time"])
-            _mouse.position = cutscene_conf_pos
-            await asyncio.sleep(settings["global_wait_time"])
-            _keyboard.press(Key.cmd)
-            await asyncio.sleep(settings["global_wait_time"])
-            _keyboard.release(Key.cmd)
-            await asyncio.sleep(settings["global_wait_time"])
-            _mouse.click(Button.left)
+            mkey.left_click_xy_natural(cutscene_conf_pos[0], cutscene_conf_pos[1])
             await asyncio.sleep(settings["global_wait_time"])
             _keyboard.press(Key.ctrl)
             _keyboard.press("a")
@@ -465,17 +385,7 @@ async def glitch_detector():
             await asyncio.sleep(settings["global_wait_time"])
             _keyboard.type("219999999")
             await asyncio.sleep(settings["global_wait_time"])
-            _keyboard.press(Key.cmd)
-            await asyncio.sleep(settings["global_wait_time"])
-            _keyboard.release(Key.cmd)
-            await asyncio.sleep(settings["global_wait_time"])
-            _mouse.position = close_pos
-            await asyncio.sleep(settings["global_wait_time"])
-            _keyboard.press(Key.cmd)
-            await asyncio.sleep(settings["global_wait_time"])
-            _keyboard.release(Key.cmd)
-            await asyncio.sleep(settings["global_wait_time"])
-            _mouse.click(Button.left)
+            mkey.left_click_xy_natural(close_pos[0], close_pos[1])
             await asyncio.sleep(settings["global_wait_time"])
             to_use = []
             for buff in reversed(settings["auto_use_items_in_glitch"].keys()):
@@ -521,53 +431,13 @@ async def dreamspace_detector():
             await log_channel.send(embed=emb, file=up)
         if settings["pop_in_dreamspace"] and popping:
             popping = False
-            _keyboard.press(Key.cmd)
+            mkey.left_click_xy_natural(menu_btn_pos[0], menu_btn_pos[1])
             await asyncio.sleep(settings["global_wait_time"])
-            _keyboard.release(Key.cmd)
+            mkey.left_click_xy_natural(settings_btn_pos[0], settings_btn_pos[1])
             await asyncio.sleep(settings["global_wait_time"])
-            _mouse.position = menu_btn_pos
+            mkey.left_click_xy_natural(rolling_conf_pos[0], rolling_conf_pos[1])
             await asyncio.sleep(settings["global_wait_time"])
-            _keyboard.press(Key.cmd)
-            await asyncio.sleep(settings["global_wait_time"])
-            _keyboard.release(Key.cmd)
-            await asyncio.sleep(settings["global_wait_time"])
-            _mouse.click(Button.left)
-            await asyncio.sleep(settings["global_wait_time"])
-            _keyboard.press(Key.cmd)
-            await asyncio.sleep(settings["global_wait_time"])
-            _keyboard.release(Key.cmd)
-            await asyncio.sleep(settings["global_wait_time"])
-            _mouse.position = settings_btn_pos
-            await asyncio.sleep(settings["global_wait_time"])
-            _keyboard.press(Key.cmd)
-            await asyncio.sleep(settings["global_wait_time"])
-            _keyboard.release(Key.cmd)
-            await asyncio.sleep(settings["global_wait_time"])
-            _mouse.click(Button.left)
-            await asyncio.sleep(settings["global_wait_time"])
-            _keyboard.press(Key.cmd)
-            await asyncio.sleep(settings["global_wait_time"])
-            _keyboard.release(Key.cmd)
-            await asyncio.sleep(settings["global_wait_time"])
-            _mouse.position = rolling_conf_pos
-            await asyncio.sleep(settings["global_wait_time"])
-            _keyboard.press(Key.cmd)
-            await asyncio.sleep(settings["global_wait_time"])
-            _keyboard.release(Key.cmd)
-            await asyncio.sleep(settings["global_wait_time"])
-            _mouse.click(Button.left)
-            await asyncio.sleep(settings["global_wait_time"])
-            _keyboard.press(Key.cmd)
-            await asyncio.sleep(settings["global_wait_time"])
-            _keyboard.release(Key.cmd)
-            await asyncio.sleep(settings["global_wait_time"])
-            _mouse.position = cutscene_conf_pos
-            await asyncio.sleep(settings["global_wait_time"])
-            _keyboard.press(Key.cmd)
-            await asyncio.sleep(settings["global_wait_time"])
-            _keyboard.release(Key.cmd)
-            await asyncio.sleep(settings["global_wait_time"])
-            _mouse.click(Button.left)
+            mkey.left_click_xy_natural(cutscene_conf_pos[0], cutscene_conf_pos[1])
             await asyncio.sleep(settings["global_wait_time"])
             _keyboard.press(Key.ctrl)
             _keyboard.press("a")
@@ -577,17 +447,7 @@ async def dreamspace_detector():
             await asyncio.sleep(settings["global_wait_time"])
             _keyboard.type("219999999")
             await asyncio.sleep(settings["global_wait_time"])
-            _keyboard.press(Key.cmd)
-            await asyncio.sleep(settings["global_wait_time"])
-            _keyboard.release(Key.cmd)
-            await asyncio.sleep(settings["global_wait_time"])
-            _mouse.position = close_pos
-            await asyncio.sleep(settings["global_wait_time"])
-            _keyboard.press(Key.cmd)
-            await asyncio.sleep(settings["global_wait_time"])
-            _keyboard.release(Key.cmd)
-            await asyncio.sleep(settings["global_wait_time"])
-            _mouse.click(Button.left)
+            mkey.left_click_xy_natural(close_pos[0], close_pos[1])
             await asyncio.sleep(settings["global_wait_time"])
             to_use = []
             for buff in reversed(settings["auto_use_items_in_dreamspace"].keys()):
@@ -611,6 +471,7 @@ async def dreamspace_detector():
 @client.event
 async def on_command_error(ctx, error):
     print(str(error))
+    logging.error(str(error))
 
 @tasks.loop(seconds=2100)
 async def biome_randomizer():
@@ -634,6 +495,7 @@ async def set_log_channel(ctx):
     update_settings(settings)
     reload_settings()
     await ctx.send(f"Log Channel set to {ctx.message.channel.mention}")
+    logging.info(f"Log Channel set to {ctx.message.channel.mention}")
 
 @client.command()
 @commands.is_owner()
@@ -643,6 +505,7 @@ async def set_mention(ctx):
     update_settings(settings)
     reload_settings()
     await ctx.send(f"User to mention is now {ctx.author.mention}")
+    logging.info(f"User to mention is now {ctx.author.id}")
 
 @client.command()
 @commands.is_owner()
@@ -657,6 +520,7 @@ async def set_min_roll(ctx, minimum : str):
     update_settings(settings)
     reload_settings()
     await ctx.send(f"Minimum roll alert is now {minimum}")
+    logging.info(f"Minimum roll alert is now {minimum}")
 
 @client.command()
 @commands.is_owner()
@@ -671,6 +535,7 @@ async def set_min_ping(ctx, minimum : str):
     update_settings(settings)
     reload_settings()
     await ctx.send(f"Minimum ping alert is now {minimum}")
+    logging.info(f"Minimum ping alert is now {minimum}")
 
 @client.command()
 async def mode(ctx):
@@ -687,6 +552,7 @@ async def mode(ctx):
 @commands.is_owner()
 async def stop(ctx):
     await ctx.send("Manual stop initiated")
+    logging.warning("Manual stop initiated")
     aura_detection.stop()
     keep_alive.stop()
     await client.close()
@@ -704,86 +570,28 @@ async def edit_settings(ctx):
 @commands.is_owner()
 async def storage_scr(ctx):
     await ctx.send("Taking screenshot of Aura Storage, please wait, this will take a few seconds.")
-    _keyboard.press(Key.cmd)
+    logging.info("Taking screenshot of Aura Storage")
+    mkey.left_click_xy_natural(aura_button_pos[0], aura_button_pos[1])
     await asyncio.sleep(settings["global_wait_time"])
-    _keyboard.release(Key.cmd)
-    await asyncio.sleep(settings["global_wait_time"])
-    _mouse.position = aura_button_pos
-    await asyncio.sleep(settings["global_wait_time"])
-    _keyboard.press(Key.cmd)
-    await asyncio.sleep(settings["global_wait_time"])
-    _keyboard.release(Key.cmd)
-    await asyncio.sleep(settings["global_wait_time"])
-    _mouse.click(Button.left)
-    await asyncio.sleep(settings["global_wait_time"])
-    _keyboard.press(Key.cmd)
-    await asyncio.sleep(settings["global_wait_time"])
-    _keyboard.release(Key.cmd)
-    await asyncio.sleep(settings["global_wait_time"])
-    _mouse.position = search_pos
-    await asyncio.sleep(settings["global_wait_time"])
-    _keyboard.press(Key.cmd)
-    await asyncio.sleep(settings["global_wait_time"])
-    _keyboard.release(Key.cmd)
-    await asyncio.sleep(settings["global_wait_time"])
-    _mouse.click(Button.left)
+    mkey.left_click_xy_natural(search_pos[0], search_pos[1])
     await asyncio.sleep(settings["global_wait_time"])
     storimg = pag.screenshot(f"{MACROPATH}/scr/screenshot_storage.png")
     await asyncio.sleep(settings["global_wait_time"])
-    _keyboard.press(Key.cmd)
-    await asyncio.sleep(settings["global_wait_time"])
-    _keyboard.release(Key.cmd)
-    await asyncio.sleep(settings["global_wait_time"])
-    _mouse.position = close_pos
-    await asyncio.sleep(settings["global_wait_time"])
-    _keyboard.press(Key.cmd)
-    await asyncio.sleep(settings["global_wait_time"])
-    _keyboard.release(Key.cmd)
-    await asyncio.sleep(settings["global_wait_time"])
-    _mouse.click(Button.left)
+    mkey.left_click_xy_natural(close_pos[0], close_pos[1])
     await ctx.send(file=discord.File(f"{MACROPATH}/scr/screenshot_storage.png"))
 
 @client.command()
 @commands.is_owner()
 async def inv_scr(ctx):
     await ctx.send("Taking screenshot of inventory, please wait, this will take a few seconds.")
-    _keyboard.press(Key.cmd)
+    logging.info("Taking screenshot of inventory")
+    mkey.left_click_xy_natural(inv_button_pos[0], inv_button_pos[1])
     await asyncio.sleep(settings["global_wait_time"])
-    _keyboard.release(Key.cmd)
-    await asyncio.sleep(settings["global_wait_time"])
-    _mouse.position = inv_button_pos
-    await asyncio.sleep(settings["global_wait_time"])
-    _keyboard.press(Key.cmd)
-    await asyncio.sleep(settings["global_wait_time"])
-    _keyboard.release(Key.cmd)
-    await asyncio.sleep(settings["global_wait_time"])
-    _mouse.click(Button.left)
-    await asyncio.sleep(settings["global_wait_time"])
-    _keyboard.press(Key.cmd)
-    await asyncio.sleep(settings["global_wait_time"])
-    _keyboard.release(Key.cmd)
-    await asyncio.sleep(settings["global_wait_time"])
-    _mouse.position = search_pos
-    await asyncio.sleep(settings["global_wait_time"])
-    _keyboard.press(Key.cmd)
-    await asyncio.sleep(settings["global_wait_time"])
-    _keyboard.release(Key.cmd)
-    await asyncio.sleep(settings["global_wait_time"])
-    _mouse.click(Button.left)
+    mkey.left_click_xy_natural(search_pos[0], search_pos[1])
     await asyncio.sleep(settings["global_wait_time"])
     storimg = pag.screenshot(f"{MACROPATH}/scr/screenshot_inventory.png")
     await asyncio.sleep(settings["global_wait_time"])
-    _keyboard.press(Key.cmd)
-    await asyncio.sleep(settings["global_wait_time"])
-    _keyboard.release(Key.cmd)
-    await asyncio.sleep(settings["global_wait_time"])
-    _mouse.position = close_pos
-    await asyncio.sleep(settings["global_wait_time"])
-    _keyboard.press(Key.cmd)
-    await asyncio.sleep(settings["global_wait_time"])
-    _keyboard.release(Key.cmd)
-    await asyncio.sleep(settings["global_wait_time"])
-    _mouse.click(Button.left)
+    mkey.left_click_xy_natural(close_pos[0], close_pos[1])
     await ctx.send(file=discord.File(f"{MACROPATH}/scr/screenshot_inventory.png"))
 
 @client.command()
@@ -798,242 +606,92 @@ async def purchase_item(ctx, item : int):
         await ctx.send("A merchant only sells 5 items at a time")
         return
     if item == 1:
-        _keyboard.press(Key.cmd)
+        mkey.left_click_xy_natural(merch_item_pos_1_purchase[0], merch_item_pos_1_purchase[1])
         await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.release(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _mouse.position = merch_item_pos_1_purchase
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.press(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.release(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _mouse.click(Button.left)
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.press(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.release(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _mouse.position = quantity_btn_pos
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.press(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.release(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _mouse.click(Button.left)
+        mkey.left_click_xy_natural(quantity_btn_pos[0], quantity_btn_pos[1])
         await asyncio.sleep(settings["global_wait_time"])
         _keyboard.type("25")
         await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.press(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.release(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _mouse.position = purchase_btn_pos
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.press(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.release(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _mouse.click(Button.left)
+        mkey.left_click_xy_natural(purchase_btn_pos[0], purchase_btn_pos[1])
         await asyncio.sleep(settings["global_wait_time"])
         log_channel = client.get_channel(settings["log_channel_id"])
         if settings["ping_merchant"] and settings["mention_id"] != 0:
             await log_channel.send(f"<@{settings["mention_id"]}>\nPurchased item in box 1 from merchant")
         else:
             await log_channel.send(f"Purchased item in box 1 from merchant")
+        logging.info(f"Purchased item in box 1 from merchant")
         await asyncio.sleep(2)
     elif item == 2:
-        _keyboard.press(Key.cmd)
+        mkey.left_click_xy_natural(merch_item_pos_2_purchase[0], merch_item_pos_2_purchase[1])
         await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.release(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _mouse.position = merch_item_pos_2_purchase
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.press(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.release(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _mouse.click(Button.left)
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.press(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.release(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _mouse.position = quantity_btn_pos
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.press(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.release(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _mouse.click(Button.left)
+        mkey.left_click_xy_natural(quantity_btn_pos[0], quantity_btn_pos[1])
         await asyncio.sleep(settings["global_wait_time"])
         _keyboard.type("25")
         await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.press(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.release(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _mouse.position = purchase_btn_pos
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.press(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.release(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _mouse.click(Button.left)
+        mkey.left_click_xy_natural(purchase_btn_pos[0], purchase_btn_pos[1])
         await asyncio.sleep(settings["global_wait_time"])
         log_channel = client.get_channel(settings["log_channel_id"])
         if settings["ping_merchant"] and settings["mention_id"] != 0:
             await log_channel.send(f"<@{settings["mention_id"]}>\nPurchased item in box 2 from merchant")
         else:
             await log_channel.send(f"Purchased item in box 2 from merchant")
+        logging.info(f"Purchased item in box 2 from merchant")
         await asyncio.sleep(2)
     elif item == 3:
-        _keyboard.press(Key.cmd)
+        mkey.left_click_xy_natural(merch_item_pos_3_purchase[0], merch_item_pos_3_purchase[1])
         await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.release(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _mouse.position = merch_item_pos_3_purchase
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.press(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.release(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _mouse.click(Button.left)
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.press(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.release(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _mouse.position = quantity_btn_pos
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.press(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.release(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _mouse.click(Button.left)
+        mkey.left_click_xy_natural(quantity_btn_pos[0], quantity_btn_pos[1])
         await asyncio.sleep(settings["global_wait_time"])
         _keyboard.type("25")
         await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.press(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.release(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _mouse.position = purchase_btn_pos
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.press(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.release(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _mouse.click(Button.left)
+        mkey.left_click_xy_natural(purchase_btn_pos[0], purchase_btn_pos[1])
         await asyncio.sleep(settings["global_wait_time"])
         log_channel = client.get_channel(settings["log_channel_id"])
         if settings["ping_merchant"] and settings["mention_id"] != 0:
             await log_channel.send(f"<@{settings["mention_id"]}>\nPurchased item in box 3 from merchant")
         else:
             await log_channel.send(f"Purchased item in box 3 from merchant")
+        logging.info(f"Purchased item in box 3 from merchant")
         await asyncio.sleep(2)
     elif item == 4:
-        _keyboard.press(Key.cmd)
+        mkey.left_click_xy_natural(merch_item_pos_4_purchase[0], merch_item_pos_4_purchase[1])
         await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.release(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _mouse.position = merch_item_pos_4_purchase
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.press(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.release(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _mouse.click(Button.left)
-        await asyncio.sleep(settings["global_wait_time"])
-        _mouse.position = quantity_btn_pos
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.press(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.release(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.press(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.release(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _mouse.click(Button.left)
+        mkey.left_click_xy_natural(quantity_btn_pos[0], quantity_btn_pos[1])
         await asyncio.sleep(settings["global_wait_time"])
         _keyboard.type("25")
         await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.press(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.release(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _mouse.position = purchase_btn_pos
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.press(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.release(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _mouse.click(Button.left)
+        mkey.left_click_xy_natural(purchase_btn_pos[0], purchase_btn_pos[1])
         await asyncio.sleep(settings["global_wait_time"])
         log_channel = client.get_channel(settings["log_channel_id"])
         if settings["ping_merchant"] and settings["mention_id"] != 0:
             await log_channel.send(f"<@{settings["mention_id"]}>\nPurchased item in box 4 from merchant")
         else:
             await log_channel.send(f"Purchased item in box 4 from merchant")
+        logging.info(f"Purchased item in box 4 from merchant")
         await asyncio.sleep(2)
     elif item == 5:
-        _keyboard.press(Key.cmd)
+        mkey.left_click_xy_natural(merch_item_pos_5_purchase[0], merch_item_pos_5_purchase[1])
         await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.release(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _mouse.position = merch_item_pos_5_purchase
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.press(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.release(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _mouse.click(Button.left)
-        await asyncio.sleep(settings["global_wait_time"])
-        _mouse.position = quantity_btn_pos
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.press(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.release(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _mouse.click(Button.left)
+        mkey.left_click_xy_natural(quantity_btn_pos[0], quantity_btn_pos[1])
         await asyncio.sleep(settings["global_wait_time"])
         _keyboard.type("25")
         await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.press(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.release(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _mouse.position = purchase_btn_pos
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.press(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.release(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _mouse.click(Button.left)
+        mkey.left_click_xy_natural(purchase_btn_pos[0], purchase_btn_pos[1])
         await asyncio.sleep(settings["global_wait_time"])
         log_channel = client.get_channel(settings["log_channel_id"])
         if settings["ping_merchant"] and settings["mention_id"] != 0:
             await log_channel.send(f"<@{settings["mention_id"]}>\nPurchased item in box 5 from merchant")
         else:
             await log_channel.send(f"Purchased item in box 5 from merchant")
+        logging.info(f"Purchased item in box 5 from merchant")
         await asyncio.sleep(2)
 
 @tasks.loop(seconds=577)
 async def keep_alive():
-    _keyboard.press(Key.cmd)
+    mkey.left_click_xy_natural(close_pos[0], close_pos[1])
     await asyncio.sleep(settings["global_wait_time"])
-    _keyboard.release(Key.cmd)
+    mkey.left_click_xy_natural(close_pos[0], close_pos[1])
     await asyncio.sleep(settings["global_wait_time"])
-    _mouse.position = close_pos
-    await asyncio.sleep(settings["global_wait_time"])
-    _keyboard.press(Key.cmd)
-    await asyncio.sleep(settings["global_wait_time"])
-    _keyboard.release(Key.cmd)
-    await asyncio.sleep(settings["global_wait_time"])
-    _mouse.click(Button.left)
-    await asyncio.sleep(settings["global_wait_time"])
-    _mouse.click(Button.left)
 
 
 @tasks.loop(seconds=60)
@@ -1045,43 +703,15 @@ async def auto_craft():
     if item_to_craft == "":
         return
     if item_to_craft == "Heavenly Potion I":
-        _keyboard.press(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.release(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.press(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.release(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _mouse.click(Button.left)
+        mkey.left_click_xy_natural(secondary_pos[0], secondary_pos[1])
         await asyncio.sleep(settings["global_wait_time"])
         _keyboard.press("f")
         await asyncio.sleep(settings["global_wait_time"])
         _keyboard.release("f")
         await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.press(Key.cmd)
+        mkey.left_click_xy_natural(craft_btn_pos[0], craft_btn_pos[1])
         await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.release(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _mouse.position = craft_btn_pos
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.press(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.release(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _mouse.click(Button.left)
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.press(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.release(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _mouse.position = (hp1_pos_potions[0] - (110 * scale_w), hp1_pos_potions[1])
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.press(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.release(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _mouse.click(Button.left)
+        mkey.left_click_xy_natural(hp1_pos_potions[0] - (110 * scale_w), hp1_pos_potions[1])
         await asyncio.sleep(settings["global_wait_time"])
         _keyboard.press(Key.ctrl)
         _keyboard.press("a")
@@ -1091,17 +721,7 @@ async def auto_craft():
         await asyncio.sleep(settings["global_wait_time"])
         _keyboard.type("100")
         await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.press(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.release(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _mouse.position = hp1_pos_potions
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.press(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.release(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _mouse.click(Button.left)
+        mkey.left_click_xy_natural(hp1_pos_potions[0], hp1_pos_potions[1])
         await asyncio.sleep(settings["global_wait_time"])
         _keyboard.press("d")
         await asyncio.sleep(settings["global_wait_time"])
@@ -1109,82 +729,26 @@ async def auto_craft():
         await asyncio.sleep(settings["global_wait_time"])
         _mouse.scroll(0, -10)
         await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.press(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.release(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _mouse.position = hp1_pos_celestial
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.press(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.release(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _mouse.click(Button.left)
+        mkey.left_click_xy_natural(hp1_pos_celestial[0], hp1_pos_celestial[1])
         await asyncio.sleep(settings["global_wait_time"])
         _mouse.scroll(0, 10)
         await asyncio.sleep(settings["global_wait_time"])
     elif item_to_craft == "Heavenly Potion II":
-        _keyboard.press(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.release(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.press(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.release(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _mouse.click(Button.left)
+        mkey.left_click_xy_natural(secondary_pos[0], secondary_pos[1])
         await asyncio.sleep(settings["global_wait_time"])
         _keyboard.press("f")
         await asyncio.sleep(settings["global_wait_time"])
         _keyboard.release("f")
         await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.press(Key.cmd)
+        mkey.left_click_xy_natural(craft_btn_pos[0], craft_btn_pos[1])
         await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.release(Key.cmd)
+        mkey.left_click_xy_natural(hp1_pos_potions[0], hp1_pos_potions[1])
         await asyncio.sleep(settings["global_wait_time"])
-        _mouse.position = craft_btn_pos
+        mkey.left_click_xy_natural(hp1_pos_potions[0], hp1_pos_potions[1])
         await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.press(Key.cmd)
+        mkey.left_click_xy_natural(hp2_pos_potions[0], hp2_pos_potions[1])
         await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.release(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _mouse.click(Button.left)
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.press(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.release(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _mouse.position = hp1_pos_potions
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.press(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.release(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _mouse.click(Button.left)
-        await asyncio.sleep(settings["global_wait_time"])
-        _mouse.click(Button.left)
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.release(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _mouse.position = hp2_pos_potions
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.press(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.release(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _mouse.click(Button.left)
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.press(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.release(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _mouse.position = (hp2_pos_potions[0] - (110 * scale_w), hp2_pos_potions[1])
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.press(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.release(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _mouse.click(Button.left)
+        mkey.left_click_xy_natural(hp2_pos_potions[0] - (110 * scale_w), hp2_pos_potions[1])
         await asyncio.sleep(settings["global_wait_time"])
         _keyboard.press(Key.ctrl)
         _keyboard.press("a")
@@ -1194,17 +758,7 @@ async def auto_craft():
         await asyncio.sleep(settings["global_wait_time"])
         _keyboard.type("125")
         await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.press(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.release(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _mouse.position = hp2_pos_potions
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.press(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.release(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _mouse.click(Button.left)
+        mkey.left_click_xy_natural(hp2_pos_potions[0], hp2_pos_potions[1])
         await asyncio.sleep(settings["global_wait_time"])
         _keyboard.press("d")
         await asyncio.sleep(settings["global_wait_time"])
@@ -1214,97 +768,29 @@ async def auto_craft():
         await asyncio.sleep(settings["global_wait_time"])
         _mouse.scroll(0, -10)
         await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.press(Key.cmd)
+        mkey.left_click_xy_natural(hp1_pos_celestial[0], hp1_pos_celestial[1])
         await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.release(Key.cmd)
+        mkey.left_click_xy_natural(craft_btn_pos[0], craft_btn_pos[1])
         await asyncio.sleep(settings["global_wait_time"])
-        _mouse.position = hp1_pos_celestial
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.press(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.release(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _mouse.click(Button.left)
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.press(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.release(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _mouse.position = craft_btn_pos
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.press(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.release(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _mouse.click(Button.left)
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.press(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.release(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _mouse.position = hp1_pos_celestial
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.press(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.release(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _mouse.click(Button.left)
+        mkey.left_click_xy_natural(hp1_pos_celestial[0], hp1_pos_celestial[1])
         await asyncio.sleep(settings["global_wait_time"])
         _mouse.scroll(0, 10)
     elif item_to_craft == "Warp Potion":
-        _keyboard.press(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.release(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.press(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.release(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _mouse.click(Button.left)
+        mkey.left_click_xy_natural(secondary_pos[0], secondary_pos[1])
         await asyncio.sleep(settings["global_wait_time"])
         _keyboard.press("f")
         await asyncio.sleep(settings["global_wait_time"])
         _keyboard.release("f")
         await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.press(Key.cmd)
+        mkey.left_click_xy_natural(craft_btn_pos[0], craft_btn_pos[1])
         await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.release(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _mouse.position = craft_btn_pos
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.press(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.release(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _mouse.click(Button.left)
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.press(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.release(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _mouse.position = hp1_pos_potions
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.press(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.release(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _mouse.click(Button.left)
+        mkey.left_click_xy_natural(hp1_pos_potions[0], hp1_pos_potions[1])
         await asyncio.sleep(settings["global_wait_time"])
         _mouse.scroll(0, -30)
         await asyncio.sleep(settings["global_wait_time"])
         _mouse.scroll(0, -30)
         await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.press(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.release(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _mouse.position = (hp1_pos_celestial[0] - (110 * scale_w), hp1_pos_celestial[1])
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.press(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.release(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _mouse.click(Button.left)
+        mkey.left_click_xy_natural(hp1_pos_celestial[0] - (110 * scale_w), hp1_pos_celestial[1])
         await asyncio.sleep(settings["global_wait_time"])
         _keyboard.press(Key.ctrl)
         _keyboard.press("a")
@@ -1314,33 +800,13 @@ async def auto_craft():
         await asyncio.sleep(settings["global_wait_time"])
         _keyboard.type("1000")
         await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.press(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.release(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _mouse.position = hp1_pos_potions
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.press(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.release(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _mouse.click(Button.left)
+        mkey.left_click_xy_natural(hp1_pos_potions[0], hp1_pos_potions[1])
         await asyncio.sleep(settings["global_wait_time"])
         _keyboard.press("d")
         await asyncio.sleep(settings["global_wait_time"])
         _keyboard.release("d")
         await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.press(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.release(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _mouse.position = hp1_pos_celestial
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.press(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.release(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _mouse.click(Button.left)
+        mkey.left_click_xy_natural(hp1_pos_celestial[0], hp1_pos_celestial[1])
         await asyncio.sleep(settings["global_wait_time"])
         _mouse.scroll(0, 30)
         await asyncio.sleep(settings["global_wait_time"])
@@ -1355,57 +821,17 @@ async def reset_aura():
 
 @reset_aura.after_loop
 async def on_reset_aura_cancel():
-    _keyboard.press(Key.cmd)
+    mkey.left_click_xy_natural(aura_button_pos[0], aura_button_pos[1])
     await asyncio.sleep(settings["global_wait_time"])
-    _keyboard.release(Key.cmd)
-    await asyncio.sleep(settings["global_wait_time"])
-    _mouse.position = aura_button_pos
-    await asyncio.sleep(settings["global_wait_time"])
-    _keyboard.press(Key.cmd)
-    await asyncio.sleep(settings["global_wait_time"])
-    _keyboard.release(Key.cmd)
-    await asyncio.sleep(settings["global_wait_time"])
-    _mouse.click(Button.left)
-    await asyncio.sleep(settings["global_wait_time"])
-    _keyboard.press(Key.cmd)
-    await asyncio.sleep(settings["global_wait_time"])
-    _keyboard.release(Key.cmd)
-    await asyncio.sleep(settings["global_wait_time"])
-    _mouse.position = search_pos
-    await asyncio.sleep(settings["global_wait_time"])
-    _keyboard.press(Key.cmd)
-    await asyncio.sleep(settings["global_wait_time"])
-    _keyboard.release(Key.cmd)
-    await asyncio.sleep(settings["global_wait_time"])
-    _mouse.click(Button.left)
+    mkey.left_click_xy_natural(search_pos[0], search_pos[1])
     await asyncio.sleep(settings["global_wait_time"])
     _keyboard.type(settings["reset_aura"])
     await asyncio.sleep(settings["global_wait_time"])
-    _keyboard.press(Key.cmd)
+    mkey.left_click_xy_natural(query_pos[0], query_pos[1])
     await asyncio.sleep(settings["global_wait_time"])
-    _keyboard.release(Key.cmd)
+    mkey.left_click_xy_natural(equip_pos[0], equip_pos[1])
     await asyncio.sleep(settings["global_wait_time"])
-    _mouse.position = query_pos    
-    await asyncio.sleep(settings["global_wait_time"])
-    _keyboard.press(Key.cmd)
-    await asyncio.sleep(settings["global_wait_time"])
-    _keyboard.release(Key.cmd)
-    await asyncio.sleep(settings["global_wait_time"])
-    _mouse.click(Button.left)
-    await asyncio.sleep(settings["global_wait_time"])
-    _keyboard.press(Key.cmd)
-    await asyncio.sleep(settings["global_wait_time"])
-    _keyboard.release(Key.cmd)
-    await asyncio.sleep(settings["global_wait_time"])
-    _mouse.position = equip_pos
-    await asyncio.sleep(settings["global_wait_time"])
-    _keyboard.press(Key.cmd)
-    await asyncio.sleep(settings["global_wait_time"])
-    _keyboard.release(Key.cmd)
-    await asyncio.sleep(settings["global_wait_time"])
-    _mouse.click(Button.left)
-    await asyncio.sleep(settings["global_wait_time"])
-    _mouse.click(Button.left)
+    mkey.left_click_xy_natural(equip_pos[0], equip_pos[1])
     await asyncio.sleep(settings["global_wait_time"])
     _keyboard.press(Key.cmd)
     await asyncio.sleep(settings["global_wait_time"])
@@ -1417,7 +843,7 @@ async def on_reset_aura_cancel():
     await asyncio.sleep(settings["global_wait_time"])
     _keyboard.release(Key.cmd)
     await asyncio.sleep(settings["global_wait_time"])
-    _mouse.click(Button.left)
+    mkey.left_click_xy_natural(close_pos[0], close_pos[1])
     
 @tasks.loop(seconds=150)
 async def merchant_detection():
@@ -1432,19 +858,10 @@ async def merchant_detection():
     hex_col = rgb2hex(colour[0], colour[1], colour[2])
     colour2 = px[secondary_pos[0], secondary_pos[1]]
     hex_col2 = rgb2hex(colour2[0], colour2[1], colour2[2])
-    if (hex_col == "#000000" and hex_col2 == "#000000"):
+    if (hex_col == "#000000" and hex_col2 == "#000000"): # REMOVE NOT FOR REALSE THIS FOR TESTING
+    #if not (hex_col == "#000000" and hex_col2 == "#000000"): # REMOVE NOT FOR REALSE THIS FOR TESTING
         rnow = datetime.now()
-        _keyboard.press(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.release(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _mouse.position = close_pos
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.press(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.release(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _mouse.click(Button.left)
+        mkey.left_click_xy_natural(close_pos[0], close_pos[1])
         await asyncio.sleep(1)
         _keyboard.press("e")
         await asyncio.sleep(2)
@@ -1452,22 +869,13 @@ async def merchant_detection():
         await asyncio.sleep(3)
         px = ImageGrab.grab().load()
         await asyncio.sleep(2)
-        _keyboard.press(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.release(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _mouse.position = open_merch_pos
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.press(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.release(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _mouse.click(Button.left)
+        mkey.left_click_xy_natural(open_merch_pos[0], open_merch_pos[1])
         await asyncio.sleep(0.5)
         merchimg = pag.screenshot(f"{MACROPATH}/scr/screenshot_merchant.png")
         await asyncio.sleep(0.2)
         up = discord.File(f"{MACROPATH}/scr/screenshot_merchant.png", filename="merchant.png")
         _break = False
+        cols = []
         try:
             for y in range(merchant_face_pos_1[1], merchant_face_pos_2[1]):
                 for x in range(merchant_face_pos_1[0], merchant_face_pos_2[0]):
@@ -1475,6 +883,7 @@ async def merchant_detection():
                         break
                     colour = px[x, y]
                     hex_col = rgb2hex(colour[0], colour[1], colour[2])
+                    cols.append(hex_col)
                     if hex_col in mari_cols:
                         emb = discord.Embed(
                                         title = f"Mari Spawned",
@@ -1488,6 +897,7 @@ async def merchant_detection():
                                 await log_channel.send(f"<@{settings["mention_id"]}>", embed=emb, file=up)
                             else:
                                 await log_channel.send(embed=emb, file=up)
+                        logging.info("A Mari has been detected")
                         _break = True
                     elif hex_col in jester_cols:
                         emb = discord.Embed(
@@ -1502,23 +912,14 @@ async def merchant_detection():
                                 await log_channel.send(f"<@{settings["mention_id"]}>", embed=emb, file=up)
                             else:
                                 await log_channel.send(embed=emb, file=up)
+                        logging.info("A Jester has been detected")
                         _break = True
                 if _break:
                     break
         except Exception as e:
             print(e)
     else:
-        _keyboard.press(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.release(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _mouse.position = close_pos
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.press(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.release(Key.cmd)
-        await asyncio.sleep(settings["global_wait_time"])
-        _mouse.click(Button.left)
+        mkey.left_click_xy_natural(close_pos[0], close_pos[1])
 
 @tasks.loop(seconds=0)
 async def aura_detection():
@@ -1571,6 +972,7 @@ async def on_aura_detection_cancel():
                     else:
                         await log_channel.send(embed=emb, file=up)
                     print(f"Rolled Aura: {auras[f"{hex_col},{hex_col2}"]["name"]}\nWith chances of 1/{auras[f"{hex_col},{hex_col2}"]["rarity"]}\nAt time: {rnow.strftime("%d/%m/%Y %H:%M:%S")}\nDetected Colours: {hex_col}, {hex_col2}")
+                    logging.info(f"Rolled Aura: {auras[f"{hex_col},{hex_col2}"]["name"]} at time: {rnow.strftime("%d/%m/%Y %H:%M:%S")} using detected colours: {hex_col}, {hex_col2}")
                 else:
                     hex_col == "#5bffb0"
                     hex_col2 = "#050e09"
@@ -1589,6 +991,7 @@ async def on_aura_detection_cancel():
                     else:
                         await log_channel.send(embed=emb, file=up)
                     print(f"Rolled Aura: {auras[f"{hex_col},{hex_col2}"]["name"]}\nWith chances of 1/{auras[f"{hex_col},{hex_col2}"]["rarity"]}\nAt time: {rnow.strftime("%d/%m/%Y %H:%M:%S")}\nDetected Colour: {hex_col}")
+                    logging.info(f"Rolled Aura: {auras[f"{hex_col},{hex_col2}"]["name"]} at time: {rnow.strftime("%d/%m/%Y %H:%M:%S")} using detected colour: {hex_col}")
             elif hex_col == "#3c66ff": # history detector
                 await asyncio.sleep(1)
                 auraimg = pag.screenshot(f"{MACROPATH}/scr/screenshot_aura.png")
@@ -1613,6 +1016,7 @@ async def on_aura_detection_cancel():
                     else:
                         await log_channel.send(embed=emb, file=up)
                     print(f"Rolled Aura: {auras[f"{hex_col},{hex_col2}"]["name"]}\nWith chances of 1/{auras[f"{hex_col},{hex_col2}"]["rarity"]}\nAt time: {rnow.strftime("%d/%m/%Y %H:%M:%S")}\nDetected Colour: {hex_col}")
+                    logging.info(f"Rolled Aura: {auras[f"{hex_col},{hex_col2}"]["name"]} at time: {rnow.strftime("%d/%m/%Y %H:%M:%S")} using detected colour: {hex_col}")
                 else:
                     hex_col = "#3c66ff"
                     hex_col2 = "#******"
@@ -1629,6 +1033,7 @@ async def on_aura_detection_cancel():
                     else:
                         await log_channel.send(embed=emb, file=up)
                     print(f"Rolled Aura: {auras[f"{hex_col},{hex_col2}"]["name"]}\nWith chances of 1/{auras[f"{hex_col},{hex_col2}"]["rarity"]}\nAt time: {rnow.strftime("%d/%m/%Y %H:%M:%S")}\nDetected Colour: {hex_col}")
+                    logging.info(f"Rolled Aura: {auras[f"{hex_col},{hex_col2}"]["name"]} at time: {rnow.strftime("%d/%m/%Y %H:%M:%S")} using detected colour: {hex_col}")     
             elif hex_col2 == "#******":
                 auraimg = pag.screenshot(f"{MACROPATH}/scr/screenshot_aura.png")
                 await asyncio.sleep(1)
@@ -1645,6 +1050,7 @@ async def on_aura_detection_cancel():
                 else:
                     await log_channel.send(embed=emb, file=up)
                 print(f"Rolled Aura: {auras[f"{hex_col},{hex_col2}"]["name"]}\nWith chances of 1/{auras[f"{hex_col},{hex_col2}"]["rarity"]}\nAt time: {rnow.strftime("%d/%m/%Y %H:%M:%S")}\nDetected Colour: {hex_col}")
+                logging.info(f"Rolled Aura: {auras[f"{hex_col},{hex_col2}"]["name"]} at time: {rnow.strftime("%d/%m/%Y %H:%M:%S")} using detected colour: {hex_col}")
             else:
                 auraimg = pag.screenshot(f"{MACROPATH}/scr/screenshot_aura.png")
                 await asyncio.sleep(1)
@@ -1661,8 +1067,10 @@ async def on_aura_detection_cancel():
                 else:
                     await log_channel.send(embed=emb, file=up)
                 print(f"Rolled Aura: {auras[f"{hex_col},{hex_col2}"]["name"]}\nWith chances of 1/{auras[f"{hex_col},{hex_col2}"]["rarity"]}\nAt time: {rnow.strftime("%d/%m/%Y %H:%M:%S")}\nDetected Colours: {hex_col}, {hex_col2}")
+                logging.info(f"Rolled Aura: {auras[f"{hex_col},{hex_col2}"]["name"]} at time: {rnow.strftime("%d/%m/%Y %H:%M:%S")} using detected colours: {hex_col}, {hex_col2}")
         else:
             print(f"Rolled Aura: {auras[f"{hex_col},{hex_col2}"]["name"]}\nWith chances of 1/{auras[f"{hex_col},{hex_col2}"]["rarity"]}\nAt time: {rnow.strftime("%d/%m/%Y %H:%M:%S")}\nDetected Colours: {hex_col}, {hex_col2}")
+            logging.info(f"Rolled Aura: {auras[f"{hex_col},{hex_col2}"]["name"]} at time: {rnow.strftime("%d/%m/%Y %H:%M:%S")} using detected colours: {hex_col}, {hex_col2}")
         if int(auras[f"{hex_col},{hex_col2}"]["rarity"]) >= 1000000 and int(auras[f"{hex_col},{hex_col2}"]["rarity"]) <= 99999998:
             await asyncio.sleep(8)
         elif int(auras[f"{hex_col},{hex_col2}"]["rarity"]) >= 99999 and int(auras[f"{hex_col},{hex_col2}"]["rarity"]) <= 999999:
@@ -1686,6 +1094,7 @@ for filename in os.listdir(f"{MACROPATH}/plugins"):
     if filename.endswith(".py"):
         client.load_extension(f"plugins.{filename[:-3]}")
         print(f"Loaded plugin: {filename[:-3]}")
+        logging.info(f"Loaded plugin: {filename[:-3]}")
         _plugins.append(filename[:-3])
 
 client.run(settings["TOKEN"])

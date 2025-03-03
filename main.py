@@ -228,13 +228,13 @@ aura_button_pos = ((53 * scale_w), (538 * scale_h))
 inv_button_pos = ((67 * scale_w), (732 * scale_h))
 default_pos = ((1280 * scale_w), (720 * scale_h))
 close_pos = ((1887 * scale_w), (399 * scale_h))
-search_pos = ((1108 * scale_w), (484 * scale_h))
+search_pos = ((1164 * scale_w), (486 * scale_h))
 secondary_pos = ((564 * scale_w), (401 * scale_h))
 query_pos = ((1086 * scale_w), (572 * scale_h))
 equip_pos = ((812 * scale_w), (844 * scale_h))
 use_pos = ((910 * scale_w), (772 * scale_h))
 item_amt_pos = ((756 * scale_w), (773 * scale_h))
-items_pos = ((1702 * scale_w), (446 * scale_h)) 
+items_pos = ((1692 * scale_w), (440 * scale_h)) 
 purchase_btn_pos = ((990 * scale_w), (860 * scale_h))
 quantity_btn_pos = ((910 * scale_w), (796 * scale_h))
 open_merch_pos = ((876 * scale_w), (1256 * scale_h))
@@ -1489,7 +1489,7 @@ async def merchant_detection():
                             else:
                                 await log_channel.send(embed=emb, file=up)
                         _break = True
-                    else:
+                    elif hex_col in jester_cols:
                         emb = discord.Embed(
                                     title = f"Jester Spawned",
                                     description = f"A Jester selling the following items in the screenshot has been detected at time: {rnow.strftime("%d/%m/%Y %H:%M:%S")}",

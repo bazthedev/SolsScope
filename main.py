@@ -1,3 +1,9 @@
+#           Baz's Macro/SolsRNGBot
+#   A discord bot for macroing Sol's RNG on Roblox
+#   Version: 1.1.6 HOTFIX 1
+#   https://github.com/bazthedev/SolsRNGBot
+#   
+
 import os
 import discord
 from discord.ext import commands, tasks
@@ -10,7 +16,6 @@ from pynput.keyboard import Key
 import asyncio
 from PIL import ImageGrab
 import requests
-import logging
 import screeninfo as si
 import re
 import glob
@@ -27,8 +32,8 @@ except ModuleNotFoundError:
 mkey = mk.MouseKey()
 MACROPATH = os.path.expandvars(r"%localappdata%\\Baz's Macro") # Windows Roaming Path
 LOCALVERSION = "1.1.6"
-DEFAULTSETTINGS = {"TOKEN": "", "__version__" :  LOCALVERSION, "log_channel_id": 0, "global_wait_time" : 1, "skip_dl": False, "mention" : True, "mention_id" : 0, "minimum_roll" : "99998", "minimum_ping" : "349999", "reset_aura" : "", "merchant_detection" : True, "send_mari" : True, "ping_mari" : False, "send_jester" : True, "ping_jester" : True, "auto_purchase_items" : {"Void Coin/Lucky Penny" : True}, "glitch_detector" : True, "ping_on_glitch" : True, "pop_in_glitch" : False, "auto_use_items_in_glitch": {"Heavenly Potion II" : {"use" : True, "amount" : 200}, "Fortune Potion III" : {"use" : True, "amount" : 1}, "Lucky Potion" : {"use" : True, "amount" : 10}, "Pumpkin" : {"use" : True, "amount" : 10}, "Haste Potion III" : {"use" : False, "amount" : 1}, "Warp Potion" : {"use" : True, "amount" : 1}, "Mixed Potion" : {"use" : True, "amount" : 10}, "Stella's Candle" : {"use" : True, "amount" : 1}, "Santa Claus Potion" : {"use" : True, "amount" : 5}}, "Hwachae" : {"use" : True}, "dreamspace_detector" : True, "ping_on_dreamspace" : True, "pop_in_dreamspace" : False, "auto_use_items_in_dreamspace" : {"Heavenly Potion II" : {"use" : False, "amount" : 1}, "Fortune Potion III" : {"use" : True, "amount" : 1}, "Lucky Potion" : {"use" : True, "amount" : 10}, "Pumpkin" : {"use" : True, "amount" : 10}, "Haste Potion III" : {"use" : False, "amount" : 1}, "Warp Potion" : {"use" : True, "amount" : 1}, "Mixed Potion" : {"use" : True, "amount" : 10}, "Stella's Candle" : {"use" : True, "amount" : 1}, "Santa Claus Potion" : {"use" : True, "amount" : 5}}, "Hwachae" : {"use" : True}, "auto_craft_mode" : False, "skip_auto_mode_warning" : False, "auto_craft_item" : {"Heavenly Potion I" : False, "Heavenly Potion II" : True, "Warp Potion" : False}, "auto_biome_randomizer" : False, "auto_strange_controller" : False, "edit_settings_mode" : False, "failsafe_key" : "ctrl+e"}
-valid_settings_keys = ["TOKEN", "__version__", "log_channel_id", "global_wait_time", "skip_dl", "mention", "mention_id", "minimum_roll", "minimum_ping", "reset_aura", "merchant_detection", "send_mari", "ping_mari", "send_jester", "ping_jester", "auto_purchase_items", "glitch_detector", "ping_on_glitch", "pop_in_glitch", "auto_use_items_in_glitch", "dreamspace_detector", "ping_on_dreamspace", "pop_in_dreamspace", "auto_use_items_in_dreamspace", "auto_craft_mode", "skip_auto_mode_warning", "auto_craft_item", "auto_biome_randomizer", "auto_strange_controller", "edit_settings_mode", "failsafe_key"]
+DEFAULTSETTINGS = {"TOKEN": "", "__version__" :  LOCALVERSION, "log_channel_id": 0, "global_wait_time" : 1, "skip_dl": False, "mention" : True, "mention_id" : 0, "minimum_roll" : "99998", "minimum_ping" : "349999", "reset_aura" : "", "merchant_detection" : True, "send_mari" : True, "ping_mari" : False, "send_jester" : True, "ping_jester" : True, "auto_purchase_items" : {"Void Coin/Lucky Penny" : True}, "glitch_detector" : True, "ping_on_glitch" : True, "pop_in_glitch" : False, "auto_use_items_in_glitch": {"Heavenly Potion II" : {"use" : True, "amount" : 200}, "Fortune Potion III" : {"use" : True, "amount" : 1}, "Lucky Potion" : {"use" : True, "amount" : 10}, "Pumpkin" : {"use" : True, "amount" : 10}, "Haste Potion III" : {"use" : False, "amount" : 1}, "Warp Potion" : {"use" : True, "amount" : 1}, "Mixed Potion" : {"use" : True, "amount" : 10}, "Stella's Candle" : {"use" : True, "amount" : 1}, "Santa Claus Potion" : {"use" : True, "amount" : 5}}, "Hwachae" : {"use" : True}, "dreamspace_detector" : True, "ping_on_dreamspace" : True, "pop_in_dreamspace" : False, "auto_use_items_in_dreamspace" : {"Heavenly Potion II" : {"use" : False, "amount" : 1}, "Fortune Potion III" : {"use" : True, "amount" : 1}, "Lucky Potion" : {"use" : True, "amount" : 10}, "Pumpkin" : {"use" : True, "amount" : 10}, "Haste Potion III" : {"use" : False, "amount" : 1}, "Warp Potion" : {"use" : True, "amount" : 1}, "Mixed Potion" : {"use" : True, "amount" : 10}, "Stella's Candle" : {"use" : True, "amount" : 1}, "Santa Claus Potion" : {"use" : True, "amount" : 5}}, "Hwachae" : {"use" : True}, "auto_craft_mode" : False, "skip_auto_mode_warning" : False, "auto_craft_item" : {"Heavenly Potion I" : False, "Heavenly Potion II" : True, "Warp Potion" : False}, "auto_biome_randomizer" : False, "auto_strange_controller" : False, "edit_settings_mode" : False, "failsafe_key" : "ctrl+e", "merchant_detec_wait" : 0}
+valid_settings_keys = ["TOKEN", "__version__", "log_channel_id", "global_wait_time", "skip_dl", "mention", "mention_id", "minimum_roll", "minimum_ping", "reset_aura", "merchant_detection", "send_mari", "ping_mari", "send_jester", "ping_jester", "auto_purchase_items", "glitch_detector", "ping_on_glitch", "pop_in_glitch", "auto_use_items_in_glitch", "dreamspace_detector", "ping_on_dreamspace", "pop_in_dreamspace", "auto_use_items_in_dreamspace", "auto_craft_mode", "skip_auto_mode_warning", "auto_craft_item", "auto_biome_randomizer", "auto_strange_controller", "edit_settings_mode", "failsafe_key", "merchant_detec_wait"]
 
 if not os.path.exists(f"{MACROPATH}"):
     os.mkdir(MACROPATH)
@@ -64,18 +69,15 @@ def validate_settings():
         if k not in valid_settings_keys:
             todel.append(k)
             print(f"Invalid setting ({k}) detected")
-            logging.info(f"Invalid setting ({k}) detected")
         else:
             found_keys.append(k)
     for _ in todel:
         del settings[_]
         print(f"Invalid setting ({_}) deleted")
-        logging.info(f"Invalid setting ({_}) deleted")
     for _ in valid_settings_keys:
         if _ not in found_keys:
             settings[_] = DEFAULTSETTINGS[_]
             print(f"Missing setting ({_}) added")
-            logging.info(f"Missing setting ({_}) added")
     update_settings(settings)
     reload_settings()
 
@@ -215,9 +217,7 @@ previous_biome = None
 popping = False
 _plugins = []
 auto_purchase = {"Void Coin/Lucky Penny": ["#ff92fe", "#ff9e4e"]}
-logger = logging.Logger("SolsRNGBot logging")
 print(f"Starting SolsRNGBot v{LOCALVERSION}")
-logging.info(f"Starting SolsRNGBot v{LOCALVERSION}")
 
 if not os.path.exists(f"{MACROPATH}/settings.json"):
     x = open(f"{MACROPATH}/settings.json", "w")
@@ -269,8 +269,7 @@ __version__ = settings["__version__"]
 @client.event
 async def on_ready():
     print("Let's go gambling!")
-    print(f"Started at {now.strftime("%d/%m/%Y %H:%M:%S")} running v{__version__} using local version {LOCALVERSION}")
-    logging.info(f"Started at {now.strftime("%d/%m/%Y %H:%M:%S")} running v{__version__} using local version {LOCALVERSION}")
+    print(f"Started at {now.strftime('%d/%m/%Y %H:%M:%S')} running v{__version__} using local version {LOCALVERSION}")
     await client.change_presence(activity=discord.Game(name=f"bazthedev/SolsRNGBot v{LOCALVERSION}"))
     if settings["auto_craft_mode"] and not settings["merchant_detection"]:
         crafts = []
@@ -297,14 +296,13 @@ async def on_ready():
     else:
         keep_alive.start()
         print("Started Autokick Prevention")
-        logging.info("Started Autokick Prevention")
         await asyncio.sleep(((settings["global_wait_time"] * 7) + 0.7))
     if settings["log_channel_id"] != 0:
         if settings["auto_craft_mode"] and not settings["merchant_detection"]:
             log_channel = client.get_channel(settings["log_channel_id"])
             emb = discord.Embed(
                 title="Bot has started",
-                description=f"Mode: Auto Craft\nAuto Craft item: {crafts[0]}\nStarted at {now.strftime("%d/%m/%Y %H:%M:%S")}"
+                description=f"Mode: Auto Craft\nAuto Craft item: {crafts[0]}\nStarted at {now.strftime('%d/%m/%Y %H:%M:%S')}"
             )
             emb.set_footer(text=f"bazthedev/SolsRNGBot v{LOCALVERSION}")
             await log_channel.send(embed=emb)
@@ -312,38 +310,32 @@ async def on_ready():
             log_channel = client.get_channel(settings["log_channel_id"])
             emb = discord.Embed(
                 title="Bot has started",
-                description=f"Mode: Normal\nStarted at {now.strftime("%d/%m/%Y %H:%M:%S")}"
+                description=f"Mode: Normal\nStarted at {now.strftime('%d/%m/%Y %H:%M:%S')}"
             )
             emb.set_footer(text=f"bazthedev/SolsRNGBot v{LOCALVERSION}")
             await log_channel.send(embed=emb)
         aura_detection.start()
         print("Started Aura Detection")
-        logging.info("Started Aura Detection")
         if settings["glitch_detector"]:
             glitch_detector.start()
             print("Started Glitch Biome Detection")
-            logging.info("Started Glitch Biome Detection")
         if settings["dreamspace_detector"]:
             dreamspace_detector.start()
             print("Started Dreamspace Biome Detection")
-            logging.info("Started Dreamspace Biome Detection")
     else:
         print("You must select a channel ID, you can do this by running the set_log_channel command.")
     if settings["auto_biome_randomizer"]:
         biome_randomizer.start()
         print("Started Biome Randomizer")
-        logging.info("Started Biome Randomizer")
     if settings["auto_strange_controller"]:
         await asyncio.sleep((settings["global_wait_time"] * 50))
         strange_controller.start()
         print("Started Strange Controller")
-        logging.info("Started Strange Controller")
     if settings["merchant_detection"] and settings["log_channel_id"] != 0:
         if settings["auto_biome_randomizer"] or settings["auto_strange_controller"]:
             await asyncio.sleep((settings["global_wait_time"] * 50))
         merchant_detection.start()
         print("Started Merchant Detection")
-        logging.info("Started Merchant Detection")
     
 @tasks.loop(seconds=0)
 async def glitch_detector():
@@ -360,7 +352,7 @@ async def glitch_detector():
         print("Glitch biome started")    
         emb = discord.Embed(
                 title="GLITCH BIOME DETECTED",
-                description=f"A GLITCH biome was detected at {rnow.strftime("%d/%m/%Y %H:%M:%S")}",
+                description=f"A GLITCH biome was detected at {rnow.strftime('%d/%m/%Y %H:%M:%S')}",
                 colour=discord.Colour.from_rgb(101, 255, 101)
         )
         if settings["ping_on_glitch"]:
@@ -401,7 +393,7 @@ async def glitch_detector():
         print("Glitch iome ended")
         emb = discord.Embed(
                 title="Glitch Biome Ended",
-                description=f"A GLITCH biome ended at {rnow.strftime("%d/%m/%Y %H:%M:%S")}",
+                description=f"A GLITCH biome ended at {rnow.strftime('%d/%m/%Y %H:%M:%S')}",
                 colour=discord.Colour.from_rgb(101, 255, 101)
         )
         await log_channel.send(embed=emb)
@@ -422,7 +414,7 @@ async def dreamspace_detector():
         print("Dreamspace biome started")    
         emb = discord.Embed(
                 title="DREAMSPACE BIOME DETECTED",
-                description=f"A DREAMSPACE biome was detected at {rnow.strftime("%d/%m/%Y %H:%M:%S")}",
+                description=f"A DREAMSPACE biome was detected at {rnow.strftime('%d/%m/%Y %H:%M:%S')}",
                 colour=discord.Colour.from_rgb(255, 105, 180)
         )
         if settings["ping_on_dreamspace"]:
@@ -463,7 +455,7 @@ async def dreamspace_detector():
         print("Dreamspace biome ended")
         emb = discord.Embed(
                 title="Dreamspace Biome Ended",
-                description=f"A DREAMSPACE biome ended at {rnow.strftime("%d/%m/%Y %H:%M:%S")}",
+                description=f"A DREAMSPACE biome ended at {rnow.strftime('%d/%m/%Y %H:%M:%S')}",
                 colour=discord.Colour.from_rgb(255, 105, 180)
         )
         await log_channel.send(embed=emb)
@@ -471,7 +463,6 @@ async def dreamspace_detector():
 @client.event
 async def on_command_error(ctx, error):
     print(str(error))
-    logging.error(str(error))
 
 @tasks.loop(seconds=2100)
 async def biome_randomizer():
@@ -495,7 +486,6 @@ async def set_log_channel(ctx):
     update_settings(settings)
     reload_settings()
     await ctx.send(f"Log Channel set to {ctx.message.channel.mention}")
-    logging.info(f"Log Channel set to {ctx.message.channel.mention}")
 
 @client.command()
 @commands.is_owner()
@@ -505,7 +495,6 @@ async def set_mention(ctx):
     update_settings(settings)
     reload_settings()
     await ctx.send(f"User to mention is now {ctx.author.mention}")
-    logging.info(f"User to mention is now {ctx.author.id}")
 
 @client.command()
 @commands.is_owner()
@@ -520,7 +509,6 @@ async def set_min_roll(ctx, minimum : str):
     update_settings(settings)
     reload_settings()
     await ctx.send(f"Minimum roll alert is now {minimum}")
-    logging.info(f"Minimum roll alert is now {minimum}")
 
 @client.command()
 @commands.is_owner()
@@ -535,7 +523,6 @@ async def set_min_ping(ctx, minimum : str):
     update_settings(settings)
     reload_settings()
     await ctx.send(f"Minimum ping alert is now {minimum}")
-    logging.info(f"Minimum ping alert is now {minimum}")
 
 @client.command()
 async def mode(ctx):
@@ -552,7 +539,6 @@ async def mode(ctx):
 @commands.is_owner()
 async def stop(ctx):
     await ctx.send("Manual stop initiated")
-    logging.warning("Manual stop initiated")
     aura_detection.stop()
     keep_alive.stop()
     await client.close()
@@ -570,7 +556,6 @@ async def edit_settings(ctx):
 @commands.is_owner()
 async def storage_scr(ctx):
     await ctx.send("Taking screenshot of Aura Storage, please wait, this will take a few seconds.")
-    logging.info("Taking screenshot of Aura Storage")
     mkey.left_click_xy_natural(aura_button_pos[0], aura_button_pos[1])
     await asyncio.sleep(settings["global_wait_time"])
     mkey.left_click_xy_natural(search_pos[0], search_pos[1])
@@ -584,7 +569,6 @@ async def storage_scr(ctx):
 @commands.is_owner()
 async def inv_scr(ctx):
     await ctx.send("Taking screenshot of inventory, please wait, this will take a few seconds.")
-    logging.info("Taking screenshot of inventory")
     mkey.left_click_xy_natural(inv_button_pos[0], inv_button_pos[1])
     await asyncio.sleep(settings["global_wait_time"])
     mkey.left_click_xy_natural(search_pos[0], search_pos[1])
@@ -619,7 +603,6 @@ async def purchase_item(ctx, item : int):
             await log_channel.send(f"<@{settings["mention_id"]}>\nPurchased item in box 1 from merchant")
         else:
             await log_channel.send(f"Purchased item in box 1 from merchant")
-        logging.info(f"Purchased item in box 1 from merchant")
         await asyncio.sleep(2)
     elif item == 2:
         mkey.left_click_xy_natural(merch_item_pos_2_purchase[0], merch_item_pos_2_purchase[1])
@@ -635,7 +618,6 @@ async def purchase_item(ctx, item : int):
             await log_channel.send(f"<@{settings["mention_id"]}>\nPurchased item in box 2 from merchant")
         else:
             await log_channel.send(f"Purchased item in box 2 from merchant")
-        logging.info(f"Purchased item in box 2 from merchant")
         await asyncio.sleep(2)
     elif item == 3:
         mkey.left_click_xy_natural(merch_item_pos_3_purchase[0], merch_item_pos_3_purchase[1])
@@ -651,7 +633,6 @@ async def purchase_item(ctx, item : int):
             await log_channel.send(f"<@{settings["mention_id"]}>\nPurchased item in box 3 from merchant")
         else:
             await log_channel.send(f"Purchased item in box 3 from merchant")
-        logging.info(f"Purchased item in box 3 from merchant")
         await asyncio.sleep(2)
     elif item == 4:
         mkey.left_click_xy_natural(merch_item_pos_4_purchase[0], merch_item_pos_4_purchase[1])
@@ -667,7 +648,6 @@ async def purchase_item(ctx, item : int):
             await log_channel.send(f"<@{settings["mention_id"]}>\nPurchased item in box 4 from merchant")
         else:
             await log_channel.send(f"Purchased item in box 4 from merchant")
-        logging.info(f"Purchased item in box 4 from merchant")
         await asyncio.sleep(2)
     elif item == 5:
         mkey.left_click_xy_natural(merch_item_pos_5_purchase[0], merch_item_pos_5_purchase[1])
@@ -683,7 +663,6 @@ async def purchase_item(ctx, item : int):
             await log_channel.send(f"<@{settings["mention_id"]}>\nPurchased item in box 5 from merchant")
         else:
             await log_channel.send(f"Purchased item in box 5 from merchant")
-        logging.info(f"Purchased item in box 5 from merchant")
         await asyncio.sleep(2)
 
 @tasks.loop(seconds=577)
@@ -853,13 +832,13 @@ async def merchant_detection():
     if aura_detection.is_being_cancelled():
         return
     await use_item("Merchant Teleport", 1, False)
+    await asyncio.sleep(settings["merchant_detec_wait"])
     px = ImageGrab.grab().load()
     colour = px[default_pos[0], default_pos[1]]
     hex_col = rgb2hex(colour[0], colour[1], colour[2])
     colour2 = px[secondary_pos[0], secondary_pos[1]]
     hex_col2 = rgb2hex(colour2[0], colour2[1], colour2[2])
-    if (hex_col == "#000000" and hex_col2 == "#000000"): # REMOVE NOT FOR REALSE THIS FOR TESTING
-    #if not (hex_col == "#000000" and hex_col2 == "#000000"): # REMOVE NOT FOR REALSE THIS FOR TESTING
+    if (hex_col == "#000000" and hex_col2 == "#000000"):
         rnow = datetime.now()
         mkey.left_click_xy_natural(close_pos[0], close_pos[1])
         await asyncio.sleep(1)
@@ -887,7 +866,7 @@ async def merchant_detection():
                     if hex_col in mari_cols:
                         emb = discord.Embed(
                                         title = f"Mari Spawned",
-                                        description = f"A Mari selling the following items in the screenshot has been detected at time: {rnow.strftime("%d/%m/%Y %H:%M:%S")}",
+                                        description = f"A Mari selling the following items in the screenshot has been detected at time: {rnow.strftime('%d/%m/%Y %H:%M:%S')}",
                                         colour = discord.Color.from_rgb(255, 255, 255)
                         )
                         emb.set_image(url="attachment://merchant.png")
@@ -897,12 +876,11 @@ async def merchant_detection():
                                 await log_channel.send(f"<@{settings["mention_id"]}>", embed=emb, file=up)
                             else:
                                 await log_channel.send(embed=emb, file=up)
-                        logging.info("A Mari has been detected")
                         _break = True
                     elif hex_col in jester_cols:
                         emb = discord.Embed(
                                     title = f"Jester Spawned",
-                                    description = f"A Jester selling the following items in the screenshot has been detected at time: {rnow.strftime("%d/%m/%Y %H:%M:%S")}",
+                                    description = f"A Jester selling the following items in the screenshot has been detected at time: {rnow.strftime('%d/%m/%Y %H:%M:%S')}",
                                     colour = discord.Color.from_rgb(176, 49, 255)
                         )
                         emb.set_image(url="attachment://merchant.png")
@@ -912,7 +890,6 @@ async def merchant_detection():
                                 await log_channel.send(f"<@{settings["mention_id"]}>", embed=emb, file=up)
                             else:
                                 await log_channel.send(embed=emb, file=up)
-                        logging.info("A Jester has been detected")
                         _break = True
                 if _break:
                     break
@@ -962,7 +939,7 @@ async def on_aura_detection_cancel():
                     up = discord.File(f"{MACROPATH}/scr/screenshot_aura.png", filename="aura.png")
                     emb = discord.Embed(
                         title = f"Aura Rolled: {auras[f"{hex_col},{hex_col2}"]["name"]}",
-                        description = f"Rolled Aura: {auras[f"{hex_col},{hex_col2}"]["name"]}\nWith chances of 1/{auras[f"{hex_col},{hex_col2}"]["rarity"]}\nAt time: {rnow.strftime("%d/%m/%Y %H:%M:%S")}\nDetected Colours: {hex_col}, {hex_col2}",
+                        description = f"Rolled Aura: {auras[f"{hex_col},{hex_col2}"]["name"]}\nWith chances of 1/{auras[f"{hex_col},{hex_col2}"]["rarity"]}\nAt time: {rnow.strftime('%d/%m/%Y %H:%M:%S')}\nDetected Colours: {hex_col}, {hex_col2}",
                         colour = discord.Color.from_rgb(colour[0], colour[1], colour[2])
                     )
                     emb.set_image(url="attachment://aura.png")
@@ -971,8 +948,7 @@ async def on_aura_detection_cancel():
                         await log_channel.send(f"<@{settings["mention_id"]}>", embed=emb, file=up)
                     else:
                         await log_channel.send(embed=emb, file=up)
-                    print(f"Rolled Aura: {auras[f"{hex_col},{hex_col2}"]["name"]}\nWith chances of 1/{auras[f"{hex_col},{hex_col2}"]["rarity"]}\nAt time: {rnow.strftime("%d/%m/%Y %H:%M:%S")}\nDetected Colours: {hex_col}, {hex_col2}")
-                    logging.info(f"Rolled Aura: {auras[f"{hex_col},{hex_col2}"]["name"]} at time: {rnow.strftime("%d/%m/%Y %H:%M:%S")} using detected colours: {hex_col}, {hex_col2}")
+                    print(f"Rolled Aura: {auras[f"{hex_col},{hex_col2}"]["name"]}\nWith chances of 1/{auras[f"{hex_col},{hex_col2}"]["rarity"]}\nAt time: {rnow.strftime('%d/%m/%Y %H:%M:%S')}\nDetected Colours: {hex_col}, {hex_col2}")
                 else:
                     hex_col == "#5bffb0"
                     hex_col2 = "#050e09"
@@ -981,7 +957,7 @@ async def on_aura_detection_cancel():
                     up = discord.File(f"{MACROPATH}/scr/screenshot_aura.png", filename="aura.png")
                     emb = discord.Embed(
                             title = f"Aura Rolled: {auras[f"{hex_col},{hex_col2}"]["name"]}",
-                            description = f"Rolled Aura: {auras[f"{hex_col},{hex_col2}"]["name"]}\nWith chances of 1/{auras[f"{hex_col},{hex_col2}"]["rarity"]}\nAt time: {rnow.strftime("%d/%m/%Y %H:%M:%S")}\nDetected Colour: {hex_col}",
+                            description = f"Rolled Aura: {auras[f"{hex_col},{hex_col2}"]["name"]}\nWith chances of 1/{auras[f"{hex_col},{hex_col2}"]["rarity"]}\nAt time: {rnow.strftime('%d/%m/%Y %H:%M:%S')}\nDetected Colour: {hex_col}",
                             colour = discord.Color.from_rgb(colour[0], colour[1], colour[2])
                     )
                     emb.set_image(url="attachment://aura.png")
@@ -990,8 +966,7 @@ async def on_aura_detection_cancel():
                         await log_channel.send(f"<@{settings["mention_id"]}>", embed=emb, file=up)
                     else:
                         await log_channel.send(embed=emb, file=up)
-                    print(f"Rolled Aura: {auras[f"{hex_col},{hex_col2}"]["name"]}\nWith chances of 1/{auras[f"{hex_col},{hex_col2}"]["rarity"]}\nAt time: {rnow.strftime("%d/%m/%Y %H:%M:%S")}\nDetected Colour: {hex_col}")
-                    logging.info(f"Rolled Aura: {auras[f"{hex_col},{hex_col2}"]["name"]} at time: {rnow.strftime("%d/%m/%Y %H:%M:%S")} using detected colour: {hex_col}")
+                    print(f"Rolled Aura: {auras[f"{hex_col},{hex_col2}"]["name"]}\nWith chances of 1/{auras[f"{hex_col},{hex_col2}"]["rarity"]}\nAt time: {rnow.strftime('%d/%m/%Y %H:%M:%S')}\nDetected Colour: {hex_col}")
             elif hex_col == "#3c66ff": # history detector
                 await asyncio.sleep(1)
                 auraimg = pag.screenshot(f"{MACROPATH}/scr/screenshot_aura.png")
@@ -1006,7 +981,7 @@ async def on_aura_detection_cancel():
                     up = discord.File(f"{MACROPATH}/scr/screenshot_aura.png", filename="aura.png")
                     emb = discord.Embed(
                             title = f"Aura Rolled: {auras[f"{hex_col},{hex_col2}"]["name"]}",
-                            description = f"Rolled Aura: {auras[f"{hex_col},{hex_col2}"]["name"]}\nWith chances of 1/{auras[f"{hex_col},{hex_col2}"]["rarity"]}\nAt time: {rnow.strftime("%d/%m/%Y %H:%M:%S")}\nDetected Colour: {hex_col}",
+                            description = f"Rolled Aura: {auras[f"{hex_col},{hex_col2}"]["name"]}\nWith chances of 1/{auras[f"{hex_col},{hex_col2}"]["rarity"]}\nAt time: {rnow.strftime('%d/%m/%Y %H:%M:%S')}\nDetected Colour: {hex_col}",
                             colour = discord.Color.from_rgb(colour[0], colour[1], colour[2])
                     )
                     emb.set_image(url="attachment://aura.png")
@@ -1015,15 +990,14 @@ async def on_aura_detection_cancel():
                         await log_channel.send(f"<@{settings["mention_id"]}>", embed=emb, file=up)
                     else:
                         await log_channel.send(embed=emb, file=up)
-                    print(f"Rolled Aura: {auras[f"{hex_col},{hex_col2}"]["name"]}\nWith chances of 1/{auras[f"{hex_col},{hex_col2}"]["rarity"]}\nAt time: {rnow.strftime("%d/%m/%Y %H:%M:%S")}\nDetected Colour: {hex_col}")
-                    logging.info(f"Rolled Aura: {auras[f"{hex_col},{hex_col2}"]["name"]} at time: {rnow.strftime("%d/%m/%Y %H:%M:%S")} using detected colour: {hex_col}")
+                    print(f"Rolled Aura: {auras[f"{hex_col},{hex_col2}"]["name"]}\nWith chances of 1/{auras[f"{hex_col},{hex_col2}"]["rarity"]}\nAt time: {rnow.strftime('%d/%m/%Y %H:%M:%S')}\nDetected Colour: {hex_col}")
                 else:
                     hex_col = "#3c66ff"
                     hex_col2 = "#******"
                     up = discord.File(f"{MACROPATH}/scr/screenshot_aura.png", filename="aura.png")
                     emb = discord.Embed(
                             title = f"Aura Rolled: {auras[f"{hex_col},{hex_col2}"]["name"]}",
-                            description = f"Rolled Aura: {auras[f"{hex_col},{hex_col2}"]["name"]}\nWith chances of 1/{auras[f"{hex_col},{hex_col2}"]["rarity"]}\nAt time: {rnow.strftime("%d/%m/%Y %H:%M:%S")}\nDetected Colour: {hex_col}",
+                            description = f"Rolled Aura: {auras[f"{hex_col},{hex_col2}"]["name"]}\nWith chances of 1/{auras[f"{hex_col},{hex_col2}"]["rarity"]}\nAt time: {rnow.strftime('%d/%m/%Y %H:%M:%S')}\nDetected Colour: {hex_col}",
                             colour = discord.Color.from_rgb(colour[0], colour[1], colour[2])
                     )
                     emb.set_image(url="attachment://aura.png")
@@ -1032,15 +1006,14 @@ async def on_aura_detection_cancel():
                         await log_channel.send(f"<@{settings["mention_id"]}>", embed=emb, file=up)
                     else:
                         await log_channel.send(embed=emb, file=up)
-                    print(f"Rolled Aura: {auras[f"{hex_col},{hex_col2}"]["name"]}\nWith chances of 1/{auras[f"{hex_col},{hex_col2}"]["rarity"]}\nAt time: {rnow.strftime("%d/%m/%Y %H:%M:%S")}\nDetected Colour: {hex_col}")
-                    logging.info(f"Rolled Aura: {auras[f"{hex_col},{hex_col2}"]["name"]} at time: {rnow.strftime("%d/%m/%Y %H:%M:%S")} using detected colour: {hex_col}")     
+                    print(f"Rolled Aura: {auras[f"{hex_col},{hex_col2}"]["name"]}\nWith chances of 1/{auras[f"{hex_col},{hex_col2}"]["rarity"]}\nAt time: {rnow.strftime('%d/%m/%Y %H:%M:%S')}\nDetected Colour: {hex_col}")
             elif hex_col2 == "#******":
                 auraimg = pag.screenshot(f"{MACROPATH}/scr/screenshot_aura.png")
                 await asyncio.sleep(1)
                 up = discord.File(f"{MACROPATH}/scr/screenshot_aura.png", filename="aura.png")
                 emb = discord.Embed(
                         title = f"Aura Rolled: {auras[f"{hex_col},{hex_col2}"]["name"]}",
-                        description = f"Rolled Aura: {auras[f"{hex_col},{hex_col2}"]["name"]}\nWith chances of 1/{auras[f"{hex_col},{hex_col2}"]["rarity"]}\nAt time: {rnow.strftime("%d/%m/%Y %H:%M:%S")}\nDetected Colour: {hex_col}",
+                        description = f"Rolled Aura: {auras[f"{hex_col},{hex_col2}"]["name"]}\nWith chances of 1/{auras[f"{hex_col},{hex_col2}"]["rarity"]}\nAt time: {rnow.strftime('%d/%m/%Y %H:%M:%S')}\nDetected Colour: {hex_col}",
                         colour = discord.Color.from_rgb(colour[0], colour[1], colour[2])
                 )
                 emb.set_image(url="attachment://aura.png")
@@ -1049,15 +1022,14 @@ async def on_aura_detection_cancel():
                     await log_channel.send(f"<@{settings["mention_id"]}>", embed=emb, file=up)
                 else:
                     await log_channel.send(embed=emb, file=up)
-                print(f"Rolled Aura: {auras[f"{hex_col},{hex_col2}"]["name"]}\nWith chances of 1/{auras[f"{hex_col},{hex_col2}"]["rarity"]}\nAt time: {rnow.strftime("%d/%m/%Y %H:%M:%S")}\nDetected Colour: {hex_col}")
-                logging.info(f"Rolled Aura: {auras[f"{hex_col},{hex_col2}"]["name"]} at time: {rnow.strftime("%d/%m/%Y %H:%M:%S")} using detected colour: {hex_col}")
+                print(f"Rolled Aura: {auras[f"{hex_col},{hex_col2}"]["name"]}\nWith chances of 1/{auras[f"{hex_col},{hex_col2}"]["rarity"]}\nAt time: {rnow.strftime('%d/%m/%Y %H:%M:%S')}\nDetected Colour: {hex_col}")
             else:
                 auraimg = pag.screenshot(f"{MACROPATH}/scr/screenshot_aura.png")
                 await asyncio.sleep(1)
                 up = discord.File(f"{MACROPATH}/scr/screenshot_aura.png", filename="aura.png")
                 emb = discord.Embed(
                     title = f"Aura Rolled: {auras[f"{hex_col},{hex_col2}"]["name"]}",
-                    description = f"Rolled Aura: {auras[f"{hex_col},{hex_col2}"]["name"]}\nWith chances of 1/{auras[f"{hex_col},{hex_col2}"]["rarity"]}\nAt time: {rnow.strftime("%d/%m/%Y %H:%M:%S")}\nDetected Colours: {hex_col}, {hex_col2}",
+                    description = f"Rolled Aura: {auras[f"{hex_col},{hex_col2}"]["name"]}\nWith chances of 1/{auras[f"{hex_col},{hex_col2}"]["rarity"]}\nAt time: {rnow.strftime('%d/%m/%Y %H:%M:%S')}\nDetected Colours: {hex_col}, {hex_col2}",
                     colour = discord.Color.from_rgb(colour[0], colour[1], colour[2])
                 )
                 emb.set_image(url="attachment://aura.png")
@@ -1066,11 +1038,9 @@ async def on_aura_detection_cancel():
                     await log_channel.send(f"<@{settings["mention_id"]}>", embed=emb, file=up)
                 else:
                     await log_channel.send(embed=emb, file=up)
-                print(f"Rolled Aura: {auras[f"{hex_col},{hex_col2}"]["name"]}\nWith chances of 1/{auras[f"{hex_col},{hex_col2}"]["rarity"]}\nAt time: {rnow.strftime("%d/%m/%Y %H:%M:%S")}\nDetected Colours: {hex_col}, {hex_col2}")
-                logging.info(f"Rolled Aura: {auras[f"{hex_col},{hex_col2}"]["name"]} at time: {rnow.strftime("%d/%m/%Y %H:%M:%S")} using detected colours: {hex_col}, {hex_col2}")
+                print(f"Rolled Aura: {auras[f"{hex_col},{hex_col2}"]["name"]}\nWith chances of 1/{auras[f"{hex_col},{hex_col2}"]["rarity"]}\nAt time: {rnow.strftime('%d/%m/%Y %H:%M:%S')}\nDetected Colours: {hex_col}, {hex_col2}")
         else:
-            print(f"Rolled Aura: {auras[f"{hex_col},{hex_col2}"]["name"]}\nWith chances of 1/{auras[f"{hex_col},{hex_col2}"]["rarity"]}\nAt time: {rnow.strftime("%d/%m/%Y %H:%M:%S")}\nDetected Colours: {hex_col}, {hex_col2}")
-            logging.info(f"Rolled Aura: {auras[f"{hex_col},{hex_col2}"]["name"]} at time: {rnow.strftime("%d/%m/%Y %H:%M:%S")} using detected colours: {hex_col}, {hex_col2}")
+            print(f"Rolled Aura: {auras[f"{hex_col},{hex_col2}"]["name"]}\nWith chances of 1/{auras[f"{hex_col},{hex_col2}"]["rarity"]}\nAt time: {rnow.strftime('%d/%m/%Y %H:%M:%S')}\nDetected Colours: {hex_col}, {hex_col2}")
         if int(auras[f"{hex_col},{hex_col2}"]["rarity"]) >= 1000000 and int(auras[f"{hex_col},{hex_col2}"]["rarity"]) <= 99999998:
             await asyncio.sleep(8)
         elif int(auras[f"{hex_col},{hex_col2}"]["rarity"]) >= 99999 and int(auras[f"{hex_col},{hex_col2}"]["rarity"]) <= 999999:
@@ -1094,7 +1064,6 @@ for filename in os.listdir(f"{MACROPATH}/plugins"):
     if filename.endswith(".py"):
         client.load_extension(f"plugins.{filename[:-3]}")
         print(f"Loaded plugin: {filename[:-3]}")
-        logging.info(f"Loaded plugin: {filename[:-3]}")
         _plugins.append(filename[:-3])
 
 client.run(settings["TOKEN"])

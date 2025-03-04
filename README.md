@@ -41,7 +41,6 @@ You can watch [this video guide](https://youtu.be/AKva_0biJuk) to help setup the
 # Common Issues:
 - Chromatic does not get detected: Chromatic is bugged, due to the amount of different colours there is only a very small chance that it will detect the Chromatic cutscene.
 - Nothing is working on my dual monitor setup: Make sure that Roblox is open on the monitor you marked as PRIMARY. You can check this by typing "Change my primary display" into the Windows search bar.
-- Microsoft Edge or some app on my Windows menu keeps opening when I use the macro. You can customise the time between actions by changing the `global_wait_time` setting in the settings.json file.
 - The macro does not work on X platform. The macro has only been tested on Windows and is designed with Windows 10 in mind. Windows 11 should run the same.
 - The macro freezes when trying to download the auras. You will have to manually download the auras. Click on the auras.json file, then press the download button. Open this path `%localappdata%\Baz's Macro\` and then copy the auras.json file there.
 ## If you are experiencing issues, please create a new issue so that it can be raised, solved and prevented from happening again.

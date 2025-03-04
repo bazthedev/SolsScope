@@ -226,7 +226,7 @@
         "name" : "Atlas",
         "rarity" : "360000000"
     },
-    "#0055ff,#000000": {
+    "#0055ff,#******": {
         "name" : "Abyssal Hunter",
         "rarity" : "400000000"
     },

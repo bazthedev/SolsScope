@@ -1,8 +1,8 @@
 #           Baz's Macro/SolsRNGBot
 #   A discord bot for macroing Sol's RNG on Roblox
-#   Version: 1.1.6 HOTFIX 1
+#   Version: 1.1.7
 #   https://github.com/bazthedev/SolsRNGBot
-#   
+#
 
 import os
 import discord
@@ -31,8 +31,8 @@ except ModuleNotFoundError:
 
 mkey = mk.MouseKey()
 MACROPATH = os.path.expandvars(r"%localappdata%\\Baz's Macro") # Windows Roaming Path
-LOCALVERSION = "1.1.6"
-DEFAULTSETTINGS = {"TOKEN": "", "__version__" :  LOCALVERSION, "log_channel_id": 0, "global_wait_time" : 1, "skip_dl": False, "mention" : True, "mention_id" : 0, "minimum_roll" : "99998", "minimum_ping" : "349999", "reset_aura" : "", "merchant_detection" : True, "send_mari" : True, "ping_mari" : False, "send_jester" : True, "ping_jester" : True, "auto_purchase_items" : {"Void Coin/Lucky Penny" : True}, "glitch_detector" : True, "ping_on_glitch" : True, "pop_in_glitch" : False, "auto_use_items_in_glitch": {"Heavenly Potion II" : {"use" : True, "amount" : 200}, "Fortune Potion III" : {"use" : True, "amount" : 1}, "Lucky Potion" : {"use" : True, "amount" : 10}, "Pumpkin" : {"use" : True, "amount" : 10}, "Haste Potion III" : {"use" : False, "amount" : 1}, "Warp Potion" : {"use" : True, "amount" : 1}, "Mixed Potion" : {"use" : True, "amount" : 10}, "Stella's Candle" : {"use" : True, "amount" : 1}, "Santa Claus Potion" : {"use" : True, "amount" : 5}}, "Hwachae" : {"use" : True}, "dreamspace_detector" : True, "ping_on_dreamspace" : True, "pop_in_dreamspace" : False, "auto_use_items_in_dreamspace" : {"Heavenly Potion II" : {"use" : False, "amount" : 1}, "Fortune Potion III" : {"use" : True, "amount" : 1}, "Lucky Potion" : {"use" : True, "amount" : 10}, "Pumpkin" : {"use" : True, "amount" : 10}, "Haste Potion III" : {"use" : False, "amount" : 1}, "Warp Potion" : {"use" : True, "amount" : 1}, "Mixed Potion" : {"use" : True, "amount" : 10}, "Stella's Candle" : {"use" : True, "amount" : 1}, "Santa Claus Potion" : {"use" : True, "amount" : 5}}, "Hwachae" : {"use" : True}, "auto_craft_mode" : False, "skip_auto_mode_warning" : False, "auto_craft_item" : {"Heavenly Potion I" : False, "Heavenly Potion II" : True, "Warp Potion" : False}, "auto_biome_randomizer" : False, "auto_strange_controller" : False, "edit_settings_mode" : False, "failsafe_key" : "ctrl+e", "merchant_detec_wait" : 0}
+LOCALVERSION = "1.1.7"
+DEFAULTSETTINGS = {"TOKEN": "", "__version__" :  LOCALVERSION, "log_channel_id": 0, "global_wait_time" : 1, "skip_dl": False, "mention" : True, "mention_id" : 0, "minimum_roll" : "99998", "minimum_ping" : "349999", "reset_aura" : "", "merchant_detection" : False, "send_mari" : True, "ping_mari" : False, "send_jester" : True, "ping_jester" : True, "auto_purchase_items" : {"Void Coin/Lucky Penny" : True}, "glitch_detector" : True, "ping_on_glitch" : True, "pop_in_glitch" : False, "auto_use_items_in_glitch": {"Heavenly Potion II" : {"use" : True, "amount" : 200}, "Fortune Potion III" : {"use" : True, "amount" : 1}, "Lucky Potion" : {"use" : True, "amount" : 10}, "Pumpkin" : {"use" : True, "amount" : 10}, "Haste Potion III" : {"use" : False, "amount" : 1}, "Warp Potion" : {"use" : True, "amount" : 1}, "Mixed Potion" : {"use" : True, "amount" : 10}, "Stella's Candle" : {"use" : True, "amount" : 1}, "Santa Claus Potion" : {"use" : True, "amount" : 5}}, "Hwachae" : {"use" : True}, "dreamspace_detector" : True, "ping_on_dreamspace" : True, "pop_in_dreamspace" : False, "auto_use_items_in_dreamspace" : {"Heavenly Potion II" : {"use" : False, "amount" : 1}, "Fortune Potion III" : {"use" : True, "amount" : 1}, "Lucky Potion" : {"use" : True, "amount" : 10}, "Pumpkin" : {"use" : True, "amount" : 10}, "Haste Potion III" : {"use" : False, "amount" : 1}, "Warp Potion" : {"use" : True, "amount" : 1}, "Mixed Potion" : {"use" : True, "amount" : 10}, "Stella's Candle" : {"use" : True, "amount" : 1}, "Santa Claus Potion" : {"use" : True, "amount" : 5}}, "Hwachae" : {"use" : True}, "auto_craft_mode" : False, "skip_auto_mode_warning" : False, "auto_craft_item" : {"Heavenly Potion I" : False, "Heavenly Potion II" : True, "Warp Potion" : False}, "auto_biome_randomizer" : False, "auto_strange_controller" : False, "edit_settings_mode" : True, "failsafe_key" : "ctrl+e", "merchant_detec_wait" : 0}
 valid_settings_keys = ["TOKEN", "__version__", "log_channel_id", "global_wait_time", "skip_dl", "mention", "mention_id", "minimum_roll", "minimum_ping", "reset_aura", "merchant_detection", "send_mari", "ping_mari", "send_jester", "ping_jester", "auto_purchase_items", "glitch_detector", "ping_on_glitch", "pop_in_glitch", "auto_use_items_in_glitch", "dreamspace_detector", "ping_on_dreamspace", "pop_in_dreamspace", "auto_use_items_in_dreamspace", "auto_craft_mode", "skip_auto_mode_warning", "auto_craft_item", "auto_biome_randomizer", "auto_strange_controller", "edit_settings_mode", "failsafe_key", "merchant_detec_wait"]
 
 if not os.path.exists(f"{MACROPATH}"):
@@ -148,6 +148,38 @@ def get_latest_hovertext(logs_dir):
     
     return last_hover_text
 
+def get_latest_equipped_aura(logs_dir):
+    log_files = glob.glob(os.path.join(logs_dir, "*.log"))
+    if not log_files:
+        return None
+
+    latest_log_file = max(log_files, key=os.path.getctime)
+    try:
+        temp_file = os.path.join(tempfile.gettempdir(), "solsrngbot_aura_detection.log")
+        shutil.copy2(latest_log_file, temp_file)
+    except PermissionError:
+        return None
+
+    json_pattern = re.compile(r'\{.*\}')
+    
+    try:
+        with open(temp_file, "r", encoding="utf-8") as file:
+            for line in reversed(file.readlines()):
+                match = json_pattern.search(line)
+                if match:
+                    try:
+                        json_data = json.loads(match.group())
+                        aura = json_data.get("data", {}).get("state", "").replace("Equipped \"", "").replace("\"", "")
+                        if aura:
+                            aura = aura.replace("_", ": ")
+                            return aura
+                    except json.JSONDecodeError:
+                        continue
+    except Exception:
+        return None
+    
+    return None
+
 migrate_settings()
 
 if not os.path.exists(f"{MACROPATH}/scr/"):
@@ -249,15 +281,15 @@ validate_settings()
 
 mkey.enable_failsafekill(settings["failsafe_key"])
 
-if settings["edit_settings_mode"]:
+if settings["edit_settings_mode"] or settings["TOKEN"] == "":
     settings["edit_settings_mode"] = False
+    if settings["TOKEN"] == "":
+        print("You need to add your bot token between the \"\" and then save the file.")
     update_settings(settings)
     reload_settings()
     os.system(f"notepad {MACROPATH}/settings.json")
     exit("Opened Macro Settings")
 
-if settings["TOKEN"] == "":
-    exit("You need to add your bot token in the settings.json file")
 if not settings["skip_dl"]:
     get_auras()
 
@@ -349,14 +381,14 @@ async def glitch_detector():
         popping = True
         storimg = pag.screenshot(f"{MACROPATH}/scr/screenshot_glitch.png")
         up = discord.File(f"{MACROPATH}/scr/screenshot_glitch.png", filename="glitch.png")
-        print("Glitch biome started")    
+        print("Glitch Biome started")    
         emb = discord.Embed(
                 title="GLITCH BIOME DETECTED",
                 description=f"A GLITCH biome was detected at {rnow.strftime('%d/%m/%Y %H:%M:%S')}",
                 colour=discord.Colour.from_rgb(101, 255, 101)
         )
         if settings["ping_on_glitch"]:
-            await log_channel.send(f"<@{settings["mention_id"]}>",embed=emb, file=up)
+            await log_channel.send("@everyone", embed=emb, file=up)
         else:
             await log_channel.send(embed=emb, file=up)
         if settings["pop_in_glitch"] and popping:
@@ -390,7 +422,7 @@ async def glitch_detector():
     elif previous_biome == "GLITCHED" and latest_hovertext != "GLITCHED":
         previous_biome = None
         merchant_detection.start()
-        print("Glitch iome ended")
+        print("Glitch Biome ended")
         emb = discord.Embed(
                 title="Glitch Biome Ended",
                 description=f"A GLITCH biome ended at {rnow.strftime('%d/%m/%Y %H:%M:%S')}",
@@ -411,14 +443,14 @@ async def dreamspace_detector():
         popping = True
         storimg = pag.screenshot(f"{MACROPATH}/scr/screenshot_dreamspace.png")
         up = discord.File(f"{MACROPATH}/scr/screenshot_dreamspace.png", filename="dreamspace.png")
-        print("Dreamspace biome started")    
+        print("Dreamspace Biome started")    
         emb = discord.Embed(
                 title="DREAMSPACE BIOME DETECTED",
                 description=f"A DREAMSPACE biome was detected at {rnow.strftime('%d/%m/%Y %H:%M:%S')}",
                 colour=discord.Colour.from_rgb(255, 105, 180)
         )
         if settings["ping_on_dreamspace"]:
-            await log_channel.send(f"<@{settings["mention_id"]}>",embed=emb, file=up)
+            await log_channel.send("<@everyone>",embed=emb, file=up)
         else:
             await log_channel.send(embed=emb, file=up)
         if settings["pop_in_dreamspace"] and popping:
@@ -452,7 +484,7 @@ async def dreamspace_detector():
     elif previous_biome == "DREAMSPACE" and latest_hovertext != "DREAMSPACE":
         merchant_detection.start()
         previous_biome = None
-        print("Dreamspace biome ended")
+        print("Dreamspace Biome ended")
         emb = discord.Embed(
                 title="Dreamspace Biome Ended",
                 description=f"A DREAMSPACE biome ended at {rnow.strftime('%d/%m/%Y %H:%M:%S')}",
@@ -476,6 +508,11 @@ async def strange_controller():
 async def get_biome(ctx):
     latest_hovertext = get_latest_hovertext(rblx_log_dir)
     await ctx.send(f"The current biome is: {latest_hovertext}")
+
+@client.command()
+async def get_aura(ctx):
+    current_aura = get_latest_equipped_aura(rblx_log_dir)
+    await ctx.send(f"The currently equipped aura is: {current_aura}")
 
 @client.command()
 @commands.is_owner()
@@ -577,6 +614,50 @@ async def inv_scr(ctx):
     await asyncio.sleep(settings["global_wait_time"])
     mkey.left_click_xy_natural(close_pos[0], close_pos[1])
     await ctx.send(file=discord.File(f"{MACROPATH}/scr/screenshot_inventory.png"))
+
+@client.command()
+@commands.is_owner()
+async def get_settings(ctx):
+    settings_str = """"""
+    for _ in settings:
+        if _ == "TOKEN" or _ == "auto_use_items_in_glitch" or _ == "auto_use_items_in_dreamspace":
+            continue
+        settings_str += f"Setting: {_}; Value: {settings[_]}\n"
+    await ctx.send(f"```\n{settings_str}\n```")
+
+@client.command()
+@commands.is_owner()
+async def enable(ctx, setting):
+    if setting not in valid_settings_keys:
+        await ctx.send("That setting does not exist.")
+        return
+    if "bool" not in str(type(settings[setting])):
+        await ctx.send("That setting cannot be toggled.")
+        return
+    if settings[setting] == True:
+        await ctx.send("This setting is already on.")
+        return
+    settings[setting] = True
+    update_settings(settings)
+    reload_settings()
+    await ctx.send(f"{setting} has been enabled.")
+
+@client.command()
+@commands.is_owner()
+async def disable(ctx, setting):
+    if setting not in valid_settings_keys:
+        await ctx.send("That setting does not exist.")
+        return
+    if "bool" not in str(type(settings[setting])):
+        await ctx.send("That setting cannot be toggled.")
+        return
+    if settings[setting] == False:
+        await ctx.send("This setting is already off.")
+        return
+    settings[setting] = False
+    update_settings(settings)
+    reload_settings()
+    await ctx.send(f"{setting} has been disabled.")
 
 @client.command()
 async def purchase_item(ctx, item : int):
@@ -800,6 +881,9 @@ async def reset_aura():
 
 @reset_aura.after_loop
 async def on_reset_aura_cancel():
+    current_aura = get_latest_equipped_aura(rblx_log_dir)
+    if current_aura == settings["reset_aura"]:
+        return    
     mkey.left_click_xy_natural(aura_button_pos[0], aura_button_pos[1])
     await asyncio.sleep(settings["global_wait_time"])
     mkey.left_click_xy_natural(search_pos[0], search_pos[1])

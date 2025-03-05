@@ -6,7 +6,10 @@ import asyncio
 import pyautogui as pag
 import time
 
-with open("settings.json", "r") as f:
+
+MACROPATH = os.path.expandvars(r"%localappdata%\\Baz's Macro") # Windows Roaming Path
+
+with open(f"{MACROPATH}/settings.json", "r") as f:
     settings = json.load(f)
 
 class Remote(commands.Cog):
@@ -15,11 +18,11 @@ class Remote(commands.Cog):
         self.client = client
         self.name = type(self).__name__
         self.cfname = f"{self.name.lower()}.json"
-        if not os.path.exists(f"./plugins/config/{self.cfname}"):
-            x = open(f"./plugins/config/{self.cfname}", "w")
-            x.write('{"__version__" : "1.0.0", "author" : "bazthedev"}')
+        if not os.path.exists(f"{MACROPATH}/plugins/config/{self.cfname}"):
+            x = open(f"{MACROPATH}/plugins/config/{self.cfname}", "w")
+            x.write('{"__version__" : "1.0.1", "author" : "bazthedev"}')
             x.close()
-        with open(f"./plugins/config/{self.cfname}", "r") as c:
+        with open(f"{MACROPATH}/plugins/config/{self.cfname}", "r") as c:
             self.config = json.load(c)
 
     @commands.command()
@@ -39,11 +42,11 @@ class Remote(commands.Cog):
     @commands.command()
     @commands.is_owner()
     async def scr(self, ctx):
-        if os.path.exists("./scr/screenshot.png"):
-            os.remove("./scr/screenshot.png")
-            await asyncio.sleep(1)
-        img = pag.screenshot("./scr/screenshot.png", allScreens=True)
-        await ctx.send(file=discord.File("./scr/screenshot.png"))
+        if os.path.exists("{MACROPATH}/scr/screenshot.png"):
+            os.remove("{MACROPATH}/scr/screenshot.png")
+            await asyncio.sleep(0.2)
+        img = pag.screenshot("{MACROPATH}/scr/screenshot.png", allScreens=True)
+        await ctx.send(file=discord.File("{MACROPATH}/scr/screenshot.png"))
 
 def setup(client):
     client.add_cog(Remote(client))

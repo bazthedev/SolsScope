@@ -3,7 +3,9 @@ from discord.ext import commands
 import json
 import os
 
-with open("settings.json", "r") as f:
+MACROPATH = os.path.expandvars(r"%localappdata%\\Baz's Macro") # Windows Roaming Path
+
+with open(f"{MACROPATH}/settings.json", "r") as f:
     settings = json.load(f)
 
 class Template(commands.Cog):
@@ -12,11 +14,11 @@ class Template(commands.Cog):
         self.client = client
         self.name = type(self).__name__
         self.cfname = f"{self.name.lower()}.json"
-        if not os.path.exists(f"./plugins/config/{self.cfname}"):
-            x = open(f"./plugins/config/{self.cfname}", "w")
+        if not os.path.exists(f"{MACROPATH}/plugins/config/{self.cfname}"):
+            x = open(f"{MACROPATH}/plugins/config/{self.cfname}", "w")
             x.write('{"__version__" : "1.0.0", "author" : "your_github_username"}')
             x.close()
-        with open(f"./plugins/config/{self.cfname}", "r") as c:
+        with open(f"{MACROPATH}/plugins/config/{self.cfname}", "r") as c:
             self.config = json.load(c)
 
 def setup(client):

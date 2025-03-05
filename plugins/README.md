@@ -17,6 +17,8 @@ with open(f"./plugins/config/{self.cfname}", "r") as c:
 import json
 import os
 
+MACROPATH = os.path.expandvars(r"%localappdata%\\Baz's Macro")
+
 with open("settings.json", "r") as f:
     settings = json.load(f)
 ```

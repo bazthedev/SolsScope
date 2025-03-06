@@ -26,6 +26,9 @@
 # Video Guide
 You can watch [this video guide](https://youtu.be/AKva_0biJuk) to help setup the bot.
 
+# Support Server
+If you need help with the macro, please join [this server](https://discord.com/invite/y6NV89Na) and message Baz or send a message in the support thread.
+
 # Quick Start
 1. Download the [latest release](https://github.com/bazthedev/SolsRNGBot/releases/latest)
 2. Make sure you have Python installed. I am using version 3.12 but you should be able to use any version 3.12 or newer.

@@ -42,11 +42,11 @@ class Remote(commands.Cog):
     @commands.command()
     @commands.is_owner()
     async def scr(self, ctx):
-        if os.path.exists("{MACROPATH}/scr/screenshot.png"):
-            os.remove("{MACROPATH}/scr/screenshot.png")
+        if os.path.exists(f"{MACROPATH}/scr/screenshot.png"):
+            os.remove(f"{MACROPATH}/scr/screenshot.png")
             await asyncio.sleep(0.2)
-        img = pag.screenshot("{MACROPATH}/scr/screenshot.png", allScreens=True)
-        await ctx.send(file=discord.File("{MACROPATH}/scr/screenshot.png"))
+        img = pag.screenshot(f"{MACROPATH}/scr/screenshot.png", allScreens=True)
+        await ctx.send(file=discord.File(f"{MACROPATH}/scr/screenshot.png"))
 
 def setup(client):
     client.add_cog(Remote(client))

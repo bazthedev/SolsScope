@@ -52,8 +52,3 @@ If you need help with the macro, please join [this server](https://discord.com/i
 ## If you are experiencing issues, please create a new issue so that it can be raised, solved and prevented from happening again. If there is no update, then turn skip_dl to true in settings.
 
 # You can read more about how the bot works and the things you can do with it [here](https://github.com/bazthedev/SolsRNGBot/wiki)
-
-# Help with the project:
-## If you want to help to implement some features, then please reach out and I would be happy to add you as a contributor to help!
-## If anyone has any of the auras listed below and is willing to help add them to the aura database, then please reach out to me!
-- Matrix: Reality

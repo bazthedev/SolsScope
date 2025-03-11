@@ -3,7 +3,7 @@
 # Features:
 - Manual screenshots of game, storage, and inventory
 - Autokick prevention
-- Aura Detection
+- Aura Detection (two different methods)
 - Custom Plugins to add custom commands
 - Automatic Updating of New Auras
 - Mention on aura roll
@@ -11,14 +11,17 @@
 - Compatibility with all kinds of monitor sizes
 - Matrix: Overdrive or Overture: History Detection
 - Merchant Detection and sending a screenshot with their stock (Merchant Teleporter is required)
-- Mari/Jester Detection. 
-- Automatic crafting of potions
+- Mari detection (jester detection is unfinished)
+- Automatic crafting of multiple potions
 - Purchase items from merchant via command
 - Glitch and Dreamspace Biome Detection
 - Auto Pop in Glitch or Dreamspace (untested)
 - Automatic Biome Randomizer/Strange Controller uses
 
 # TBA:
+- Finished Jester detection.
+- Integration with Yay joins to control the macro when the sniper gets a hit.
+- A window to allow users to configure settings easier.
 - Auto Purchase from merchant (???) will start only for void coins. If you do not have Merchant Teleporter, then this will not work.
 - You will be able to choose to only buy items from Mari, Jester or both.
 - Create a feature request if you want something to be added!

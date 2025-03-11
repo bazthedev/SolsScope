@@ -1,6 +1,6 @@
 #           Baz's Macro/SolsRNGBot
 #   A discord bot for macroing Sol's RNG on Roblox
-#   Version: 1.1.7
+#   Version: 1.1.8
 #   https://github.com/bazthedev/SolsRNGBot
 #
 
@@ -30,10 +30,10 @@ except ModuleNotFoundError:
     exit("Mousekey should be installed, try running the macro again now.")
 
 mkey = mk.MouseKey()
-MACROPATH = os.path.expandvars(r"%localappdata%\\Baz's Macro") # Windows Roaming Path
-LOCALVERSION = "1.1.7"
-DEFAULTSETTINGS = {"TOKEN": "", "__version__" :  LOCALVERSION, "log_channel_id": 0, "global_wait_time" : 1, "skip_dl": False, "mention" : True, "mention_id" : 0, "minimum_roll" : "99998", "minimum_ping" : "349999", "reset_aura" : "", "merchant_detection" : False, "send_mari" : True, "ping_mari" : False, "send_jester" : True, "ping_jester" : True, "auto_purchase_items" : {"Void Coin/Lucky Penny" : True}, "glitch_detector" : True, "ping_on_glitch" : True, "pop_in_glitch" : False, "auto_use_items_in_glitch": {"Heavenly Potion II" : {"use" : True, "amount" : 200}, "Fortune Potion III" : {"use" : True, "amount" : 1}, "Lucky Potion" : {"use" : True, "amount" : 10}, "Pumpkin" : {"use" : True, "amount" : 10}, "Haste Potion III" : {"use" : False, "amount" : 1}, "Warp Potion" : {"use" : True, "amount" : 1}, "Mixed Potion" : {"use" : True, "amount" : 10}, "Stella's Candle" : {"use" : True, "amount" : 1}, "Santa Claus Potion" : {"use" : True, "amount" : 5}}, "Hwachae" : {"use" : True}, "dreamspace_detector" : True, "ping_on_dreamspace" : True, "pop_in_dreamspace" : False, "auto_use_items_in_dreamspace" : {"Heavenly Potion II" : {"use" : False, "amount" : 1}, "Fortune Potion III" : {"use" : True, "amount" : 1}, "Lucky Potion" : {"use" : True, "amount" : 10}, "Pumpkin" : {"use" : True, "amount" : 10}, "Haste Potion III" : {"use" : False, "amount" : 1}, "Warp Potion" : {"use" : True, "amount" : 1}, "Mixed Potion" : {"use" : True, "amount" : 10}, "Stella's Candle" : {"use" : True, "amount" : 1}, "Santa Claus Potion" : {"use" : True, "amount" : 5}}, "Hwachae" : {"use" : True}, "auto_craft_mode" : False, "skip_auto_mode_warning" : False, "auto_craft_item" : {"Heavenly Potion I" : False, "Heavenly Potion II" : True, "Warp Potion" : False}, "auto_biome_randomizer" : False, "auto_strange_controller" : False, "edit_settings_mode" : True, "failsafe_key" : "ctrl+e", "merchant_detec_wait" : 0}
-valid_settings_keys = ["TOKEN", "__version__", "log_channel_id", "global_wait_time", "skip_dl", "mention", "mention_id", "minimum_roll", "minimum_ping", "reset_aura", "merchant_detection", "send_mari", "ping_mari", "send_jester", "ping_jester", "auto_purchase_items", "glitch_detector", "ping_on_glitch", "pop_in_glitch", "auto_use_items_in_glitch", "dreamspace_detector", "ping_on_dreamspace", "pop_in_dreamspace", "auto_use_items_in_dreamspace", "auto_craft_mode", "skip_auto_mode_warning", "auto_craft_item", "auto_biome_randomizer", "auto_strange_controller", "edit_settings_mode", "failsafe_key", "merchant_detec_wait"]
+MACROPATH = os.path.expandvars(r"%localappdata%\Baz's Macro") # Windows Roaming Path
+LOCALVERSION = "1.1.8"
+DEFAULTSETTINGS = {"TOKEN": "", "__version__" :  LOCALVERSION, "log_channel_id": 0, "global_wait_time" : 1, "skip_dl": False, "mention" : True, "mention_id" : 0, "minimum_roll" : "99998", "minimum_ping" : "349999", "reset_aura" : "", "merchant_detection" : False, "send_mari" : True, "ping_mari" : False, "send_jester" : True, "ping_jester" : True, "auto_purchase_items" : {"Void Coin/Lucky Penny" : True}, "glitch_detector" : True, "ping_on_glitch" : True, "pop_in_glitch" : False, "auto_use_items_in_glitch": {"Heavenly Potion II" : {"use" : True, "amount" : 200}, "Fortune Potion III" : {"use" : True, "amount" : 1}, "Lucky Potion" : {"use" : True, "amount" : 10}, "Pumpkin" : {"use" : True, "amount" : 10}, "Haste Potion III" : {"use" : False, "amount" : 1}, "Warp Potion" : {"use" : True, "amount" : 1}, "Transcended Potion" : {"use" : False, "amount" : 1}, "Mixed Potion" : {"use" : True, "amount" : 10}, "Stella's Candle" : {"use" : True, "amount" : 1}, "Santa Claus Potion" : {"use" : True, "amount" : 5}, "Hwachae" : {"use" : True}}, "dreamspace_detector" : True, "ping_on_dreamspace" : True, "pop_in_dreamspace" : False, "auto_use_items_in_dreamspace" : {"Heavenly Potion II" : {"use" : False, "amount" : 1}, "Fortune Potion III" : {"use" : True, "amount" : 1}, "Lucky Potion" : {"use" : True, "amount" : 10}, "Pumpkin" : {"use" : True, "amount" : 10}, "Haste Potion III" : {"use" : False, "amount" : 1}, "Warp Potion" : {"use" : True, "amount" : 1}, "Transcended Potion" : {"use" : False, "amount" : 1}, "Mixed Potion" : {"use" : True, "amount" : 10}, "Stella's Candle" : {"use" : True, "amount" : 1}, "Santa Claus Potion" : {"use" : True, "amount" : 5}, "Hwachae" : {"use" : True, "amount" : 1}}, "auto_craft_mode" : False, "skip_auto_mode_warning" : False, "auto_craft_item" : {"Heavenly Potion I" : False, "Heavenly Potion II" : True, "Warp Potion" : False}, "auto_biome_randomizer" : False, "auto_strange_controller" : False, "edit_settings_mode" : True, "failsafe_key" : "ctrl+e", "merchant_detec_wait" : 0, "ps_server_link" : "", "legacy_aura_detection" : False}
+valid_settings_keys = ["TOKEN", "__version__", "log_channel_id", "global_wait_time", "skip_dl", "mention", "mention_id", "minimum_roll", "minimum_ping", "reset_aura", "merchant_detection", "send_mari", "ping_mari", "send_jester", "ping_jester", "auto_purchase_items", "glitch_detector", "ping_on_glitch", "pop_in_glitch", "auto_use_items_in_glitch", "dreamspace_detector", "ping_on_dreamspace", "pop_in_dreamspace", "auto_use_items_in_dreamspace", "auto_craft_mode", "skip_auto_mode_warning", "auto_craft_item", "auto_biome_randomizer", "auto_strange_controller", "edit_settings_mode", "failsafe_key", "merchant_detec_wait", "ps_server_link", "legacy_aura_detection"]
 
 if not os.path.exists(f"{MACROPATH}"):
     os.mkdir(MACROPATH)
@@ -43,9 +43,15 @@ if not os.path.isfile(f"{MACROPATH}/settings.json"):
         json.dump(DEFAULTSETTINGS, f, indent=4)
 
 def get_auras():
-    print("Downloading Aura List")
+    print("Downloading Legacy Aura List")
     dl = requests.get("https://raw.githubusercontent.com/bazthedev/SolsRNGBot/main/auras.json")
     f = open(f"{MACROPATH}/auras.json", "wb")
+    f.write(dl.content)
+    f.close()
+    print("Downloaded Legacy Aura List")
+    print("Downloading Aura List")
+    dl = requests.get("https://raw.githubusercontent.com/bazthedev/SolsRNGBot/main/auras_new.json")
+    f = open(f"{MACROPATH}/auras_new.json", "wb")
     f.write(dl.content)
     f.close()
     print("Downloaded Aura List")
@@ -56,6 +62,10 @@ def update_settings(settings):
 
 def rgb2hex(r,g,b):
     return "#{:02x}{:02x}{:02x}".format(r,g,b)
+
+def hex2rgb(_hex):
+    _hex = _hex.lstrip("#")
+    return tuple(int(_hex[i:i+2], 16) for i in (0, 2, 4))
 
 def reload_settings():
     global settings
@@ -169,6 +179,8 @@ def get_latest_equipped_aura(logs_dir):
                 if match:
                     try:
                         json_data = json.loads(match.group())
+                        if json_data.get("data", {}).get("state", "") == "In Main Menu":
+                            return "In Main Menu"
                         aura = json_data.get("data", {}).get("state", "").replace("Equipped \"", "").replace("\"", "")
                         if aura:
                             aura = aura.replace("_", ": ")
@@ -240,12 +252,19 @@ craft_btn_pos = ((764 * scale_w), (764 * scale_h))
 hp1_pos_potions = ((1064 * scale_w), (840 * scale_h))
 hp1_pos_celestial = ((1064 * scale_w), (1024 * scale_h))
 hp2_pos_potions = ((1064 * scale_w), (910 * scale_h))
+auto_btn_pos = ((940 * scale_w), (762 * scale_h))
+auto_mode_swap = 0
+auto_craft_index = 3
+hp1_recipe_pos = ((1516 * scale_w), (684 * scale_h))
+hp2_recipe_pos = ((1516 * scale_w), (836 * scale_h))
+warp_recipe_pos = ((1516 * scale_w), (980 * scale_h))
 merchant_face_pos_1 = (int(841 * scale_w), int(1056 * scale_h))
 merchant_face_pos_2 = (int(855 * scale_w), int(1063 * scale_h))
 mari_cols = ["#767474", "#767476", "#757474", "#7c7c7c", "#7c7a7c", "#7a7878", "#787678", "#787878"]
-jester_cols = ["#e2e2e2", "#e0e0e0"]
-rblx_log_dir = os.path.expandvars(r"%localappdata%\\Roblox\\logs") # This is for Windows users only. If you are on a different OS, please change this to either the Roblox logs directory, or leave glitch/dreamspace detection as disabled
+jester_cols = ["#e2e2e2", "#e1e1e1", "#e0e0e0"]
+rblx_log_dir = os.path.expandvars(r"%localappdata%\Roblox\logs") # This is for Windows users only. If you are on a different OS, please change this to either the Roblox logs directory, or leave glitch/dreamspace detection as disabled
 previous_biome = None
+previous_aura = None
 popping = False
 _plugins = []
 auto_purchase = {"Void Coin/Lucky Penny": ["#ff92fe", "#ff9e4e"]}
@@ -261,8 +280,6 @@ if not os.path.exists(f"{MACROPATH}/settings.json"):
     exit("Opened Macro Settings")
 
 reload_settings()
-
-
 
 if settings["__version__"] < LOCALVERSION:
     settings["__version__"] = LOCALVERSION
@@ -293,8 +310,15 @@ if settings["edit_settings_mode"] or settings["TOKEN"] == "":
 if not settings["skip_dl"]:
     get_auras()
 
-with open(f"{MACROPATH}/auras.json", "r") as f:
-    auras = json.load(f)
+if not os.path.exists(f"{MACROPATH}/auras.json") or not os.path.exists(f"{MACROPATH}/auras_new.json"):
+    get_auras()
+
+if settings["legacy_aura_detection"]:
+    with open(f"{MACROPATH}/auras.json", "r") as f:
+        auras = json.load(f)
+else:
+    with open(f"{MACROPATH}/auras_new.json", "r") as f:
+        auras = json.load(f)
 
 __version__ = settings["__version__"]
 
@@ -304,20 +328,17 @@ async def on_ready():
     print(f"Started at {now.strftime('%d/%m/%Y %H:%M:%S')} running v{__version__} using local version {LOCALVERSION}")
     await client.change_presence(activity=discord.Game(name=f"bazthedev/SolsRNGBot v{LOCALVERSION}"))
     if settings["auto_craft_mode"] and not settings["merchant_detection"]:
-        crafts = []
-        for item in settings["auto_craft_item"]:
+        crafts = ""
+        for item in settings["auto_craft_item"].keys():
             if settings["auto_craft_item"][item]:
-                crafts.append(item)        
-        if len(crafts) > 1 or len(crafts) < 1:
-            print("You can only auto craft one item at a time, please rerun the program with ONE item from the list selected.")
-            exit("Please select one item from the list")        
+                crafts += f"{item}: {settings['auto_craft_item'][item]}\n"
         print("[WARNING] Auto Craft Mode is on. You will not be able to use certain features whilst this settings is on.")
-        print(f"The item you are automatically crafting is {crafts[0]}")
+        print(f"The item(s) you are automatically crafting are:\n{crafts}")
         if not settings["skip_auto_mode_warning"]:
-            print("Please ensure that you are on the craft screen for the item you want and have selected Auto mode for it in the craft menu. When you have done this, please press enter.")
+            print("Please ensure that you are ostanding next to the cauldran so that you can see the \"f\" prompt. When you have done this, please press enter.")
             input("")
         else:
-            print("Please ensure that you are on the craft screen for the item you want and have selected Auto mode for it in the craft menu.")
+            print("Please ensure that you are ostanding next to the cauldran so that you can see the \"f\" prompt.")
         if settings["reset_aura"] != "":
             settings["reset_aura"] = ""
             update_settings(settings)
@@ -326,15 +347,16 @@ async def on_ready():
         await asyncio.sleep(5)
         auto_craft.start()
     else:
-        keep_alive.start()
-        print("Started Autokick Prevention")
-        await asyncio.sleep(((settings["global_wait_time"] * 7) + 0.7))
+        if settings["log_channel_id"] != 0:
+            keep_alive.start()
+            print("Started Autokick Prevention")
+            await asyncio.sleep(((settings["global_wait_time"] * 7) + 0.7))
     if settings["log_channel_id"] != 0:
         if settings["auto_craft_mode"] and not settings["merchant_detection"]:
             log_channel = client.get_channel(settings["log_channel_id"])
             emb = discord.Embed(
                 title="Bot has started",
-                description=f"Mode: Auto Craft\nAuto Craft item: {crafts[0]}\nStarted at {now.strftime('%d/%m/%Y %H:%M:%S')}"
+                description=f"Mode: Auto Craft\nAuto Craft item(s):\n{crafts}\nStarted at {now.strftime('%d/%m/%Y %H:%M:%S')}"
             )
             emb.set_footer(text=f"bazthedev/SolsRNGBot v{LOCALVERSION}")
             await log_channel.send(embed=emb)
@@ -346,8 +368,12 @@ async def on_ready():
             )
             emb.set_footer(text=f"bazthedev/SolsRNGBot v{LOCALVERSION}")
             await log_channel.send(embed=emb)
-        aura_detection.start()
-        print("Started Aura Detection")
+        if settings["legacy_aura_detection"]:
+            legacy_aura_detection.start()
+            print("Started Legacy Aura Detection")
+        else:
+            aura_detection.start()
+            print("Started Aura Detection")
         if settings["glitch_detector"]:
             glitch_detector.start()
             print("Started Glitch Biome Detection")
@@ -368,6 +394,7 @@ async def on_ready():
             await asyncio.sleep((settings["global_wait_time"] * 50))
         merchant_detection.start()
         print("Started Merchant Detection")
+    print(f"Started SolsRNGBot v{LOCALVERSION}")
     
 @tasks.loop(seconds=0)
 async def glitch_detector():
@@ -392,6 +419,8 @@ async def glitch_detector():
         else:
             await log_channel.send(embed=emb, file=up)
         if settings["pop_in_glitch"] and popping:
+            if settings["auto_craft_mode"] and not settings["merchant_detection"]:
+                auto_craft.stop()
             popping = False
             mkey.left_click_xy_natural(menu_btn_pos[0], menu_btn_pos[1])
             await asyncio.sleep(settings["global_wait_time"])
@@ -417,12 +446,14 @@ async def glitch_detector():
                     to_use.append(buff)
             for item in to_use:
                     await use_item(item, settings["auto_use_items_in_glitch"][item]["amount"], True)
+            if settings["auto_craft_mode"] and not settings["merchant_detection"]:
+                auto_craft.start()
         else:
             popping = False
     elif previous_biome == "GLITCHED" and latest_hovertext != "GLITCHED":
         previous_biome = None
         merchant_detection.start()
-        print("Glitch Biome ended")
+        print("Glitch biome ended")
         emb = discord.Embed(
                 title="Glitch Biome Ended",
                 description=f"A GLITCH biome ended at {rnow.strftime('%d/%m/%Y %H:%M:%S')}",
@@ -454,6 +485,8 @@ async def dreamspace_detector():
         else:
             await log_channel.send(embed=emb, file=up)
         if settings["pop_in_dreamspace"] and popping:
+            if settings["auto_craft_mode"] and not settings["merchant_detection"]:
+                auto_craft.stop()
             popping = False
             mkey.left_click_xy_natural(menu_btn_pos[0], menu_btn_pos[1])
             await asyncio.sleep(settings["global_wait_time"])
@@ -479,6 +512,8 @@ async def dreamspace_detector():
                     to_use.append(buff)
             for item in to_use:
                     await use_item(item, settings["auto_use_items_in_dreamspace"][item]["amount"], True)
+            if settings["auto_craft_mode"] and not settings["merchant_detection"]:
+                auto_craft.start()
         else:
             popping = False
     elif previous_biome == "DREAMSPACE" and latest_hovertext != "DREAMSPACE":
@@ -512,6 +547,9 @@ async def get_biome(ctx):
 @client.command()
 async def get_aura(ctx):
     current_aura = get_latest_equipped_aura(rblx_log_dir)
+    if current_aura == "In Main Menu":
+        await ctx.send("Currently in the main menu.")
+        return
     await ctx.send(f"The currently equipped aura is: {current_aura}")
 
 @client.command()
@@ -576,7 +614,8 @@ async def mode(ctx):
 @commands.is_owner()
 async def stop(ctx):
     await ctx.send("Manual stop initiated")
-    aura_detection.stop()
+    if settings["legacy_aura_detection"]:
+        legacy_aura_detection.stop()
     keep_alive.stop()
     await client.close()
     print("Aw dang it")
@@ -660,7 +699,8 @@ async def disable(ctx, setting):
     await ctx.send(f"{setting} has been disabled.")
 
 @client.command()
-async def purchase_item(ctx, item : int):
+@commands.is_owner()
+async def purchase_item(ctx, item : int, amount = 25):
     if not settings["merchant_detection"]:
         await ctx.send("Merchant Detection is disabled. Please enable it to use this feature.")
         return
@@ -670,12 +710,17 @@ async def purchase_item(ctx, item : int):
     if item > 5 or item < 1:
         await ctx.send("A merchant only sells 5 items at a time")
         return
+    try:
+        int(amount)
+    except Exception:
+        await ctx.send("You need to provide a number for items to buy.")
+        return
     if item == 1:
         mkey.left_click_xy_natural(merch_item_pos_1_purchase[0], merch_item_pos_1_purchase[1])
         await asyncio.sleep(settings["global_wait_time"])
         mkey.left_click_xy_natural(quantity_btn_pos[0], quantity_btn_pos[1])
         await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.type("25")
+        _keyboard.type(str(amount))
         await asyncio.sleep(settings["global_wait_time"])
         mkey.left_click_xy_natural(purchase_btn_pos[0], purchase_btn_pos[1])
         await asyncio.sleep(settings["global_wait_time"])
@@ -690,7 +735,7 @@ async def purchase_item(ctx, item : int):
         await asyncio.sleep(settings["global_wait_time"])
         mkey.left_click_xy_natural(quantity_btn_pos[0], quantity_btn_pos[1])
         await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.type("25")
+        _keyboard.type(str(amount))
         await asyncio.sleep(settings["global_wait_time"])
         mkey.left_click_xy_natural(purchase_btn_pos[0], purchase_btn_pos[1])
         await asyncio.sleep(settings["global_wait_time"])
@@ -705,7 +750,7 @@ async def purchase_item(ctx, item : int):
         await asyncio.sleep(settings["global_wait_time"])
         mkey.left_click_xy_natural(quantity_btn_pos[0], quantity_btn_pos[1])
         await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.type("25")
+        _keyboard.type(str(amount))
         await asyncio.sleep(settings["global_wait_time"])
         mkey.left_click_xy_natural(purchase_btn_pos[0], purchase_btn_pos[1])
         await asyncio.sleep(settings["global_wait_time"])
@@ -720,7 +765,7 @@ async def purchase_item(ctx, item : int):
         await asyncio.sleep(settings["global_wait_time"])
         mkey.left_click_xy_natural(quantity_btn_pos[0], quantity_btn_pos[1])
         await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.type("25")
+        _keyboard.type(str(amount))
         await asyncio.sleep(settings["global_wait_time"])
         mkey.left_click_xy_natural(purchase_btn_pos[0], purchase_btn_pos[1])
         await asyncio.sleep(settings["global_wait_time"])
@@ -735,7 +780,7 @@ async def purchase_item(ctx, item : int):
         await asyncio.sleep(settings["global_wait_time"])
         mkey.left_click_xy_natural(quantity_btn_pos[0], quantity_btn_pos[1])
         await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.type("25")
+        _keyboard.type(str(amount))
         await asyncio.sleep(settings["global_wait_time"])
         mkey.left_click_xy_natural(purchase_btn_pos[0], purchase_btn_pos[1])
         await asyncio.sleep(settings["global_wait_time"])
@@ -756,36 +801,82 @@ async def keep_alive():
 
 @tasks.loop(seconds=60)
 async def auto_craft():
-    item_to_craft = ""
-    for itm in settings["auto_craft_item"]:
+    global auto_mode_swap, auto_craft_index
+    items_to_craft = []
+    for itm in settings["auto_craft_item"].keys():
         if settings["auto_craft_item"][itm]:
-            item_to_craft = itm
-    if item_to_craft == "":
+            items_to_craft.append(itm)
+    if len(items_to_craft) == 1:
         return
-    if item_to_craft == "Heavenly Potion I":
-        mkey.left_click_xy_natural(secondary_pos[0], secondary_pos[1])
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.press("f")
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.release("f")
+    _keyboard.press("f")
+    await asyncio.sleep(settings["global_wait_time"])
+    _keyboard.release("f")
+    await asyncio.sleep(settings["global_wait_time"])
+    mkey.left_click_xy_natural(hp1_recipe_pos[0], hp1_recipe_pos[1])
+    await asyncio.sleep(settings["global_wait_time"])
+    _mouse.scroll(0, -30)
+    await asyncio.sleep(settings["global_wait_time"])
+    _mouse.scroll(0, -30)
+    await asyncio.sleep(settings["global_wait_time"])
+    _mouse.scroll(0, -30)
+    await asyncio.sleep(settings["global_wait_time"])
+    _mouse.scroll(0, -30)
+    await asyncio.sleep(settings["global_wait_time"])
+    _mouse.scroll(0, -30)
+    await asyncio.sleep(settings["global_wait_time"])
+    if auto_mode_swap == 1:
+        auto_mode_swap = 0
+        if auto_craft_index == 1:
+            if settings["auto_craft_item"]["Heavenly Potion II"]:
+                auto_craft_index = 2
+                mkey.left_click_xy_natural(hp2_recipe_pos[0], hp2_recipe_pos[1])
+                await asyncio.sleep(settings["global_wait_time"])
+                mkey.left_click_xy_natural(auto_btn_pos[0], auto_btn_pos[1])
+                await asyncio.sleep(settings["global_wait_time"])
+            elif settings["auto_craft_item"]["Warp Potion"]:
+                auto_craft_index = 3    
+                mkey.left_click_xy_natural(warp_recipe_pos[0], warp_recipe_pos[1])
+                await asyncio.sleep(settings["global_wait_time"])
+                mkey.left_click_xy_natural(auto_btn_pos[0], auto_btn_pos[1])
+                await asyncio.sleep(settings["global_wait_time"])
+        elif auto_craft_index == 2:
+            if settings["auto_craft_item"]["Heavenly Potion I"]:
+                auto_craft_index = 1    
+                mkey.left_click_xy_natural(hp1_recipe_pos[0], hp1_recipe_pos[1])
+                await asyncio.sleep(settings["global_wait_time"])
+                mkey.left_click_xy_natural(auto_btn_pos[0], auto_btn_pos[1])
+                await asyncio.sleep(settings["global_wait_time"])
+            elif settings["auto_craft_item"]["Warp Potion"]:
+                auto_craft_index = 3
+                mkey.left_click_xy_natural(warp_recipe_pos[0], warp_recipe_pos[1])
+                await asyncio.sleep(settings["global_wait_time"])
+                mkey.left_click_xy_natural(auto_btn_pos[0], auto_btn_pos[1])
+                await asyncio.sleep(settings["global_wait_time"])
+        elif auto_craft_index == 3:
+            if settings["auto_craft_item"]["Heavenly Potion I"]:
+                auto_craft_index = 1
+                mkey.left_click_xy_natural(hp1_recipe_pos[0], hp1_recipe_pos[1])
+                await asyncio.sleep(settings["global_wait_time"])
+                mkey.left_click_xy_natural(auto_btn_pos[0], auto_btn_pos[1])
+                await asyncio.sleep(settings["global_wait_time"])
+            elif settings["auto_craft_item"]["Heavenly Potion II"]:
+                auto_craft_index = 2
+                mkey.left_click_xy_natural(hp2_recipe_pos[0], hp2_recipe_pos[1])
+                await asyncio.sleep(settings["global_wait_time"])
+                mkey.left_click_xy_natural(auto_btn_pos[0], auto_btn_pos[1])
+                await asyncio.sleep(settings["global_wait_time"])
+    if "Heavenly Potion I" in items_to_craft:
+        mkey.left_click_xy_natural(hp1_recipe_pos[0], hp1_recipe_pos[1])
         await asyncio.sleep(settings["global_wait_time"])
         mkey.left_click_xy_natural(craft_btn_pos[0], craft_btn_pos[1])
         await asyncio.sleep(settings["global_wait_time"])
         mkey.left_click_xy_natural(hp1_pos_potions[0] - (110 * scale_w), hp1_pos_potions[1])
         await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.press(Key.ctrl)
-        _keyboard.press("a")
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.release("a")
-        _keyboard.release(Key.ctrl)
+        mkey.left_click_xy_natural(hp1_pos_potions[0] - (110 * scale_w), hp1_pos_potions[1])
         await asyncio.sleep(settings["global_wait_time"])
         _keyboard.type("100")
         await asyncio.sleep(settings["global_wait_time"])
         mkey.left_click_xy_natural(hp1_pos_potions[0], hp1_pos_potions[1])
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.press("d")
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.release("d")
         await asyncio.sleep(settings["global_wait_time"])
         _mouse.scroll(0, -10)
         await asyncio.sleep(settings["global_wait_time"])
@@ -793,12 +884,8 @@ async def auto_craft():
         await asyncio.sleep(settings["global_wait_time"])
         _mouse.scroll(0, 10)
         await asyncio.sleep(settings["global_wait_time"])
-    elif item_to_craft == "Heavenly Potion II":
-        mkey.left_click_xy_natural(secondary_pos[0], secondary_pos[1])
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.press("f")
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.release("f")
+    if "Heavenly Potion II" in items_to_craft:
+        mkey.left_click_xy_natural(hp2_recipe_pos[0], hp2_recipe_pos[1])
         await asyncio.sleep(settings["global_wait_time"])
         mkey.left_click_xy_natural(craft_btn_pos[0], craft_btn_pos[1])
         await asyncio.sleep(settings["global_wait_time"])
@@ -810,19 +897,11 @@ async def auto_craft():
         await asyncio.sleep(settings["global_wait_time"])
         mkey.left_click_xy_natural(hp2_pos_potions[0] - (110 * scale_w), hp2_pos_potions[1])
         await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.press(Key.ctrl)
-        _keyboard.press("a")
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.release("a")
-        _keyboard.release(Key.ctrl)
+        mkey.left_click_xy_natural(hp2_pos_potions[0] - (110 * scale_w), hp2_pos_potions[1])
         await asyncio.sleep(settings["global_wait_time"])
         _keyboard.type("125")
         await asyncio.sleep(settings["global_wait_time"])
         mkey.left_click_xy_natural(hp2_pos_potions[0], hp2_pos_potions[1])
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.press("d")
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.release("d")
         await asyncio.sleep(settings["global_wait_time"])
         _mouse.scroll(0, 10)
         await asyncio.sleep(settings["global_wait_time"])
@@ -835,12 +914,8 @@ async def auto_craft():
         mkey.left_click_xy_natural(hp1_pos_celestial[0], hp1_pos_celestial[1])
         await asyncio.sleep(settings["global_wait_time"])
         _mouse.scroll(0, 10)
-    elif item_to_craft == "Warp Potion":
-        mkey.left_click_xy_natural(secondary_pos[0], secondary_pos[1])
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.press("f")
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.release("f")
+    if "Warp Potion" in items_to_craft:
+        mkey.left_click_xy_natural(warp_recipe_pos[0], warp_recipe_pos[1])
         await asyncio.sleep(settings["global_wait_time"])
         mkey.left_click_xy_natural(craft_btn_pos[0], craft_btn_pos[1])
         await asyncio.sleep(settings["global_wait_time"])
@@ -852,19 +927,11 @@ async def auto_craft():
         await asyncio.sleep(settings["global_wait_time"])
         mkey.left_click_xy_natural(hp1_pos_celestial[0] - (110 * scale_w), hp1_pos_celestial[1])
         await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.press(Key.ctrl)
-        _keyboard.press("a")
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.release("a")
-        _keyboard.release(Key.ctrl)
+        mkey.left_click_xy_natural(hp1_pos_celestial[0] - (110 * scale_w), hp1_pos_celestial[1])
         await asyncio.sleep(settings["global_wait_time"])
         _keyboard.type("1000")
         await asyncio.sleep(settings["global_wait_time"])
         mkey.left_click_xy_natural(hp1_pos_potions[0], hp1_pos_potions[1])
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.press("d")
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.release("d")
         await asyncio.sleep(settings["global_wait_time"])
         mkey.left_click_xy_natural(hp1_pos_celestial[0], hp1_pos_celestial[1])
         await asyncio.sleep(settings["global_wait_time"])
@@ -872,8 +939,7 @@ async def auto_craft():
         await asyncio.sleep(settings["global_wait_time"])
         _mouse.scroll(0, 30)
         await asyncio.sleep(settings["global_wait_time"])
-    else:
-        print("An invalid item has been selected")
+    auto_mode_swap += 1
 
 @tasks.loop(seconds=0)
 async def reset_aura():
@@ -913,7 +979,7 @@ async def merchant_detection():
     if settings["log_channel_id"] == 0:
         print("You must select a channel ID, you can do this by running the set_log_channel command.")
         return    
-    if aura_detection.is_being_cancelled():
+    if legacy_aura_detection.is_being_cancelled():
         return
     await use_item("Merchant Teleport", 1, False)
     await asyncio.sleep(settings["merchant_detec_wait"])
@@ -984,6 +1050,45 @@ async def merchant_detection():
 
 @tasks.loop(seconds=0)
 async def aura_detection():
+    global previous_aura
+    current_aura = get_latest_equipped_aura(rblx_log_dir)
+    if previous_aura == None:
+        previous_aura = current_aura
+        return
+    if current_aura == "In Main Menu":
+        return
+    if current_aura == settings["reset_aura"] and settings["reset_aura"] != "":
+        return
+    if current_aura == previous_aura:
+        return
+    if settings["log_channel_id"] == 0:
+        print("You must select a channel ID, you can do this by running the set_log_channel command.")
+        return
+    try:
+        _ = auras[current_aura]
+        previous_aura = current_aura
+        rnow = datetime.now()
+        log_channel = client.get_channel(settings["log_channel_id"])
+        emb = discord.Embed(
+            title=f"Aura Rolled: {current_aura}",
+            description=f"Rolled Aura: {current_aura}\nWith chances of 1/{auras[current_aura]["rarity"]}\nAt time: {rnow.strftime('%d/%m/%Y %H:%M:%S')}",
+            colour=discord.Colour.from_rgb(hex2rgb(auras[current_aura]["emb_colour"])[0],hex2rgb(auras[current_aura]["emb_colour"])[1],hex2rgb(auras[current_aura]["emb_colour"])[2])
+        )
+        emb.set_thumbnail(url=auras[current_aura]["img_url"])
+        if settings["mention"] and settings["mention_id"] != 0 and (int(auras[current_aura]["rarity"]) > int(settings["minimum_ping"])):
+            await log_channel.send(f"<@{settings["mention_id"]}>", embed=emb)
+        else:
+            await log_channel.send(embed=emb)
+        print(f"Rolled Aura: {current_aura}\nWith chances of 1/{auras[current_aura]["rarity"]}\nAt time: {rnow.strftime('%d/%m/%Y %H:%M:%S')}")
+        if settings["reset_aura"] != "":
+            reset_aura.start()
+    except KeyError:
+        pass
+    except Exception as e:
+        print(e)
+
+@tasks.loop(seconds=0)
+async def legacy_aura_detection():
     global hex_col, hex_col2, colour, colour2
     if settings["log_channel_id"] == 0:
         print("You must select a channel ID, you can do this by running the set_log_channel command.")
@@ -995,18 +1100,18 @@ async def aura_detection():
     hex_col2 = rgb2hex(colour2[0], colour2[1], colour2[2])
     try:
         check = auras[f"{hex_col},{hex_col2}"]
-        aura_detection.stop()
+        legacy_aura_detection.stop()
     except KeyError:
         for k in auras.keys():
             _ = list(k.split(","))
             if _[0] == hex_col and _[1] == "#******":
                 hex_col2 = "#******"
-                aura_detection.stop()
+                legacy_aura_detection.stop()
     except Exception as e:
         print(e)
 
-@aura_detection.after_loop
-async def on_aura_detection_cancel():
+@legacy_aura_detection.after_loop
+async def on_legacy_aura_detection_cancel():
     global hex_col, hex_col2, colour, colour2
     try:
         rnow = datetime.now()
@@ -1136,7 +1241,7 @@ async def on_aura_detection_cancel():
     except Exception as e:
         print(e)
     finally:
-        aura_detection.restart()
+        legacy_aura_detection.restart()
 
 @client.command()
 async def plugins(ctx):

@@ -49,7 +49,7 @@
         "rarity": "180000",
         "img_url": "https://static.wikia.nocookie.net/sol-rng/images/9/91/AetherCollection.gif/revision/latest"
     },
-    "Bounded": {
+    "BOUNDED": {
         "emb_colour": "#2556ff",
         "rarity": "200000",
         "img_url": "https://static.wikia.nocookie.net/sol-rng/images/5/52/BoundedAuraNight.gif/revision/latest"
@@ -109,7 +109,7 @@
         "rarity": "2000000",
         "img_url": "https://static.wikia.nocookie.net/sol-rng/images/f/fd/Grav_CollectionE9.gif/revision/latest"
     },
-    "Bounded: Unbound": {
+    "BOUNDED: UNBOUND": {
         "emb_colour": "#4d40ff",
         "rarity": "2000000",
         "img_url": "https://static.wikia.nocookie.net/sol-rng/images/6/65/Unbound_E7_Collection2.gif/revision/latest"
@@ -279,7 +279,7 @@
         "rarity": "250000000",
         "img_url": "https://static.wikia.nocookie.net/sol-rng/images/4/4f/ArchangelCollection.gif/revision/latest"
     },
-    "Bloodlust": {
+    "BLOODLUST": {
         "emb_colour": "#d90005",
         "rarity": "300000000",
         "img_url": "https://static.wikia.nocookie.net/sol-rng/images/f/f9/BloodlustInCollection.gif/revision/latest"
@@ -294,7 +294,7 @@
         "rarity": "400000000",
         "img_url": "https://static.wikia.nocookie.net/sol-rng/images/2/25/Abyssal_Hunter_Max_Graphics.gif/revision/latest"
     },
-    "Gargantua": {
+    "GARGANTUA": {
         "emb_colour": "#ffbd43",
         "rarity": "430000000",
         "img_url": "https://static.wikia.nocookie.net/sol-rng/images/5/5a/GargantuaStable.gif/revision/latest"

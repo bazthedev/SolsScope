@@ -1,6 +1,6 @@
 #           Baz's Macro/SolsRNGBot
 #   A discord bot for macroing Sol's RNG on Roblox
-#   Version: 1.1.8
+#   Version: 1.1.8 HOTFIX
 #   https://github.com/bazthedev/SolsRNGBot
 #
 
@@ -32,8 +32,8 @@ except ModuleNotFoundError:
 mkey = mk.MouseKey()
 MACROPATH = os.path.expandvars(r"%localappdata%\Baz's Macro") # Windows Roaming Path
 LOCALVERSION = "1.1.8"
-DEFAULTSETTINGS = {"TOKEN": "", "__version__" :  LOCALVERSION, "log_channel_id": 0, "global_wait_time" : 1, "skip_dl": False, "mention" : True, "mention_id" : 0, "minimum_roll" : "99998", "minimum_ping" : "349999", "reset_aura" : "", "merchant_detection" : False, "send_mari" : True, "ping_mari" : False, "send_jester" : True, "ping_jester" : True, "auto_purchase_items" : {"Void Coin/Lucky Penny" : True}, "glitch_detector" : True, "ping_on_glitch" : True, "pop_in_glitch" : False, "auto_use_items_in_glitch": {"Heavenly Potion II" : {"use" : True, "amount" : 200}, "Fortune Potion III" : {"use" : True, "amount" : 1}, "Lucky Potion" : {"use" : True, "amount" : 10}, "Pumpkin" : {"use" : True, "amount" : 10}, "Haste Potion III" : {"use" : False, "amount" : 1}, "Warp Potion" : {"use" : True, "amount" : 1}, "Transcended Potion" : {"use" : False, "amount" : 1}, "Mixed Potion" : {"use" : True, "amount" : 10}, "Stella's Candle" : {"use" : True, "amount" : 1}, "Santa Claus Potion" : {"use" : True, "amount" : 5}, "Hwachae" : {"use" : True}}, "dreamspace_detector" : True, "ping_on_dreamspace" : True, "pop_in_dreamspace" : False, "auto_use_items_in_dreamspace" : {"Heavenly Potion II" : {"use" : False, "amount" : 1}, "Fortune Potion III" : {"use" : True, "amount" : 1}, "Lucky Potion" : {"use" : True, "amount" : 10}, "Pumpkin" : {"use" : True, "amount" : 10}, "Haste Potion III" : {"use" : False, "amount" : 1}, "Warp Potion" : {"use" : True, "amount" : 1}, "Transcended Potion" : {"use" : False, "amount" : 1}, "Mixed Potion" : {"use" : True, "amount" : 10}, "Stella's Candle" : {"use" : True, "amount" : 1}, "Santa Claus Potion" : {"use" : True, "amount" : 5}, "Hwachae" : {"use" : True, "amount" : 1}}, "auto_craft_mode" : False, "skip_auto_mode_warning" : False, "auto_craft_item" : {"Heavenly Potion I" : False, "Heavenly Potion II" : True, "Warp Potion" : False}, "auto_biome_randomizer" : False, "auto_strange_controller" : False, "edit_settings_mode" : True, "failsafe_key" : "ctrl+e", "merchant_detec_wait" : 0, "ps_server_link" : "", "legacy_aura_detection" : False}
-valid_settings_keys = ["TOKEN", "__version__", "log_channel_id", "global_wait_time", "skip_dl", "mention", "mention_id", "minimum_roll", "minimum_ping", "reset_aura", "merchant_detection", "send_mari", "ping_mari", "send_jester", "ping_jester", "auto_purchase_items", "glitch_detector", "ping_on_glitch", "pop_in_glitch", "auto_use_items_in_glitch", "dreamspace_detector", "ping_on_dreamspace", "pop_in_dreamspace", "auto_use_items_in_dreamspace", "auto_craft_mode", "skip_auto_mode_warning", "auto_craft_item", "auto_biome_randomizer", "auto_strange_controller", "edit_settings_mode", "failsafe_key", "merchant_detec_wait", "ps_server_link", "legacy_aura_detection"]
+DEFAULTSETTINGS = {"TOKEN": "", "__version__" :  LOCALVERSION, "log_channel_id": 0, "global_wait_time" : 1, "skip_dl": False, "mention" : True, "mention_id" : 0, "minimum_roll" : "99998", "minimum_ping" : "349999", "reset_aura" : "", "merchant_detection" : False, "send_mari" : True, "ping_mari" : False, "send_jester" : True, "ping_jester" : True, "auto_purchase_items" : {"Void Coin/Lucky Penny" : True}, "glitch_detector" : True, "ping_on_glitch" : True, "pop_in_glitch" : False, "auto_use_items_in_glitch": {"Heavenly Potion II" : {"use" : True, "amount" : 200}, "Fortune Potion III" : {"use" : True, "amount" : 1}, "Lucky Potion" : {"use" : True, "amount" : 10}, "Pumpkin" : {"use" : True, "amount" : 10}, "Haste Potion III" : {"use" : False, "amount" : 1}, "Warp Potion" : {"use" : True, "amount" : 1}, "Transcended Potion" : {"use" : False, "amount" : 1}, "Mixed Potion" : {"use" : True, "amount" : 10}, "Stella's Candle" : {"use" : True, "amount" : 1}, "Santa Claus Potion" : {"use" : True, "amount" : 5}, "Hwachae" : {"use" : True}}, "dreamspace_detector" : True, "ping_on_dreamspace" : True, "pop_in_dreamspace" : False, "auto_use_items_in_dreamspace" : {"Heavenly Potion II" : {"use" : False, "amount" : 1}, "Fortune Potion III" : {"use" : True, "amount" : 1}, "Lucky Potion" : {"use" : True, "amount" : 10}, "Pumpkin" : {"use" : True, "amount" : 10}, "Haste Potion III" : {"use" : False, "amount" : 1}, "Warp Potion" : {"use" : True, "amount" : 1}, "Transcended Potion" : {"use" : False, "amount" : 1}, "Mixed Potion" : {"use" : True, "amount" : 10}, "Stella's Candle" : {"use" : True, "amount" : 1}, "Santa Claus Potion" : {"use" : True, "amount" : 5}, "Hwachae" : {"use" : True, "amount" : 1}}, "auto_craft_mode" : False, "skip_auto_mode_warning" : False, "auto_craft_item" : {"Heavenly Potion I" : False, "Heavenly Potion II" : True, "Warp Potion" : False}, "auto_biome_randomizer" : False, "auto_strange_controller" : False, "edit_settings_mode" : True, "failsafe_key" : "ctrl+e", "merchant_detec_wait" : 0, "ps_server_link" : "", "legacy_aura_detection" : False, "take_screenshot_on_detection" : False}
+valid_settings_keys = ["TOKEN", "__version__", "log_channel_id", "global_wait_time", "skip_dl", "mention", "mention_id", "minimum_roll", "minimum_ping", "reset_aura", "merchant_detection", "send_mari", "ping_mari", "send_jester", "ping_jester", "auto_purchase_items", "glitch_detector", "ping_on_glitch", "pop_in_glitch", "auto_use_items_in_glitch", "dreamspace_detector", "ping_on_dreamspace", "pop_in_dreamspace", "auto_use_items_in_dreamspace", "auto_craft_mode", "skip_auto_mode_warning", "auto_craft_item", "auto_biome_randomizer", "auto_strange_controller", "edit_settings_mode", "failsafe_key", "merchant_detec_wait", "ps_server_link", "legacy_aura_detection", "take_screenshot_on_detection"]
 
 if not os.path.exists(f"{MACROPATH}"):
     os.mkdir(MACROPATH)
@@ -1065,23 +1065,32 @@ async def aura_detection():
         print("You must select a channel ID, you can do this by running the set_log_channel command.")
         return
     try:
-        _ = auras[current_aura]
-        previous_aura = current_aura
-        rnow = datetime.now()
-        log_channel = client.get_channel(settings["log_channel_id"])
-        emb = discord.Embed(
-            title=f"Aura Rolled: {current_aura}",
-            description=f"Rolled Aura: {current_aura}\nWith chances of 1/{auras[current_aura]["rarity"]}\nAt time: {rnow.strftime('%d/%m/%Y %H:%M:%S')}",
-            colour=discord.Colour.from_rgb(hex2rgb(auras[current_aura]["emb_colour"])[0],hex2rgb(auras[current_aura]["emb_colour"])[1],hex2rgb(auras[current_aura]["emb_colour"])[2])
-        )
-        emb.set_thumbnail(url=auras[current_aura]["img_url"])
-        if settings["mention"] and settings["mention_id"] != 0 and (int(auras[current_aura]["rarity"]) > int(settings["minimum_ping"])):
-            await log_channel.send(f"<@{settings["mention_id"]}>", embed=emb)
-        else:
-            await log_channel.send(embed=emb)
-        print(f"Rolled Aura: {current_aura}\nWith chances of 1/{auras[current_aura]["rarity"]}\nAt time: {rnow.strftime('%d/%m/%Y %H:%M:%S')}")
-        if settings["reset_aura"] != "":
-            reset_aura.start()
+        if current_aura.lower() in auras.keys():
+            previous_aura = current_aura
+            rnow = datetime.now()
+            log_channel = client.get_channel(settings["log_channel_id"])
+            emb = discord.Embed(
+                title=f"Aura Rolled: {current_aura}",
+                description=f"Rolled Aura: {current_aura}\nWith chances of 1/{auras[current_aura.lower()]["rarity"]}\nAt time: {rnow.strftime('%d/%m/%Y %H:%M:%S')}",
+                colour=discord.Colour.from_rgb(hex2rgb(auras[current_aura.lower()]["emb_colour"])[0],hex2rgb(auras[current_aura.lower()]["emb_colour"])[1],hex2rgb(auras[current_aura.lower()]["emb_colour"])[2])
+            )
+            emb.set_thumbnail(url=auras[current_aura.lower()]["img_url"])
+            if settings["take_screenshot_on_detection"]:                    
+                auraimg = pag.screenshot(f"{MACROPATH}/scr/screenshot_aura.png")
+                up = discord.File(f"{MACROPATH}/scr/screenshot_aura.png", filename="aura.png")
+                emb.set_image(url="attachment://aura.png")
+                if settings["mention"] and settings["mention_id"] != 0 and (int(auras[current_aura.lower()]["rarity"]) > int(settings["minimum_ping"])):
+                    await log_channel.send(f"<@{settings["mention_id"]}>", embed=emb, file=up)
+                else:
+                    await log_channel.send(embed=emb, file=up)
+            else:
+                if settings["mention"] and settings["mention_id"] != 0 and (int(auras[current_aura.lower()]["rarity"]) > int(settings["minimum_ping"])):
+                    await log_channel.send(f"<@{settings["mention_id"]}>", embed=emb)
+                else:
+                    await log_channel.send(embed=emb)
+            print(f"Rolled Aura: {current_aura}\nWith chances of 1/{auras[current_aura.lower()]["rarity"]}\nAt time: {rnow.strftime('%d/%m/%Y %H:%M:%S')}")
+            if settings["reset_aura"] != "":
+                reset_aura.start()
     except KeyError:
         pass
     except Exception as e:

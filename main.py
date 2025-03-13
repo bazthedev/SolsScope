@@ -1,6 +1,6 @@
 #           Baz's Macro/SolsRNGBot
 #   A discord bot for macroing Sol's RNG on Roblox
-#   Version: 1.1.8 HOTFIX
+#   Version: 1.1.8 HOTFIX 2
 #   https://github.com/bazthedev/SolsRNGBot
 #
 
@@ -824,7 +824,7 @@ async def auto_craft():
     await asyncio.sleep(settings["global_wait_time"])
     _mouse.scroll(0, -30)
     await asyncio.sleep(settings["global_wait_time"])
-    if auto_mode_swap == 1:
+    if auto_mode_swap == 9:
         auto_mode_swap = 0
         if auto_craft_index == 1:
             if settings["auto_craft_item"]["Heavenly Potion II"]:

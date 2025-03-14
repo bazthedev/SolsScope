@@ -1,6 +1,6 @@
 #           Baz's Macro/SolsRNGBot
 #   A discord bot for macroing Sol's RNG on Roblox
-#   Version: 1.1.8 HOTFIX 2
+#   Version: 1.1.8 HOTFIX 3
 #   https://github.com/bazthedev/SolsRNGBot
 #
 
@@ -834,21 +834,21 @@ async def auto_craft():
                 mkey.left_click_xy_natural(auto_btn_pos[0], auto_btn_pos[1])
                 await asyncio.sleep(settings["global_wait_time"])
             elif settings["auto_craft_item"]["Warp Potion"]:
-                auto_craft_index = 3    
+                auto_craft_index = 3
                 mkey.left_click_xy_natural(warp_recipe_pos[0], warp_recipe_pos[1])
                 await asyncio.sleep(settings["global_wait_time"])
                 mkey.left_click_xy_natural(auto_btn_pos[0], auto_btn_pos[1])
                 await asyncio.sleep(settings["global_wait_time"])
         elif auto_craft_index == 2:
-            if settings["auto_craft_item"]["Heavenly Potion I"]:
-                auto_craft_index = 1    
-                mkey.left_click_xy_natural(hp1_recipe_pos[0], hp1_recipe_pos[1])
+            if settings["auto_craft_item"]["Warp Potion"]:
+                auto_craft_index = 3
+                mkey.left_click_xy_natural(warp_recipe_pos[0], warp_recipe_pos[1])
                 await asyncio.sleep(settings["global_wait_time"])
                 mkey.left_click_xy_natural(auto_btn_pos[0], auto_btn_pos[1])
                 await asyncio.sleep(settings["global_wait_time"])
-            elif settings["auto_craft_item"]["Warp Potion"]:
-                auto_craft_index = 3
-                mkey.left_click_xy_natural(warp_recipe_pos[0], warp_recipe_pos[1])
+            elif settings["auto_craft_item"]["Heavenly Potion I"]:
+                auto_craft_index = 1    
+                mkey.left_click_xy_natural(hp1_recipe_pos[0], hp1_recipe_pos[1])
                 await asyncio.sleep(settings["global_wait_time"])
                 mkey.left_click_xy_natural(auto_btn_pos[0], auto_btn_pos[1])
                 await asyncio.sleep(settings["global_wait_time"])
@@ -871,7 +871,7 @@ async def auto_craft():
         mkey.left_click_xy_natural(craft_btn_pos[0], craft_btn_pos[1])
         await asyncio.sleep(settings["global_wait_time"])
         mkey.left_click_xy_natural(hp1_pos_potions[0] - (110 * scale_w), hp1_pos_potions[1])
-        await asyncio.sleep(settings["global_wait_time"])
+        await asyncio.sleep(0.1)
         mkey.left_click_xy_natural(hp1_pos_potions[0] - (110 * scale_w), hp1_pos_potions[1])
         await asyncio.sleep(settings["global_wait_time"])
         _keyboard.type("100")
@@ -896,7 +896,7 @@ async def auto_craft():
         mkey.left_click_xy_natural(hp2_pos_potions[0], hp2_pos_potions[1])
         await asyncio.sleep(settings["global_wait_time"])
         mkey.left_click_xy_natural(hp2_pos_potions[0] - (110 * scale_w), hp2_pos_potions[1])
-        await asyncio.sleep(settings["global_wait_time"])
+        await asyncio.sleep(0.1)
         mkey.left_click_xy_natural(hp2_pos_potions[0] - (110 * scale_w), hp2_pos_potions[1])
         await asyncio.sleep(settings["global_wait_time"])
         _keyboard.type("125")
@@ -926,7 +926,7 @@ async def auto_craft():
         _mouse.scroll(0, -30)
         await asyncio.sleep(settings["global_wait_time"])
         mkey.left_click_xy_natural(hp1_pos_celestial[0] - (110 * scale_w), hp1_pos_celestial[1])
-        await asyncio.sleep(settings["global_wait_time"])
+        await asyncio.sleep(0.1)
         mkey.left_click_xy_natural(hp1_pos_celestial[0] - (110 * scale_w), hp1_pos_celestial[1])
         await asyncio.sleep(settings["global_wait_time"])
         _keyboard.type("1000")

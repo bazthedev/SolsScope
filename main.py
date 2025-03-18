@@ -1,39 +1,51 @@
 #           Baz's Macro/SolsRNGBot
 #   A discord bot for macroing Sol's RNG on Roblox
-#   Version: 1.1.8 HOTFIX 3
+#   Version: 1.1.9
 #   https://github.com/bazthedev/SolsRNGBot
 #
 
-import os
-import discord
-from discord.ext import commands, tasks
-import pyautogui as pag
-from datetime import datetime
-import json
-from pynput import mouse, keyboard
-from pynput.mouse import Button
-from pynput.keyboard import Key
-import asyncio
-from PIL import ImageGrab
-import requests
-import screeninfo as si
-import re
-import glob
-import shutil
-import tempfile
 try:
+    import os
+    import discord
+    from discord.ext import commands, tasks
+    import pyautogui as pag
+    from datetime import datetime
+    import json
+    from pynput import mouse, keyboard
+    from pynput.keyboard import Key
+    import asyncio
+    from PIL import ImageGrab
+    import requests
+    import screeninfo as si
+    import re
+    import glob
+    import shutil
+    import tempfile
+    import psutil
+    import random
+    import tkinter as tk
+    from tkinter import ttk, messagebox
     import mousekey as mk
+    from aiohttp import ClientSession
+    import subprocess
+    import typing
+    from websockets import connect
 except ModuleNotFoundError:
-    print("You need to install mousekey, by running pip install mousekey. After pressing any key, this should automatically happen, however if it does not, please run pip install mousekey.")
-    os.system("pause")
-    os.system("py -m pip install mousekey")
-    exit("Mousekey should be installed, try running the macro again now.")
+    print("A module is missing, please reinstall the requirements to fix this.")
+    exit()
 
 mkey = mk.MouseKey()
 MACROPATH = os.path.expandvars(r"%localappdata%\Baz's Macro") # Windows Roaming Path
-LOCALVERSION = "1.1.8"
-DEFAULTSETTINGS = {"TOKEN": "", "__version__" :  LOCALVERSION, "log_channel_id": 0, "global_wait_time" : 1, "skip_dl": False, "mention" : True, "mention_id" : 0, "minimum_roll" : "99998", "minimum_ping" : "349999", "reset_aura" : "", "merchant_detection" : False, "send_mari" : True, "ping_mari" : False, "send_jester" : True, "ping_jester" : True, "auto_purchase_items" : {"Void Coin/Lucky Penny" : True}, "glitch_detector" : True, "ping_on_glitch" : True, "pop_in_glitch" : False, "auto_use_items_in_glitch": {"Heavenly Potion II" : {"use" : True, "amount" : 200}, "Fortune Potion III" : {"use" : True, "amount" : 1}, "Lucky Potion" : {"use" : True, "amount" : 10}, "Pumpkin" : {"use" : True, "amount" : 10}, "Haste Potion III" : {"use" : False, "amount" : 1}, "Warp Potion" : {"use" : True, "amount" : 1}, "Transcended Potion" : {"use" : False, "amount" : 1}, "Mixed Potion" : {"use" : True, "amount" : 10}, "Stella's Candle" : {"use" : True, "amount" : 1}, "Santa Claus Potion" : {"use" : True, "amount" : 5}, "Hwachae" : {"use" : True}}, "dreamspace_detector" : True, "ping_on_dreamspace" : True, "pop_in_dreamspace" : False, "auto_use_items_in_dreamspace" : {"Heavenly Potion II" : {"use" : False, "amount" : 1}, "Fortune Potion III" : {"use" : True, "amount" : 1}, "Lucky Potion" : {"use" : True, "amount" : 10}, "Pumpkin" : {"use" : True, "amount" : 10}, "Haste Potion III" : {"use" : False, "amount" : 1}, "Warp Potion" : {"use" : True, "amount" : 1}, "Transcended Potion" : {"use" : False, "amount" : 1}, "Mixed Potion" : {"use" : True, "amount" : 10}, "Stella's Candle" : {"use" : True, "amount" : 1}, "Santa Claus Potion" : {"use" : True, "amount" : 5}, "Hwachae" : {"use" : True, "amount" : 1}}, "auto_craft_mode" : False, "skip_auto_mode_warning" : False, "auto_craft_item" : {"Heavenly Potion I" : False, "Heavenly Potion II" : True, "Warp Potion" : False}, "auto_biome_randomizer" : False, "auto_strange_controller" : False, "edit_settings_mode" : True, "failsafe_key" : "ctrl+e", "merchant_detec_wait" : 0, "ps_server_link" : "", "legacy_aura_detection" : False, "take_screenshot_on_detection" : False}
-valid_settings_keys = ["TOKEN", "__version__", "log_channel_id", "global_wait_time", "skip_dl", "mention", "mention_id", "minimum_roll", "minimum_ping", "reset_aura", "merchant_detection", "send_mari", "ping_mari", "send_jester", "ping_jester", "auto_purchase_items", "glitch_detector", "ping_on_glitch", "pop_in_glitch", "auto_use_items_in_glitch", "dreamspace_detector", "ping_on_dreamspace", "pop_in_dreamspace", "auto_use_items_in_dreamspace", "auto_craft_mode", "skip_auto_mode_warning", "auto_craft_item", "auto_biome_randomizer", "auto_strange_controller", "edit_settings_mode", "failsafe_key", "merchant_detec_wait", "ps_server_link", "legacy_aura_detection", "take_screenshot_on_detection"]
+LOCALVERSION = "1.1.9"
+PRERELEASE = False
+if PRERELEASE:
+    print(f"Warning! This is a prerelease version of SolsRNGBot, meaning you can expect bugs and some errors to occur!\nYou can find logs relating to events that occur during the prerelease in this folder: {MACROPATH}\n\nYou are currently running prerelease for version {LOCALVERSION}, are you sure you wish to continue?")
+    input("Press ENTER to continue using the macro: ")
+DEFAULTSETTINGS = {"TOKEN": "", "__version__" :  LOCALVERSION, "log_channel_id": 0, "use_rblx_player" : True, "global_wait_time" : 0.1, "skip_aura_download": False, "mention" : True, "mention_id" : 0, "minimum_roll" : "99998", "minimum_ping" : "349999", "reset_aura" : "", "merchant_detection" : False, "send_mari" : True, "ping_mari" : False, "send_jester" : True, "ping_jester" : True, "auto_purchase_items" : {"Void Coin/Lucky Penny" : True, "Oblivion Potion" : True}, "glitch_detector" : True, "ping_on_glitch" : True, "pop_in_glitch" : False, "auto_use_items_in_glitch": {"Heavenly Potion II" : {"use" : True, "amount" : 200}, "Fortune Potion III" : {"use" : True, "amount" : 1}, "Lucky Potion" : {"use" : True, "amount" : 10}, "Pumpkin" : {"use" : True, "amount" : 10}, "Haste Potion III" : {"use" : False, "amount" : 1}, "Warp Potion" : {"use" : True, "amount" : 1}, "Transcended Potion" : {"use" : False, "amount" : 1}, "Mixed Potion" : {"use" : True, "amount" : 10}, "Stella's Candle" : {"use" : True, "amount" : 1}, "Santa Claus Potion" : {"use" : True, "amount" : 5}, "Hwachae" : {"use" : True, "amount" : 1}}, "dreamspace_detector" : True, "ping_on_dreamspace" : True, "pop_in_dreamspace" : False, "auto_use_items_in_dreamspace" : {"Heavenly Potion II" : {"use" : False, "amount" : 1}, "Fortune Potion III" : {"use" : True, "amount" : 1}, "Lucky Potion" : {"use" : True, "amount" : 10}, "Pumpkin" : {"use" : True, "amount" : 10}, "Haste Potion III" : {"use" : False, "amount" : 1}, "Warp Potion" : {"use" : True, "amount" : 1}, "Transcended Potion" : {"use" : False, "amount" : 1}, "Mixed Potion" : {"use" : True, "amount" : 10}, "Stella's Candle" : {"use" : True, "amount" : 1}, "Santa Claus Potion" : {"use" : True, "amount" : 5}, "Hwachae" : {"use" : True, "amount" : 1}}, "auto_craft_mode" : False, "skip_auto_mode_warning" : False, "auto_craft_item" : {"Heavenly Potion I" : False, "Heavenly Potion II" : True, "Warp Potion" : False}, "auto_biome_randomizer" : False, "auto_strange_controller" : False, "edit_settings_mode" : True, "failsafe_key" : "ctrl+e", "merchant_detec_wait" : 0, "private_server_link" : "", "legacy_aura_detection" : False, "take_screenshot_on_detection" : False, "ROBLOSECURITY_KEY" : "", "DISCORD_TOKEN" : "", "sniper_enabled" : False, "sniper_toggles" : {"Glitched" : True, "Dreamspace" : False}, "sniper_channel_id" : 0, "sniper_logs" : True, "change_cutscene_on_pop" : True, "disable_autokick_prevention" : False, "periodic_screenshots" : {"inventory" : False, "storage" : False}, "disconnect_prevention" : False}
+VALIDSETTINGSKEYS = ["TOKEN", "__version__", "log_channel_id", "use_rblx_player", "global_wait_time", "skip_aura_download", "mention", "mention_id", "minimum_roll", "minimum_ping", "reset_aura", "merchant_detection", "send_mari", "ping_mari", "send_jester", "ping_jester", "auto_purchase_items", "glitch_detector", "ping_on_glitch", "pop_in_glitch", "auto_use_items_in_glitch", "dreamspace_detector", "ping_on_dreamspace", "pop_in_dreamspace", "auto_use_items_in_dreamspace", "auto_craft_mode", "skip_auto_mode_warning", "auto_craft_item", "auto_biome_randomizer", "auto_strange_controller", "edit_settings_mode", "failsafe_key", "merchant_detec_wait", "private_server_link", "legacy_aura_detection", "take_screenshot_on_detection", "ROBLOSECURITY_KEY", "DISCORD_TOKEN", "sniper_enabled", "sniper_toggles", "sniper_channel_id", "sniper_logs", "change_cutscene_on_pop", "disable_autokick_prevention", "periodic_screenshots", "disconnect_prevention"]
+STARTUP_MSGS = ["Let's go gambling!", "Nah, I'd Roll", "I give my life...", "Take a break", "Waste of time", "I can't stop playing this", "Touch the grass", "Eternal time...", "Break the Reality", "Finished work for today", "When is payday???", "One who stands before God", "Flaws in the world", "We do a little bit of rolling", "Exotic Destiny", "Always bet on yourself", "Is that a Mari I hear?", "(Lime shivers quietly in the cold)", "There's no way to stop it!", "[Tip]: Get Lucky"]
+
+detected_snipe = False
 
 if not os.path.exists(f"{MACROPATH}"):
     os.mkdir(MACROPATH)
@@ -41,6 +53,263 @@ if not os.path.exists(f"{MACROPATH}"):
 if not os.path.isfile(f"{MACROPATH}/settings.json"):
     with open(f"{MACROPATH}/settings.json", "w") as f:
         json.dump(DEFAULTSETTINGS, f, indent=4)
+
+# THE FOLLOWING CODE IS A SLIGHTLY MODIFIED VERSION OF YAY JOINS SNIPER 1.2.10, WHICH IS OWNED BY Root1527. YOU CAN DOWNLOAD THE REGULAR VERSION OF YAY JOINS HERE: https://github.com/Root1527/yay-joins
+
+PLACE_ID = 15532962292
+BASE_ROBLOX_URL = f"https://www.roblox.com/games/{PLACE_ID}/Sols-RNG-Eon1-1"
+DISCORD_WS_BASE = "wss://gateway.discord.gg/?v=10&encoding-json"
+SHARELINKS_API = "https://apis.roblox.com/sharelinks/v1/resolve-link"
+
+
+class Sniper:
+    def __init__(self):
+        self.config = self._load_config()
+        self.roblox_session: typing.Optional[ClientSession] = None
+        self._refresh_task = None
+        self.output_list = []
+        self.is_running = True
+
+        self.words = ["Glitched", "Dreamspace"]
+
+        self.link_pattern = re.compile(
+            f"https://www.roblox.com/games/{PLACE_ID}/Sols-RNG-Eon1-1\\?privateServerLinkCode="
+        )
+        self.link_pattern_2 = re.compile(r"https://.*&type=Server")
+
+        self.blacklists = [
+            re.compile(pattern)
+            for pattern in [
+                "need|want|lf|look|stop|how|bait|ste|snip|fak|real|pl|hunt|sho|sea|wait|tho|gone|think|ago|prob|try|dev|adm|or|see|cap|tot|is|us|spa|giv|get|hav|and|str|sc|br|rai|wi|san|star|null|pm|gra|pump|moon|scr|mac|do|did|jk|no|rep|dm|farm|sum|who|if|imag|pro|bot|next|post|was|bae|fae",
+                "need|want|lf|look|stop|how|bait|ste|snip|fak|real|pl|hunt|sho|sea|wait|tho|gone|think|ago|prob|try|dev|adm|or|see|cap|tot|is|us|giv|get|hav|and|str|br|rai|wi|san|star|null|pm|gra|pump|moon|scr|mac|do|did|jk|no|rep|dm|farm|sum|who|if|imag|pro|bot|next|post|was|bae|fae",
+            ]
+        ]
+        self.word_patterns = [
+            re.compile(pattern)
+            for pattern in [r"g[liotc]+h", r"d[rea]+ms"]
+        ]
+
+    def _load_config(self):
+        with open(f"{MACROPATH}/settings.json", "r") as f:
+            config = json.load(f)
+        return config
+
+    async def setup(self):
+        self.roblox_session = ClientSession()
+        self.roblox_session.cookie_jar.update_cookies(
+            {".ROBLOSECURITY": self.config["ROBLOSECURITY_KEY"]}
+        )
+
+    async def _identify(self, ws):
+        try:
+            identify_payload = {
+                "op": 2,
+                "d": {
+                    "token": self.config["DISCORD_TOKEN"],
+                    "properties": {"$os": "windows", "$browser": "chrome", "$device": "pc"}
+                }
+            }
+            await ws.send(json.dumps(identify_payload))
+        except Exception as e:
+            if self.config["sniper_logs"]:
+                print(f"[SNIPER] Error: {e}")
+        
+    async def _subscribe(self, ws):
+        subscription_payload = {
+            "op": 14,
+            "d": {
+                    "guild_id": "1186570213077041233",
+                    "channels_ranges": {},
+                    "typing": True,
+                    "threads": False,
+                    "activities": False,
+                    "members": [],
+                    "thread_member_lists": []
+                }
+            }
+        await ws.send(json.dumps(subscription_payload))
+
+    async def heartbeat(self, ws, interval):
+        while True:
+            try:
+                heartbeat_json= {
+                    'op':1,
+                    'd': 'null'
+                }
+                await ws.send(json.dumps(heartbeat_json))
+                await asyncio.sleep(interval)
+            except Exception as e:
+                if self.config["sniper_logs"]:
+                    print(f"[SNIPER] Error: {e}")
+
+    async def _on_message(self, ws):
+        while True:
+            event = json.loads(await ws.recv())
+            try:
+                if event["t"] == "MESSAGE_CREATE":
+                    channel_id = event["d"]["channel_id"]
+                    content = event["d"]["content"]
+                    for choice_id in self.cycle_index:
+                        if int(channel_id) == [1282542323590496277, 1282542323590496277][choice_id]:
+                            await self.process_message(content, choice_id)
+            except Exception as e:
+                if self.config["sniper_logs"]:
+                    print(f"[SNIPER] Error: {e}")
+
+    def _should_process_message(self, message: str, choice_id: int) -> bool:          
+        if not self.word_patterns[choice_id].search(message.lower()):
+            return False
+
+        if self.blacklists[choice_id].search(message.lower()):
+            if self.config["sniper_logs"]:
+                print(f"[SNIPER] Filtered message! content: {message}")
+            return False
+
+        return True
+
+    async def _extract_server_code(self, message: str) -> typing.Optional[str]:
+        if link_match := self.link_pattern.search(message):
+            return link_match.group(0).split("LinkCode=")[-1]
+
+        if link_match_2 := self.link_pattern_2.search(message):
+            share_code = link_match_2.group(0).split("code=")[-1].split("&")[0]
+            return await self._convert_link(share_code)
+        
+        if "locked" in message.lower():
+            print("The #biomes channel has been locked!")
+        return None
+
+    async def _convert_link(self, link_id: str) -> typing.Optional[str]:
+        payload = {"linkId": link_id, "linkType": "Server"}
+
+        async with self.roblox_session.post(SHARELINKS_API, json=payload) as response:
+            if response.status == 403 and "X-CSRF-TOKEN" in response.headers:
+                self.roblox_session.headers["X-CSRF-TOKEN"] = response.headers[
+                    "X-CSRF-TOKEN"
+                ]
+                async with self.roblox_session.post(
+                    SHARELINKS_API, json=payload
+                ) as retry_response:
+                    data = await retry_response.json()
+            else:
+                data = await response.json()
+
+        if data["privateServerInviteData"]["placeId"] != PLACE_ID:
+            if self.config["sniper_logs"]:
+                print("[SNIPER] Filtered non-sols link!")
+            return None
+
+        return data["privateServerInviteData"]["linkCode"]
+
+    async def _handle_server_join(self, choice_id: int, server_code: str):
+        global detected_snipe, rblx_log_dir
+        if rblx_log_dir == rblx_player_log_dir:
+            os.system("taskkill /f /im RobloxPlayerBeta.exe /t")
+            rblx_log_dir = ms_rblx_log_dir
+        aura_detection.cancel()
+        merchant_detection.cancel()
+        biome_randomizer.cancel()
+        strange_controller.cancel()
+        keep_alive.cancel()
+        legacy_aura_detection.cancel()
+        detected_snipe = True
+        await self._join_windows(server_code)
+        print(f"[SNIPER] {self.words[choice_id]} link found\nyay joins (modified for bazthedev/SolsRNGBot v{LOCALVERSION})")
+        if settings["pop_in_glitch"] and self.words[choice_id] == "Glitched":
+            await auto_pop("glitched")
+
+
+    async def _join_windows(self, server_code: str):
+        final_link = f"roblox://placeID={PLACE_ID}^&linkCode={server_code}"
+        subprocess.Popen(["start", final_link], shell=True)
+
+    async def _send_notification(self, choice_id: int, server_code: str):
+        sniper_channel = client.get_channel(settings["sniper_channel_id"])
+        if not sniper_channel:
+            return
+
+        colors = [11206400, 16744703]
+
+        embed_link = f"{BASE_ROBLOX_URL}?privateServerLinkCode={server_code}"
+        embed = discord.Embed(
+            title = f'[{datetime.now().strftime("%H:%M:%S")}] {self.words[choice_id]} Link Sniped!',
+            colour = colors[choice_id],
+        )
+        embed.add_field(name =  f"{self.words[choice_id]} Link:", value = embed_link, inline=True)
+        embed.set_footer(text=f"yay joins (modified for bazthedev/SolsRNGBot v{LOCALVERSION})")
+
+        await sniper_channel.send(f"<@{self.config['mention_id']}>", embed=embed)
+
+    async def process_message(self, content: str, choice_id: int) -> None:
+        try:
+            if not self._should_process_message(content, choice_id):
+                return
+
+            server_code = await self._extract_server_code(content)
+            if not server_code:
+                return
+
+            print(f"[SNIPER] Found message! content: {content}")
+
+            await self._handle_server_join(choice_id, server_code)
+            await self._send_notification(choice_id, server_code)
+
+        except Exception as e:
+            if self.config["sniper_logs"]:
+                print(f"[SNIPER] Error processing message: {str(e)}")
+
+    async def run(self):
+        global ps_link_code
+        await self.setup()
+
+        glitch = self.config["sniper_toggles"]["Glitched"]
+        dream = self.config["sniper_toggles"]["Dreamspace"]
+        snipe_list = [glitch, dream]
+
+        self.cycle_index = [i for i, x in enumerate(snipe_list) if x]
+
+        if not (glitch or dream):
+            print("[SNIPER] At least one option has to be True. Sniper has not been started.")
+            return
+            
+        if not detect_client_disconnect(rblx_log_dir):
+            print("Started yay joins (sniper)")
+            ps_link_code = await self._extract_server_code(settings["private_server_link"])
+            sniper_channel = client.get_channel(settings["sniper_channel_id"])
+            emb = discord.Embed(
+                title="Started Sniper!",
+                description = f"Snipe Glitched: {str(glitch)}\nSnipe Dreamspace: {str(dream)}"
+            )
+            emb.set_footer(text=f"yay joins (modified for bazthedev/SolsRNGBot v{LOCALVERSION})")
+            await sniper_channel.send(embed=emb)
+        else:
+            print("Attempting to reconnect sniper.")
+        while True:
+            try:
+                async with connect(DISCORD_WS_BASE, max_size=None, ping_interval=None) as ws:
+                    await self._identify(ws)
+                    await self._subscribe(ws)
+                                        
+                    event = json.loads(await ws.recv())
+                    interval = event["d"]["heartbeat_interval"] / 1000
+                    async with asyncio.TaskGroup() as tg:
+                        tg.create_task(self.heartbeat(ws, interval))
+                        tg.create_task(self._on_message(ws))
+            except Exception as e:
+                if self.config["sniper_logs"]:
+                    print(f"[SNIPER] Error: {e}")
+
+
+sniper = Sniper()
+
+# THE ABOVE CODE IS A SLIGHTLY MODIFIED VERSION OF YAY JOINS SNIPER 1.2.10, WHICH IS OWNED BY Root1527. YOU CAN DOWNLOAD THE REGULAR VERSION OF YAY JOINS HERE: https://github.com/Root1527/yay-joins
+
+
+if not os.path.isfile(f"{MACROPATH}/icon.ico"):
+    dl = requests.get("https://raw.githubusercontent.com/bazthedev/SolsRNGBot/main/icon.ico")
+    f = open(f"{MACROPATH}/icon.ico", "wb")
+    f.write(dl.content)
+    f.close()
 
 def get_auras():
     print("Downloading Legacy Aura List")
@@ -76,7 +345,7 @@ def validate_settings():
     found_keys = []
     todel = []
     for k in settings.keys():
-        if k not in valid_settings_keys:
+        if k not in VALIDSETTINGSKEYS:
             todel.append(k)
             print(f"Invalid setting ({k}) detected")
         else:
@@ -84,12 +353,27 @@ def validate_settings():
     for _ in todel:
         del settings[_]
         print(f"Invalid setting ({_}) deleted")
-    for _ in valid_settings_keys:
+    for _ in VALIDSETTINGSKEYS:
         if _ not in found_keys:
             settings[_] = DEFAULTSETTINGS[_]
             print(f"Missing setting ({_}) added")
     update_settings(settings)
     reload_settings()
+
+def validate_pslink(ps_server_link : str):
+    if "https://www.roblox.com/share?code=" not in ps_server_link:
+        return False
+    if "&type=Server" not in ps_server_link:
+        return False
+    return True
+
+def format_roblosecurity():
+    if "_|WARNING:-DO-NOT-SHARE-THIS.--Sharing-this-will-allow-someone-to-log-in-as-you-and-to-steal-your-ROBUX-and-items.|_" in settings["ROBLOSECURITY_KEY"]:
+        new_roblosec = settings["ROBLOSECURITY_KEY"].replace("_|WARNING:-DO-NOT-SHARE-THIS.--Sharing-this-will-allow-someone-to-log-in-as-you-and-to-steal-your-ROBUX-and-items.|_", "")
+        settings["ROBLOSECURITY_KEY"] = new_roblosec
+        update_settings(settings)
+        reload_settings()
+
 
 def migrate_settings():
     if os.path.exists("./settings.json") and not os.path.exists(f"{MACROPATH}/settings.json"):
@@ -125,6 +409,46 @@ async def use_item(item_name : str, amount : int, close_menu : bool):
     if close_menu:
         mkey.left_click_xy_natural(close_pos[0], close_pos[1])
         await asyncio.sleep(settings["global_wait_time"])
+
+async def align_camera():
+    print("Aligning Camera....")
+    _keyboard.press(Key.esc)
+    await asyncio.sleep(settings["global_wait_time"])
+    _keyboard.release(Key.esc)
+    await asyncio.sleep(settings["global_wait_time"])
+    _keyboard.press("r")
+    await asyncio.sleep(settings["global_wait_time"])
+    _keyboard.release("r")
+    await asyncio.sleep(settings["global_wait_time"])    
+    _keyboard.press(Key.enter)
+    await asyncio.sleep(settings["global_wait_time"])
+    _keyboard.release(Key.enter)
+    await asyncio.sleep(settings["global_wait_time"])
+    mkey.left_click_xy_natural(collection_open_pos[0], collection_open_pos[1])
+    await asyncio.sleep(settings["global_wait_time"])
+    mkey.left_click_xy_natural(exit_collection_pos[0], exit_collection_pos[1])
+    await asyncio.sleep(settings["global_wait_time"])
+    _keyboard.press(Key.shift)
+    await asyncio.sleep(settings["global_wait_time"])
+    _keyboard.release(Key.shift)
+    await asyncio.sleep(settings["global_wait_time"])
+    _keyboard.press(Key.shift)
+    await asyncio.sleep(settings["global_wait_time"])
+    _keyboard.release(Key.shift)
+    await asyncio.sleep(settings["global_wait_time"])
+    for i in range(80):
+        _mouse.scroll(0, 30)
+    await asyncio.sleep(2)
+    for i in range(3):
+        _mouse.scroll(0, -5)
+        await asyncio.sleep(settings["global_wait_time"])
+    await asyncio.sleep(settings["global_wait_time"])
+
+async def leave_main_menu():
+    if get_latest_equipped_aura(rblx_log_dir) == "In Main Menu":
+        mkey.left_click_xy_natural(start_btn_pos[0], start_btn_pos[1])
+        await asyncio.sleep(2)
+        await leave_main_menu()
 
 def get_latest_hovertext(logs_dir):
     log_files = glob.glob(os.path.join(logs_dir, "*.log"))
@@ -191,6 +515,195 @@ def get_latest_equipped_aura(logs_dir):
         return None
     
     return None
+
+def detect_client_disconnect(logs_dir, lines_to_check=10):
+    log_files = glob.glob(os.path.join(logs_dir, "*.log"))
+    if not log_files:
+        return False
+
+    latest_log_file = max(log_files, key=os.path.getctime)
+    try:
+        temp_file = os.path.join(tempfile.gettempdir(), "solsrngbot_biome_detection.log")
+        shutil.copy2(latest_log_file, temp_file)
+    except PermissionError:
+        return False
+
+    disconnect_patterns = [
+        r"Lost connection with reason : Lost connection to the game server, please reconnect",
+    ]
+    
+    try:
+        with open(temp_file, "r", encoding="utf-8") as file:
+            last_lines = file.readlines()[-lines_to_check:]
+            for line in reversed(last_lines):
+                if any(re.search(pattern, line) for pattern in disconnect_patterns):
+                    timestamp_match = re.search(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z", line)
+                    if timestamp_match:
+                        timestamp = timestamp_match.group()
+                        print(f"Disconnection detected at {timestamp}")
+                    return True
+    except Exception:
+        return False
+    
+    return False
+
+def detect_client_reconnect(logs_dir, lines_to_check=20):
+    log_files = glob.glob(os.path.join(logs_dir, "*.log"))
+    if not log_files:
+        return False
+
+    latest_log_file = max(log_files, key=os.path.getctime)
+    try:
+        temp_file = os.path.join(tempfile.gettempdir(), "solsrngbot_biome_detection.log")
+        shutil.copy2(latest_log_file, temp_file)
+    except PermissionError:
+        return False
+
+    disconnect_patterns = [
+        r"NetworkClient:Create",
+        r"Info: Stack End",
+        r"Connection accepted from"
+    ]
+    
+    try:
+        with open(temp_file, "r", encoding="utf-8") as file:
+            last_lines = file.readlines()[-lines_to_check:]
+            for line in reversed(last_lines):
+                if any(re.search(pattern, line) for pattern in disconnect_patterns):
+                    timestamp_match = re.search(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z", line)
+                    if timestamp_match:
+                        timestamp = timestamp_match.group()
+                        print(f"Reconnection detected at {timestamp}")
+                    return True
+    except Exception:
+        return False
+    
+    return False
+
+def exists_procs_by_name(name):
+    for p in psutil.process_iter(['name']):
+        if p.info['name'].lower() == name.lower():
+            return True
+    return False
+
+def get_process_by_name(name):
+    for p in psutil.process_iter(['name']):
+        if p.info['name'].lower() == name.lower():
+            return p
+    return False
+
+def match_rblxms_hwnd_to_pid(pid):
+    for w in mkey.get_all_windows():
+        if w.pid == pid and w.title == "MSCTFIME UI":
+            return w
+    return False
+
+async def auto_pop(biome : str):
+    global ps_link_code, detected_snipe, rblx_log_dir
+    _ended = False
+    if detected_snipe and rblx_log_dir == ms_rblx_log_dir:
+        rblx_log_dir = ms_rblx_log_dir
+        while not exists_procs_by_name("Windows10Universal.exe"):
+            pass # Wait for roblox to start
+        ps_rblxms = get_process_by_name("Windows10Universal.exe")
+        rblxms_window = match_rblxms_hwnd_to_pid(ps_rblxms.pid)
+        mkey.activate_window(rblxms_window.hwnd)
+        await asyncio.sleep(settings["global_wait_time"])
+        mkey.left_click_xy_natural(ms_rblx_spawn_pos[0], ms_rblx_spawn_pos[1])
+        await asyncio.sleep(settings["global_wait_time"])
+        mkey.left_click_xy_natural(ms_rblx_spawn_pos[0], ms_rblx_spawn_pos[1])
+        await asyncio.sleep(settings["global_wait_time"])
+        _keyboard.press(Key.f11)
+        await asyncio.sleep(0.1)
+        _keyboard.release(Key.f11)
+        await leave_main_menu()
+    if biome.lower() != get_latest_hovertext(rblx_log_dir).lower():
+        _ended = True
+    if settings["change_cutscene_on_pop"]:
+        mkey.left_click_xy_natural(menu_btn_pos[0], menu_btn_pos[1])
+        await asyncio.sleep(settings["global_wait_time"])
+        mkey.left_click_xy_natural(settings_btn_pos[0], settings_btn_pos[1])
+        await asyncio.sleep(settings["global_wait_time"])
+        mkey.left_click_xy_natural(rolling_conf_pos[0], rolling_conf_pos[1])
+        await asyncio.sleep(settings["global_wait_time"])
+        mkey.left_click_xy_natural(cutscene_conf_pos[0], cutscene_conf_pos[1])
+        await asyncio.sleep(settings["global_wait_time"])
+        _keyboard.press(Key.ctrl)
+        _keyboard.press("a")
+        await asyncio.sleep(settings["global_wait_time"])
+        _keyboard.release("a")
+        _keyboard.release(Key.ctrl)
+        await asyncio.sleep(settings["global_wait_time"])
+        _keyboard.type("9999999999")
+        await asyncio.sleep(settings["global_wait_time"])
+        _keyboard.press(Key.enter)
+        await asyncio.sleep(settings["global_wait_time"])
+        _keyboard.release(Key.enter)
+        await asyncio.sleep(settings["global_wait_time"])
+        mkey.left_click_xy_natural(menu_btn_pos[0], menu_btn_pos[1])
+        await asyncio.sleep(settings["global_wait_time"])
+        mkey.left_click_xy_natural(menu_btn_pos[0], menu_btn_pos[1])
+        await asyncio.sleep(settings["global_wait_time"])
+    if biome.lower() == "glitched" and settings["pop_in_glitch"]:
+        original_hp2_amt = settings["auto_use_items_in_glitch"]["Heavenly Potion II"]["amount"]
+        for item in reversed(settings["auto_use_items_in_glitch"].keys()):
+            if biome.lower() != get_latest_hovertext(rblx_log_dir).lower():
+                _ended = True
+            if _ended:
+                break
+            if not settings["auto_use_items_in_glitch"][item]["use"]:
+                continue
+            if item == "Heavenly Potion II" or item == "Oblivion Potion":
+                while True:
+                    if get_latest_hovertext(rblx_log_dir).lower() != biome:
+                        print("Biome has ended")
+                        _ended = True
+                        break
+                    else:
+                        if original_hp2_amt > 10:
+                            await use_item(item, 10, True)
+                            original_hp2_amt -= 10
+                        elif original_hp2_amt > 1:
+                            await use_item(item, 1, True)
+                            original_hp2_amt -= 1
+                        else:
+                            break
+                    await asyncio.sleep(2)
+            else:
+                await use_item(item, settings["auto_use_items_in_glitch"][item]["amount"], True)
+
+    if not legacy_aura_detection.is_running() and settings["legacy_aura_detection"]:
+        legacy_aura_detection.start()
+    elif not aura_detection.is_running():
+        aura_detection.start()    
+    if valid_ps:
+        print("Attempting to rejoin private server")
+        await asyncio.sleep(5)
+        await sniper._join_windows(ps_link_code)
+        await asyncio.sleep(10)
+        ps_rblxms = get_process_by_name("Windows10Universal.exe")
+        rblxms_window = match_rblxms_hwnd_to_pid(ps_rblxms.pid)
+        mkey.activate_window(rblxms_window.hwnd)
+        await asyncio.sleep(settings["global_wait_time"])
+        mkey.left_click_xy_natural(ms_rblx_spawn_pos[0], ms_rblx_spawn_pos[1])
+        await asyncio.sleep(settings["global_wait_time"])
+        mkey.left_click_xy_natural(ms_rblx_spawn_pos[0], ms_rblx_spawn_pos[1])
+        await asyncio.sleep(settings["global_wait_time"])
+        _keyboard.press(Key.f11)
+        await asyncio.sleep(0.1)
+        _keyboard.release(Key.f11)
+        await leave_main_menu()
+        print("Success!")
+    else:
+        exit("No server to rejoin in settings")
+    if not keep_alive.is_running():
+        keep_alive.start()
+    if not merchant_detection.is_running() and settings["merchant_detection"]:
+        merchant_detection.start()
+    if not biome_randomizer.is_running() and settings["auto_biome_randomizer"]:
+        biome_randomizer.start()
+    if not strange_controller.is_running() and settings["auto_strange_controller"]:
+        strange_controller.start()
 
 migrate_settings()
 
@@ -260,15 +773,177 @@ hp2_recipe_pos = ((1516 * scale_w), (836 * scale_h))
 warp_recipe_pos = ((1516 * scale_w), (980 * scale_h))
 merchant_face_pos_1 = (int(841 * scale_w), int(1056 * scale_h))
 merchant_face_pos_2 = (int(855 * scale_w), int(1063 * scale_h))
+collection_open_pos = ((54 * scale_w), (624 * scale_h))
+exit_collection_pos = ((510 * scale_w), (146 * scale_h))
+start_btn_pos = ((1252 * scale_w), (1206 * scale_h))
+reconnect_btn_pos = ((1370 * scale_w), (800 * scale_h))
 mari_cols = ["#767474", "#767476", "#757474", "#7c7c7c", "#7c7a7c", "#7a7878", "#787678", "#787878"]
 jester_cols = ["#e2e2e2", "#e1e1e1", "#e0e0e0"]
-rblx_log_dir = os.path.expandvars(r"%localappdata%\Roblox\logs") # This is for Windows users only. If you are on a different OS, please change this to either the Roblox logs directory, or leave glitch/dreamspace detection as disabled
 previous_biome = None
 previous_aura = None
 popping = False
+valid_ps = False
+item_collection_index = 1
+use_ms_rblx = False
+rblx_player_log_dir = os.path.expandvars(r"%localappdata%\Roblox\logs") # This is for the Roblox Player
+ms_rblx_log_dir = os.path.expandvars(r"%LOCALAPPDATA%\Packages\ROBLOXCorporation.ROBLOX_55nm5eh3cm0pr\LocalState\logs") # This is for the Microsoft Store version of Roblox
+ms_rblx_spawn_pos = ((820 * scale_w), (548 * scale_h))
+ps_link_code = 0
+WINDY_MULTIPLIER = 3
+SNOWY_MULTIPLIER = 3
+RAINY_MULTIPLER = 4
+SANDSTORM_MULTIPLIER = 4
+HELL_MULTIPLIER = 6
+STARFALL_MULTIPLIER = 10
+CORRUPTION_MULTIPLIER = 5
+NULL_MULTIPLIER = 1000
+GLITCHED_MULTIPLIER = 1
+DREAMSPACE_MULTIPLIER = 1
 _plugins = []
-auto_purchase = {"Void Coin/Lucky Penny": ["#ff92fe", "#ff9e4e"]}
+auto_purchase = {"Void Coin/Lucky Penny": ["#ff92fe", "#ff9e4e"], "Oblivion Potion" : []}
 print(f"Starting SolsRNGBot v{LOCALVERSION}")
+
+class SettingsApp:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Baz's Macro Settings Editor")
+
+        try:
+            self.root.iconbitmap(f"{MACROPATH}/icon.ico")
+        except Exception:
+            pass
+
+        self.original_settings = self.load_settings()
+        self.entries = {}
+
+        self.create_ui()
+    
+    def load_settings(self):
+        try:
+            with open(f"{MACROPATH}/settings.json", "r") as f:
+                return json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError):
+            return {}
+
+    def format_key(self, key):
+        if " " in key:
+            return key
+        return key.replace("_", " ").title()
+
+
+    def create_ui(self):
+        container = ttk.Frame(self.root)
+        container.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        canvas = tk.Canvas(container)
+        scrollbar = ttk.Scrollbar(container, orient=tk.VERTICAL, command=canvas.yview)
+        self.scrollable_frame = ttk.Frame(canvas)
+
+        self.scrollable_frame.bind(
+            "<Configure>",
+            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+        )
+
+        window = canvas.create_window((0, 0), window=self.scrollable_frame, anchor="nw")
+
+        canvas.configure(yscrollcommand=scrollbar.set)
+        canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+        self.create_widgets(self.original_settings, self.scrollable_frame)
+
+        save_button = ttk.Button(self.root, text="Save", command=self.save_settings)
+        save_button.pack(pady=10)
+
+    def create_widgets(self, settings, parent, entry_dict=None):
+        if entry_dict is None:
+            entry_dict = self.entries
+
+        for key, value in settings.items():
+            if key == "edit_settings_mode":
+                continue
+            formatted_key = self.format_key(key)
+
+            row = ttk.Frame(parent)
+            row.pack(fill=tk.X, pady=2)
+
+            label = ttk.Label(row, text=formatted_key + ":", width=25, anchor="w")
+            label.pack(side=tk.LEFT)
+
+            if isinstance(value, bool):
+                var = tk.BooleanVar(value=value)
+                checkbox = ttk.Checkbutton(row, variable=var)
+                checkbox.pack(side=tk.LEFT)
+                entry_dict[key] = var
+
+            elif isinstance(value, dict):
+                subframe = ttk.LabelFrame(parent, text=formatted_key, padding=5)
+                subframe.pack(fill=tk.X, padx=10, pady=5)
+                entry_dict[key] = {}
+                self.create_widgets(value, subframe, entry_dict[key])
+
+            else:
+                var = tk.StringVar(value=str(value))
+                entry = ttk.Entry(row, textvariable=var, width=30)
+                entry.pack(side=tk.LEFT)
+                entry_dict[key] = var
+
+    def get_updated_values(self, original, entries):
+        updated_settings = {}
+
+        for key, widget in entries.items():
+            if isinstance(widget, dict):
+                sub_updates = self.get_updated_values(original.get(key, {}), widget)
+                if sub_updates:
+                    updated_settings[key] = sub_updates
+            else:
+                new_value = widget.get()
+                if isinstance(original.get(key), bool):
+                    new_value = bool(new_value)
+                elif isinstance(original.get(key), (int, float)):
+                    try:
+                        new_value = int(new_value)
+                    except ValueError:
+                        try:
+                            new_value = float(new_value)
+                        except ValueError:
+                            pass
+
+                if new_value != original.get(key):
+                    updated_settings[key] = new_value
+
+        return updated_settings
+
+    def save_settings(self):
+        updated_values = self.get_updated_values(self.original_settings, self.entries)
+
+        if not updated_values:
+            messagebox.showinfo("Baz's Macro Settings Editor", "No settings were changed.")
+            return
+
+        try:
+            with open(f"{MACROPATH}/settings.json", "r") as f:
+                current_settings = json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError):
+            current_settings = {}
+
+        def merge_dicts(original, updates):
+            for key, value in updates.items():
+                if isinstance(value, dict) and isinstance(original.get(key), dict):
+                    merge_dicts(original[key], value)
+                else:
+                    original[key] = value
+
+        merge_dicts(current_settings, updated_values)
+
+        try:
+            with open(f"{MACROPATH}/settings.json", "w") as f:
+                json.dump(current_settings, f, indent=4)
+            messagebox.showinfo("Baz's Macro Settings Editor", "Settings saved successfully!")
+            reload_settings()
+            print("Settings were reloaded.")
+        except Exception as e:
+            messagebox.showerror("Baz's Macro Settings Editor", f"Failed to save settings:\n{e}")
 
 if not os.path.exists(f"{MACROPATH}/settings.json"):
     x = open(f"{MACROPATH}/settings.json", "w")
@@ -276,38 +951,71 @@ if not os.path.exists(f"{MACROPATH}/settings.json"):
     x.close()
     with open(f"{MACROPATH}/settings.json", "w") as f:
         json.dump(DEFAULTSETTINGS, f, indent=4)
-    os.system(f"notepad {MACROPATH}/settings.json")
-    exit("Opened Macro Settings")
+    print("Settings have been created!")
+
 
 reload_settings()
 
+
 if settings["__version__"] < LOCALVERSION:
     settings["__version__"] = LOCALVERSION
+    settings["edit_settings_mode"] = True
     update_settings(settings)
     reload_settings()
+    print("The macro has been updated!")
 
 if settings["__version__"] > LOCALVERSION:
     print("You are running newer settings with an older version of this program. This may delete some of your settings. Are you sure you want to continue (y)? ")
     confirm = input("")
     if confirm[0].lower() != "y":
         exit("You are running newer settings with an older version of this program.")
+
         
 # Settings integrity check
 validate_settings()
 
+if not os.path.exists(ms_rblx_log_dir):
+    print("The Microsoft Store Version of Roblox has not been detected as installed. This will break certain features of the macro, such as the Sniper and joining servers.")
+
+if exists_procs_by_name("Windows10Universal.exe"):
+    rblx_log_dir = ms_rblx_log_dir
+    print("Using Microsoft Store Roblox (detected as running)")
+elif exists_procs_by_name("RobloxPlayerBeta.exe"):
+    rblx_log_dir = rblx_player_log_dir
+    print("Using Roblox Player (detected as running)")
+elif settings["use_rblx_player"]:
+    rblx_log_dir = rblx_player_log_dir
+else:
+    print("Defaulting to Microsoft store roblox")
+    rblx_log_dir = ms_rblx_log_dir
 
 mkey.enable_failsafekill(settings["failsafe_key"])
 
 if settings["edit_settings_mode"] or settings["TOKEN"] == "":
     settings["edit_settings_mode"] = False
+    print("Edit settings mode is enabled!")
     if settings["TOKEN"] == "":
-        print("You need to add your bot token between the \"\" and then save the file.")
+        print("You need to add your bot token.")
     update_settings(settings)
     reload_settings()
-    os.system(f"notepad {MACROPATH}/settings.json")
-    exit("Opened Macro Settings")
+    root = tk.Tk()
+    app = SettingsApp(root)
+    root.mainloop()
+    print("Validating settings, then starting macro...")
+    validate_settings()
 
-if not settings["skip_dl"]:
+    
+if settings["sniper_enabled"] and (settings["ROBLOSECURITY_KEY"] == "" or settings["DISCORD_TOKEN"] == "" or settings["sniper_channel_id"] == 0):
+    print("You must provide both your ROBLOSECURITY cookie and your Discord Token for the sniper to work. You also need to set a sniper logs channel")
+    settings["edit_settings_mode"] = True
+    update_settings(settings)
+    reload_settings()
+    exit()
+
+if settings["ROBLOSECURITY_KEY"] != "":
+    format_roblosecurity()
+
+if not settings["skip_aura_download"]:
     get_auras()
 
 if not os.path.exists(f"{MACROPATH}/auras.json") or not os.path.exists(f"{MACROPATH}/auras_new.json"):
@@ -320,25 +1028,40 @@ else:
     with open(f"{MACROPATH}/auras_new.json", "r") as f:
         auras = json.load(f)
 
+if settings["private_server_link"] != "":
+    if not validate_pslink(settings["private_server_link"]):
+        print("Invalid Private Server Link")
+        valid_ps = False
+    else:
+        valid_ps = True
+
 __version__ = settings["__version__"]
 
 @client.event
 async def on_ready():
-    print("Let's go gambling!")
+    print(random.choice(STARTUP_MSGS))
     print(f"Started at {now.strftime('%d/%m/%Y %H:%M:%S')} running v{__version__} using local version {LOCALVERSION}")
     await client.change_presence(activity=discord.Game(name=f"bazthedev/SolsRNGBot v{LOCALVERSION}"))
+    await asyncio.sleep(settings["global_wait_time"])
+    if not ((not exists_procs_by_name("Windows10Universal.exe")) ^ (not exists_procs_by_name("RobloxPlayerBeta.exe"))):
+        print("Roblox is not running, waiting for it to start...")
+    while not ((not exists_procs_by_name("Windows10Universal.exe")) ^ (not exists_procs_by_name("RobloxPlayerBeta.exe"))):
+        pass
+    await asyncio.sleep(settings["global_wait_time"])
+    await leave_main_menu()
+    await asyncio.sleep(settings["global_wait_time"])
     if settings["auto_craft_mode"] and not settings["merchant_detection"]:
         crafts = ""
         for item in settings["auto_craft_item"].keys():
             if settings["auto_craft_item"][item]:
-                crafts += f"{item}: {settings['auto_craft_item'][item]}\n"
+                crafts += f"{item}\n"
         print("[WARNING] Auto Craft Mode is on. You will not be able to use certain features whilst this settings is on.")
         print(f"The item(s) you are automatically crafting are:\n{crafts}")
         if not settings["skip_auto_mode_warning"]:
-            print("Please ensure that you are ostanding next to the cauldran so that you can see the \"f\" prompt. When you have done this, please press enter.")
+            print("Please ensure that you are standing next to the cauldron so that you can see the \"f\" prompt. When you have done this, please press enter.")
             input("")
         else:
-            print("Please ensure that you are ostanding next to the cauldran so that you can see the \"f\" prompt.")
+            print("Please ensure that you are standing next to the cauldron so that you can see the \"f\" prompt.")
         if settings["reset_aura"] != "":
             settings["reset_aura"] = ""
             update_settings(settings)
@@ -348,9 +1071,21 @@ async def on_ready():
         auto_craft.start()
     else:
         if settings["log_channel_id"] != 0:
-            keep_alive.start()
-            print("Started Autokick Prevention")
-            await asyncio.sleep(((settings["global_wait_time"] * 7) + 0.7))
+            if not settings["disable_autokick_prevention"]:
+                keep_alive.start()
+                print("Started Autokick Prevention")
+                await asyncio.sleep(((settings["global_wait_time"] * 7) + 0.7))
+        if settings["sniper_enabled"] and settings["sniper_channel_id"] != "":
+            yay_joins_sniper.start()
+        if settings["disconnect_prevention"]:
+            print("Start Disconnect Prevention")
+            disconnect_prevention.start()
+        if settings["periodic_screenshots"]["inventory"]:
+            inventory_screenshot.start()
+            print("Start Periodic Inventory Screenshots")
+        if settings["periodic_screenshots"]["storage"]:
+            storage_screeenshot.start()
+            print("Start Periodic Storage Screenshots")
     if settings["log_channel_id"] != 0:
         if settings["auto_craft_mode"] and not settings["merchant_detection"]:
             log_channel = client.get_channel(settings["log_channel_id"])
@@ -386,12 +1121,12 @@ async def on_ready():
         biome_randomizer.start()
         print("Started Biome Randomizer")
     if settings["auto_strange_controller"]:
-        await asyncio.sleep((settings["global_wait_time"] * 50))
+        await asyncio.sleep((settings["global_wait_time"] * 60))
         strange_controller.start()
         print("Started Strange Controller")
     if settings["merchant_detection"] and settings["log_channel_id"] != 0:
         if settings["auto_biome_randomizer"] or settings["auto_strange_controller"]:
-            await asyncio.sleep((settings["global_wait_time"] * 50))
+            await asyncio.sleep((settings["global_wait_time"] * 60))
         merchant_detection.start()
         print("Started Merchant Detection")
     print(f"Started SolsRNGBot v{LOCALVERSION}")
@@ -404,6 +1139,7 @@ async def glitch_detector():
     log_channel = client.get_channel(settings["log_channel_id"])
     if latest_hovertext == "GLITCHED" and previous_biome != "GLITCHED":
         merchant_detection.stop()
+        yay_joins_sniper.cancel()
         previous_biome = latest_hovertext
         popping = True
         storimg = pag.screenshot(f"{MACROPATH}/scr/screenshot_glitch.png")
@@ -414,6 +1150,9 @@ async def glitch_detector():
                 description=f"A GLITCH biome was detected at {rnow.strftime('%d/%m/%Y %H:%M:%S')}",
                 colour=discord.Colour.from_rgb(101, 255, 101)
         )
+        emb.set_image(url="attachment://glitch.png")
+        if valid_ps:
+            emb.add_field(name="Private Server Link:", value=f"{settings["private_server_link"]}", inline=True)
         if settings["ping_on_glitch"]:
             await log_channel.send("@everyone", embed=emb, file=up)
         else:
@@ -422,37 +1161,17 @@ async def glitch_detector():
             if settings["auto_craft_mode"] and not settings["merchant_detection"]:
                 auto_craft.stop()
             popping = False
-            mkey.left_click_xy_natural(menu_btn_pos[0], menu_btn_pos[1])
-            await asyncio.sleep(settings["global_wait_time"])
-            mkey.left_click_xy_natural(settings_btn_pos[0], settings_btn_pos[1])
-            await asyncio.sleep(settings["global_wait_time"])
-            mkey.left_click_xy_natural(rolling_conf_pos[0], rolling_conf_pos[1])
-            await asyncio.sleep(settings["global_wait_time"])
-            mkey.left_click_xy_natural(cutscene_conf_pos[0], cutscene_conf_pos[1])
-            await asyncio.sleep(settings["global_wait_time"])
-            _keyboard.press(Key.ctrl)
-            _keyboard.press("a")
-            await asyncio.sleep(settings["global_wait_time"])
-            _keyboard.release("a")
-            _keyboard.release(Key.ctrl)
-            await asyncio.sleep(settings["global_wait_time"])
-            _keyboard.type("219999999")
-            await asyncio.sleep(settings["global_wait_time"])
-            mkey.left_click_xy_natural(close_pos[0], close_pos[1])
-            await asyncio.sleep(settings["global_wait_time"])
-            to_use = []
-            for buff in reversed(settings["auto_use_items_in_glitch"].keys()):
-                if settings["auto_use_items_in_glitch"][buff]["use"]:
-                    to_use.append(buff)
-            for item in to_use:
-                    await use_item(item, settings["auto_use_items_in_glitch"][item]["amount"], True)
-            if settings["auto_craft_mode"] and not settings["merchant_detection"]:
-                auto_craft.start()
+            await auto_pop("glitched")
         else:
             popping = False
     elif previous_biome == "GLITCHED" and latest_hovertext != "GLITCHED":
         previous_biome = None
-        merchant_detection.start()
+        if settings["auto_craft_mode"] and not settings["merchant_detection"]:
+            auto_craft.start()
+        elif settings["merchant_detection"]:
+            merchant_detection.start()
+        if settings["sniper_enabled"]:
+            yay_joins_sniper.start()
         print("Glitch biome ended")
         emb = discord.Embed(
                 title="Glitch Biome Ended",
@@ -480,6 +1199,9 @@ async def dreamspace_detector():
                 description=f"A DREAMSPACE biome was detected at {rnow.strftime('%d/%m/%Y %H:%M:%S')}",
                 colour=discord.Colour.from_rgb(255, 105, 180)
         )
+        emb.set_image(url="attachment://dreamspace.png")
+        if valid_ps:
+            emb.add_field(name="Private Server Link:", value=f"{settings["private_server_link"]}", inline=True)
         if settings["ping_on_dreamspace"]:
             await log_channel.send("<@everyone>",embed=emb, file=up)
         else:
@@ -488,37 +1210,17 @@ async def dreamspace_detector():
             if settings["auto_craft_mode"] and not settings["merchant_detection"]:
                 auto_craft.stop()
             popping = False
-            mkey.left_click_xy_natural(menu_btn_pos[0], menu_btn_pos[1])
-            await asyncio.sleep(settings["global_wait_time"])
-            mkey.left_click_xy_natural(settings_btn_pos[0], settings_btn_pos[1])
-            await asyncio.sleep(settings["global_wait_time"])
-            mkey.left_click_xy_natural(rolling_conf_pos[0], rolling_conf_pos[1])
-            await asyncio.sleep(settings["global_wait_time"])
-            mkey.left_click_xy_natural(cutscene_conf_pos[0], cutscene_conf_pos[1])
-            await asyncio.sleep(settings["global_wait_time"])
-            _keyboard.press(Key.ctrl)
-            _keyboard.press("a")
-            await asyncio.sleep(settings["global_wait_time"])
-            _keyboard.release("a")
-            _keyboard.release(Key.ctrl)
-            await asyncio.sleep(settings["global_wait_time"])
-            _keyboard.type("219999999")
-            await asyncio.sleep(settings["global_wait_time"])
-            mkey.left_click_xy_natural(close_pos[0], close_pos[1])
-            await asyncio.sleep(settings["global_wait_time"])
-            to_use = []
-            for buff in reversed(settings["auto_use_items_in_dreamspace"].keys()):
-                if settings["auto_use_items_in_dreamspace"][buff]["use"]:
-                    to_use.append(buff)
-            for item in to_use:
-                    await use_item(item, settings["auto_use_items_in_dreamspace"][item]["amount"], True)
-            if settings["auto_craft_mode"] and not settings["merchant_detection"]:
-                auto_craft.start()
+            await auto_pop("dreamspace")      
         else:
             popping = False
     elif previous_biome == "DREAMSPACE" and latest_hovertext != "DREAMSPACE":
-        merchant_detection.start()
         previous_biome = None
+        if settings["auto_craft_mode"] and not settings["merchant_detection"]:
+            auto_craft.start()
+        elif settings["merchant_detection"]:
+            merchant_detection.start()
+        if settings["sniper_enabled"]:
+            yay_joins_sniper.start()
         print("Dreamspace Biome ended")
         emb = discord.Embed(
                 title="Dreamspace Biome Ended",
@@ -526,6 +1228,10 @@ async def dreamspace_detector():
                 colour=discord.Colour.from_rgb(255, 105, 180)
         )
         await log_channel.send(embed=emb)
+
+@tasks.loop(count=None)
+async def yay_joins_sniper():
+    await sniper.run()
 
 @client.event
 async def on_command_error(ctx, error):
@@ -549,8 +1255,10 @@ async def get_aura(ctx):
     current_aura = get_latest_equipped_aura(rblx_log_dir)
     if current_aura == "In Main Menu":
         await ctx.send("Currently in the main menu.")
-        return
-    await ctx.send(f"The currently equipped aura is: {current_aura}")
+    elif current_aura == "_None_":
+        await ctx.send("There is no equipped aura.")
+    else:
+        await ctx.send(f"The currently equipped aura is: {current_aura}")
 
 @client.command()
 @commands.is_owner()
@@ -561,6 +1269,16 @@ async def set_log_channel(ctx):
     update_settings(settings)
     reload_settings()
     await ctx.send(f"Log Channel set to {ctx.message.channel.mention}")
+
+@client.command()
+@commands.is_owner()
+async def set_sniper_channel(ctx):
+    await ctx.send("Updating sniper logs channel...")
+    new_sniper_channel_id = ctx.message.channel.id
+    settings["sniper_channel_id"] = new_sniper_channel_id
+    update_settings(settings)
+    reload_settings()
+    await ctx.send(f"Sniper Channel set to {ctx.message.channel.mention}! This will change will take place next time the macro is run.")
 
 @client.command()
 @commands.is_owner()
@@ -602,11 +1320,11 @@ async def set_min_ping(ctx, minimum : str):
 @client.command()
 async def mode(ctx):
     if settings["auto_craft_mode"] and not settings["merchant_detection"]:
-        crafts = []
-        for item in settings["auto_craft_item"]:
+        crafts = ""
+        for item in settings["auto_craft_item"].keys():
             if settings["auto_craft_item"][item]:
-                crafts.append(item)
-        await ctx.send(f"The bot is currently running in Auto Craft mode, and the item being crafted is: {crafts[0]}")
+                crafts += f"{item}\n"
+        await ctx.send(f"The bot is currently running in Auto Craft mode, and the item(s) being crafted are:\n{crafts}")
     else:
         await ctx.send("The bot is running in Normal mode.")
 
@@ -647,6 +1365,8 @@ async def inv_scr(ctx):
     await ctx.send("Taking screenshot of inventory, please wait, this will take a few seconds.")
     mkey.left_click_xy_natural(inv_button_pos[0], inv_button_pos[1])
     await asyncio.sleep(settings["global_wait_time"])
+    mkey.left_click_xy_natural(items_pos[0], items_pos[1])
+    await asyncio.sleep(settings["global_wait_time"])
     mkey.left_click_xy_natural(search_pos[0], search_pos[1])
     await asyncio.sleep(settings["global_wait_time"])
     storimg = pag.screenshot(f"{MACROPATH}/scr/screenshot_inventory.png")
@@ -659,7 +1379,7 @@ async def inv_scr(ctx):
 async def get_settings(ctx):
     settings_str = """"""
     for _ in settings:
-        if _ == "TOKEN" or _ == "auto_use_items_in_glitch" or _ == "auto_use_items_in_dreamspace":
+        if _ == "TOKEN" or _ == "auto_use_items_in_glitch" or _ == "auto_use_items_in_dreamspace" or _ == "ROBLOSECURITY_KEY" or _ == "DISCORD_TOKEN":
             continue
         settings_str += f"Setting: {_}; Value: {settings[_]}\n"
     await ctx.send(f"```\n{settings_str}\n```")
@@ -667,7 +1387,7 @@ async def get_settings(ctx):
 @client.command()
 @commands.is_owner()
 async def enable(ctx, setting):
-    if setting not in valid_settings_keys:
+    if setting not in VALIDSETTINGSKEYS:
         await ctx.send("That setting does not exist.")
         return
     if "bool" not in str(type(settings[setting])):
@@ -684,7 +1404,7 @@ async def enable(ctx, setting):
 @client.command()
 @commands.is_owner()
 async def disable(ctx, setting):
-    if setting not in valid_settings_keys:
+    if setting not in VALIDSETTINGSKEYS:
         await ctx.send("That setting does not exist.")
         return
     if "bool" not in str(type(settings[setting])):
@@ -798,6 +1518,68 @@ async def keep_alive():
     mkey.left_click_xy_natural(close_pos[0], close_pos[1])
     await asyncio.sleep(settings["global_wait_time"])
 
+
+@tasks.loop(seconds=1260)
+async def storage_screeenshot():
+    mkey.left_click_xy_natural(aura_button_pos[0], aura_button_pos[1])
+    await asyncio.sleep(settings["global_wait_time"])
+    mkey.left_click_xy_natural(search_pos[0], search_pos[1])
+    await asyncio.sleep(settings["global_wait_time"])
+    storimg = pag.screenshot(f"{MACROPATH}/scr/screenshot_storage.png")
+    await asyncio.sleep(settings["global_wait_time"])
+    mkey.left_click_xy_natural(close_pos[0], close_pos[1])
+    log_channel = client.get_channel(settings["log_channel_id"])
+    await log_channel.send(file=discord.File(f"{MACROPATH}/scr/screenshot_storage.png"))
+
+@tasks.loop(seconds=1140)
+async def inventory_screenshot():
+    mkey.left_click_xy_natural(inv_button_pos[0], inv_button_pos[1])
+    await asyncio.sleep(settings["global_wait_time"])
+    mkey.left_click_xy_natural(items_pos[0], items_pos[1])
+    await asyncio.sleep(settings["global_wait_time"])
+    mkey.left_click_xy_natural(search_pos[0], search_pos[1])
+    await asyncio.sleep(settings["global_wait_time"])
+    storimg = pag.screenshot(f"{MACROPATH}/scr/screenshot_inventory.png")
+    await asyncio.sleep(settings["global_wait_time"])
+    mkey.left_click_xy_natural(close_pos[0], close_pos[1])
+    log_channel = client.get_channel(settings["log_channel_id"])
+    await log_channel.send(file=discord.File(f"{MACROPATH}/scr/screenshot_inventory.png"))
+
+@tasks.loop(seconds=0)
+async def disconnect_prevention():
+    global rblx_log_dir
+    if not exists_procs_by_name("Windows10Universal.exe") and not exists_procs_by_name("RobloxPlayerBeta.exe"):
+        print("There are no instances of Roblox running, the macro will now stop.")
+        exit()
+    if detect_client_disconnect(rblx_log_dir):
+        if valid_ps:
+            if rblx_log_dir != ms_rblx_log_dir:
+                rblx_log_dir = ms_rblx_log_dir
+            _attempt = 1
+            os.system("taskkill /f /im RobloxPlayerBeta.exe /t")
+            while not detect_client_reconnect(rblx_log_dir):
+                print(f"Attempting to rejoin private server (Attempt #{str(_attempt)})")
+                os.system("taskkill /f /im Windows10Universal.exe /t")
+                await asyncio.sleep(5)
+                await sniper._join_windows(ps_link_code)
+                await asyncio.sleep(5)                
+                ps_rblxms = get_process_by_name("Windows10Universal.exe")
+                rblxms_window = match_rblxms_hwnd_to_pid(ps_rblxms.pid)
+                mkey.activate_window(rblxms_window.hwnd)
+                await asyncio.sleep(settings["global_wait_time"])
+                mkey.left_click_xy_natural(ms_rblx_spawn_pos[0], ms_rblx_spawn_pos[1])
+                await asyncio.sleep(settings["global_wait_time"])
+                mkey.left_click_xy_natural(ms_rblx_spawn_pos[0], ms_rblx_spawn_pos[1])
+                await asyncio.sleep(settings["global_wait_time"])
+                _keyboard.press(Key.f11)
+                await asyncio.sleep(0.1)
+                _keyboard.release(Key.f11)
+                if detect_client_reconnect(rblx_log_dir):
+                    break
+                await asyncio.sleep(45)
+                _attempt += 1
+            await leave_main_menu()
+            print("Successfully rejoined!")
 
 @tasks.loop(seconds=60)
 async def auto_craft():
@@ -1013,6 +1795,7 @@ async def merchant_detection():
                     colour = px[x, y]
                     hex_col = rgb2hex(colour[0], colour[1], colour[2])
                     cols.append(hex_col)
+                    print(hex_col)
                     if hex_col in mari_cols:
                         emb = discord.Embed(
                                         title = f"Mari Spawned",
@@ -1043,6 +1826,8 @@ async def merchant_detection():
                         _break = True
                 if _break:
                     break
+            with open("test.json", "w") as f:
+                json.dump(cols, f, indent=4)
         except Exception as e:
             print(e)
     else:
@@ -1068,13 +1853,43 @@ async def aura_detection():
         if current_aura.lower() in auras.keys():
             previous_aura = current_aura
             rnow = datetime.now()
-            log_channel = client.get_channel(settings["log_channel_id"])
-            emb = discord.Embed(
-                title=f"Aura Rolled: {current_aura}",
-                description=f"Rolled Aura: {current_aura}\nWith chances of 1/{auras[current_aura.lower()]["rarity"]}\nAt time: {rnow.strftime('%d/%m/%Y %H:%M:%S')}",
-                colour=discord.Colour.from_rgb(hex2rgb(auras[current_aura.lower()]["emb_colour"])[0],hex2rgb(auras[current_aura.lower()]["emb_colour"])[1],hex2rgb(auras[current_aura.lower()]["emb_colour"])[2])
-            )
-            emb.set_thumbnail(url=auras[current_aura.lower()]["img_url"])
+            current_biome = get_latest_hovertext(rblx_log_dir)
+            if current_biome.lower() == auras[current_aura.lower()]["native_biome"].lower():
+                if current_biome.lower() == "snowy":
+                    aura_rarity = int(int(auras[current_aura.lower()]["rarity"]) / SNOWY_MULTIPLIER)
+                elif current_biome.lower() == "windy":
+                    aura_rarity = int(int(auras[current_aura.lower()]["rarity"]) / WINDY_MULTIPLIER)
+                elif current_biome.lower() == "rainy":
+                    aura_rarity = int(int(auras[current_aura.lower()]["rarity"]) / RAINY_MULTIPLER)
+                elif current_biome.lower() == "sandstorm":
+                    aura_rarity = int(int(auras[current_aura.lower()]["rarity"]) / SANDSTORM_MULTIPLIER)
+                elif current_biome.lower() == "hell":
+                    aura_rarity = int(int(auras[current_aura.lower()]["rarity"]) / HELL_MULTIPLIER)
+                elif current_biome.lower() == "starfall":
+                    aura_rarity = int(int(auras[current_aura.lower()]["rarity"]) / STARFALL_MULTIPLIER)
+                elif current_biome.lower() == "corruption":
+                    aura_rarity = int(int(auras[current_aura.lower()]["rarity"]) / CORRUPTION_MULTIPLIER)
+                elif current_biome.lower() == "null":
+                    aura_rarity = int(int(auras[current_aura.lower()]["rarity"]) / NULL_MULTIPLIER)
+                elif current_biome.lower() == "glitched":
+                    aura_rarity = int(int(auras[current_aura.lower()]["rarity"]) / GLITCHED_MULTIPLIER)
+                elif current_biome.lower() == "dreamspace":
+                    aura_rarity = int(int(auras[current_aura.lower()]["rarity"]) / DREAMSPACE_MULTIPLIER)
+                log_channel = client.get_channel(settings["log_channel_id"])
+                emb = discord.Embed(
+                    title=f"Aura Rolled: {current_aura}",
+                    description=f"Rolled Aura: {current_aura}\nWith chances of 1/{str(aura_rarity)} (from {auras[current_aura.lower()]["native_biome"]})\nAt time: {rnow.strftime('%d/%m/%Y %H:%M:%S')}",
+                    colour=discord.Colour.from_rgb(hex2rgb(auras[current_aura.lower()]["emb_colour"])[0],hex2rgb(auras[current_aura.lower()]["emb_colour"])[1],hex2rgb(auras[current_aura.lower()]["emb_colour"])[2])
+                )
+                emb.set_thumbnail(url=auras[current_aura.lower()]["img_url"])
+            else:
+                log_channel = client.get_channel(settings["log_channel_id"])
+                emb = discord.Embed(
+                    title=f"Aura Rolled: {current_aura}",
+                    description=f"Rolled Aura: {current_aura}\nWith chances of 1/{auras[current_aura.lower()]["rarity"]}\nAt time: {rnow.strftime('%d/%m/%Y %H:%M:%S')}",
+                    colour=discord.Colour.from_rgb(hex2rgb(auras[current_aura.lower()]["emb_colour"])[0],hex2rgb(auras[current_aura.lower()]["emb_colour"])[1],hex2rgb(auras[current_aura.lower()]["emb_colour"])[2])
+                )
+                emb.set_thumbnail(url=auras[current_aura.lower()]["img_url"])
             if settings["take_screenshot_on_detection"]:                    
                 auraimg = pag.screenshot(f"{MACROPATH}/scr/screenshot_aura.png")
                 up = discord.File(f"{MACROPATH}/scr/screenshot_aura.png", filename="aura.png")
@@ -1092,6 +1907,8 @@ async def aura_detection():
             if settings["reset_aura"] != "":
                 reset_aura.start()
     except KeyError:
+        pass
+    except AttributeError:
         pass
     except Exception as e:
         print(e)

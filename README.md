@@ -48,7 +48,7 @@ If you need help with the macro, please join [this server](https://discord.com/i
 7. Run the main.py file again
 8. Add the bot to a server
 9. Run the set_log_channel command in the channel you want the bot to automatically post in
-10. 10. And you are done! You can customize the settings by using the `edit_settings` command and rerunning the macro!
+10. And you are done! You can customize the settings by using the `edit_settings` command and rerunning the macro!
 
 # Common Issues:
 - Nothing is working on my dual monitor setup: Make sure that Roblox is open on the monitor you marked as PRIMARY. You can check this by typing "Change my primary display" into the Windows search bar.

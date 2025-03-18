@@ -11,20 +11,26 @@
 - Compatibility with all kinds of monitor sizes
 - Matrix: Overdrive or Overture: History Detection
 - Merchant Detection and sending a screenshot with their stock (Merchant Teleporter is required)
-- Mari detection (jester detection is unfinished)
 - Automatic crafting of multiple potions
 - Purchase items from merchant via command
 - Glitch and Dreamspace Biome Detection
 - Auto Pop in Glitch or Dreamspace (untested)
 - Automatic Biome Randomizer/Strange Controller uses
+- Window for Setting configuration
+- Yay joins integration
+- Disconnect prevention
+- Added Periodic Inventory and/or Storage Screenshots
+- Automatically detect if you are using the MSStore version or the Player and will adjust the script accordingly
 
 # TBA:
 - Finished Jester detection.
-- Integration with Yay joins to control the macro when the sniper gets a hit.
-- A window to allow users to configure settings easier.
 - Auto Purchase from merchant (???) will start only for void coins. If you do not have Merchant Teleporter, then this will not work.
 - You will be able to choose to only buy items from Mari, Jester or both.
 - Create a feature request if you want something to be added!
+
+# System Requirements:
+This macro has been tested on a 1440p display but is known to work on 1080p displays. Screen resolutions below this may be incompatible.
+You should have the Microsoft Store version of Roblox installed, the Roblox Player can also be used but the MSStore version is needed for certain features.
 
 # Video Guide
 You can watch [this video guide](https://youtu.be/AKva_0biJuk) to help setup the bot.
@@ -35,14 +41,14 @@ If you need help with the macro, please join [this server](https://discord.com/i
 # Quick Start
 1. Download the [latest release](https://github.com/bazthedev/SolsRNGBot/releases/latest)
 2. Make sure you have Python installed. I am using version 3.12 but you should be able to use any version 3.12 or newer.
-3. Install the requirements by running `python -m pip install -r requirements.txt`
+3. Install the requirements by running `py -m pip install -r requirements.txt`
 4. Run the main.py file
 5. Create a new Discord Bot and copy its token
-6. Edit the newly created `settings.json` file and paste your discord bot token in the "TOKEN" key.
+6. Edit the newly created `settings.json` file by using the `edit_settings` command and paste your discord bot token in the "TOKEN" key.
 7. Run the main.py file again
 8. Add the bot to a server
 9. Run the set_log_channel command in the channel you want the bot to automatically post in
-10. And you are done! You can customize the settings by editing the `settings.json` file or by using some of the built in commands.
+10. 10. And you are done! You can customize the settings by using the `edit_settings` command and rerunning the macro!
 
 # Common Issues:
 - Nothing is working on my dual monitor setup: Make sure that Roblox is open on the monitor you marked as PRIMARY. You can check this by typing "Change my primary display" into the Windows search bar.

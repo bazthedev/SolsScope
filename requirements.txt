@@ -5,3 +5,6 @@ requests
 pillow
 screeninfo
 mousekey
+aiohttp
+websockets
+psutil

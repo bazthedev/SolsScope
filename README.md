@@ -8,7 +8,7 @@
 - Automatic Updating of New Auras
 - Mention on aura roll
 - Minimum rarity for ping and send message
-- Compatibility with all kinds of monitor sizes
+- Compatibility with most 16:9 monitors
 - Matrix: Overdrive or Overture: History Detection
 - Merchant Detection and sending a screenshot with their stock (Merchant Teleporter is required)
 - Automatic crafting of multiple potions

@@ -6,7 +6,7 @@
 - Auto Craft Mode (for afking)
 - Merchant Detection (if autocraft is off)
 - Sending to a webhook
-- Specific Role Pings for Mari/Jester
+- Specific Role Pings for Mari/Jester or Glitched/Dreamspace
 - Sending a screenshot of a Merchant's stock upon detection
 
 # Note that this version is very minimal compared to the full version of SolsRNGBot.

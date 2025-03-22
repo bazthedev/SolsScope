@@ -1,0 +1,8 @@
+discord==1.7.3
+pyautogui
+pynput
+requests
+pillow
+screeninfo
+mousekey
+psutil

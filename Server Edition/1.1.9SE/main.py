@@ -5,6 +5,7 @@
 #
 
 try:
+    import sys
     import os
     import discord
     import pyautogui as pag
@@ -28,7 +29,7 @@ try:
     import threading
 except ModuleNotFoundError:
     print("A module is missing, please reinstall the requirements to fix this.")
-    exit()
+    sys.exit()
 
 mkey = mk.MouseKey()
 MACROPATH = os.path.expandvars(r"%localappdata%\Baz Macro SE") # Windows Roaming Path
@@ -209,7 +210,7 @@ warp_recipe_pos = ((1516 * scale_w), (980 * scale_h))
 merchant_face_pos_1 = (int(841 * scale_w), int(1056 * scale_h))
 merchant_face_pos_2 = (int(855 * scale_w), int(1063 * scale_h))
 collection_open_pos = ((54 * scale_w), (624 * scale_h))
-exit_collection_pos = ((510 * scale_w), (146 * scale_h))
+sys.exit_collection_pos = ((510 * scale_w), (146 * scale_h))
 start_btn_pos = ((1252 * scale_w), (1206 * scale_h))
 reconnect_btn_pos = ((1370 * scale_w), (800 * scale_h))
 mari_cols = ["#767474", "#767476", "#757474", "#7c7c7c", "#7c7a7c", "#7a7878", "#787678", "#787878"]
@@ -391,7 +392,7 @@ if settings["__version__"] > LOCALVERSION:
     print("You are running newer settings with an older version of this program. This may delete some of your settings. Are you sure you want to continue (y)? ")
     confirm = input("")
     if confirm[0].lower() != "y":
-        exit("You are running newer settings with an older version of this program.")
+        sys.exit("You are running newer settings with an older version of this program.")
         
 # Settings integrity check
 validate_settings()
@@ -401,7 +402,7 @@ mkey.enable_failsafekill(settings["failsafe_key"])
 
 root = tk.Tk()
 app = SettingsApp(root)
-root.protocol("WM_DELETE_WINDOW", exit)
+root.protocol("WM_DELETE_WINDOW", sys.exit)
 root.mainloop()
 print("Validating settings, then starting macro...")
 validate_settings()
@@ -705,12 +706,12 @@ def biome_detection():
 
 if settings["WEBHOOK_URL"] == "":
     print("You need to provide a Webhook URL")
-    exit()
+    sys.exit()
 try:
     webhook = discord.Webhook.from_url(settings["WEBHOOK_URL"], adapter=discord.RequestsWebhookAdapter())
 except Exception:
     print("You are probably seeing this because your webhook link is invalid.")
-    exit()
+    sys.exit()
 print(random.choice(STARTUP_MSGS))
 print(f"Started at {now.strftime('%d/%m/%Y %H:%M:%S')} running v{__version__} using local version {LOCALVERSION}")
 if not (exists_procs_by_name("Windows10Universal.exe") or exists_procs_by_name("RobloxPlayerBeta.exe")):
@@ -756,6 +757,6 @@ print(f"Started SolsRNGBot v{LOCALVERSION}")
 root = tk.Tk()
 app = SettingsApp(root)
 root.withdraw()
-root.protocol("WM_DELETE_WINDOW", exit)
+root.protocol("WM_DELETE_WINDOW", sys.exit)
 root.mainloop()
 print("SolsRNGBot has stopped.")

@@ -629,7 +629,7 @@ def merchant_detection():
                             emb.set_image(url="attachment://merchant.png")
                             if settings["send_mari"]:
                                 if settings["ping_jester"] != 0:
-                                    webhook.send(username="SolsRNGBot Server Edition", avatar_url=WEBHOOK_ICON_URL, content=f"<@{settings["ping_mari_id"]}>", embed=emb, file=up)
+                                    webhook.send(username="SolsRNGBot Server Edition", avatar_url=WEBHOOK_ICON_URL, content=f"<@{settings['ping_mari_id']}>", embed=emb, file=up)
                                 else:
                                     webhook.send(username="SolsRNGBot Server Edition", avatar_url=WEBHOOK_ICON_URL, embed=emb, file=up)
                             _break = True
@@ -642,7 +642,7 @@ def merchant_detection():
                             emb.set_image(url="attachment://merchant.png")
                             if settings["send_jester"]:
                                 if settings["ping_jester"] != 0:
-                                    webhook.send(username="SolsRNGBot Server Edition", avatar_url=WEBHOOK_ICON_URL, content=f"<@{settings["ping_jester_id"]}>", embed=emb, file=up)
+                                    webhook.send(username="SolsRNGBot Server Edition", avatar_url=WEBHOOK_ICON_URL, content=f"<@{settings['ping_jester_id']}>", embed=emb, file=up)
                                 else:
                                     webhook.send(username="SolsRNGBot Server Edition", avatar_url=WEBHOOK_ICON_URL, embed=emb, file=up)
                             _break = True

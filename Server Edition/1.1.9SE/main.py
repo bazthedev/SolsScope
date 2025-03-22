@@ -35,13 +35,14 @@ MACROPATH = os.path.expandvars(r"%localappdata%\Baz Macro SE") # Windows Roaming
 LOCALVERSION = "1.1.9SE"
 PRERELEASE = False
 SERVERMACRO_EDITION = True
+WEBHOOK_ICON_URL = "https://raw.githubusercontent.com/bazthedev/SolsRNGBot/a93aaa9a42a7184047f12aa4135f3dab0857f05d/Server%20Edition/whicon.png"
 if PRERELEASE:
     print(f"Warning! This is a prerelease version of SolsRNGBot, meaning you can expect bugs and some errors to occur!\nYou can find logs relating to events that occur during the prerelease in this folder: {MACROPATH}\n\nYou are currently running prerelease for version {LOCALVERSION}, are you sure you wish to continue?")
     input("Press ENTER to continue using the macro: ")
 if SERVERMACRO_EDITION or LOCALVERSION.endswith("SE"):
     print("This is a stripped down version of SolsRNGBot designed for people who macro in Glitch Hunt Servers.")
-DEFAULTSETTINGS = {"WEBHOOK_URL": "", "__version__" :  LOCALVERSION,  "merchant_detection" : False, "send_mari" : True, "ping_mari_id" : 0, "send_jester" : True, "ping_jester_id" : 0, "auto_craft_mode" : False, "auto_craft_item" : {"Heavenly Potion I" : False, "Heavenly Potion II" : True, "Warp Potion" : False},  "edit_settings_mode" : True, "failsafe_key" : "ctrl+e", "private_server_link" : "", "biomes" : {"snowy" : False, "windy" : False, "rainy" : False, "sandstorm" : False, "hell" : False, "starfall" : False, "corruption" : False, "null" : False, "glitched" : True, "dreamspace" : True}, "send_start_message" : True, "ping_everyone_on_dreamspace" : False}
-VALIDSETTINGSKEYS = ["WEBHOOK_URL", "__version__", "merchant_detection", "send_mari", "ping_mari_id", "send_jester", "ping_jester_id", "auto_craft_mode", "auto_craft_item", "edit_settings_mode", "failsafe_key",  "private_server_link", "biomes", "send_start_message", "ping_everyone_on_dreamspace"]
+DEFAULTSETTINGS = {"WEBHOOK_URL": "", "__version__" :  LOCALVERSION,  "merchant_detection" : False, "ping_glitched_id" : 0, "ping_dreamspace_id" : 0, "send_mari" : True, "ping_mari_id" : 0, "send_jester" : True, "ping_jester_id" : 0, "auto_craft_mode" : False, "auto_craft_item" : {"Heavenly Potion I" : False, "Heavenly Potion II" : True, "Warp Potion" : False},  "edit_settings_mode" : True, "failsafe_key" : "ctrl+e", "private_server_link" : "", "biomes" : {"snowy" : False, "windy" : False, "rainy" : False, "sandstorm" : False, "hell" : False, "starfall" : False, "corruption" : False, "null" : False, "glitched" : True, "dreamspace" : True}, "send_start_message" : True, "ping_everyone_on_dreamspace" : True}
+VALIDSETTINGSKEYS = ["WEBHOOK_URL", "__version__", "merchant_detection", "ping_glitched_id", "ping_dreamspace_id", "send_mari", "ping_mari_id", "send_jester", "ping_jester_id", "auto_craft_mode", "auto_craft_item", "edit_settings_mode", "failsafe_key",  "private_server_link", "biomes", "send_start_message", "ping_everyone_on_dreamspace"]
 STARTUP_MSGS = ["Let's go gambling!", "Nah, I'd Roll", "I give my life...", "Take a break", "Waste of time", "I can't stop playing this", "Touch the grass", "Eternal time...", "Break the Reality", "Finished work for today", "When is payday???", "-One who stands before God-", "-Flaws in the world-", "We do a little bit of rolling", "Exotic Destiny", "Always bet on yourself", "(Lime shivers quietly in the cold)", "There's no way to stop it!", "[Tip]: Get Lucky", "I'm addicted to Sol's RNG", "The Lost"]
 
 
@@ -628,9 +629,9 @@ def merchant_detection():
                             emb.set_image(url="attachment://merchant.png")
                             if settings["send_mari"]:
                                 if settings["ping_jester"] != 0:
-                                    webhook.send(username="SolsRNGBot Server Edition", content=f"<@{settings["ping_mari_id"]}>", embed=emb, file=up)
+                                    webhook.send(username="SolsRNGBot Server Edition", avatar_url=WEBHOOK_ICON_URL, content=f"<@{settings["ping_mari_id"]}>", embed=emb, file=up)
                                 else:
-                                    webhook.send(username="SolsRNGBot Server Edition", embed=emb, file=up)
+                                    webhook.send(username="SolsRNGBot Server Edition", avatar_url=WEBHOOK_ICON_URL, embed=emb, file=up)
                             _break = True
                         elif hex_col in jester_cols:
                             emb = discord.Embed(
@@ -641,9 +642,9 @@ def merchant_detection():
                             emb.set_image(url="attachment://merchant.png")
                             if settings["send_jester"]:
                                 if settings["ping_jester"] != 0:
-                                    webhook.send(username="SolsRNGBot Server Edition", content=f"<@{settings["ping_jester_id"]}>", embed=emb, file=up)
+                                    webhook.send(username="SolsRNGBot Server Edition", avatar_url=WEBHOOK_ICON_URL, content=f"<@{settings["ping_jester_id"]}>", embed=emb, file=up)
                                 else:
-                                    webhook.send(username="SolsRNGBot Server Edition", embed=emb, file=up)
+                                    webhook.send(username="SolsRNGBot Server Edition", avatar_url=WEBHOOK_ICON_URL, embed=emb, file=up)
                             _break = True
                     if _break:
                         break
@@ -681,10 +682,20 @@ def biome_detection():
                             description=f"Biome {current_biome} has started at time: {rnow.strftime('%d/%m/%Y %H:%M:%S')}",
                             colour=discord.Colour.from_rgb(biome_cols[current_biome.lower()][0], biome_cols[current_biome.lower()][1], biome_cols[current_biome.lower()][2])
                         )
-                    if current_biome.lower() == "glitched" or (settings["ping_everyone_on_dreamspace"] and current_biome.lower() == "dreamspace"):
-                        webhook.send(username="SolsRNGBot Server Edition", content="@everyone", embed=emb)
+                    if current_biome.lower() == "glitched":
+                        if settings["ping_glitched_id"] != 0:
+                            webhook.send(username="SolsRNGBot Server Edition", avatar_url=WEBHOOK_ICON_URL, content=f"@<{settings['ping_glitched_id']}", embed=emb)
+                        else:
+                            webhook.send(username="SolsRNGBot Server Edition", avatar_url=WEBHOOK_ICON_URL, content="@everyone", embed=emb)
+                    elif current_biome.lower() == "dreamspace":
+                        if settings["ping_dreamspace_id"] != 0:
+                            webhook.send(username="SolsRNGBot Server Edition", avatar_url=WEBHOOK_ICON_URL, content=f"@<{settings['ping_dreamspace_id']}", embed=emb)
+                        elif settings["ping_everyone_on_dreamspace"]:
+                            webhook.send(username="SolsRNGBot Server Edition", avatar_url=WEBHOOK_ICON_URL, content="@everyone", embed=emb)
+                        else:
+                            webhook.send(username="SolsRNGBot Server Edition", avatar_url=WEBHOOK_ICON_URL, embed=emb)
                     else:
-                        webhook.send(username="SolsRNGBot Server Edition", embed=emb)
+                        webhook.send(username="SolsRNGBot Server Edition", avatar_url=WEBHOOK_ICON_URL, embed=emb)
         except KeyError:
             pass
         except AttributeError:
@@ -695,7 +706,11 @@ def biome_detection():
 if settings["WEBHOOK_URL"] == "":
     print("You need to provide a Webhook URL")
     exit()
-webhook = discord.Webhook.from_url(settings["WEBHOOK_URL"], adapter=discord.RequestsWebhookAdapter())
+try:
+    webhook = discord.Webhook.from_url(settings["WEBHOOK_URL"], adapter=discord.RequestsWebhookAdapter())
+except Exception:
+    print("You are probably seeing this because your webhook link is invalid.")
+    exit()
 print(random.choice(STARTUP_MSGS))
 print(f"Started at {now.strftime('%d/%m/%Y %H:%M:%S')} running v{__version__} using local version {LOCALVERSION}")
 if not (exists_procs_by_name("Windows10Universal.exe") or exists_procs_by_name("RobloxPlayerBeta.exe")):
@@ -723,7 +738,8 @@ emb = discord.Embed(
         description=f"Started at {now.strftime('%d/%m/%Y %H:%M:%S')}"
     )
 emb.set_footer(text=f"bazthedev/SolsRNGBot v{LOCALVERSION}")
-webhook.send(username="SolsRNGBot Server Edition", embed=emb)
+if settings["send_start_message"]:
+    webhook.send(username="SolsRNGBot Server Edition", avatar_url=WEBHOOK_ICON_URL, embed=emb)
 for _ in settings["biomes"].keys():
     if settings["biomes"][_]:
         biome_detection_thread = threading.Thread(target=biome_detection)

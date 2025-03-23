@@ -42,8 +42,8 @@ if PRERELEASE:
     input("Press ENTER to continue using the macro: ")
 if SERVERMACRO_EDITION or LOCALVERSION.endswith("SE"):
     print("This is a stripped down version of SolsRNGBot designed for people who macro in Glitch Hunt Servers.")
-DEFAULTSETTINGS = {"WEBHOOK_URL": "", "__version__" :  LOCALVERSION,  "merchant_detection" : False, "ping_glitched_id" : 0, "ping_dreamspace_id" : 0, "send_mari" : True, "ping_mari_id" : 0, "send_jester" : True, "ping_jester_id" : 0, "auto_craft_mode" : False, "auto_craft_item" : {"Heavenly Potion I" : False, "Heavenly Potion II" : True, "Warp Potion" : False},  "edit_settings_mode" : True, "failsafe_key" : "ctrl+e", "private_server_link" : "", "biomes" : {"snowy" : False, "windy" : False, "rainy" : False, "sand storm" : False, "hell" : False, "starfall" : False, "corruption" : False, "null" : False, "glitched" : True, "dreamspace" : True}, "send_start_message" : True, "ping_everyone_on_dreamspace" : True}
-VALIDSETTINGSKEYS = ["WEBHOOK_URL", "__version__", "merchant_detection", "ping_glitched_id", "ping_dreamspace_id", "send_mari", "ping_mari_id", "send_jester", "ping_jester_id", "auto_craft_mode", "auto_craft_item", "edit_settings_mode", "failsafe_key",  "private_server_link", "biomes", "send_start_message", "ping_everyone_on_dreamspace"]
+DEFAULTSETTINGS = {"WEBHOOK_URL": "", "__version__" :  LOCALVERSION,  "merchant_detection" : False, "ping_glitched_id" : "everyone", "ping_dreamspace_id" : "everyone", "send_mari" : True, "ping_mari_id" : 0, "send_jester" : True, "ping_jester_id" : 0, "auto_craft_mode" : False, "auto_craft_item" : {"Heavenly Potion I" : False, "Heavenly Potion II" : True, "Warp Potion" : False},  "edit_settings_mode" : True, "failsafe_key" : "ctrl+e", "private_server_link" : "", "biomes" : {"snowy" : False, "windy" : False, "rainy" : False, "sand storm" : False, "hell" : False, "starfall" : False, "corruption" : False, "null" : False, "glitched" : True, "dreamspace" : True}, "send_start_message" : True}
+VALIDSETTINGSKEYS = ["WEBHOOK_URL", "__version__", "merchant_detection", "ping_glitched_id", "ping_dreamspace_id", "send_mari", "ping_mari_id", "send_jester", "ping_jester_id", "auto_craft_mode", "auto_craft_item", "edit_settings_mode", "failsafe_key",  "private_server_link", "biomes", "send_start_message"]
 STARTUP_MSGS = ["Let's go gambling!", "Nah, I'd Roll", "I give my life...", "Take a break", "Waste of time", "I can't stop playing this", "Touch the grass", "Eternal time...", "Break the Reality", "Finished work for today", "When is payday???", "-One who stands before God-", "-Flaws in the world-", "We do a little bit of rolling", "Exotic Destiny", "Always bet on yourself", "(Lime shivers quietly in the cold)", "There's no way to stop it!", "[Tip]: Get Lucky", "I'm addicted to Sol's RNG", "The Lost"]
 
 
@@ -684,17 +684,15 @@ def biome_detection():
                             colour=discord.Colour.from_rgb(biome_cols[current_biome.lower()][0], biome_cols[current_biome.lower()][1], biome_cols[current_biome.lower()][2])
                         )
                     if current_biome.lower() == "glitched":
-                        if settings["ping_glitched_id"] != 0:
-                            webhook.send(username="SolsRNGBot Server Edition", avatar_url=WEBHOOK_ICON_URL, content=f"@<{settings['ping_glitched_id']}", embed=emb)
+                        if settings["ping_glitched_id"].lower() == "everyone" or settings["ping_glitched_id"].lower() == "here":
+                            webhook.send(username="SolsRNGBot Server Edition", avatar_url=WEBHOOK_ICON_URL, content=f"@{settings['ping_glitched_id'].lower()}", embed=emb)
                         else:
-                            webhook.send(username="SolsRNGBot Server Edition", avatar_url=WEBHOOK_ICON_URL, content="@everyone", embed=emb)
+                            webhook.send(username="SolsRNGBot Server Edition", avatar_url=WEBHOOK_ICON_URL, content=f"<@{settings['ping_glitched_id']}>", embed=emb)
                     elif current_biome.lower() == "dreamspace":
-                        if settings["ping_dreamspace_id"] != 0:
-                            webhook.send(username="SolsRNGBot Server Edition", avatar_url=WEBHOOK_ICON_URL, content=f"@<{settings['ping_dreamspace_id']}", embed=emb)
-                        elif settings["ping_everyone_on_dreamspace"]:
-                            webhook.send(username="SolsRNGBot Server Edition", avatar_url=WEBHOOK_ICON_URL, content="@everyone", embed=emb)
+                        if settings["ping_dreamspace_id"].lower() == "everyone" or settings["ping_dreamspace_id"].lower() == "here":
+                            webhook.send(username="SolsRNGBot Server Edition", avatar_url=WEBHOOK_ICON_URL, content=f"@{settings['ping_dreamspace_id']}", embed=emb)
                         else:
-                            webhook.send(username="SolsRNGBot Server Edition", avatar_url=WEBHOOK_ICON_URL, embed=emb)
+                            webhook.send(username="SolsRNGBot Server Edition", avatar_url=WEBHOOK_ICON_URL, content=f"<@{settings['ping_dreamspace_id']}>", embed=emb)
                     else:
                         webhook.send(username="SolsRNGBot Server Edition", avatar_url=WEBHOOK_ICON_URL, embed=emb)
         except KeyError:

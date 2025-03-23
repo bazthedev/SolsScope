@@ -8,6 +8,7 @@
 - Sending to a webhook
 - Specific Role Pings for Mari/Jester or Glitched/Dreamspace
 - Sending a screenshot of a Merchant's stock upon detection
+- If the Glitched/Dreamspace IDs are 0, then by default it will ping everyone.
 
 # Note that this version is very minimal compared to the full version of SolsRNGBot.
 # Setup:

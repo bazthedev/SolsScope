@@ -12,7 +12,12 @@
 
 # Note that this version is very minimal compared to the full version of SolsRNGBot.
 # Setup:
-## In order to setup the Macro, you need to install the requirements (py -m pip install -r requirements.txt) or (py -m pip install discord==1.7.3 pyautogui pynput requests pillow screeninfo mousekey psutil). After that, run the Macro and paste your webhook link into the Webhook URL field. You can also customise your settings, including the roles to be mentioned, the biomes to notify about etc here. Once you are done, press save and start macro to begin.
+## Exe:
+Just run the exe and it will start the macro, it will take some time to start because of all the Python packages that were bundled with it.
+## Python:
+In order to setup the Macro, you need to install the requirements (py -m pip install -r requirements.txt) or (py -m pip install discord==1.7.3 pyautogui pynput requests pillow screeninfo mousekey psutil).
+## Do this for both:
+Run the Macro and paste your webhook link into the Webhook URL field. You can also customise your settings, including the roles to be mentioned, the biomes to notify about etc here. Once you are done, press save and start macro to begin.
 
 # Stopping the Macro:
 ## To stop the Macro, you need to press Ctrl and E, or whatever the value of your Failsafe Key is in settings.

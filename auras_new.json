@@ -1,9 +1,27 @@
 {
+    "★" : {
+        "emb_colour" : "#ec88ff",
+        "rarity" : "100",
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/d/d7/Dreamscape_star1_collection.png/revision/latest",
+        "native_biome" : "Dreamspace"
+    },
+    "★★" : {
+        "emb_colour" : "#ec88ff",
+        "rarity" : "1000",
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/4/4f/Dreamscape_star2.png/revision/latest",
+        "native_biome" : "Dreamspace"
+    },
     "fault" : {
-        "emb_colour" : "",
+        "emb_colour" : "#97e18f",
         "rarity" : "3000",
         "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/e/e1/Fault_Aura_Collection_GIF.gif/revision/latest",
         "native_biome" : "Glitched"
+    },
+    "★★★" : {
+        "emb_colour" : "#ec88ff",
+        "rarity" : "10000",
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/a/a3/Screenshot_2025-02-09_145439.png/revision/latest",
+        "native_biome" : "Dreamspace"
     },
     "exotic": {
         "emb_colour": "#38c8d8",
@@ -131,6 +149,12 @@
         "img_url": "https://static.wikia.nocookie.net/sol-rng/images/5/57/Astral_Era9.gif/revision/latest",
         "native_biome": "Corruption"
     },
+    "cosmos" : {
+        "emb_colour" : "#ec88ff",
+        "rarity" : "1520000",
+         "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/4/4c/CosmosCollection.gif/revision/latest",
+        "native_biome" : "Starfall"
+    },
     "gravitational": {
         "emb_colour": "#5163ff",
         "rarity": "2000000",
@@ -221,11 +245,23 @@
         "img_url": "https://static.wikia.nocookie.net/sol-rng/images/d/d4/HpVl.gif/revision/latest",
         "native_biome": ""
     },
+    "velocity" : {
+        "emb_colour" : "#de4a00",
+        "rarity" : "7630000",
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/5/54/Velocitygif.gif/revision/latest",
+        "native_biome" : ""
+    },
     "nihility": {
         "emb_colour": "#ffffff",
         "rarity": "9000000",
         "img_url": "https://static.wikia.nocookie.net/sol-rng/images/c/ca/Nihility_collection.gif/revision/latest",
         "native_biome": "Null"
+    },
+    "helios" : {
+        "emb_colour" : "#e39250",
+        "rarity" : "9000000",
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/e/ed/HeliosCollection.gif/revision/latest",
+        "native_biome" : ""
     },
     "starscourge": {
         "emb_colour": "#ff8080",
@@ -383,11 +419,23 @@
         "img_url": "https://static.wikia.nocookie.net/sol-rng/images/0/05/Sovereign_Collection_E8.gif/revision/latest",
         "native_biome": ""
     },
+    "ruins: withered" : {
+        "emb_colour" : "#000000",
+        "rarity" : "800000000",
+        "img_url" : "",
+        "native_biome" : ""
+    },
     "aegis": {
         "emb_colour": "#3151ff",
         "rarity": "825000000",
         "img_url": "https://static.wikia.nocookie.net/sol-rng/images/a/ab/AegisCollection.gif/revision/latest",
         "native_biome": ""
+    },
+    "pixelated" : {
+        "emb_colour" : "#000000",
+        "rarity" : "1073741824",
+        "img_url" : "",
+        "native_biome" : ""
     },
     "luminosity": {
         "emb_colour": "#c2deff",
@@ -454,5 +502,23 @@
         "rarity": "510000000",
         "img_url": "https://static.wikia.nocookie.net/sol-rng/images/e/e4/Roblox2025-02-0917-24-01-ezgif.com-optimize.gif/revision/latest",
         "native_biome": "Snowy"
+    },
+    ":flushed: troll" : {
+        "emb_colour" : "#ffffff",
+        "rarity" : "1000000",
+        "img_url": "",
+        "native_biome" : ""
+    },
+    "origin: onion" : {
+        "emb_colour" : "#d067fe",
+        "rarity" : "8000000",
+        "img_url" : "",
+        "native_biome" : ""
+    },
+    "glock: shieldofthesky" : {
+        "emb_colour" : "#000000",
+        "rarity" : "170000000",
+        "img_url" : "",
+        "native_biome" : ""
     }
 }

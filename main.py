@@ -318,7 +318,7 @@ if not os.path.isfile(f"{MACROPATH}/icon.ico"):
 def get_auras():
     print("Downloading Aura List")
     dl = requests.get("https://raw.githubusercontent.com/bazthedev/SolsRNGBot/main/auras_new.json")
-    f = open(f"{MACROPATH}/auras_new.json", "wb", encoding="utf-8")
+    f = open(f"{MACROPATH}/auras_new.json", "wb")
     f.write(dl.content)
     f.close()
     print("Downloaded Aura List")

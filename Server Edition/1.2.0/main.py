@@ -1,6 +1,6 @@
 #           Baz's Macro/SolsRNGBot
 #   A discord bot for macroing Sol's RNG on Roblox
-#   Version: 1.2.0SE (Server Edition)
+#   Version: 1.2.0SE (Server Edition) Hotfix 1
 #   https://github.com/bazthedev/SolsRNGBot
 #
 
@@ -124,7 +124,7 @@ def validate_pslink(ps_server_link : str):
 def get_auras():
     print("Downloading Aura List")
     dl = requests.get("https://raw.githubusercontent.com/bazthedev/SolsRNGBot/main/auras_new.json")
-    f = open(f"{MACROPATH}/auras_new.json", "wb")
+    f = open(f"{MACROPATH}/auras_new.json", "wb", encoding="utf-8")
     f.write(dl.content)
     f.close()
     print("Downloaded Aura List")   
@@ -299,7 +299,7 @@ print(f"Starting SolsRNGBot v{LOCALVERSION}")
 if not os.path.exists(f"{MACROPATH}/auras_new.json"):
     get_auras()
 
-with open(f"{MACROPATH}/auras_new.json", "r") as f:
+with open(f"{MACROPATH}/auras_new.json", "r", encoding="utf-8") as f:
         auras = json.load(f)
 
 class SettingsApp:

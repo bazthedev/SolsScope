@@ -1,9 +1,9 @@
 #           Baz's Macro/SolsRNGBot
 #   A discord bot for macroing Sol's RNG on Roblox
-#   Version: 1.2.0
+#   Version: 1.2.0 Hotfix 1
 #   https://github.com/bazthedev/SolsRNGBot
 #
-
+import  sys
 try:
     import os
     import discord
@@ -34,7 +34,7 @@ try:
     import zipfile
 except ModuleNotFoundError:
     print("A module is missing, please reinstall the requirements to fix this.")
-    exit()
+    sys.exit()
 
 mkey = mk.MouseKey()
 MACROPATH = os.path.expandvars(r"%localappdata%\Baz's Macro") # Windows Roaming Path
@@ -318,7 +318,7 @@ if not os.path.isfile(f"{MACROPATH}/icon.ico"):
 def get_auras():
     print("Downloading Aura List")
     dl = requests.get("https://raw.githubusercontent.com/bazthedev/SolsRNGBot/main/auras_new.json")
-    f = open(f"{MACROPATH}/auras_new.json", "wb")
+    f = open(f"{MACROPATH}/auras_new.json", "wb", encoding="utf-8")
     f.write(dl.content)
     f.close()
     print("Downloaded Aura List")
@@ -678,7 +678,7 @@ async def auto_pop(biome : str):
         await leave_main_menu()
         print("Success!")
     else:
-        exit("No server to rejoin in settings")
+        sys.exit("No server to rejoin in settings")
     if not keep_alive.is_running():
         keep_alive.start()
     if not merchant_detection.is_running() and settings["merchant_detection"]:
@@ -997,7 +997,7 @@ if settings["__version__"] > LOCALVERSION:
     print("You are running newer settings with an older version of this program. This may delete some of your settings. Are you sure you want to continue (y)? ")
     confirm = input("")
     if confirm[0].lower() != "y":
-        exit("You are running newer settings with an older version of this program.")
+        sys.exit("You are running newer settings with an older version of this program.")
         
 # Settings integrity check
 validate_settings()
@@ -1030,7 +1030,7 @@ if settings["check_update"]:
                 print(f"Extracted v{new_ver_str} to directory {DOWNLOADS_DIR}\\SolsRNGBot_{new_ver_str}")
                 print("Cleaning up...")
                 os.remove(f"{DOWNLOADS_DIR}/SolsRNGBot_{new_ver_str}.zip")
-            exit(f"Downloaded v{new_ver_str}")
+            sys.exit(f"Downloaded v{new_ver_str}")
     else:
         print(f"You are running the latest version.")
 
@@ -1068,7 +1068,7 @@ if settings["sniper_enabled"] and (settings["ROBLOSECURITY_KEY"] == "" or settin
     settings["edit_settings_mode"] = True
     update_settings(settings)
     reload_settings()
-    exit()
+    sys.exit()
 
 if settings["ROBLOSECURITY_KEY"] != "":
     format_roblosecurity()
@@ -1079,7 +1079,7 @@ if not settings["skip_aura_download"]:
 if not os.path.exists(f"{MACROPATH}/auras.json") or not os.path.exists(f"{MACROPATH}/auras_new.json"):
     get_auras()
 
-with open(f"{MACROPATH}/auras_new.json", "r") as f:
+with open(f"{MACROPATH}/auras_new.json", "r", encoding="utf-8") as f:
         auras = json.load(f)
 
 if settings["private_server_link"] != "":
@@ -1523,7 +1523,7 @@ async def disconnect_prevention():
     global rblx_log_dir
     if not exists_procs_by_name("Windows10Universal.exe") and not exists_procs_by_name("RobloxPlayerBeta.exe"):
         print("There are no instances of Roblox running, the macro will now stop.")
-        exit()
+        sys.exit()
     if detect_client_disconnect(rblx_log_dir):
         if valid_ps:
             if rblx_log_dir != ms_rblx_log_dir:

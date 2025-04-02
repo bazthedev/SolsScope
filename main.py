@@ -1,6 +1,6 @@
 #           Baz's Macro/SolsRNGBot
 #   A discord bot for macroing Sol's RNG on Roblox
-#   Version: 1.1.9
+#   Version: 1.2.0
 #   https://github.com/bazthedev/SolsRNGBot
 #
 
@@ -30,21 +30,26 @@ try:
     import subprocess
     import typing
     from websockets import connect
+    from pathlib import Path
+    import zipfile
 except ModuleNotFoundError:
     print("A module is missing, please reinstall the requirements to fix this.")
     exit()
 
 mkey = mk.MouseKey()
 MACROPATH = os.path.expandvars(r"%localappdata%\Baz's Macro") # Windows Roaming Path
-LOCALVERSION = "1.1.9"
+LOCALVERSION = "1.2.0"
 PRERELEASE = False
+SERVERMACRO_EDITION = False
 if PRERELEASE:
     print(f"Warning! This is a prerelease version of SolsRNGBot, meaning you can expect bugs and some errors to occur!\nYou can find logs relating to events that occur during the prerelease in this folder: {MACROPATH}\n\nYou are currently running prerelease for version {LOCALVERSION}, are you sure you wish to continue?")
     input("Press ENTER to continue using the macro: ")
-DEFAULTSETTINGS = {"TOKEN": "", "__version__" :  LOCALVERSION, "log_channel_id": 0, "use_rblx_player" : True, "global_wait_time" : 0.1, "skip_aura_download": False, "mention" : True, "mention_id" : 0, "minimum_roll" : "99998", "minimum_ping" : "349999", "reset_aura" : "", "merchant_detection" : False, "send_mari" : True, "ping_mari" : False, "send_jester" : True, "ping_jester" : True, "auto_purchase_items" : {"Void Coin/Lucky Penny" : True, "Oblivion Potion" : True}, "glitch_detector" : True, "ping_on_glitch" : True, "pop_in_glitch" : False, "auto_use_items_in_glitch": {"Heavenly Potion II" : {"use" : True, "amount" : 200}, "Fortune Potion III" : {"use" : True, "amount" : 1}, "Lucky Potion" : {"use" : True, "amount" : 10}, "Pumpkin" : {"use" : True, "amount" : 10}, "Haste Potion III" : {"use" : False, "amount" : 1}, "Warp Potion" : {"use" : True, "amount" : 1}, "Transcended Potion" : {"use" : False, "amount" : 1}, "Mixed Potion" : {"use" : True, "amount" : 10}, "Stella's Candle" : {"use" : True, "amount" : 1}, "Santa Claus Potion" : {"use" : True, "amount" : 5}, "Hwachae" : {"use" : True, "amount" : 1}}, "dreamspace_detector" : True, "ping_on_dreamspace" : True, "pop_in_dreamspace" : False, "auto_use_items_in_dreamspace" : {"Heavenly Potion II" : {"use" : False, "amount" : 1}, "Fortune Potion III" : {"use" : True, "amount" : 1}, "Lucky Potion" : {"use" : True, "amount" : 10}, "Pumpkin" : {"use" : True, "amount" : 10}, "Haste Potion III" : {"use" : False, "amount" : 1}, "Warp Potion" : {"use" : True, "amount" : 1}, "Transcended Potion" : {"use" : False, "amount" : 1}, "Mixed Potion" : {"use" : True, "amount" : 10}, "Stella's Candle" : {"use" : True, "amount" : 1}, "Santa Claus Potion" : {"use" : True, "amount" : 5}, "Hwachae" : {"use" : True, "amount" : 1}}, "auto_craft_mode" : False, "skip_auto_mode_warning" : False, "auto_craft_item" : {"Heavenly Potion I" : False, "Heavenly Potion II" : True, "Warp Potion" : False}, "auto_biome_randomizer" : False, "auto_strange_controller" : False, "edit_settings_mode" : True, "failsafe_key" : "ctrl+e", "merchant_detec_wait" : 0, "private_server_link" : "", "legacy_aura_detection" : False, "take_screenshot_on_detection" : False, "ROBLOSECURITY_KEY" : "", "DISCORD_TOKEN" : "", "sniper_enabled" : False, "sniper_toggles" : {"Glitched" : True, "Dreamspace" : False}, "sniper_channel_id" : 0, "sniper_logs" : True, "change_cutscene_on_pop" : True, "disable_autokick_prevention" : False, "periodic_screenshots" : {"inventory" : False, "storage" : False}, "disconnect_prevention" : False}
-VALIDSETTINGSKEYS = ["TOKEN", "__version__", "log_channel_id", "use_rblx_player", "global_wait_time", "skip_aura_download", "mention", "mention_id", "minimum_roll", "minimum_ping", "reset_aura", "merchant_detection", "send_mari", "ping_mari", "send_jester", "ping_jester", "auto_purchase_items", "glitch_detector", "ping_on_glitch", "pop_in_glitch", "auto_use_items_in_glitch", "dreamspace_detector", "ping_on_dreamspace", "pop_in_dreamspace", "auto_use_items_in_dreamspace", "auto_craft_mode", "skip_auto_mode_warning", "auto_craft_item", "auto_biome_randomizer", "auto_strange_controller", "edit_settings_mode", "failsafe_key", "merchant_detec_wait", "private_server_link", "legacy_aura_detection", "take_screenshot_on_detection", "ROBLOSECURITY_KEY", "DISCORD_TOKEN", "sniper_enabled", "sniper_toggles", "sniper_channel_id", "sniper_logs", "change_cutscene_on_pop", "disable_autokick_prevention", "periodic_screenshots", "disconnect_prevention"]
-STARTUP_MSGS = ["Let's go gambling!", "Nah, I'd Roll", "I give my life...", "Take a break", "Waste of time", "I can't stop playing this", "Touch the grass", "Eternal time...", "Break the Reality", "Finished work for today", "When is payday???", "One who stands before God", "Flaws in the world", "We do a little bit of rolling", "Exotic Destiny", "Always bet on yourself", "Is that a Mari I hear?", "(Lime shivers quietly in the cold)", "There's no way to stop it!", "[Tip]: Get Lucky"]
-
+if SERVERMACRO_EDITION or LOCALVERSION.endswith("SE"):
+    print("This is a stripped down version of SolsRNGBot designed for people who macro in Glitch Hunt Servers.")
+DEFAULTSETTINGS = {"TOKEN": "", "__version__" :  LOCALVERSION, "log_channel_id": 0, "use_rblx_player" : True, "global_wait_time" : 0.1, "skip_aura_download": False, "mention" : True, "mention_id" : 0, "minimum_roll" : "99998", "minimum_ping" : "349999", "reset_aura" : "", "merchant_detection" : False, "send_mari" : True, "ping_mari" : False, "send_jester" : True, "ping_jester" : True, "auto_purchase_items" : {"Void Coin/Lucky Penny" : True, "Oblivion Potion" : True}, "clear_logs" : False, "pop_in_glitch" : False, "auto_use_items_in_glitch": {"Heavenly Potion" : {"use" : True, "amount" : 200}, "Fortune Potion III" : {"use" : True, "amount" : 1}, "Lucky Potion" : {"use" : True, "amount" : 10}, "Pumpkin" : {"use" : True, "amount" : 10}, "Haste Potion III" : {"use" : False, "amount" : 1}, "Warp Potion" : {"use" : True, "amount" : 1}, "Transcended Potion" : {"use" : False, "amount" : 1}, "Mixed Potion" : {"use" : True, "amount" : 10}, "Stella's Candle" : {"use" : True, "amount" : 1}, "Santa Claus Potion" : {"use" : True, "amount" : 5}, "Hwachae" : {"use" : True, "amount" : 1}}, "pop_in_dreamspace" : False, "auto_use_items_in_dreamspace" : {"Heavenly Potion" : {"use" : False, "amount" : 1}, "Fortune Potion III" : {"use" : True, "amount" : 1}, "Lucky Potion" : {"use" : True, "amount" : 10}, "Pumpkin" : {"use" : True, "amount" : 10}, "Haste Potion III" : {"use" : False, "amount" : 1}, "Warp Potion" : {"use" : True, "amount" : 1}, "Transcended Potion" : {"use" : False, "amount" : 1}, "Mixed Potion" : {"use" : True, "amount" : 10}, "Stella's Candle" : {"use" : True, "amount" : 1}, "Santa Claus Potion" : {"use" : True, "amount" : 5}, "Hwachae" : {"use" : True, "amount" : 1}}, "auto_craft_mode" : False, "skip_auto_mode_warning" : False, "auto_craft_item" : {"Potion of Bound" : False, "Heavenly Potion" : True, "Godly Potion (Zeus)" : True, "Godly Potion (Poseidon)" : True, "Godly Potion (Hades)" : True, "Warp Potion" : True, "Godlike Potion" : True}, "auto_biome_randomizer" : False, "auto_strange_controller" : False, "edit_settings_mode" : True, "failsafe_key" : "ctrl+e", "merchant_detec_wait" : 0, "private_server_link" : "", "take_screenshot_on_detection" : False, "ROBLOSECURITY_KEY" : "", "DISCORD_TOKEN" : "", "collect_items" : {"1" : False, "2" : False, "3" : False, "4" : False}, "sniper_enabled" : False, "sniper_toggles" : {"Glitched" : True, "Dreamspace" : False}, "sniper_channel_id" : 0, "sniper_logs" : True, "change_cutscene_on_pop" : True, "disable_autokick_prevention" : False, "periodic_screenshots" : {"inventory" : False, "storage" : False}, "disconnect_prevention" : False, "check_update" : True, "auto_install_update" : False, "biomes" : {"snowy" : False, "windy" : False, "rainy" : False, "sand storm" : False, "hell" : False, "starfall" : False, "corruption" : False, "null" : False, "glitched" : True, "dreamspace" : True}}
+VALIDSETTINGSKEYS = ["TOKEN", "__version__", "log_channel_id", "use_rblx_player", "global_wait_time", "skip_aura_download", "mention", "mention_id", "minimum_roll", "minimum_ping", "reset_aura", "merchant_detection", "send_mari", "ping_mari", "send_jester", "ping_jester", "auto_purchase_items", "clear_logs", "pop_in_glitch", "auto_use_items_in_glitch", "pop_in_dreamspace", "auto_use_items_in_dreamspace", "auto_craft_mode", "skip_auto_mode_warning", "auto_craft_item", "auto_biome_randomizer", "auto_strange_controller", "edit_settings_mode", "failsafe_key", "merchant_detec_wait", "private_server_link", "take_screenshot_on_detection", "ROBLOSECURITY_KEY", "DISCORD_TOKEN", "sniper_enabled", "sniper_toggles", "collect_items", "sniper_channel_id", "sniper_logs", "change_cutscene_on_pop", "disable_autokick_prevention", "periodic_screenshots", "disconnect_prevention", "check_update", "auto_install_update", "biomes"]
+STARTUP_MSGS = ["Let's go gambling!", "Nah, I'd Roll", "I give my life...", "Take a break", "Waste of time", "I can't stop playing this", "Touch the grass", "Eternal time...", "Break the Reality", "Finished work for today", "When is payday???", "-One who stands before God-", "-Flaws in the world-", "We do a little bit of rolling", "Exotic Destiny", "Always bet on yourself", "(Lime shivers quietly in the cold)", "There's no way to stop it!", "[Tip]: Get Lucky", "I'm addicted to Sol's RNG", "The Lost"]
+ACCEPTEDPOTIONS = ["Potion of Bound", "Heavenly Potion", "Godly Potion (Zeus)", "Godly Potion (Poseidon)", "Godly Potion (Hades)", "Warp Potion", "Godlike Potion"]
 detected_snipe = False
 
 if not os.path.exists(f"{MACROPATH}"):
@@ -206,15 +211,14 @@ class Sniper:
         if rblx_log_dir == rblx_player_log_dir:
             os.system("taskkill /f /im RobloxPlayerBeta.exe /t")
             rblx_log_dir = ms_rblx_log_dir
+        detected_snipe = True
+        await self._join_windows(server_code)
+        print(f"[SNIPER] {self.words[choice_id]} link found\nyay joins (modified for bazthedev/SolsRNGBot v{LOCALVERSION})")
         aura_detection.cancel()
         merchant_detection.cancel()
         biome_randomizer.cancel()
         strange_controller.cancel()
         keep_alive.cancel()
-        legacy_aura_detection.cancel()
-        detected_snipe = True
-        await self._join_windows(server_code)
-        print(f"[SNIPER] {self.words[choice_id]} link found\nyay joins (modified for bazthedev/SolsRNGBot v{LOCALVERSION})")
         if settings["pop_in_glitch"] and self.words[choice_id] == "Glitched":
             await auto_pop("glitched")
 
@@ -312,12 +316,6 @@ if not os.path.isfile(f"{MACROPATH}/icon.ico"):
     f.close()
 
 def get_auras():
-    print("Downloading Legacy Aura List")
-    dl = requests.get("https://raw.githubusercontent.com/bazthedev/SolsRNGBot/main/auras.json")
-    f = open(f"{MACROPATH}/auras.json", "wb")
-    f.write(dl.content)
-    f.close()
-    print("Downloaded Legacy Aura List")
     print("Downloading Aura List")
     dl = requests.get("https://raw.githubusercontent.com/bazthedev/SolsRNGBot/main/auras_new.json")
     f = open(f"{MACROPATH}/auras_new.json", "wb")
@@ -360,6 +358,25 @@ def validate_settings():
     update_settings(settings)
     reload_settings()
 
+def validate_potions():
+    found_keys = []
+    todel = []
+    for k in settings["auto_craft_item"].keys():
+        if k not in ACCEPTEDPOTIONS:
+            todel.append(k)
+            print(f"Invalid potion ({k}) detected")
+        else:
+            found_keys.append(k)
+    for _ in todel:
+        del settings["auto_craft_item"][_]
+        print(f"Invalid potion ({_}) deleted")
+    for _ in ACCEPTEDPOTIONS:
+        if _ not in found_keys:
+            settings["auto_craft_item"][_] = False
+            print(f"Missing potion ({_}) added")
+    update_settings(settings)
+    reload_settings()
+
 def validate_pslink(ps_server_link : str):
     if "https://www.roblox.com/share?code=" not in ps_server_link:
         return False
@@ -382,6 +399,8 @@ def migrate_settings():
         with open(f"{MACROPATH}/settings.json", "w+") as f:
             json.dump(_, f, indent=4)
     reload_settings()
+    if not os.path.exists(f"{MACROPATH}"):
+        print(f"Moving to new directory: {MACROPATH}")
 
 async def use_item(item_name : str, amount : int, close_menu : bool):
     mkey.left_click_xy_natural(inv_button_pos[0], inv_button_pos[1])
@@ -409,40 +428,6 @@ async def use_item(item_name : str, amount : int, close_menu : bool):
     if close_menu:
         mkey.left_click_xy_natural(close_pos[0], close_pos[1])
         await asyncio.sleep(settings["global_wait_time"])
-
-async def align_camera():
-    print("Aligning Camera....")
-    _keyboard.press(Key.esc)
-    await asyncio.sleep(settings["global_wait_time"])
-    _keyboard.release(Key.esc)
-    await asyncio.sleep(settings["global_wait_time"])
-    _keyboard.press("r")
-    await asyncio.sleep(settings["global_wait_time"])
-    _keyboard.release("r")
-    await asyncio.sleep(settings["global_wait_time"])    
-    _keyboard.press(Key.enter)
-    await asyncio.sleep(settings["global_wait_time"])
-    _keyboard.release(Key.enter)
-    await asyncio.sleep(settings["global_wait_time"])
-    mkey.left_click_xy_natural(collection_open_pos[0], collection_open_pos[1])
-    await asyncio.sleep(settings["global_wait_time"])
-    mkey.left_click_xy_natural(exit_collection_pos[0], exit_collection_pos[1])
-    await asyncio.sleep(settings["global_wait_time"])
-    _keyboard.press(Key.shift)
-    await asyncio.sleep(settings["global_wait_time"])
-    _keyboard.release(Key.shift)
-    await asyncio.sleep(settings["global_wait_time"])
-    _keyboard.press(Key.shift)
-    await asyncio.sleep(settings["global_wait_time"])
-    _keyboard.release(Key.shift)
-    await asyncio.sleep(settings["global_wait_time"])
-    for i in range(80):
-        _mouse.scroll(0, 30)
-    await asyncio.sleep(2)
-    for i in range(3):
-        _mouse.scroll(0, -5)
-        await asyncio.sleep(settings["global_wait_time"])
-    await asyncio.sleep(settings["global_wait_time"])
 
 async def leave_main_menu():
     if get_latest_equipped_aura(rblx_log_dir) == "In Main Menu":
@@ -592,9 +577,9 @@ def get_process_by_name(name):
             return p
     return False
 
-def match_rblxms_hwnd_to_pid(pid):
+def match_rblx_hwnd_to_pid(pid):
     for w in mkey.get_all_windows():
-        if w.pid == pid and w.title == "MSCTFIME UI":
+        if w.pid == pid:
             return w
     return False
 
@@ -606,7 +591,7 @@ async def auto_pop(biome : str):
         while not exists_procs_by_name("Windows10Universal.exe"):
             pass # Wait for roblox to start
         ps_rblxms = get_process_by_name("Windows10Universal.exe")
-        rblxms_window = match_rblxms_hwnd_to_pid(ps_rblxms.pid)
+        rblxms_window = match_rblx_hwnd_to_pid(ps_rblxms.pid)
         mkey.activate_window(rblxms_window.hwnd)
         await asyncio.sleep(settings["global_wait_time"])
         mkey.left_click_xy_natural(ms_rblx_spawn_pos[0], ms_rblx_spawn_pos[1])
@@ -672,9 +657,7 @@ async def auto_pop(biome : str):
             else:
                 await use_item(item, settings["auto_use_items_in_glitch"][item]["amount"], True)
 
-    if not legacy_aura_detection.is_running() and settings["legacy_aura_detection"]:
-        legacy_aura_detection.start()
-    elif not aura_detection.is_running():
+    if not aura_detection.is_running():
         aura_detection.start()    
     if valid_ps:
         print("Attempting to rejoin private server")
@@ -682,7 +665,7 @@ async def auto_pop(biome : str):
         await sniper._join_windows(ps_link_code)
         await asyncio.sleep(10)
         ps_rblxms = get_process_by_name("Windows10Universal.exe")
-        rblxms_window = match_rblxms_hwnd_to_pid(ps_rblxms.pid)
+        rblxms_window = match_rblx_hwnd_to_pid(ps_rblxms.pid)
         mkey.activate_window(rblxms_window.hwnd)
         await asyncio.sleep(settings["global_wait_time"])
         mkey.left_click_xy_natural(ms_rblx_spawn_pos[0], ms_rblx_spawn_pos[1])
@@ -762,12 +745,12 @@ settings_btn_pos = ((1278 * scale_w), (738 * scale_h))
 rolling_conf_pos = ((888 * scale_w), (498 * scale_h))
 cutscene_conf_pos = ((1518 * scale_w), (812 * scale_h))
 craft_btn_pos = ((764 * scale_w), (764 * scale_h))
-hp1_pos_potions = ((1064 * scale_w), (840 * scale_h))
-hp1_pos_celestial = ((1064 * scale_w), (1024 * scale_h))
-hp2_pos_potions = ((1064 * scale_w), (910 * scale_h))
+hp1_pos_potions = ((1064 * scale_w), (840 * scale_h)) # first add button (-110 * scale_w gives the item input)
+hp1_pos_celestial = ((1064 * scale_w), (1024 * scale_h)) # very botton button
+hp2_pos_potions = ((1064 * scale_w), (910 * scale_h)) # second add button
 auto_btn_pos = ((940 * scale_w), (762 * scale_h))
-auto_mode_swap = 0
-auto_craft_index = 3
+auto_mode_swap = 5
+auto_craft_index = 1
 hp1_recipe_pos = ((1516 * scale_w), (684 * scale_h))
 hp2_recipe_pos = ((1516 * scale_w), (836 * scale_h))
 warp_recipe_pos = ((1516 * scale_w), (980 * scale_h))
@@ -777,8 +760,10 @@ collection_open_pos = ((54 * scale_w), (624 * scale_h))
 exit_collection_pos = ((510 * scale_w), (146 * scale_h))
 start_btn_pos = ((1252 * scale_w), (1206 * scale_h))
 reconnect_btn_pos = ((1370 * scale_w), (800 * scale_h))
+bound_recipe_pos = ((1524 * scale_w), (994 * scale_h))
 mari_cols = ["#767474", "#767476", "#757474", "#7c7c7c", "#7c7a7c", "#7a7878", "#787678", "#787878"]
 jester_cols = ["#e2e2e2", "#e1e1e1", "#e0e0e0"]
+biome_cols = {"windy" : (145, 247, 255), "snowy" : (196, 245, 246), "rainy" : (67, 133, 255), "hell" : (74, 23, 34), "starfall" : (103, 132, 224), "corruption" : (144, 66, 255), "null" : (7, 9, 16), "dreamspace" : (234, 108, 188), "glitched" : (100, 252, 100)}
 previous_biome = None
 previous_aura = None
 popping = False
@@ -794,7 +779,7 @@ SNOWY_MULTIPLIER = 3
 RAINY_MULTIPLER = 4
 SANDSTORM_MULTIPLIER = 4
 HELL_MULTIPLIER = 6
-STARFALL_MULTIPLIER = 10
+STARFALL_MULTIPLIER = 5
 CORRUPTION_MULTIPLIER = 5
 NULL_MULTIPLIER = 1000
 GLITCHED_MULTIPLIER = 1
@@ -806,7 +791,7 @@ print(f"Starting SolsRNGBot v{LOCALVERSION}")
 class SettingsApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("Baz's Macro Settings Editor")
+        self.root.title("Baz's Macro")
 
         try:
             self.root.iconbitmap(f"{MACROPATH}/icon.ico")
@@ -815,7 +800,7 @@ class SettingsApp:
 
         self.original_settings = self.load_settings()
         self.entries = {}
-
+        self.listbox_refs = {}
         self.create_ui()
     
     def load_settings(self):
@@ -852,8 +837,51 @@ class SettingsApp:
 
         self.create_widgets(self.original_settings, self.scrollable_frame)
 
-        save_button = ttk.Button(self.root, text="Save", command=self.save_settings)
+        save_button = ttk.Button(self.root, text="Start Macro", command=self.save_settings)
         save_button.pack(pady=10)
+
+    def create_list_widget(self, parent, key, items):
+        frame = ttk.Frame(parent)
+        frame.pack(fill=tk.X, expand=True)
+
+        listbox = tk.Listbox(frame, height=5, selectmode=tk.SINGLE)
+        listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+        for item in items:
+            listbox.insert(tk.END, item)
+
+        self.entries[key] = items
+        self.listbox_refs[key] = listbox
+
+        button_frame = ttk.Frame(frame)
+        button_frame.pack(side=tk.RIGHT, padx=5)
+
+        add_entry = ttk.Entry(button_frame, width=15)
+        add_entry.pack(pady=2)
+
+        add_button = ttk.Button(button_frame, text="Add", command=lambda: self.add_to_list(key, add_entry))
+        add_button.pack(pady=2)
+
+        remove_button = ttk.Button(button_frame, text="Remove", command=lambda: self.remove_from_list(key))
+        remove_button.pack(pady=2)
+
+    def add_to_list(self, key, entry):
+        new_item = entry.get().strip()
+        if new_item:
+            listbox = self.listbox_refs[key]
+            if new_item not in self.entries[key]:
+                self.entries[key].append(new_item)
+                listbox.insert(tk.END, new_item)
+                entry.delete(0, tk.END)
+
+    def remove_from_list(self, key):
+        listbox = self.listbox_refs[key]
+        selection = listbox.curselection()
+
+        if selection:
+            index = selection[0]
+            listbox.delete(index)
+            self.entries[key].pop(index)
 
     def create_widgets(self, settings, parent, entry_dict=None):
         if entry_dict is None:
@@ -875,13 +903,13 @@ class SettingsApp:
                 checkbox = ttk.Checkbutton(row, variable=var)
                 checkbox.pack(side=tk.LEFT)
                 entry_dict[key] = var
-
             elif isinstance(value, dict):
                 subframe = ttk.LabelFrame(parent, text=formatted_key, padding=5)
                 subframe.pack(fill=tk.X, padx=10, pady=5)
                 entry_dict[key] = {}
                 self.create_widgets(value, subframe, entry_dict[key])
-
+            elif isinstance(value, list):
+                self.create_list_widget(row, key, value)
             else:
                 var = tk.StringVar(value=str(value))
                 entry = ttk.Entry(row, textvariable=var, width=30)
@@ -918,7 +946,7 @@ class SettingsApp:
         updated_values = self.get_updated_values(self.original_settings, self.entries)
 
         if not updated_values:
-            messagebox.showinfo("Baz's Macro Settings Editor", "No settings were changed.")
+            self.root.destroy()
             return
 
         try:
@@ -942,6 +970,7 @@ class SettingsApp:
             messagebox.showinfo("Baz's Macro Settings Editor", "Settings saved successfully!")
             reload_settings()
             print("Settings were reloaded.")
+            self.root.destroy()
         except Exception as e:
             messagebox.showerror("Baz's Macro Settings Editor", f"Failed to save settings:\n{e}")
 
@@ -962,17 +991,48 @@ if settings["__version__"] < LOCALVERSION:
     settings["edit_settings_mode"] = True
     update_settings(settings)
     reload_settings()
-    print("The macro has been updated!")
+    print(f"The macro has been updated to version {LOCALVERSION}!")
 
 if settings["__version__"] > LOCALVERSION:
     print("You are running newer settings with an older version of this program. This may delete some of your settings. Are you sure you want to continue (y)? ")
     confirm = input("")
     if confirm[0].lower() != "y":
         exit("You are running newer settings with an older version of this program.")
-
         
 # Settings integrity check
 validate_settings()
+
+if settings["check_update"]:
+    new_ver = requests.get(f"https://api.github.com/repos/bazthedev/SolsRNGBot/releases/latest")
+    new_ver_str = new_ver.json()["name"]
+
+    if LOCALVERSION < new_ver_str:
+        DOWNLOADS_DIR = Path.home() / "Downloads"
+        if not settings["auto_install_update"]:
+            confirm_dl = input(f"A new version has been found ({new_ver_str}), would you like to install it (y/n)? ")
+        else:
+            confirm_dl = "y"
+            print("Automatically installing new version...")
+        if confirm_dl[0].lower() == "y":
+            print(f"Downloading v{new_ver_str}...")
+            if not os.path.isfile(f"{DOWNLOADS_DIR}/SolsRNGBot_{new_ver_str}.zip"):
+                toupd = requests.get(f"https://github.com/bazthedev/SolsRNGBot/releases/download/{new_ver_str}/SolsRNGBot_{new_ver_str}.zip")
+                with open(f"{DOWNLOADS_DIR}/SolsRNGBot_{new_ver_str}.zip", "wb") as p:
+                    p.write(toupd.content)
+                    p.close()
+                print(f"Downloaded v{new_ver_str}")
+            else:
+                print("New version zip appears to already be downloaded.")
+            with zipfile.ZipFile(f"{DOWNLOADS_DIR}/SolsRNGBot_{new_ver_str}.zip", "r") as newverzip:
+                if not os.path.exists(f"{DOWNLOADS_DIR}/SolsRNGBot_{new_ver_str}"):
+                    os.mkdir(f"{DOWNLOADS_DIR}/SolsRNGBot_{new_ver_str}")
+                newverzip.extractall(f"{DOWNLOADS_DIR}/SolsRNGBot_{new_ver_str}/")
+                print(f"Extracted v{new_ver_str} to directory {DOWNLOADS_DIR}\\SolsRNGBot_{new_ver_str}")
+                print("Cleaning up...")
+                os.remove(f"{DOWNLOADS_DIR}/SolsRNGBot_{new_ver_str}.zip")
+            exit(f"Downloaded v{new_ver_str}")
+    else:
+        print(f"You are running the latest version.")
 
 if not os.path.exists(ms_rblx_log_dir):
     print("The Microsoft Store Version of Roblox has not been detected as installed. This will break certain features of the macro, such as the Sniper and joining servers.")
@@ -984,27 +1044,25 @@ elif exists_procs_by_name("RobloxPlayerBeta.exe"):
     rblx_log_dir = rblx_player_log_dir
     print("Using Roblox Player (detected as running)")
 elif settings["use_rblx_player"]:
+    print("Using Roblox player (no Roblox instances were detected as running)")
     rblx_log_dir = rblx_player_log_dir
 else:
-    print("Defaulting to Microsoft store roblox")
+    print("Using Microsoft Store Roblox (no Roblox instances were detected as running)")
     rblx_log_dir = ms_rblx_log_dir
 
 mkey.enable_failsafekill(settings["failsafe_key"])
 
-if settings["edit_settings_mode"] or settings["TOKEN"] == "":
-    settings["edit_settings_mode"] = False
-    print("Edit settings mode is enabled!")
-    if settings["TOKEN"] == "":
-        print("You need to add your bot token.")
-    update_settings(settings)
-    reload_settings()
-    root = tk.Tk()
-    app = SettingsApp(root)
-    root.mainloop()
-    print("Validating settings, then starting macro...")
-    validate_settings()
+if settings["TOKEN"] == "":
+    print("You need to add your bot token.")
 
-    
+validate_potions()
+root = tk.Tk()
+app = SettingsApp(root)
+root.mainloop()
+print("Validating settings, then starting macro...")
+validate_settings()
+
+
 if settings["sniper_enabled"] and (settings["ROBLOSECURITY_KEY"] == "" or settings["DISCORD_TOKEN"] == "" or settings["sniper_channel_id"] == 0):
     print("You must provide both your ROBLOSECURITY cookie and your Discord Token for the sniper to work. You also need to set a sniper logs channel")
     settings["edit_settings_mode"] = True
@@ -1021,11 +1079,7 @@ if not settings["skip_aura_download"]:
 if not os.path.exists(f"{MACROPATH}/auras.json") or not os.path.exists(f"{MACROPATH}/auras_new.json"):
     get_auras()
 
-if settings["legacy_aura_detection"]:
-    with open(f"{MACROPATH}/auras.json", "r") as f:
-        auras = json.load(f)
-else:
-    with open(f"{MACROPATH}/auras_new.json", "r") as f:
+with open(f"{MACROPATH}/auras_new.json", "r") as f:
         auras = json.load(f)
 
 if settings["private_server_link"] != "":
@@ -1043,25 +1097,56 @@ async def on_ready():
     print(f"Started at {now.strftime('%d/%m/%Y %H:%M:%S')} running v{__version__} using local version {LOCALVERSION}")
     await client.change_presence(activity=discord.Game(name=f"bazthedev/SolsRNGBot v{LOCALVERSION}"))
     await asyncio.sleep(settings["global_wait_time"])
-    if not ((not exists_procs_by_name("Windows10Universal.exe")) ^ (not exists_procs_by_name("RobloxPlayerBeta.exe"))):
+    if not (exists_procs_by_name("Windows10Universal.exe") or exists_procs_by_name("RobloxPlayerBeta.exe")):
         print("Roblox is not running, waiting for it to start...")
-    while not ((not exists_procs_by_name("Windows10Universal.exe")) ^ (not exists_procs_by_name("RobloxPlayerBeta.exe"))):
+    while not (exists_procs_by_name("Windows10Universal.exe") or exists_procs_by_name("RobloxPlayerBeta.exe")):
+        pass
+    if rblx_log_dir == ms_rblx_log_dir:
+        ps_rblxms = get_process_by_name("Windows10Universal.exe")
+    else:
+        ps_rblxms = get_process_by_name("RobloxPlayerBeta.exe")
+    try:
+        rblx_window = match_rblx_hwnd_to_pid(ps_rblxms.pid)
+        mkey.activate_window(rblx_window.hwnd)
+    except Exception:
         pass
     await asyncio.sleep(settings["global_wait_time"])
     await leave_main_menu()
     await asyncio.sleep(settings["global_wait_time"])
+    if settings["log_channel_id"] != 0:
+        log_channel = client.get_channel(settings["log_channel_id"])
+        emb = discord.Embed(
+            title="Bot has started",
+            description=f"Mode: Normal\nStarted at {now.strftime('%d/%m/%Y %H:%M:%S')}"
+        )
+        emb.set_footer(text=f"bazthedev/SolsRNGBot v{LOCALVERSION}")
+        if not settings["auto_craft_mode"]:
+            await log_channel.send(embed=emb)
+        aura_detection.start()
+        print("Started Aura Detection")
+        for _ in settings["biomes"].keys():
+            if settings["biomes"][_]:
+                biome_detection.start()
+                print("Started Biome Detection")
+                break
+    else:
+        print("You must select a channel ID, you can do this by running the set_log_channel command.")
     if settings["auto_craft_mode"] and not settings["merchant_detection"]:
         crafts = ""
         for item in settings["auto_craft_item"].keys():
             if settings["auto_craft_item"][item]:
                 crafts += f"{item}\n"
+        if settings["log_channel_id"] != 0:
+            log_channel = client.get_channel(settings["log_channel_id"])
+            emb = discord.Embed(
+                title="Bot has started",
+                description=f"Mode: Auto Craft\nAuto Craft item(s):\n{crafts}\nStarted at {now.strftime('%d/%m/%Y %H:%M:%S')}"
+            )
+            emb.set_footer(text=f"bazthedev/SolsRNGBot v{LOCALVERSION}")
+            await log_channel.send(embed=emb)
         print("[WARNING] Auto Craft Mode is on. You will not be able to use certain features whilst this settings is on.")
         print(f"The item(s) you are automatically crafting are:\n{crafts}")
-        if not settings["skip_auto_mode_warning"]:
-            print("Please ensure that you are standing next to the cauldron so that you can see the \"f\" prompt. When you have done this, please press enter.")
-            input("")
-        else:
-            print("Please ensure that you are standing next to the cauldron so that you can see the \"f\" prompt.")
+        print("Please ensure that you are standing next to the cauldron so that you can see the \"f\" prompt.")
         if settings["reset_aura"] != "":
             settings["reset_aura"] = ""
             update_settings(settings)
@@ -1086,37 +1171,6 @@ async def on_ready():
         if settings["periodic_screenshots"]["storage"]:
             storage_screeenshot.start()
             print("Start Periodic Storage Screenshots")
-    if settings["log_channel_id"] != 0:
-        if settings["auto_craft_mode"] and not settings["merchant_detection"]:
-            log_channel = client.get_channel(settings["log_channel_id"])
-            emb = discord.Embed(
-                title="Bot has started",
-                description=f"Mode: Auto Craft\nAuto Craft item(s):\n{crafts}\nStarted at {now.strftime('%d/%m/%Y %H:%M:%S')}"
-            )
-            emb.set_footer(text=f"bazthedev/SolsRNGBot v{LOCALVERSION}")
-            await log_channel.send(embed=emb)
-        else:
-            log_channel = client.get_channel(settings["log_channel_id"])
-            emb = discord.Embed(
-                title="Bot has started",
-                description=f"Mode: Normal\nStarted at {now.strftime('%d/%m/%Y %H:%M:%S')}"
-            )
-            emb.set_footer(text=f"bazthedev/SolsRNGBot v{LOCALVERSION}")
-            await log_channel.send(embed=emb)
-        if settings["legacy_aura_detection"]:
-            legacy_aura_detection.start()
-            print("Started Legacy Aura Detection")
-        else:
-            aura_detection.start()
-            print("Started Aura Detection")
-        if settings["glitch_detector"]:
-            glitch_detector.start()
-            print("Started Glitch Biome Detection")
-        if settings["dreamspace_detector"]:
-            dreamspace_detector.start()
-            print("Started Dreamspace Biome Detection")
-    else:
-        print("You must select a channel ID, you can do this by running the set_log_channel command.")
     if settings["auto_biome_randomizer"]:
         biome_randomizer.start()
         print("Started Biome Randomizer")
@@ -1129,105 +1183,16 @@ async def on_ready():
             await asyncio.sleep((settings["global_wait_time"] * 60))
         merchant_detection.start()
         print("Started Merchant Detection")
+    if settings["clear_logs"]:
+        print("Clearing logs")
+        for file in os.listdir(f"{MACROPATH}/logs/"):
+            try:
+                os.remove(f"{MACROPATH}/logs/{file}")
+                print("Delete file: " + file)
+            except PermissionError:
+                pass
     print(f"Started SolsRNGBot v{LOCALVERSION}")
     
-@tasks.loop(seconds=0)
-async def glitch_detector():
-    rnow = datetime.now()
-    global previous_biome, popping
-    latest_hovertext = get_latest_hovertext(rblx_log_dir)
-    log_channel = client.get_channel(settings["log_channel_id"])
-    if latest_hovertext == "GLITCHED" and previous_biome != "GLITCHED":
-        merchant_detection.stop()
-        yay_joins_sniper.cancel()
-        previous_biome = latest_hovertext
-        popping = True
-        storimg = pag.screenshot(f"{MACROPATH}/scr/screenshot_glitch.png")
-        up = discord.File(f"{MACROPATH}/scr/screenshot_glitch.png", filename="glitch.png")
-        print("Glitch Biome started")    
-        emb = discord.Embed(
-                title="GLITCH BIOME DETECTED",
-                description=f"A GLITCH biome was detected at {rnow.strftime('%d/%m/%Y %H:%M:%S')}",
-                colour=discord.Colour.from_rgb(101, 255, 101)
-        )
-        emb.set_image(url="attachment://glitch.png")
-        if valid_ps:
-            emb.add_field(name="Private Server Link:", value=f"{settings["private_server_link"]}", inline=True)
-        if settings["ping_on_glitch"]:
-            await log_channel.send("@everyone", embed=emb, file=up)
-        else:
-            await log_channel.send(embed=emb, file=up)
-        if settings["pop_in_glitch"] and popping:
-            if settings["auto_craft_mode"] and not settings["merchant_detection"]:
-                auto_craft.stop()
-            popping = False
-            await auto_pop("glitched")
-        else:
-            popping = False
-    elif previous_biome == "GLITCHED" and latest_hovertext != "GLITCHED":
-        previous_biome = None
-        if settings["auto_craft_mode"] and not settings["merchant_detection"]:
-            auto_craft.start()
-        elif settings["merchant_detection"]:
-            merchant_detection.start()
-        if settings["sniper_enabled"]:
-            yay_joins_sniper.start()
-        print("Glitch biome ended")
-        emb = discord.Embed(
-                title="Glitch Biome Ended",
-                description=f"A GLITCH biome ended at {rnow.strftime('%d/%m/%Y %H:%M:%S')}",
-                colour=discord.Colour.from_rgb(101, 255, 101)
-        )
-        await log_channel.send(embed=emb)
-        
-
-@tasks.loop(seconds=0)
-async def dreamspace_detector():
-    rnow = datetime.now()
-    global previous_biome, popping
-    latest_hovertext = get_latest_hovertext(rblx_log_dir)
-    log_channel = client.get_channel(settings["log_channel_id"])
-    if latest_hovertext == "DREAMSPACE" and previous_biome != "DREAMSPACE":
-        merchant_detection.stop()
-        previous_biome = latest_hovertext
-        popping = True
-        storimg = pag.screenshot(f"{MACROPATH}/scr/screenshot_dreamspace.png")
-        up = discord.File(f"{MACROPATH}/scr/screenshot_dreamspace.png", filename="dreamspace.png")
-        print("Dreamspace Biome started")    
-        emb = discord.Embed(
-                title="DREAMSPACE BIOME DETECTED",
-                description=f"A DREAMSPACE biome was detected at {rnow.strftime('%d/%m/%Y %H:%M:%S')}",
-                colour=discord.Colour.from_rgb(255, 105, 180)
-        )
-        emb.set_image(url="attachment://dreamspace.png")
-        if valid_ps:
-            emb.add_field(name="Private Server Link:", value=f"{settings["private_server_link"]}", inline=True)
-        if settings["ping_on_dreamspace"]:
-            await log_channel.send("<@everyone>",embed=emb, file=up)
-        else:
-            await log_channel.send(embed=emb, file=up)
-        if settings["pop_in_dreamspace"] and popping:
-            if settings["auto_craft_mode"] and not settings["merchant_detection"]:
-                auto_craft.stop()
-            popping = False
-            await auto_pop("dreamspace")      
-        else:
-            popping = False
-    elif previous_biome == "DREAMSPACE" and latest_hovertext != "DREAMSPACE":
-        previous_biome = None
-        if settings["auto_craft_mode"] and not settings["merchant_detection"]:
-            auto_craft.start()
-        elif settings["merchant_detection"]:
-            merchant_detection.start()
-        if settings["sniper_enabled"]:
-            yay_joins_sniper.start()
-        print("Dreamspace Biome ended")
-        emb = discord.Embed(
-                title="Dreamspace Biome Ended",
-                description=f"A DREAMSPACE biome ended at {rnow.strftime('%d/%m/%Y %H:%M:%S')}",
-                colour=discord.Colour.from_rgb(255, 105, 180)
-        )
-        await log_channel.send(embed=emb)
 
 @tasks.loop(count=None)
 async def yay_joins_sniper():
@@ -1332,8 +1297,6 @@ async def mode(ctx):
 @commands.is_owner()
 async def stop(ctx):
     await ctx.send("Manual stop initiated")
-    if settings["legacy_aura_detection"]:
-        legacy_aura_detection.stop()
     keep_alive.stop()
     await client.close()
     print("Aw dang it")
@@ -1518,6 +1481,16 @@ async def keep_alive():
     mkey.left_click_xy_natural(close_pos[0], close_pos[1])
     await asyncio.sleep(settings["global_wait_time"])
 
+@tasks.loop(seconds=720)
+async def obby_blessing():
+    await align_camera()
+    await asyncio.sleep(settings["global_wait_time"])
+    await do_obby_blessing()
+    await asyncio.sleep(settings["global_wait_time"])
+
+@tasks.loop(seconds=1200)
+async def collect_items():
+    pass
 
 @tasks.loop(seconds=1260)
 async def storage_screeenshot():
@@ -1564,7 +1537,7 @@ async def disconnect_prevention():
                 await sniper._join_windows(ps_link_code)
                 await asyncio.sleep(5)                
                 ps_rblxms = get_process_by_name("Windows10Universal.exe")
-                rblxms_window = match_rblxms_hwnd_to_pid(ps_rblxms.pid)
+                rblxms_window = match_rblx_hwnd_to_pid(ps_rblxms.pid)
                 mkey.activate_window(rblxms_window.hwnd)
                 await asyncio.sleep(settings["global_wait_time"])
                 mkey.left_click_xy_natural(ms_rblx_spawn_pos[0], ms_rblx_spawn_pos[1])
@@ -1588,140 +1561,499 @@ async def auto_craft():
     for itm in settings["auto_craft_item"].keys():
         if settings["auto_craft_item"][itm]:
             items_to_craft.append(itm)
-    if len(items_to_craft) == 1:
+    if len(items_to_craft) < 1:
         return
+    mkey.left_click_xy_natural(hp1_recipe_pos[0], hp1_recipe_pos[1])
+    await asyncio.sleep(settings["global_wait_time"])
     _keyboard.press("f")
     await asyncio.sleep(settings["global_wait_time"])
     _keyboard.release("f")
     await asyncio.sleep(settings["global_wait_time"])
     mkey.left_click_xy_natural(hp1_recipe_pos[0], hp1_recipe_pos[1])
     await asyncio.sleep(settings["global_wait_time"])
-    _mouse.scroll(0, -30)
+    mkey.left_click_xy_natural(hp1_recipe_pos[0], hp1_recipe_pos[1])
     await asyncio.sleep(settings["global_wait_time"])
-    _mouse.scroll(0, -30)
-    await asyncio.sleep(settings["global_wait_time"])
-    _mouse.scroll(0, -30)
-    await asyncio.sleep(settings["global_wait_time"])
-    _mouse.scroll(0, -30)
-    await asyncio.sleep(settings["global_wait_time"])
-    _mouse.scroll(0, -30)
-    await asyncio.sleep(settings["global_wait_time"])
-    if auto_mode_swap == 9:
-        auto_mode_swap = 0
-        if auto_craft_index == 1:
-            if settings["auto_craft_item"]["Heavenly Potion II"]:
-                auto_craft_index = 2
-                mkey.left_click_xy_natural(hp2_recipe_pos[0], hp2_recipe_pos[1])
-                await asyncio.sleep(settings["global_wait_time"])
-                mkey.left_click_xy_natural(auto_btn_pos[0], auto_btn_pos[1])
-                await asyncio.sleep(settings["global_wait_time"])
-            elif settings["auto_craft_item"]["Warp Potion"]:
-                auto_craft_index = 3
-                mkey.left_click_xy_natural(warp_recipe_pos[0], warp_recipe_pos[1])
-                await asyncio.sleep(settings["global_wait_time"])
-                mkey.left_click_xy_natural(auto_btn_pos[0], auto_btn_pos[1])
-                await asyncio.sleep(settings["global_wait_time"])
-        elif auto_craft_index == 2:
-            if settings["auto_craft_item"]["Warp Potion"]:
-                auto_craft_index = 3
-                mkey.left_click_xy_natural(warp_recipe_pos[0], warp_recipe_pos[1])
-                await asyncio.sleep(settings["global_wait_time"])
-                mkey.left_click_xy_natural(auto_btn_pos[0], auto_btn_pos[1])
-                await asyncio.sleep(settings["global_wait_time"])
-            elif settings["auto_craft_item"]["Heavenly Potion I"]:
-                auto_craft_index = 1    
-                mkey.left_click_xy_natural(hp1_recipe_pos[0], hp1_recipe_pos[1])
-                await asyncio.sleep(settings["global_wait_time"])
-                mkey.left_click_xy_natural(auto_btn_pos[0], auto_btn_pos[1])
-                await asyncio.sleep(settings["global_wait_time"])
-        elif auto_craft_index == 3:
-            if settings["auto_craft_item"]["Heavenly Potion I"]:
-                auto_craft_index = 1
-                mkey.left_click_xy_natural(hp1_recipe_pos[0], hp1_recipe_pos[1])
-                await asyncio.sleep(settings["global_wait_time"])
-                mkey.left_click_xy_natural(auto_btn_pos[0], auto_btn_pos[1])
-                await asyncio.sleep(settings["global_wait_time"])
-            elif settings["auto_craft_item"]["Heavenly Potion II"]:
-                auto_craft_index = 2
-                mkey.left_click_xy_natural(hp2_recipe_pos[0], hp2_recipe_pos[1])
-                await asyncio.sleep(settings["global_wait_time"])
-                mkey.left_click_xy_natural(auto_btn_pos[0], auto_btn_pos[1])
-                await asyncio.sleep(settings["global_wait_time"])
-    if "Heavenly Potion I" in items_to_craft:
+    _mouse.scroll(0, 30)
+    await asyncio.sleep(0.1)
+    _mouse.scroll(0, 30)
+    await asyncio.sleep(0.1)
+    _mouse.scroll(0, 30)
+    await asyncio.sleep(0.1)
+    _mouse.scroll(0, 30)
+    await asyncio.sleep(0.1)
+    _mouse.scroll(0, 30)
+    await asyncio.sleep(0.1)
+    _mouse.scroll(0, 30)
+    await asyncio.sleep(0.1)
+    _mouse.scroll(0, 30)
+    await asyncio.sleep(0.1)
+    _mouse.scroll(0, 30)
+    await asyncio.sleep(0.1)
+    _mouse.scroll(0, 30)
+    await asyncio.sleep(0.1)
+    _mouse.scroll(0, 30)
+    await asyncio.sleep(0.1)
+    _mouse.scroll(0, 30)
+    await asyncio.sleep(0.1)
+    _mouse.scroll(0, 30)
+    await asyncio.sleep(0.1)
+    _mouse.scroll(0, 30)
+    await asyncio.sleep(0.1)
+    _mouse.scroll(0, 30)
+    await asyncio.sleep(0.1)
+    _mouse.scroll(0, 30)
+    await asyncio.sleep(0.1)
+    _mouse.scroll(0, 30)
+    await asyncio.sleep(0.1)
+    _mouse.scroll(0, 30)
+    await asyncio.sleep(0.1)
+    _mouse.scroll(0, 30)
+    await asyncio.sleep(0.1)
+    while True:
         mkey.left_click_xy_natural(hp1_recipe_pos[0], hp1_recipe_pos[1])
         await asyncio.sleep(settings["global_wait_time"])
-        mkey.left_click_xy_natural(craft_btn_pos[0], craft_btn_pos[1])
+        _keyboard.press("f")
         await asyncio.sleep(settings["global_wait_time"])
-        mkey.left_click_xy_natural(hp1_pos_potions[0] - (110 * scale_w), hp1_pos_potions[1])
-        await asyncio.sleep(0.1)
-        mkey.left_click_xy_natural(hp1_pos_potions[0] - (110 * scale_w), hp1_pos_potions[1])
+        _keyboard.release("f")
         await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.type("100")
+        mkey.left_click_xy_natural(hp1_recipe_pos[0], hp1_recipe_pos[1])
         await asyncio.sleep(settings["global_wait_time"])
-        mkey.left_click_xy_natural(hp1_pos_potions[0], hp1_pos_potions[1])
+        mkey.left_click_xy_natural(hp1_recipe_pos[0], hp1_recipe_pos[1])
         await asyncio.sleep(settings["global_wait_time"])
-        _mouse.scroll(0, -10)
-        await asyncio.sleep(settings["global_wait_time"])
-        mkey.left_click_xy_natural(hp1_pos_celestial[0], hp1_pos_celestial[1])
-        await asyncio.sleep(settings["global_wait_time"])
-        _mouse.scroll(0, 10)
-        await asyncio.sleep(settings["global_wait_time"])
-    if "Heavenly Potion II" in items_to_craft:
-        mkey.left_click_xy_natural(hp2_recipe_pos[0], hp2_recipe_pos[1])
-        await asyncio.sleep(settings["global_wait_time"])
-        mkey.left_click_xy_natural(craft_btn_pos[0], craft_btn_pos[1])
-        await asyncio.sleep(settings["global_wait_time"])
-        mkey.left_click_xy_natural(hp1_pos_potions[0], hp1_pos_potions[1])
-        await asyncio.sleep(settings["global_wait_time"])
-        mkey.left_click_xy_natural(hp1_pos_potions[0], hp1_pos_potions[1])
-        await asyncio.sleep(settings["global_wait_time"])
-        mkey.left_click_xy_natural(hp2_pos_potions[0], hp2_pos_potions[1])
-        await asyncio.sleep(settings["global_wait_time"])
-        mkey.left_click_xy_natural(hp2_pos_potions[0] - (110 * scale_w), hp2_pos_potions[1])
-        await asyncio.sleep(0.1)
-        mkey.left_click_xy_natural(hp2_pos_potions[0] - (110 * scale_w), hp2_pos_potions[1])
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.type("125")
-        await asyncio.sleep(settings["global_wait_time"])
-        mkey.left_click_xy_natural(hp2_pos_potions[0], hp2_pos_potions[1])
-        await asyncio.sleep(settings["global_wait_time"])
-        _mouse.scroll(0, 10)
-        await asyncio.sleep(settings["global_wait_time"])
-        _mouse.scroll(0, -10)
-        await asyncio.sleep(settings["global_wait_time"])
-        mkey.left_click_xy_natural(hp1_pos_celestial[0], hp1_pos_celestial[1])
-        await asyncio.sleep(settings["global_wait_time"])
-        mkey.left_click_xy_natural(craft_btn_pos[0], craft_btn_pos[1])
-        await asyncio.sleep(settings["global_wait_time"])
-        mkey.left_click_xy_natural(hp1_pos_celestial[0], hp1_pos_celestial[1])
-        await asyncio.sleep(settings["global_wait_time"])
-        _mouse.scroll(0, 10)
-    if "Warp Potion" in items_to_craft:
-        mkey.left_click_xy_natural(warp_recipe_pos[0], warp_recipe_pos[1])
-        await asyncio.sleep(settings["global_wait_time"])
-        mkey.left_click_xy_natural(craft_btn_pos[0], craft_btn_pos[1])
-        await asyncio.sleep(settings["global_wait_time"])
-        mkey.left_click_xy_natural(hp1_pos_potions[0], hp1_pos_potions[1])
-        await asyncio.sleep(settings["global_wait_time"])
-        _mouse.scroll(0, -30)
-        await asyncio.sleep(settings["global_wait_time"])
-        _mouse.scroll(0, -30)
-        await asyncio.sleep(settings["global_wait_time"])
-        mkey.left_click_xy_natural(hp1_pos_celestial[0] - (110 * scale_w), hp1_pos_celestial[1])
-        await asyncio.sleep(0.1)
-        mkey.left_click_xy_natural(hp1_pos_celestial[0] - (110 * scale_w), hp1_pos_celestial[1])
-        await asyncio.sleep(settings["global_wait_time"])
-        _keyboard.type("1000")
-        await asyncio.sleep(settings["global_wait_time"])
-        mkey.left_click_xy_natural(hp1_pos_potions[0], hp1_pos_potions[1])
-        await asyncio.sleep(settings["global_wait_time"])
-        mkey.left_click_xy_natural(hp1_pos_celestial[0], hp1_pos_celestial[1])
-        await asyncio.sleep(settings["global_wait_time"])
-        _mouse.scroll(0, 30)
-        await asyncio.sleep(settings["global_wait_time"])
-        _mouse.scroll(0, 30)
-        await asyncio.sleep(settings["global_wait_time"])
-    auto_mode_swap += 1
+        if settings["auto_craft_item"]["Potion of Bound"]:
+            _mouse.scroll(0, -30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, -30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, -30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, -30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, -30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, -30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, -30)
+            await asyncio.sleep(settings["global_wait_time"])
+            mkey.left_click_xy_natural(bound_recipe_pos[0], bound_recipe_pos[1])
+            await asyncio.sleep(settings["global_wait_time"])
+            mkey.left_click_xy_natural(craft_btn_pos[0], craft_btn_pos[1])
+            await asyncio.sleep(settings["global_wait_time"])
+            mkey.left_click_xy_natural(hp1_pos_potions[0], hp1_pos_potions[1])
+            await asyncio.sleep(settings["global_wait_time"])
+            if auto_craft_index == 1:
+                mkey.left_click_xy_natural(auto_btn_pos[0], auto_btn_pos[1])
+                await asyncio.sleep(settings["global_wait_time"])                
+            mkey.left_click_xy_natural(hp1_recipe_pos[0], hp1_recipe_pos[1])
+            await asyncio.sleep(settings["global_wait_time"])            
+            _mouse.scroll(0, 30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, 30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, 30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, 30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, 30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, 30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, 30)
+            await asyncio.sleep(settings["global_wait_time"])
+        if settings["auto_craft_item"]["Heavenly Potion"]:
+            _mouse.scroll(0, -30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, -30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, -30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, -30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, -30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, -30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, -30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, -30)
+            await asyncio.sleep(settings["global_wait_time"])
+            mkey.left_click_xy_natural(bound_recipe_pos[0], bound_recipe_pos[1])
+            await asyncio.sleep(settings["global_wait_time"])
+            mkey.left_click_xy_natural(craft_btn_pos[0], craft_btn_pos[1])
+            await asyncio.sleep(settings["global_wait_time"])
+            mkey.left_click_xy_natural(hp1_pos_potions[0] - (110 * scale_w), hp1_pos_potions[1])
+            await asyncio.sleep(0.1)
+            mkey.left_click_xy_natural(hp1_pos_potions[0] - (110 * scale_w), hp1_pos_potions[1])
+            await asyncio.sleep(0.1)
+            _keyboard.type("250")
+            mkey.left_click_xy_natural(hp1_pos_potions[0], hp1_pos_potions[1])
+            await asyncio.sleep(0.1)
+            mkey.left_click_xy_natural(hp2_pos_potions[0], hp2_pos_potions[1])
+            await asyncio.sleep(settings["global_wait_time"])
+            mkey.left_click_xy_natural(hp2_pos_potions[0], hp2_pos_potions[1])
+            await asyncio.sleep(settings["global_wait_time"])
+            mkey.left_click_xy_natural((1064 * scale_w), (988 * scale_h))
+            await asyncio.sleep(settings["global_wait_time"])
+            if auto_craft_index == 2:
+                mkey.left_click_xy_natural(auto_btn_pos[0], auto_btn_pos[1])
+                await asyncio.sleep(settings["global_wait_time"])
+            mkey.left_click_xy_natural(hp1_recipe_pos[0], hp1_recipe_pos[1])
+            await asyncio.sleep(settings["global_wait_time"])
+            _mouse.scroll(0, 30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, 30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, 30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, 30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, 30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, 30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, 30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, 30)
+            await asyncio.sleep(0.1)
+        if settings["auto_craft_item"]["Godly Potion (Zeus)"]:
+            _mouse.scroll(0, -30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, -30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, -30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, -30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, -30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, -30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, -30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, -30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, -30)
+            await asyncio.sleep(settings["global_wait_time"])
+            mkey.left_click_xy_natural(bound_recipe_pos[0], bound_recipe_pos[1])
+            await asyncio.sleep(settings["global_wait_time"])
+            mkey.left_click_xy_natural(craft_btn_pos[0], craft_btn_pos[1])
+            await asyncio.sleep(settings["global_wait_time"])
+            mkey.left_click_xy_natural(hp1_pos_potions[0] - (110 * scale_w), hp1_pos_potions[1])
+            await asyncio.sleep(0.1)
+            mkey.left_click_xy_natural(hp1_pos_potions[0] - (110 * scale_w), hp1_pos_potions[1])
+            await asyncio.sleep(0.1)
+            _keyboard.type("25")
+            mkey.left_click_xy_natural(hp1_pos_potions[0], hp1_pos_potions[1])
+            await asyncio.sleep(0.1)
+            mkey.left_click_xy_natural(hp2_pos_potions[0] - (110 * scale_w), hp2_pos_potions[1])
+            await asyncio.sleep(0.1)
+            mkey.left_click_xy_natural(hp2_pos_potions[0] - (110 * scale_w), hp2_pos_potions[1])
+            await asyncio.sleep(0.1)
+            _keyboard.type("25")
+            mkey.left_click_xy_natural(hp1_pos_potions[0], hp1_pos_potions[1])
+            await asyncio.sleep(0.1)
+            mkey.left_click_xy_natural(hp2_pos_potions[0], hp2_pos_potions[1])
+            await asyncio.sleep(settings["global_wait_time"])
+            mkey.left_click_xy_natural((1064 * scale_w), (988 * scale_h))
+            await asyncio.sleep(settings["global_wait_time"])
+            if auto_craft_index == 3:
+                mkey.left_click_xy_natural(auto_btn_pos[0], auto_btn_pos[1])
+                await asyncio.sleep(settings["global_wait_time"])            
+            mkey.left_click_xy_natural(hp1_recipe_pos[0], hp1_recipe_pos[1])
+            await asyncio.sleep(settings["global_wait_time"])            
+            _mouse.scroll(0, 30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, 30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, 30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, 30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, 30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, 30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, 30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, 30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, 30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, 30)
+            await asyncio.sleep(0.1)
+        if settings["auto_craft_item"]["Godly Potion (Poseidon)"]:
+            _mouse.scroll(0, -30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, -30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, -30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, -30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, -30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, -30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, -30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, -30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, -30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, -30)
+            await asyncio.sleep(settings["global_wait_time"])
+            mkey.left_click_xy_natural(bound_recipe_pos[0], bound_recipe_pos[1])
+            await asyncio.sleep(settings["global_wait_time"])
+            mkey.left_click_xy_natural(craft_btn_pos[0], craft_btn_pos[1])
+            await asyncio.sleep(settings["global_wait_time"])
+            mkey.left_click_xy_natural(hp1_pos_potions[0] - (110 * scale_w), hp1_pos_potions[1])
+            await asyncio.sleep(0.1)
+            mkey.left_click_xy_natural(hp1_pos_potions[0] - (110 * scale_w), hp1_pos_potions[1])
+            await asyncio.sleep(0.1)
+            _keyboard.type("50")
+            mkey.left_click_xy_natural(hp1_pos_potions[0], hp1_pos_potions[1])
+            await asyncio.sleep(0.1)
+            mkey.left_click_xy_natural(hp2_pos_potions[0], hp2_pos_potions[1])
+            await asyncio.sleep(settings["global_wait_time"])
+            if auto_craft_index == 4:
+                mkey.left_click_xy_natural(auto_btn_pos[0], auto_btn_pos[1])
+                await asyncio.sleep(settings["global_wait_time"])            
+            mkey.left_click_xy_natural(hp1_recipe_pos[0], hp1_recipe_pos[1])
+            await asyncio.sleep(settings["global_wait_time"])            
+            _mouse.scroll(0, 30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, 30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, 30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, 30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, 30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, 30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, 30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, 30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, 30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, 30)
+            await asyncio.sleep(0.1)
+        if settings["auto_craft_item"]["Godly Potion (Hades)"]:
+            _mouse.scroll(0, -30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, -30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, -30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, -30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, -30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, -30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, -30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, -30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, -30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, -30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, -30)
+            await asyncio.sleep(settings["global_wait_time"])
+            mkey.left_click_xy_natural(bound_recipe_pos[0], bound_recipe_pos[1])
+            await asyncio.sleep(settings["global_wait_time"])
+            mkey.left_click_xy_natural(craft_btn_pos[0], craft_btn_pos[1])
+            await asyncio.sleep(settings["global_wait_time"])
+            mkey.left_click_xy_natural(hp1_pos_potions[0] - (110 * scale_w), hp1_pos_potions[1])
+            await asyncio.sleep(0.1)
+            mkey.left_click_xy_natural(hp1_pos_potions[0] - (110 * scale_w), hp1_pos_potions[1])
+            await asyncio.sleep(0.1)
+            _keyboard.type("50")
+            mkey.left_click_xy_natural(hp1_pos_potions[0], hp1_pos_potions[1])
+            await asyncio.sleep(0.1)
+            mkey.left_click_xy_natural(hp2_pos_potions[0], hp2_pos_potions[1])
+            await asyncio.sleep(settings["global_wait_time"])
+            if auto_craft_index == 5:
+                mkey.left_click_xy_natural(auto_btn_pos[0], auto_btn_pos[1])
+                await asyncio.sleep(settings["global_wait_time"])            
+            mkey.left_click_xy_natural(hp1_recipe_pos[0], hp1_recipe_pos[1])
+            await asyncio.sleep(settings["global_wait_time"])            
+            _mouse.scroll(0, 30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, 30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, 30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, 30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, 30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, 30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, 30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, 30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, 30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, 30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, 30)
+            await asyncio.sleep(0.1)
+        if settings["auto_craft_item"]["Warp Potion"]:
+            _mouse.scroll(0, -30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, -30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, -30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, -30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, -30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, -30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, -30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, -30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, -30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, -30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, -30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, -30)
+            await asyncio.sleep(settings["global_wait_time"])
+            mkey.left_click_xy_natural(bound_recipe_pos[0], bound_recipe_pos[1])
+            await asyncio.sleep(settings["global_wait_time"])
+            mkey.left_click_xy_natural(craft_btn_pos[0], craft_btn_pos[1])
+            await asyncio.sleep(settings["global_wait_time"])
+            mkey.left_click_xy_natural(hp1_pos_potions[0], hp1_pos_potions[1])
+            await asyncio.sleep(settings["global_wait_time"])
+            _mouse.scroll(0, -30)
+            await asyncio.sleep(settings["global_wait_time"])
+            _mouse.scroll(0, -30)
+            await asyncio.sleep(settings["global_wait_time"])
+            mkey.left_click_xy_natural(hp1_pos_celestial[0] - (110 * scale_w), hp1_pos_celestial[1])
+            await asyncio.sleep(settings["global_wait_time"])
+            mkey.left_click_xy_natural(hp1_pos_celestial[0] - (110 * scale_w), hp1_pos_celestial[1])
+            await asyncio.sleep(settings["global_wait_time"])
+            _keyboard.type("1000")
+            await asyncio.sleep(settings["global_wait_time"])
+            mkey.left_click_xy_natural(hp1_pos_potions[0], hp1_pos_potions[1])
+            await asyncio.sleep(settings["global_wait_time"])
+            mkey.left_click_xy_natural(hp1_pos_celestial[0], hp1_pos_celestial[1])
+            await asyncio.sleep(settings["global_wait_time"])
+            _mouse.scroll(0, 30)
+            await asyncio.sleep(settings["global_wait_time"])
+            _mouse.scroll(0, 30)
+            await asyncio.sleep(settings["global_wait_time"])
+            if auto_craft_index == 6:
+                mkey.left_click_xy_natural(auto_btn_pos[0], auto_btn_pos[1])
+                await asyncio.sleep(settings["global_wait_time"])            
+            mkey.left_click_xy_natural(hp1_recipe_pos[0], hp1_recipe_pos[1])
+            await asyncio.sleep(settings["global_wait_time"])            
+            _mouse.scroll(0, 30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, 30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, 30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, 30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, 30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, 30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, 30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, 30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, 30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, 30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, 30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, 30)
+            await asyncio.sleep(0.1)
+        if settings["auto_craft_item"]["Godlike Potion"]:
+            _mouse.scroll(0, -30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, -30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, -30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, -30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, -30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, -30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, -30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, -30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, -30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, -30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, -30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, -30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, -30)
+            await asyncio.sleep(settings["global_wait_time"])
+            mkey.left_click_xy_natural(bound_recipe_pos[0], bound_recipe_pos[1])
+            await asyncio.sleep(settings["global_wait_time"])
+            mkey.left_click_xy_natural(craft_btn_pos[0], craft_btn_pos[1])
+            await asyncio.sleep(settings["global_wait_time"])
+            mkey.left_click_xy_natural(hp1_pos_potions[0], hp1_pos_potions[1])
+            await asyncio.sleep(0.1)
+            mkey.left_click_xy_natural(hp2_pos_potions[0], hp2_pos_potions[1])
+            await asyncio.sleep(settings["global_wait_time"])
+            mkey.left_click_xy_natural((1064 * scale_w), (988 * scale_h))
+            await asyncio.sleep(settings["global_wait_time"])
+            mkey.left_click_xy_natural(bound_recipe_pos[0], bound_recipe_pos[1])
+            await asyncio.sleep(settings["global_wait_time"])
+            _mouse.scroll(0, 30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, 30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, 30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, 30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, 30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, 30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, 30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, 30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, 30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, 30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, 30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, 30)
+            await asyncio.sleep(0.1)
+            _mouse.scroll(0, 30)
+            await asyncio.sleep(0.1)
+        if auto_craft_index > 6:
+            auto_craft_index = 1
+        if auto_mode_swap == 5:
+            auto_mode_swap = 0
+        else:
+            auto_mode_swap += 1
+        auto_craft_index += 1
+        await asyncio.sleep(60)
 
 @tasks.loop(seconds=0)
 async def reset_aura():
@@ -1760,8 +2092,6 @@ async def on_reset_aura_cancel():
 async def merchant_detection():
     if settings["log_channel_id"] == 0:
         print("You must select a channel ID, you can do this by running the set_log_channel command.")
-        return    
-    if legacy_aura_detection.is_being_cancelled():
         return
     await use_item("Merchant Teleport", 1, False)
     await asyncio.sleep(settings["merchant_detec_wait"])
@@ -1826,12 +2156,54 @@ async def merchant_detection():
                         _break = True
                 if _break:
                     break
-            with open("test.json", "w") as f:
-                json.dump(cols, f, indent=4)
         except Exception as e:
             print(e)
     else:
         mkey.left_click_xy_natural(close_pos[0], close_pos[1])
+
+@tasks.loop(seconds=0)
+async def biome_detection():
+    global previous_biome
+    current_biome = get_latest_hovertext(rblx_log_dir)
+    if previous_biome == None:
+        previous_biome = current_biome
+        return
+    if current_biome == previous_biome:
+        return
+    if settings["log_channel_id"] == 0:
+        print("You must select a channel ID, you can do this by running the set_log_channel command.")
+        return
+    try:
+        if current_biome.lower() in settings["biomes"].keys():
+            previous_biome = current_biome
+            if current_biome.lower() == "normal":
+                return
+            rnow = datetime.now()
+            if settings["biomes"][current_biome.lower()]:
+                log_channel = client.get_channel(settings["log_channel_id"])
+                if valid_ps:
+                    emb = discord.Embed(
+                        title=f"Biome Started: {current_biome}",
+                        description=f"Biome {current_biome} has started at time: {rnow.strftime('%d/%m/%Y %H:%M:%S')}\nServer Invite: {settings['private_server_link']}",
+                        colour=discord.Colour.from_rgb(biome_cols[current_biome.lower()][0], biome_cols[current_biome.lower()][1], biome_cols[current_biome.lower()][2])
+                    )
+                else:
+                    emb = discord.Embed(
+                        title=f"Biome Started: {current_biome}",
+                        description=f"Biome {current_biome} has started at time: {rnow.strftime('%d/%m/%Y %H:%M:%S')}",
+                        colour=discord.Colour.from_rgb(biome_cols[current_biome.lower()][0], biome_cols[current_biome.lower()][1], biome_cols[current_biome.lower()][2])
+                    )
+                if current_biome.lower() == "glitched":
+                    await log_channel.send("@everyone", embed=emb)
+                    await auto_pop("glitched")
+                else:
+                    await log_channel.send(embed=emb)
+    except KeyError:
+        pass
+    except AttributeError:
+        pass
+    except Exception as e:
+        print(e)
 
 @tasks.loop(seconds=0)
 async def aura_detection():
@@ -1861,7 +2233,7 @@ async def aura_detection():
                     aura_rarity = int(int(auras[current_aura.lower()]["rarity"]) / WINDY_MULTIPLIER)
                 elif current_biome.lower() == "rainy":
                     aura_rarity = int(int(auras[current_aura.lower()]["rarity"]) / RAINY_MULTIPLER)
-                elif current_biome.lower() == "sandstorm":
+                elif current_biome.lower() == "sand storm":
                     aura_rarity = int(int(auras[current_aura.lower()]["rarity"]) / SANDSTORM_MULTIPLIER)
                 elif current_biome.lower() == "hell":
                     aura_rarity = int(int(auras[current_aura.lower()]["rarity"]) / HELL_MULTIPLIER)
@@ -1881,7 +2253,8 @@ async def aura_detection():
                     description=f"Rolled Aura: {current_aura}\nWith chances of 1/{str(aura_rarity)} (from {auras[current_aura.lower()]["native_biome"]})\nAt time: {rnow.strftime('%d/%m/%Y %H:%M:%S')}",
                     colour=discord.Colour.from_rgb(hex2rgb(auras[current_aura.lower()]["emb_colour"])[0],hex2rgb(auras[current_aura.lower()]["emb_colour"])[1],hex2rgb(auras[current_aura.lower()]["emb_colour"])[2])
                 )
-                emb.set_thumbnail(url=auras[current_aura.lower()]["img_url"])
+                if auras[current_aura.lower()]["img_url"] != "":
+                    emb.set_thumbnail(url=auras[current_aura.lower()]["img_url"])
             else:
                 log_channel = client.get_channel(settings["log_channel_id"])
                 emb = discord.Embed(
@@ -1889,7 +2262,8 @@ async def aura_detection():
                     description=f"Rolled Aura: {current_aura}\nWith chances of 1/{auras[current_aura.lower()]["rarity"]}\nAt time: {rnow.strftime('%d/%m/%Y %H:%M:%S')}",
                     colour=discord.Colour.from_rgb(hex2rgb(auras[current_aura.lower()]["emb_colour"])[0],hex2rgb(auras[current_aura.lower()]["emb_colour"])[1],hex2rgb(auras[current_aura.lower()]["emb_colour"])[2])
                 )
-                emb.set_thumbnail(url=auras[current_aura.lower()]["img_url"])
+                if auras[current_aura.lower()]["img_url"] != "":
+                    emb.set_thumbnail(url=auras[current_aura.lower()]["img_url"])
             if settings["take_screenshot_on_detection"]:                    
                 auraimg = pag.screenshot(f"{MACROPATH}/scr/screenshot_aura.png")
                 up = discord.File(f"{MACROPATH}/scr/screenshot_aura.png", filename="aura.png")
@@ -1912,162 +2286,6 @@ async def aura_detection():
         pass
     except Exception as e:
         print(e)
-
-@tasks.loop(seconds=0)
-async def legacy_aura_detection():
-    global hex_col, hex_col2, colour, colour2
-    if settings["log_channel_id"] == 0:
-        print("You must select a channel ID, you can do this by running the set_log_channel command.")
-        return    
-    px = ImageGrab.grab().load()
-    colour = px[default_pos[0], default_pos[1]]
-    hex_col = rgb2hex(colour[0], colour[1], colour[2])
-    colour2 = px[secondary_pos[0], secondary_pos[1]]
-    hex_col2 = rgb2hex(colour2[0], colour2[1], colour2[2])
-    try:
-        check = auras[f"{hex_col},{hex_col2}"]
-        legacy_aura_detection.stop()
-    except KeyError:
-        for k in auras.keys():
-            _ = list(k.split(","))
-            if _[0] == hex_col and _[1] == "#******":
-                hex_col2 = "#******"
-                legacy_aura_detection.stop()
-    except Exception as e:
-        print(e)
-
-@legacy_aura_detection.after_loop
-async def on_legacy_aura_detection_cancel():
-    global hex_col, hex_col2, colour, colour2
-    try:
-        rnow = datetime.now()
-        if int(auras[f"{hex_col},{hex_col2}"]["rarity"]) > int(settings["minimum_roll"]):
-            if hex_col == "#5bffb0": # overdrive detector
-                await asyncio.sleep(5)
-                px = ImageGrab.grab().load()
-                colour = px[default_pos[0], default_pos[1]]
-                hex_col = rgb2hex(colour[0], colour[1], colour[2])
-                if hex_col == "#d31e21":
-                    hex_col2 = "#******"
-                    auraimg = pag.screenshot(f"{MACROPATH}/scr/screenshot_aura.png")
-                    await asyncio.sleep(1)
-                    up = discord.File(f"{MACROPATH}/scr/screenshot_aura.png", filename="aura.png")
-                    emb = discord.Embed(
-                        title = f"Aura Rolled: {auras[f"{hex_col},{hex_col2}"]["name"]}",
-                        description = f"Rolled Aura: {auras[f"{hex_col},{hex_col2}"]["name"]}\nWith chances of 1/{auras[f"{hex_col},{hex_col2}"]["rarity"]}\nAt time: {rnow.strftime('%d/%m/%Y %H:%M:%S')}\nDetected Colours: {hex_col}, {hex_col2}",
-                        colour = discord.Color.from_rgb(colour[0], colour[1], colour[2])
-                    )
-                    emb.set_image(url="attachment://aura.png")
-                    log_channel = client.get_channel(settings["log_channel_id"])
-                    if settings["mention"] and settings["mention_id"] != 0 and (int(auras[f"{hex_col},{hex_col2}"]["rarity"]) > int(settings["minimum_ping"])):
-                        await log_channel.send(f"<@{settings["mention_id"]}>", embed=emb, file=up)
-                    else:
-                        await log_channel.send(embed=emb, file=up)
-                    print(f"Rolled Aura: {auras[f"{hex_col},{hex_col2}"]["name"]}\nWith chances of 1/{auras[f"{hex_col},{hex_col2}"]["rarity"]}\nAt time: {rnow.strftime('%d/%m/%Y %H:%M:%S')}\nDetected Colours: {hex_col}, {hex_col2}")
-                else:
-                    hex_col == "#5bffb0"
-                    hex_col2 = "#050e09"
-                    auraimg = pag.screenshot(f"{MACROPATH}/scr/screenshot_aura.png")
-                    await asyncio.sleep(1)
-                    up = discord.File(f"{MACROPATH}/scr/screenshot_aura.png", filename="aura.png")
-                    emb = discord.Embed(
-                            title = f"Aura Rolled: {auras[f"{hex_col},{hex_col2}"]["name"]}",
-                            description = f"Rolled Aura: {auras[f"{hex_col},{hex_col2}"]["name"]}\nWith chances of 1/{auras[f"{hex_col},{hex_col2}"]["rarity"]}\nAt time: {rnow.strftime('%d/%m/%Y %H:%M:%S')}\nDetected Colour: {hex_col}",
-                            colour = discord.Color.from_rgb(colour[0], colour[1], colour[2])
-                    )
-                    emb.set_image(url="attachment://aura.png")
-                    log_channel = client.get_channel(settings["log_channel_id"])
-                    if settings["mention"] and settings["mention_id"] != 0 and (int(auras[f"{hex_col},{hex_col2}"]["rarity"]) > int(settings["minimum_ping"])):
-                        await log_channel.send(f"<@{settings["mention_id"]}>", embed=emb, file=up)
-                    else:
-                        await log_channel.send(embed=emb, file=up)
-                    print(f"Rolled Aura: {auras[f"{hex_col},{hex_col2}"]["name"]}\nWith chances of 1/{auras[f"{hex_col},{hex_col2}"]["rarity"]}\nAt time: {rnow.strftime('%d/%m/%Y %H:%M:%S')}\nDetected Colour: {hex_col}")
-            elif hex_col == "#3c66ff": # history detector
-                await asyncio.sleep(1)
-                auraimg = pag.screenshot(f"{MACROPATH}/scr/screenshot_aura.png")
-                await asyncio.sleep(8)
-                px = ImageGrab.grab().load()
-                colour = px[default_pos[0], default_pos[1]]
-                hex_col = rgb2hex(colour[0], colour[1], colour[2])
-                if hex_col == "#59ff96":
-                    hex_col2 = "#******"
-                    auraimg = pag.screenshot(f"{MACROPATH}/scr/screenshot_aura.png")
-                    await asyncio.sleep(1)
-                    up = discord.File(f"{MACROPATH}/scr/screenshot_aura.png", filename="aura.png")
-                    emb = discord.Embed(
-                            title = f"Aura Rolled: {auras[f"{hex_col},{hex_col2}"]["name"]}",
-                            description = f"Rolled Aura: {auras[f"{hex_col},{hex_col2}"]["name"]}\nWith chances of 1/{auras[f"{hex_col},{hex_col2}"]["rarity"]}\nAt time: {rnow.strftime('%d/%m/%Y %H:%M:%S')}\nDetected Colour: {hex_col}",
-                            colour = discord.Color.from_rgb(colour[0], colour[1], colour[2])
-                    )
-                    emb.set_image(url="attachment://aura.png")
-                    log_channel = client.get_channel(settings["log_channel_id"])
-                    if settings["mention"] and settings["mention_id"] != 0 and (int(auras[f"{hex_col},{hex_col2}"]["rarity"]) > int(settings["minimum_ping"])):
-                        await log_channel.send(f"<@{settings["mention_id"]}>", embed=emb, file=up)
-                    else:
-                        await log_channel.send(embed=emb, file=up)
-                    print(f"Rolled Aura: {auras[f"{hex_col},{hex_col2}"]["name"]}\nWith chances of 1/{auras[f"{hex_col},{hex_col2}"]["rarity"]}\nAt time: {rnow.strftime('%d/%m/%Y %H:%M:%S')}\nDetected Colour: {hex_col}")
-                else:
-                    hex_col = "#3c66ff"
-                    hex_col2 = "#******"
-                    up = discord.File(f"{MACROPATH}/scr/screenshot_aura.png", filename="aura.png")
-                    emb = discord.Embed(
-                            title = f"Aura Rolled: {auras[f"{hex_col},{hex_col2}"]["name"]}",
-                            description = f"Rolled Aura: {auras[f"{hex_col},{hex_col2}"]["name"]}\nWith chances of 1/{auras[f"{hex_col},{hex_col2}"]["rarity"]}\nAt time: {rnow.strftime('%d/%m/%Y %H:%M:%S')}\nDetected Colour: {hex_col}",
-                            colour = discord.Color.from_rgb(colour[0], colour[1], colour[2])
-                    )
-                    emb.set_image(url="attachment://aura.png")
-                    log_channel = client.get_channel(settings["log_channel_id"])
-                    if settings["mention"] and settings["mention_id"] != 0 and (int(auras[f"{hex_col},{hex_col2}"]["rarity"]) > int(settings["minimum_ping"])):
-                        await log_channel.send(f"<@{settings["mention_id"]}>", embed=emb, file=up)
-                    else:
-                        await log_channel.send(embed=emb, file=up)
-                    print(f"Rolled Aura: {auras[f"{hex_col},{hex_col2}"]["name"]}\nWith chances of 1/{auras[f"{hex_col},{hex_col2}"]["rarity"]}\nAt time: {rnow.strftime('%d/%m/%Y %H:%M:%S')}\nDetected Colour: {hex_col}")
-            elif hex_col2 == "#******":
-                auraimg = pag.screenshot(f"{MACROPATH}/scr/screenshot_aura.png")
-                await asyncio.sleep(1)
-                up = discord.File(f"{MACROPATH}/scr/screenshot_aura.png", filename="aura.png")
-                emb = discord.Embed(
-                        title = f"Aura Rolled: {auras[f"{hex_col},{hex_col2}"]["name"]}",
-                        description = f"Rolled Aura: {auras[f"{hex_col},{hex_col2}"]["name"]}\nWith chances of 1/{auras[f"{hex_col},{hex_col2}"]["rarity"]}\nAt time: {rnow.strftime('%d/%m/%Y %H:%M:%S')}\nDetected Colour: {hex_col}",
-                        colour = discord.Color.from_rgb(colour[0], colour[1], colour[2])
-                )
-                emb.set_image(url="attachment://aura.png")
-                log_channel = client.get_channel(settings["log_channel_id"])
-                if settings["mention"] and settings["mention_id"] != 0 and (int(auras[f"{hex_col},{hex_col2}"]["rarity"]) > int(settings["minimum_ping"])):
-                    await log_channel.send(f"<@{settings["mention_id"]}>", embed=emb, file=up)
-                else:
-                    await log_channel.send(embed=emb, file=up)
-                print(f"Rolled Aura: {auras[f"{hex_col},{hex_col2}"]["name"]}\nWith chances of 1/{auras[f"{hex_col},{hex_col2}"]["rarity"]}\nAt time: {rnow.strftime('%d/%m/%Y %H:%M:%S')}\nDetected Colour: {hex_col}")
-            else:
-                auraimg = pag.screenshot(f"{MACROPATH}/scr/screenshot_aura.png")
-                await asyncio.sleep(1)
-                up = discord.File(f"{MACROPATH}/scr/screenshot_aura.png", filename="aura.png")
-                emb = discord.Embed(
-                    title = f"Aura Rolled: {auras[f"{hex_col},{hex_col2}"]["name"]}",
-                    description = f"Rolled Aura: {auras[f"{hex_col},{hex_col2}"]["name"]}\nWith chances of 1/{auras[f"{hex_col},{hex_col2}"]["rarity"]}\nAt time: {rnow.strftime('%d/%m/%Y %H:%M:%S')}\nDetected Colours: {hex_col}, {hex_col2}",
-                    colour = discord.Color.from_rgb(colour[0], colour[1], colour[2])
-                )
-                emb.set_image(url="attachment://aura.png")
-                log_channel = client.get_channel(settings["log_channel_id"])
-                if settings["mention"] and settings["mention_id"] != 0 and (int(auras[f"{hex_col},{hex_col2}"]["rarity"]) > int(settings["minimum_ping"])):
-                    await log_channel.send(f"<@{settings["mention_id"]}>", embed=emb, file=up)
-                else:
-                    await log_channel.send(embed=emb, file=up)
-                print(f"Rolled Aura: {auras[f"{hex_col},{hex_col2}"]["name"]}\nWith chances of 1/{auras[f"{hex_col},{hex_col2}"]["rarity"]}\nAt time: {rnow.strftime('%d/%m/%Y %H:%M:%S')}\nDetected Colours: {hex_col}, {hex_col2}")
-        else:
-            print(f"Rolled Aura: {auras[f"{hex_col},{hex_col2}"]["name"]}\nWith chances of 1/{auras[f"{hex_col},{hex_col2}"]["rarity"]}\nAt time: {rnow.strftime('%d/%m/%Y %H:%M:%S')}\nDetected Colours: {hex_col}, {hex_col2}")
-        if int(auras[f"{hex_col},{hex_col2}"]["rarity"]) >= 1000000 and int(auras[f"{hex_col},{hex_col2}"]["rarity"]) <= 99999998:
-            await asyncio.sleep(8)
-        elif int(auras[f"{hex_col},{hex_col2}"]["rarity"]) >= 99999 and int(auras[f"{hex_col},{hex_col2}"]["rarity"]) <= 999999:
-            await asyncio.sleep(10)
-        elif int(auras[f"{hex_col},{hex_col2}"]["rarity"]) >= 9999999:
-            await asyncio.sleep(10)
-        if settings["reset_aura"] != "":
-            reset_aura.start()
-    except Exception as e:
-        print(e)
-    finally:
-        legacy_aura_detection.restart()
 
 @client.command()
 async def plugins(ctx):

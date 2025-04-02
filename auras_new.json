@@ -152,7 +152,7 @@
     "cosmos" : {
         "emb_colour" : "#ec88ff",
         "rarity" : "1520000",
-         "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/4/4c/CosmosCollection.gif/revision/latest",
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/4/4c/CosmosCollection.gif/revision/latest",
         "native_biome" : ""
     },
     "gravitational": {
@@ -422,8 +422,8 @@
     "ruins: withered" : {
         "emb_colour" : "#000000",
         "rarity" : "800000000",
-        "img_url" : "",
-        "native_biome" : ""
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/a/a9/Ruins_-_witheredincollection2.png/revision/latest",
+        "native_biome" : "#41ff83"
     },
     "aegis": {
         "emb_colour": "#3151ff",
@@ -431,10 +431,10 @@
         "img_url": "https://static.wikia.nocookie.net/sol-rng/images/a/ab/AegisCollection.gif/revision/latest",
         "native_biome": ""
     },
-    "pixelated" : {
-        "emb_colour" : "#000000",
+    "pixelation" : {
+        "emb_colour" : "#9d3cff",
         "rarity" : "1073741824",
-        "img_url" : "",
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/6/61/Pixelation_In-Game.gif/revision/latest",
         "native_biome" : ""
     },
     "luminosity": {

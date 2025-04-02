@@ -1,6 +1,6 @@
 #           Baz's Macro/SolsRNGBot
 #   A discord bot for macroing Sol's RNG on Roblox
-#   Version: 1.2.0 Hotfix 1
+#   Version: 1.2.0 Hotfix 2
 #   https://github.com/bazthedev/SolsRNGBot
 #
 import  sys

@@ -512,13 +512,13 @@
     "origin: onion" : {
         "emb_colour" : "#d067fe",
         "rarity" : "8000000",
-        "img_url" : "",
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/c/c3/OnionCollection.gif/revision/latest",
         "native_biome" : ""
     },
     "glock: shieldofthesky" : {
         "emb_colour" : "#000000",
         "rarity" : "170000000",
-        "img_url" : "",
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/5/5f/Glock_of_the_sky_in_Collection_%28better_version%29.png/revision/latest",
         "native_biome" : ""
     }
 }

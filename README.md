@@ -1,15 +1,13 @@
 # SolsRNGBot
 ## A discord bot that can detect auras, special biomes, merchants and even has an auto crafting mode for the Roblox game Sol's RNG!
 # Features:
-- Manual screenshots of game, storage, and inventory
 - Autokick prevention
-- Aura Detection (two different methods)
+- Aura Detection
 - Custom Plugins to add custom commands
 - Automatic Updating of New Auras
 - Mention on aura roll
 - Minimum rarity for ping and send message
 - Compatibility with most 16:9 monitors
-- Matrix: Overdrive or Overture: History Detection
 - Merchant Detection and sending a screenshot with their stock (Merchant Teleporter is required)
 - Automatic crafting of multiple potions
 - Purchase items from merchant via command

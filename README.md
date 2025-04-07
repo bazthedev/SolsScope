@@ -1,5 +1,5 @@
 # SolsRNGBot
-## A discord bot that can detect auras, special biomes, merchants and even has an auto crafting mode for the Roblox game Sol's RNG!
+## A macro for Sols's RNG, boasting Auto craft, Auto purchase, aura/biome detection and much more.
 # Features:
 - Autokick prevention
 - Aura Detection
@@ -21,9 +21,6 @@
 - Automatically detect if you are using the MSStore version or the Player and will adjust the script accordingly
 
 # TBA:
-- Finished Jester detection.
-- Auto Purchase from merchant (???) will start only for void coins. If you do not have Merchant Teleporter, then this will not work.
-- You will be able to choose to only buy items from Mari, Jester or both.
 - Create a feature request if you want something to be added!
 
 # System Requirements:
@@ -41,12 +38,9 @@ If you need help with the macro, please join [this server](https://discord.com/i
 2. Make sure you have Python installed. I am using version 3.12 but you should be able to use any version 3.12 or newer.
 3. Install the requirements by running `py -m pip install -r requirements.txt`
 4. Run the main.py file
-5. Create a new Discord Bot and copy its token
-6. Edit the newly created `settings.json` file by using the `edit_settings` command and paste your discord bot token in the "TOKEN" key.
-7. Run the main.py file again
-8. Add the bot to a server
-9. Run the set_log_channel command in the channel you want the bot to automatically post in
-10. And you are done! You can customize the settings by using the `edit_settings` command and rerunning the macro!
+5. Create a new webhook and copy its link
+6. Add your webhook in the WEBHOOK_URL box
+7. And you are done!
 
 # Common Issues:
 - Nothing is working on my dual monitor setup: Make sure that Roblox is open on the monitor you marked as PRIMARY. You can check this by typing "Change my primary display" into the Windows search bar.

@@ -1,5 +1,4 @@
 # Plugins
-## A plugin is essentially a discord.py Cog which you can let the bot use
 ## To install a plugin, place the python file inside the plugins folder
 ## Make sure that the code inside [`template.py`](https://github.com/bazthedev/SolsRNGBot/blob/main/plugins/template.py) is used before starting your plugin.
 ## These allow the code to access the global configuration and the plugin's own configuration.

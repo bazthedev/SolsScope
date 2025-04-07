@@ -10,7 +10,7 @@ class Plugin:
         "config2" : 1
     }
 
-    DISPLAYSETTINGS = ["enabled", "TOKEN"]
+    DISPLAYSETTINGS = ["enabled", "config1", "config2"]
 
     def __init__(self, macro):
         self.name = "Template"

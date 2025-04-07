@@ -22,7 +22,7 @@ class Plugin:
         self.config = self.load_or_create_config()
 
         self.entries = {}
-        macro.logger.write_log(f"[{self.name}] Plugin initialized with config: {self.config}")
+        macro.logger.write_log(f"[{self.name}] Plugin initialized.")
 
     def load_or_create_config(self):
         os.makedirs(os.path.dirname(self.config_path), exist_ok=True)

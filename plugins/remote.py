@@ -170,6 +170,7 @@ class Plugin:
             await ctx.send(file=discord.File(f"{self.MACROPATH}/scr/screenshot.png"))
 
         @client.command()
+        @commands.is_owner()
         async def purchase_item(ctx, item_box : int):
             with self.macro.keyboard_lock:
                 if item_box == 1:

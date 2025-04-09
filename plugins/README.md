@@ -1,5 +1,5 @@
 # Plugins
-## To install a plugin, place the python file inside the plugins folder
+## To install a plugin, place the python file inside the plugins folder, located in `%localappdata%\Baz's Macro\plugins`
 ## Make sure that the code inside [`template.py`](https://github.com/bazthedev/SolsRNGBot/blob/main/plugins/template.py) is used before starting your plugin.
 ## These allow the code to access the global configuration and the plugin's own configuration.
 ## For an example of starting a plugin, please look at [`template.py`](https://github.com/bazthedev/SolsRNGBot/blob/main/plugins/template.py).

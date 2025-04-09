@@ -48,6 +48,7 @@ If you need help with the macro, please join [this server](https://discord.com/i
 - The macro does not work on X platform. The macro has only been tested on Windows and is designed with Windows 10 in mind. Windows 11 should run the same.
 - The macro freezes when trying to download the auras. You will have to manually download the auras. Click on the auras.json file, then press the download button. Open this path `%localappdata%\Baz's Macro\` and then copy the auras.json file there.
 - The Windows menu keeps getting opened. Download the latest version of the macro (this removes using the Windows menu for mouse movement entirely).
+- The macro doesn't stop when I press the button: The way the macro stops threads is by letting them finish what they were doing and then exiting. This is for safety as unsafe termination can cause lots of issues like data loss or memory leaks. In the new update, a message will show in logs when the job terminates.
 ## If you are experiencing issues, please create a new issue so that it can be raised, solved and prevented from happening again. If there is no update, then turn skip_dl to true in settings.
 
 # You can read more about how the bot works and the things you can do with it [here](https://github.com/bazthedev/SolsRNGBot/wiki)

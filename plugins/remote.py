@@ -135,7 +135,7 @@ class Plugin:
             await ctx.send("Stopping the macro...")
             self.macro.stop_event.set()
             emb = discord.Embed(
-                title="Macro has stopped.",
+                title="Macro was stopped remotely.",
                 colour=discord.Colour.red()
             )
             emb.set_footer(text=f"SolsRNGBot Remote Bot Plugin v{self.version}", icon_url=self.WEBHOOK_ICON_URL)

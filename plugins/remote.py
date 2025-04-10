@@ -96,9 +96,13 @@ class Plugin:
             with open(self.config_path, "w") as f:
                 json.dump(current_config, f, indent=4)
             self.macro.logger.write_log(f"[{self.name}] Plugin config saved.")
+            
+            self.macro.reload_plugin_config(self)
+
         except Exception as e:
             self.macro.logger.write_log(f"[{self.name}] Failed to save config: {e}")
             messagebox.showerror("Baz's Macro", f"[{self.name}] Failed to save config: {e}")
+
 
     def get_updated_values(self):
         updated_values = {}
@@ -140,10 +144,11 @@ class Plugin:
             )
             emb.set_footer(text=f"SolsRNGBot Remote Bot Plugin v{self.version}", icon_url=self.WEBHOOK_ICON_URL)
             self.macro.webhook.send(avatar_url=self.WEBHOOK_ICON_URL, embed=emb)
+            self.macro.logger.write_log("Macro was stopped remotely.")
 
         @tasks.loop(seconds=0)
         async def stop_checker():
-            if self.macro.stop_event.is_set(): 
+            if self.macro.stop_event.is_set():
                 await client.close()
 
         @client.command()
@@ -230,4 +235,4 @@ class Plugin:
             stop_checker.start()
 
         client.run(self.config["TOKEN"])
-        self.macro.logger.write_log("Macro was stopped.")
+        self.macro.logger.write_log("Remote bot has logged out.")

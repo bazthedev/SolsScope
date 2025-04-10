@@ -23,6 +23,96 @@
         "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/a/a3/Screenshot_2025-02-09_145439.png/revision/latest",
         "native_biome" : "Dreamspace"
     },
+    "undead" : {
+        "emb_colour" : "#26a90a",
+        "rarity" : "12000",
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/e/eb/UndeadAura.gif/revision/latest",
+        "native_biome" : "Hell"
+    },
+    "corrosive" : {
+        "emb_colour" : "#8360b2",
+        "rarity" : "12000",
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/9/94/Corrosive.gif/revision/latest",
+        "native_biome" : "Corruption"
+    },
+    "rage: heated" : {
+        "emb_colour" : "#ff7440",
+        "rarity" : "12800",
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/1/14/RageHeatedAura.gif/revision/latest",
+        "native_biome" : ""
+    },
+    "ink: leak" : {
+        "emb_colour" : "#000000",
+        "rarity" : "14000",
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/d/da/LeakGif.gif/revision/latest",
+        "native_biome" : ""
+    },
+    "powered" : {
+        "emb_colour" : "#ffffff",
+        "rarity" : "16384",
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/9/9a/Powered.gif/revision/latest",
+        "native_biome" : ""
+    },
+    "aquatic" : {
+        "emb_colour" : "#1881f5",
+        "rarity" : "40000",
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/a/a9/AquaticAura.gif/revision/latest",
+        "native_biome" : ""
+    },
+    "solar" : {
+        "emb_colour" : "#efc45a",
+        "rarity" : "50000",
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/4/41/SolarAuraNight.gif/revision/latest",
+        "native_biome" : ""
+    },
+    "lunar" : {
+        "emb_colour" : "#a587fd",
+        "rarity" : "50000",
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/d/d3/Lunar_Collection_E7.gif/revision/latest",
+        "native_biome" : ""
+    },
+    "starlight" : {
+        "emb_colour" : "#91aee2",
+        "rarity" : "50000",
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/2/22/StarlightCollection.gif/revision/latest",
+        "native_biome" : "Starfall"
+    },
+    "starrider" : {
+        "emb_colour" : "#d5ce64",
+        "rarity" : "50000",
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/1/1a/StarRiderCollection.gif/revision/latest",
+        "native_biome" : "Starfall"
+    },
+    ":flushed:: lobotomy" : {
+        "emb_colour" : "#05a715",
+        "rarity" : "69000",
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/f/f6/FlushedLobotomyAura.gif/revision/latest",
+        "native_biome" : ""
+    },
+    "permafrost" : {
+        "emb_colour" : "#9bdcba",
+        "rarity" : "73500",
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/b/bd/PermaFrostCollection.gif/revision/latest",
+        "native_biome" : "Snowy"
+    },
+    "hazard: rays" : {
+        "emb_colour" : "#6766fe",
+        "rarity" : "70000",
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/c/c1/Hazard_Rays.gif/revision/latest",
+        "native_biome" : "Corruption"
+    },
+    "nautilus" : {
+        "emb_colour" : "#5367f9",
+        "rarity" : "70000",
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/e/e2/NautilusAuraNight.gif/revision/latest",
+        "native_biome" : ""
+    },
+    "stormal" : {
+        "emb_colour" : "#a9a9a9",
+        "rarity" : "90000",
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/6/65/Stormal_Collection_E7.gif/revision/latest",
+        "native_biome" : "Windy"
+    },
     "exotic": {
         "emb_colour": "#38c8d8",
         "rarity": "99999",
@@ -464,7 +554,7 @@
     "oblivion: the truth seeker": {
         "emb_colour": "#510e9e",
         "rarity": "700000000",
-        "img_url": "https://static.wikia.nocookie.net/sol-rng/images/c/c5/Oblivion_colletion_eon1-1.gif/revision/latest",
+        "img_url": " ://static.wikia.nocookie.net/sol-rng/images/c/c5/Oblivion_colletion_eon1-1.gif/revision/latest",
         "native_biome": ""
     },
     "wonderland": {

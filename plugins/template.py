@@ -1,15 +1,7 @@
-import discord
-from discord.ext import commands, tasks
 import os
 import json
 from tkinter import messagebox
 import tkinter as tk
-import asyncio
-import time
-import pyautogui as pag
-import screeninfo as si
-from pynput import keyboard
-import mousekey as mk
 
 class Plugin:
     DEFAULTSETTINGS = {

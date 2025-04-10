@@ -7,16 +7,16 @@ class Plugin:
     DEFAULTSETTINGS = {
         "enabled": True,
         "config1" : "",
-        "config2" : 1
-    }
+        "config2" : 0
+    } # plugin config when first run
 
-    DISPLAYSETTINGS = ["enabled", "config1", "config2"]
+    DISPLAYSETTINGS = ["enabled", "config1", "config2"] # settings to be displayed on the GUI
 
 
     def __init__(self, macro):
         self.name = "Template"
         self.version = "1.0.0"
-        self.author = "bazthedev"
+        self.author = "your_user_name"
         self.macro = macro
         self.config_path = os.path.join(os.path.expandvars(r"%localappdata%\Baz's Macro"), "plugins", "config", f"{self.name}.json")
         self.WEBHOOK_ICON_URL = "https://raw.githubusercontent.com/bazthedev/SolsRNGBot/a93aaa9a42a7184047f12aa4135f3dab0857f05d/Server%20Edition/whicon.png"
@@ -69,9 +69,13 @@ class Plugin:
             with open(self.config_path, "w") as f:
                 json.dump(current_config, f, indent=4)
             self.macro.logger.write_log(f"[{self.name}] Plugin config saved.")
+            
+            self.macro.reload_plugin_config(self)
+
         except Exception as e:
             self.macro.logger.write_log(f"[{self.name}] Failed to save config: {e}")
             messagebox.showerror("Baz's Macro", f"[{self.name}] Failed to save config: {e}")
+
 
     def get_updated_values(self):
         updated_values = {}
@@ -90,4 +94,4 @@ class Plugin:
                 original[key] = value
 
     def run(self, stop_event, pause_event):
-        pass # main plugin logic here
+        pass # main plugin logic goes here

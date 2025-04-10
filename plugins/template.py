@@ -1,16 +1,25 @@
+import discord
+from discord.ext import commands, tasks
 import os
 import json
 from tkinter import messagebox
 import tkinter as tk
+import asyncio
+import time
+import pyautogui as pag
+import screeninfo as si
+from pynput import keyboard
+import mousekey as mk
 
 class Plugin:
     DEFAULTSETTINGS = {
         "enabled": True,
-        "config1" : "Example",
+        "config1" : "",
         "config2" : 1
     }
 
     DISPLAYSETTINGS = ["enabled", "config1", "config2"]
+
 
     def __init__(self, macro):
         self.name = "Template"
@@ -18,9 +27,9 @@ class Plugin:
         self.author = "bazthedev"
         self.macro = macro
         self.config_path = os.path.join(os.path.expandvars(r"%localappdata%\Baz's Macro"), "plugins", "config", f"{self.name}.json")
-
+        self.WEBHOOK_ICON_URL = "https://raw.githubusercontent.com/bazthedev/SolsRNGBot/a93aaa9a42a7184047f12aa4135f3dab0857f05d/Server%20Edition/whicon.png"
         self.config = self.load_or_create_config()
-
+        self.MACROPATH = os.path.expandvars(r"%localappdata%\Baz's Macro")
         self.entries = {}
         macro.logger.write_log(f"[{self.name}] Plugin initialized.")
 
@@ -89,4 +98,4 @@ class Plugin:
                 original[key] = value
 
     def run(self, stop_event, pause_event):
-        pass # logic for the program to run
+        pass # main plugin logic here

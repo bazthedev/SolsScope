@@ -1,5 +1,5 @@
 # SolsRNGBot
-## A macro for Sols's RNG, boasting Auto craft, Auto purchase, aura/biome detection and much more.
+## A macro for Sols's RNG, boasting Auto craft, Auto purchase, aura/biome detection and much more. Aiming to be dolphSol for Eon 1+
 # Features:
 - Autokick prevention
 - Aura Detection

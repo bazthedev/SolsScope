@@ -1,4 +1,4 @@
-discord==1.7.3
+discord.py==1.7.3
 pyautogui
 pynput
 requests
@@ -8,3 +8,5 @@ mousekey
 aiohttp
 websockets
 psutil
+opencv-python
+pytesseract

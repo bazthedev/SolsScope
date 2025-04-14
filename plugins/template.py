@@ -17,6 +17,7 @@ class Plugin:
         self.name = "Template"
         self.version = "1.0.0"
         self.author = "your_user_name"
+        self.requires = "1.0.0"
         self.macro = macro
         self.config_path = os.path.join(os.path.expandvars(r"%localappdata%\Baz's Macro"), "plugins", "config", f"{self.name}.json")
         self.WEBHOOK_ICON_URL = "https://raw.githubusercontent.com/bazthedev/SolsRNGBot/a93aaa9a42a7184047f12aa4135f3dab0857f05d/Server%20Edition/whicon.png"

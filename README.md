@@ -30,7 +30,7 @@ This macro has been tested on a 1440p display but is known to work on 1080p disp
 You should have the Microsoft Store version of Roblox installed, the Roblox Player can also be used but the MSStore version is needed for certain features.
 
 # Video Guide
-You can watch [this video guide](https://youtu.be/AKva_0biJuk) to help setup the bot.
+You can watch [this video guide](https://www.youtube.com/watch?v=Y12uiAbqMDc) to help setup the bot.
 
 # Support Server
 If you need help with the macro, please join [this server](https://discord.com/invite/y6NV89Na) and message Baz or send a message in the support thread.

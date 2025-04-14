@@ -22,8 +22,9 @@ class Plugin:
 
     def __init__(self, macro):
         self.name = "Remote Bot"
-        self.version = "1.0.0"
+        self.version = "1.0.1"
         self.author = "bazthedev"
+        self.requires = "1.2.3"
         self.macro = macro
         self.config_path = os.path.join(os.path.expandvars(r"%localappdata%\Baz's Macro"), "plugins", "config", f"{self.name}.json")
         self.WEBHOOK_ICON_URL = "https://raw.githubusercontent.com/bazthedev/SolsRNGBot/a93aaa9a42a7184047f12aa4135f3dab0857f05d/Server%20Edition/whicon.png"
@@ -48,6 +49,11 @@ class Plugin:
         self.merch_item_pos_3_purchase = ((1278 * self.scale_w), (988 * self.scale_h))
         self.merch_item_pos_4_purchase = ((1512 * self.scale_w), (988 * self.scale_h))
         self.merch_item_pos_5_purchase = ((1762 * self.scale_w), (986 * self.scale_h))
+        self.aura_button_pos = ((32 * self.scale_w), (595 * self.scale_h))
+        self.inv_button_pos = ((32 * self.scale_w), (692 * self.scale_h))
+        self.close_pos = ((1887 * self.scale_w), (399 * self.scale_h))
+        self.search_pos = ((1164 * self.scale_w), (486 * self.scale_h))
+        self.items_pos = ((1692 * self.scale_w), (440 * self.scale_h))
     
         self._keyboard = keyboard.Controller()
         self.mkey = mk.MouseKey()
@@ -136,8 +142,8 @@ class Plugin:
         @client.command()
         @commands.is_owner()
         async def stop(ctx):
-            await ctx.send("Stopping the macro...")
-            self.macro.stop_event.set()
+            await ctx.send("The macro will now be stopped.")
+            self.macro.running = False
             emb = discord.Embed(
                 title="Macro was stopped remotely.",
                 colour=discord.Colour.red()
@@ -145,6 +151,7 @@ class Plugin:
             emb.set_footer(text=f"SolsRNGBot Remote Bot Plugin v{self.version}", icon_url=self.WEBHOOK_ICON_URL)
             self.macro.webhook.send(avatar_url=self.WEBHOOK_ICON_URL, embed=emb)
             self.macro.logger.write_log("Macro was stopped remotely.")
+            self.macro.stop_event.set()
 
         @tasks.loop(seconds=0)
         async def stop_checker():
@@ -154,6 +161,13 @@ class Plugin:
         @client.command()
         @commands.is_owner()
         async def shutdown(ctx, _time : int):
+            emb = discord.Embed(
+                title="Macro was stopped remotely.",
+                colour=discord.Colour.red()
+            )
+            emb.set_footer(text=f"SolsRNGBot Remote Bot Plugin v{self.version}", icon_url=self.WEBHOOK_ICON_URL)
+            self.macro.webhook.send(avatar_url=self.WEBHOOK_ICON_URL, embed=emb)
+            self.macro.logger.write_log("Macro was stopped remotely.")
             t = round(time.time())
             t_z = t + _time
             await ctx.send(f"Shutting down at <t:{t_z}>")
@@ -228,9 +242,66 @@ class Plugin:
                     self.mkey.left_click_xy_natural(self.purchase_btn_pos[0], self.purchase_btn_pos[1])
                     time.sleep(0.2)
                     await ctx.send(f"Purchased item in box {str(item_box)}")
+
+        @client.command()
+        @commands.is_owner()
+        async def storage_scr(ctx):
+            with self.macro.keyboard_lock:
+                await ctx.send("Taking screenshot of Aura Storage, please wait, this will take a few seconds.")
+                self.mkey.left_click_xy_natural(self.aura_button_pos[0], self.aura_button_pos[1])
+                await asyncio.sleep(0.1)
+                self.mkey.left_click_xy_natural(self.search_pos[0], self.search_pos[1])
+                await asyncio.sleep(0.1)
+                storimg = pag.screenshot(f"{self.MACROPATH}/scr/screenshot_storage.png")
+                await asyncio.sleep(0.1)
+                self.mkey.left_click_xy_natural(self.close_pos[0], self.close_pos[1])
+                await ctx.send(file=discord.File(f"{self.MACROPATH}/scr/screenshot_storage.png"))
+
+
+        @client.command()
+        @commands.is_owner()
+        async def get_log(ctx):
+            log_file_path = f"{self.MACROPATH}/solsrngbot.log"
+
+            try:
+                with open(log_file_path, "r") as f:
+                    lines = f.readlines()
+
+                last_50_lines = lines[-50:] if len(lines) >= 50 else lines
+                log_content = ''.join(last_50_lines)
+
+                if len(log_content) > 1990:
+                    with open("upload.log", "w") as temp:
+                        temp.writelines(last_50_lines)
+                    await ctx.send("Log too long, sending as a file:", file=discord.File("upload.log"))
+                else:
+                    await ctx.send(f"```{log_content}```")
+
+            except FileNotFoundError:
+                await ctx.send("Log file not found.")
+            except Exception as e:
+                await ctx.send(f"An error occurred: {str(e)}")
+
+
+        @client.command()
+        @commands.is_owner()
+        async def inv_scr(ctx):
+            with self.macro.keyboard_lock:
+                await ctx.send("Taking screenshot of inventory, please wait, this will take a few seconds.")
+                self.mkey.left_click_xy_natural(self.inv_button_pos[0], self.inv_button_pos[1])
+                await asyncio.sleep(0.1)
+                self.mkey.left_click_xy_natural(self.items_pos[0], self.items_pos[1])
+                await asyncio.sleep(0.1)
+                self.mkey.left_click_xy_natural(self.search_pos[0], self.search_pos[1])
+                await asyncio.sleep(0.1)
+                self.storimg = pag.screenshot(f"{self.MACROPATH}/scr/screenshot_inventory.png")
+                await asyncio.sleep(0.1)
+                self.mkey.left_click_xy_natural(self.close_pos[0], self.close_pos[1])
+                await ctx.send(file=discord.File(f"{self.MACROPATH}/scr/screenshot_inventory.png"))
         
         @client.event
         async def on_ready():
+            await client.change_presence(activity=discord.Game(name=f"bazthedev/SolsRNGBot Remote Bot Plugin v{self.version}"))
             self.macro.logger.write_log(f"Remote bot has logged in to {client.user}")
             stop_checker.start()
 

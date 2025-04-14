@@ -1,6 +1,6 @@
 #           Baz's Macro/SolsRNGBot
 #   A discord bot for macroing Sol's RNG on Roblox
-#   Version: 1.2.2
+#   Version: 1.2.3
 #   https://github.com/bazthedev/SolsRNGBot
 #
 import sys
@@ -8,6 +8,7 @@ from tkinter import messagebox
 GLOBAL_LOGGER = None
 try:
     import os
+    import io
     import discord
     from discord.ext import commands
     import pyautogui as pag
@@ -34,7 +35,7 @@ try:
     from pathlib import Path
     import zipfile
     import threading
-    from tkinter import PhotoImage
+    from tkinter import filedialog
     from PIL import Image, ImageTk
     import time
     from difflib import SequenceMatcher
@@ -43,23 +44,23 @@ try:
     import webbrowser
     import importlib
 except ImportError as e:
-    messagebox.showerror("Baz's Macro", f"A module was not imported correctly.\n{e}")
+    messagebox.showerror("Baz's Macro", f"A module was not imported correctly, try reinstalling the requirements.\n{e}")
     sys.exit()
 
 mkey = mk.MouseKey()
 MACROPATH = os.path.expandvars(r"%localappdata%\Baz's Macro") # Windows Roaming Path
-LOCALVERSION = "1.2.2"
+LOCALVERSION = "1.2.3"
 PRERELEASE = False
-SERVERMACRO_EDITION = False
-DEFAULTSETTINGS = {"WEBHOOK_URL": "", "__version__" :  LOCALVERSION, "use_roblox_player" : True, "global_wait_time" : 0.2, "skip_aura_download": False, "mention" : True, "mention_id" : 0, "minimum_roll" : "99998", "minimum_ping" : "349999", "reset_aura" : "", "merchant_detection" : False, "send_mari" : True, "ping_mari" : False, "send_jester" : True, "ping_jester" : True, "clear_logs" : False, "pop_in_glitch" : False, "auto_use_items_in_glitch": {"Heavenly Potion" : {"use" : True, "amount" : 200}, "Fortune Potion III" : {"use" : True, "amount" : 1}, "Lucky Potion" : {"use" : True, "amount" : 10}, "Pumpkin" : {"use" : True, "amount" : 10}, "Haste Potion III" : {"use" : False, "amount" : 1}, "Warp Potion" : {"use" : True, "amount" : 1}, "Transcended Potion" : {"use" : False, "amount" : 1}, "Mixed Potion" : {"use" : True, "amount" : 10}, "Stella's Candle" : {"use" : True, "amount" : 1}, "Santa Claus Potion" : {"use" : True, "amount" : 5}, "Hwachae" : {"use" : True, "amount" : 1}}, "pop_in_dreamspace" : False, "auto_use_items_in_dreamspace" : {"Heavenly Potion" : {"use" : False, "amount" : 1}, "Fortune Potion III" : {"use" : True, "amount" : 1}, "Lucky Potion" : {"use" : True, "amount" : 10}, "Pumpkin" : {"use" : True, "amount" : 10}, "Haste Potion III" : {"use" : False, "amount" : 1}, "Warp Potion" : {"use" : True, "amount" : 1}, "Transcended Potion" : {"use" : False, "amount" : 1}, "Mixed Potion" : {"use" : True, "amount" : 10}, "Stella's Candle" : {"use" : True, "amount" : 1}, "Santa Claus Potion" : {"use" : True, "amount" : 5}, "Hwachae" : {"use" : True, "amount" : 1}}, "auto_craft_mode" : False, "skip_auto_mode_warning" : False, "auto_craft_item" : {"Potion of Bound" : False, "Heavenly Potion" : True, "Godly Potion (Zeus)" : True, "Godly Potion (Poseidon)" : True, "Godly Potion (Hades)" : True, "Warp Potion" : True, "Godlike Potion" : True}, "auto_biome_randomizer" : False, "auto_strange_controller" : False, "failsafe_key" : "ctrl+e", "merchant_detec_wait" : 0, "private_server_link" : "", "take_screenshot_on_detection" : False, "ROBLOSECURITY_KEY" : "", "DISCORD_TOKEN" : "", "collect_items" : {"1" : False, "2" : False, "3" : False, "4" : False}, "sniper_enabled" : False, "sniper_toggles" : {"Glitched" : True, "Dreamspace" : False}, "sniper_logs" : True, "change_cutscene_on_pop" : True, "disable_autokick_prevention" : False, "periodic_screenshots" : {"inventory" : False, "storage" : False}, "disconnect_prevention" : False, "check_update" : True, "auto_install_update" : False, "biomes" : {"snowy" : False, "windy" : False, "rainy" : False, "sand storm" : False, "hell" : False, "starfall" : False, "corruption" : False, "null" : False, "glitched" : True, "dreamspace" : True}, "auto_purchase_items_mari" : {"Lucky Potion" : False, "Lucky Potion L" : False, "Lucky Potion XL" : False, "Speed Potion" : False, "Speed Potion L" : False, "Speed Potion XL" : False, "Mixed Potion" : False, "Fortune Spoid" : False, "Gears" : False, "Lucky Penny" : False, "Void Coin" : True}, "auto_purchase_items_jester" : {"Lucky Potion" : False, "Speed Potion" : False, "Random Potion Sack" : False, "Stella's Star" : False, "Rune of Wind": False, "Rune of Frost" : False, "Rune of Rainstorm" : False, "Rune of Hell" : False, "Rune of Galaxy" : False, "Rune of Corruption" : False, "Rune of Nothing" : False, "Rune of Everything" : True, "Strange Potion" : True, "Stella's Candle" : True, "Potion of Bound" : True, "Merchant Tracker" : False, "Heavenly Potion" : True, "Oblivion Potion" : True}, "scan_channels" : [1282542323590496277]}
-VALIDSETTINGSKEYS = ["WEBHOOK_URL", "__version__", "use_roblox_player", "global_wait_time", "skip_aura_download", "mention", "mention_id", "minimum_roll", "minimum_ping", "reset_aura", "merchant_detection", "send_mari", "ping_mari", "send_jester", "ping_jester", "clear_logs", "pop_in_glitch", "auto_use_items_in_glitch", "pop_in_dreamspace", "auto_use_items_in_dreamspace", "auto_craft_mode", "skip_auto_mode_warning", "auto_craft_item", "auto_biome_randomizer", "auto_strange_controller", "failsafe_key", "merchant_detec_wait", "private_server_link", "take_screenshot_on_detection", "ROBLOSECURITY_KEY", "DISCORD_TOKEN", "sniper_enabled", "sniper_toggles", "collect_items", "sniper_logs", "change_cutscene_on_pop", "disable_autokick_prevention", "periodic_screenshots", "disconnect_prevention", "check_update", "auto_install_update", "biomes", "auto_purchase_items_mari", "auto_purchase_items_jester", "scan_channels"]
+DEFAULTSETTINGS = {"WEBHOOK_URL": "", "__version__" :  LOCALVERSION, "use_roblox_player" : True, "global_wait_time" : 0.2, "skip_aura_download": False, "mention" : True, "mention_id" : 0, "minimum_roll" : "99998", "minimum_ping" : "349999", "reset_aura" : "", "merchant_detection" : False, "send_mari" : True, "ping_mari" : False, "send_jester" : True, "ping_jester" : True, "clear_logs" : False, "pop_in_glitch" : False, "auto_use_items_in_glitch": {"Heavenly Potion" : {"use" : True, "amount" : 200}, "Fortune Potion III" : {"use" : True, "amount" : 1}, "Lucky Potion" : {"use" : True, "amount" : 10}, "Pumpkin" : {"use" : True, "amount" : 10}, "Haste Potion III" : {"use" : False, "amount" : 1}, "Warp Potion" : {"use" : True, "amount" : 1}, "Transcended Potion" : {"use" : False, "amount" : 1}, "Mixed Potion" : {"use" : True, "amount" : 10}, "Stella's Candle" : {"use" : True, "amount" : 1}, "Santa Claus Potion" : {"use" : True, "amount" : 5}, "Hwachae" : {"use" : True, "amount" : 1}}, "pop_in_dreamspace" : False, "auto_use_items_in_dreamspace" : {"Heavenly Potion" : {"use" : False, "amount" : 1}, "Fortune Potion III" : {"use" : True, "amount" : 1}, "Lucky Potion" : {"use" : True, "amount" : 10}, "Pumpkin" : {"use" : True, "amount" : 10}, "Haste Potion III" : {"use" : False, "amount" : 1}, "Warp Potion" : {"use" : True, "amount" : 1}, "Transcended Potion" : {"use" : False, "amount" : 1}, "Mixed Potion" : {"use" : True, "amount" : 10}, "Stella's Candle" : {"use" : True, "amount" : 1}, "Santa Claus Potion" : {"use" : True, "amount" : 5}, "Hwachae" : {"use" : True, "amount" : 1}}, "auto_craft_mode" : False, "skip_auto_mode_warning" : False, "auto_craft_item" : {"Potion of Bound" : False, "Heavenly Potion" : True, "Godly Potion (Zeus)" : True, "Godly Potion (Poseidon)" : True, "Godly Potion (Hades)" : True, "Warp Potion" : True, "Godlike Potion" : True}, "auto_biome_randomizer" : False, "auto_strange_controller" : False, "failsafe_key" : "ctrl+e", "merchant_detec_wait" : 0, "private_server_link" : "", "take_screenshot_on_detection" : False, "ROBLOSECURITY_KEY" : "", "DISCORD_TOKEN" : "", "collect_items" : {"1" : False, "2" : False, "3" : False, "4" : False}, "sniper_enabled" : False, "sniper_toggles" : {"Glitched" : True, "Dreamspace" : False}, "sniper_logs" : True, "change_cutscene_on_pop" : True, "disable_autokick_prevention" : False, "periodic_screenshots" : {"inventory" : False, "storage" : False}, "disconnect_prevention" : False, "check_update" : True, "auto_install_update" : False, "biomes" : {"snowy" : False, "windy" : False, "rainy" : False, "sand storm" : False, "hell" : False, "starfall" : False, "corruption" : False, "null" : False, "glitched" : True, "dreamspace" : True}, "auto_purchase_items_mari" : {"Lucky Potion" : False, "Lucky Potion L" : False, "Lucky Potion XL" : False, "Speed Potion" : False, "Speed Potion L" : False, "Speed Potion XL" : False, "Mixed Potion" : False, "Fortune Spoid" : False, "Gear" : False, "Lucky Penny" : False, "Void Coin" : True}, "auto_purchase_items_jester" : {"Lucky Potion" : False, "Speed Potion" : False, "Random Potion Sack" : False, "Stella's Star" : False, "Rune of Wind": False, "Rune of Frost" : False, "Rune of Rainstorm" : False, "Rune of Hell" : False, "Rune of Galaxy" : False, "Rune of Corruption" : False, "Rune of Nothing" : False, "Rune of Everything" : True, "Strange Potion" : True, "Stella's Candle" : True, "Potion of Bound" : True, "Merchant Tracker" : False, "Heavenly Potion" : True, "Oblivion Potion" : True}, "scan_channels" : ["1282542323590496277"], "mari_ping_id" : 0, "jester_ping_id" : 0, "vip" : False, "obby_blessing" : False, "do_item_collection" : False, "SECONDARY_WEBHOOK_URLS" : []}
+VALIDSETTINGSKEYS = ["WEBHOOK_URL", "__version__", "use_roblox_player", "global_wait_time", "skip_aura_download", "mention", "mention_id", "minimum_roll", "minimum_ping", "reset_aura", "merchant_detection", "send_mari", "ping_mari", "send_jester", "ping_jester", "clear_logs", "pop_in_glitch", "auto_use_items_in_glitch", "pop_in_dreamspace", "auto_use_items_in_dreamspace", "auto_craft_mode", "skip_auto_mode_warning", "auto_craft_item", "auto_biome_randomizer", "auto_strange_controller", "failsafe_key", "merchant_detec_wait", "private_server_link", "take_screenshot_on_detection", "ROBLOSECURITY_KEY", "DISCORD_TOKEN", "sniper_enabled", "sniper_toggles", "collect_items", "sniper_logs", "change_cutscene_on_pop", "disable_autokick_prevention", "periodic_screenshots", "disconnect_prevention", "check_update", "auto_install_update", "biomes", "auto_purchase_items_mari", "auto_purchase_items_jester", "scan_channels", "mari_ping_id", "jester_ping_id", "vip", "obby_blessing", "do_item_collection", "SECONDARY_WEBHOOK_URLS"]
 STARTUP_MSGS = ["Let's go gambling!", "Nah, I'd Roll", "I give my life...", "Take a break", "Waste of time", "I can't stop playing this", "Touch the grass", "Eternal time...", "Break the Reality", "Finished work for today", "When is payday???", "-One who stands before God-", "-Flaws in the world-", "We do a little bit of rolling", "Exotic Destiny", "Always bet on yourself", "(Lime shivers quietly in the cold)", "There's no way to stop it!", "[Tip]: Get Lucky", "I'm addicted to Sol's RNG", "The Lost"]
 ACCEPTEDPOTIONS = ["Potion of Bound", "Heavenly Potion", "Godly Potion (Zeus)", "Godly Potion (Poseidon)", "Godly Potion (Hades)", "Warp Potion", "Godlike Potion"]
-GENERAL_KEYS = ["WEBHOOK_URL", "private_server_link", "failsafe_key", "use_roblox_player", "global_wait_time", "skip_aura_download", "mention", "mention_id"]
+ACCEPTEDAUTOPOP = {"Oblivion Potion" : {"use" : False, "amount" : 1}, "Godlike Potion" : {"use" : True, "amount" : 1}, "Godly (Zeus)" : {"use" : False, "amount" : 1}, "Godly (Poseidon)" : {"use" : False, "amount" : 1}, "Godly (Hades)" : {"use" : False, "amount" : 1}, "Heavenly Potion" : {"use" : True, "amount" : 200}, "Fortune Potion III" : {"use" : True, "amount" : 1}, "Lucky Potion" : {"use" : True, "amount" : 10}, "Pumpkin" : {"use" : True, "amount" : 10}, "Haste Potion III" : {"use" : False, "amount" : 1}, "Warp Potion" : {"use" : True, "amount" : 1}, "Transcended Potion" : {"use" : False, "amount" : 1}, "Mixed Potion" : {"use" : True, "amount" : 10}, "Stella's Candle" : {"use" : True, "amount" : 1}, "Santa Claus Potion" : {"use" : True, "amount" : 5}, "Hwachae" : {"use" : True, "amount" : 1}}
+GENERAL_KEYS = ["WEBHOOK_URL", "private_server_link", "SECONDARY_WEBHOOK_URLS", "failsafe_key", "use_roblox_player", "global_wait_time", "skip_aura_download", "mention", "mention_id"]
 AURAS_KEYS = ["minimum_roll", "minimum_ping", "reset_aura", "take_screenshot_on_detection"]
 BIOMES_KEYS = ["biomes", "auto_biome_randomizer", "auto_strange_controller", "pop_in_glitch", "auto_use_items_in_glitch", "pop_in_dreamspace", "auto_use_items_in_dreamspace"]
 SNIPER_KEYS = ["sniper_enabled", "sniper_toggles", "DISCORD_TOKEN", "ROBLOSECURITY_KEY", "sniper_logs", "scan_channels"]
-MERCHANT_KEYS = ["merchant_detection", "send_mari", "ping_mari", "auto_purchase_items_mari", "send_jester", "ping_jester", "auto_purchase_items_jester"]
+MERCHANT_KEYS = ["merchant_detection", "send_mari", "ping_mari","mari_ping_id", "auto_purchase_items_mari", "send_jester", "ping_jester", "jester_ping_id", "auto_purchase_items_jester"]
 AUTOCRAFT_KEYS = ["auto_craft_mode", "auto_craft_item", "skip_auto_mode_warning"]
 OTHER_KEYS = ["disconnect_prevention", "disable_autokick_prevention", "periodic_screenshots", "check_update", "auto_install_update"]
 
@@ -109,8 +110,23 @@ def hex2rgb(_hex):
 
 def reload_settings():
     global settings
-    with open(f"{MACROPATH}/settings.json", "r") as f:
-        settings = json.load(f)
+    try:
+        with open(f"{MACROPATH}/settings.json", "r") as f:
+            settings = json.load(f)
+    except json.JSONDecodeError:
+        reset_settings = messagebox.askyesno("Baz's Macro", "Your settings appear to be corrupt, would you like to reset them?")
+        if reset_settings:
+            try:
+                os.remove(f"{MACROPATH}/settings.json")
+            except Exception as e:
+                messagebox.showerror("Baz's Macro", f"Failed to deleted settings: {e}")
+                sys.exit()
+            messagebox.showinfo("Baz's Macro", "Settings were reset.")
+            if not os.path.isfile(f"{MACROPATH}/settings.json"):
+                with open(f"{MACROPATH}/settings.json", "w") as f:
+                    json.dump(DEFAULTSETTINGS, f, indent=4)
+                messagebox.showinfo("Baz's Macro", "Settings were reset.\nPlease restart the macro to reload them.")
+            sys.exit()
 
 def validate_settings():
     found_keys = []
@@ -132,12 +148,23 @@ def validate_settings():
             GLOBAL_LOGGER.write_log(f"Missing setting ({_}) added")
             _show_added_msg = True
     if _show_added_msg:
-        GLOBAL_LOGGER.write_log("A settings was added/removed, you should restart the macro for the UI to update.")
-        messagebox.showwarning("Baz's Macro", "A settings was added/removed, you should restart the macro for the UI to update.")
+        GLOBAL_LOGGER.write_log("One more more settings were added/removed, you should restart the macro for the UI to update.")
+        messagebox.showwarning("Baz's Macro", "One more more settings were added/removed, you should restart the macro for the UI to update.")
     update_settings(settings)
     reload_settings()
     if "TOKEN" in todel:
         messagebox.showwarning("Baz's Macro", "This version of the macro REMOVES the discord bot feature. You now need a webhook link instead.")
+
+def validate_autopop():
+    for item in ACCEPTEDAUTOPOP.keys():
+        if item not in settings["auto_use_items_in_glitch"].keys():
+            settings["auto_use_items_in_glitch"] = ACCEPTEDAUTOPOP
+            settings["auto_use_items_in_dreamspace"] = ACCEPTEDAUTOPOP
+            update_settings(settings)
+            reload_settings()
+            GLOBAL_LOGGER.write_log("New potions were added to auto pop, please restart the macro for this to take effect.")
+            messagebox.showinfo("Baz's Macro", "New potions were added to auto pop, please restart the macro for this to take effect.")
+            break
 
 def validate_potions():
     found_keys = []
@@ -183,7 +210,8 @@ def migrate_settings():
     if not os.path.exists(f"{MACROPATH}"):
         GLOBAL_LOGGER.write_log(f"Moving to new directory: {MACROPATH}")
 
-
+def parse_version(v):
+    return tuple(map(int, v.split(".")))
 
 MARI_ITEMS = [
     "Void Coin",
@@ -268,215 +296,6 @@ def use_item(item_name : str, amount : int, close_menu : bool):
         mkey.left_click_xy_natural(close_pos[0], close_pos[1])
         time.sleep(0.2)
 
-def align_camera():
-    GLOBAL_LOGGER.write_log("Aligning Camera....")
-    _keyboard.press(Key.esc)
-    time.sleep(0.2)
-    _keyboard.release(Key.esc)
-    time.sleep(0.2)
-    _keyboard.press("r")
-    time.sleep(0.2)
-    _keyboard.release("r")
-    time.sleep(0.2)    
-    _keyboard.press(Key.enter)
-    time.sleep(0.2)
-    _keyboard.release(Key.enter)
-    time.sleep(0.2)
-    mkey.left_click_xy_natural(collection_open_pos[0], collection_open_pos[1])
-    time.sleep(0.2)
-    mkey.left_click_xy_natural(exit_collection_pos[0], exit_collection_pos[1])
-    time.sleep(0.2)
-    _keyboard.press(Key.shift)
-    time.sleep(0.2)
-    _keyboard.release(Key.shift)
-    time.sleep(0.2)
-    _keyboard.press(Key.shift)
-    time.sleep(0.2)
-    _keyboard.release(Key.shift)
-    time.sleep(0.2)
-    for i in range(80):
-        _mouse.scroll(0, 30)
-    time.sleep(2)
-    for i in range(3):
-        _mouse.scroll(0, -5)
-        time.sleep(0.2)
-    time.sleep(0.2)
-
-def do_obby_blessing():
-    _keyboard.press(Key.shift)
-    time.sleep(0.2)
-    _keyboard.release(Key.shift)
-    time.sleep(0.2)
-    mkey.move_relative(int(500 * scale_w), 0) # 0.36 sens
-    time.sleep(0.2)
-    _keyboard.press(Key.shift)
-    time.sleep(0.2)
-    _keyboard.release(Key.shift)
-    time.sleep(0.2)
-    _keyboard.press("w")
-    time.sleep(4.5) # vip +
-    _keyboard.release("w")
-    time.sleep(0.2)
-    _keyboard.press(Key.shift)
-    time.sleep(0.2)
-    _keyboard.release(Key.shift)
-    time.sleep(0.2)
-    mkey.move_relative(int(-500 * scale_w), 0) # 0.36 sens
-    time.sleep(0.2)
-    _keyboard.press("w")
-    time.sleep(1.5) # vip +
-    _keyboard.release("w")
-    time.sleep(0.2)    
-    mkey.move_relative(int(500 * scale_w), 0) # 0.36 sens
-    time.sleep(0.2)
-    _keyboard.press("w")
-    time.sleep(2) # vip +
-    _keyboard.release("w")
-    time.sleep(0.2)
-    _keyboard.press("d")
-    time.sleep(2) # vip +
-    _keyboard.release("d")
-    time.sleep(0.2)
-    _keyboard.press("a")
-    time.sleep(0.2) # vip +
-    _keyboard.release("a")
-    time.sleep(0.2)
-    _keyboard.press("s")
-    time.sleep(0.2) # vip +
-    _keyboard.release("s")
-    time.sleep(0.2)
-    _keyboard.press(Key.space)
-    _keyboard.press("w")
-    time.sleep(0.2) # vip +
-    _keyboard.release("w")
-    _keyboard.release(Key.space)
-    time.sleep(0.2)
-    _keyboard.press("w")
-    time.sleep(4) # vip +
-    _keyboard.release("w")
-    time.sleep(1)
-    _keyboard.press("w")
-    time.sleep(0.2)
-    _keyboard.press(Key.space)
-    time.sleep(0.3)
-    _keyboard.release(Key.space)
-    time.sleep(0.6) # vip +
-    _keyboard.release("w")
-    time.sleep(0.2)    
-    mkey.move_relative(int(250 * scale_w), 0) # 0.36 sens
-    time.sleep(0.2)
-    _keyboard.press("w")
-    time.sleep(0.3) # vip +
-    _keyboard.release("w")
-    time.sleep(1)
-    _keyboard.press("s")
-    time.sleep(0.2) # vip +
-    _keyboard.release("s")
-    time.sleep(0.2)
-    _keyboard.press("w")
-    _keyboard.press(Key.space)
-    time.sleep(0.2)
-    _keyboard.release(Key.space)
-    time.sleep(0.2) # vip +
-    _keyboard.release("w")
-    time.sleep(0.3) 
-    _keyboard.press("w")
-    time.sleep(0.2)
-    _keyboard.press(Key.space)
-    time.sleep(0.3)
-    _keyboard.release(Key.space)
-    time.sleep(0.6) # vip +
-    _keyboard.release("w")
-    time.sleep(0.2)
-    _keyboard.press("w")
-    time.sleep(5) # vip +
-    _keyboard.release("w")
-    time.sleep(1)
-    _keyboard.press("s")
-    time.sleep(0.2) # vip +
-    _keyboard.release("s")
-    time.sleep(0.2)
-    _keyboard.press(Key.space)
-    _keyboard.press("w")
-    time.sleep(0.2) # vip +
-    _keyboard.release("w")
-    _keyboard.release(Key.space)
-    time.sleep(0.2)
-    _keyboard.press(Key.space)
-    _keyboard.press("w")
-    time.sleep(0.2) # vip +
-    _keyboard.release("w")
-    _keyboard.release(Key.space)
-    time.sleep(0.2)
-    mkey.move_relative(int(-250 * scale_w), 0) # 0.36 sens
-    time.sleep(0.2)
-    _keyboard.press("w")
-    time.sleep(1.3) # vip +
-    _keyboard.release("w")
-    time.sleep(1)
-    mkey.move_relative(int(-500 * scale_w), 0) # 0.36 sens
-    time.sleep(0.2)
-    _keyboard.press("s")
-    time.sleep(0.2) # vip +
-    _keyboard.release("s")
-    time.sleep(0.2)
-    _keyboard.press(Key.space)
-    _keyboard.press("w")
-    time.sleep(0.2) # vip +
-    _keyboard.release("w")
-    _keyboard.release(Key.space)
-    time.sleep(0.2) # unfinished
-
-def collect_item(item_collection_index : int):
-    while not app.stop_event.is_set():
-        align_camera()
-        if item_collection_index == 1:
-            if not settings["collect_items"]["1"]:
-                item_collection_index += 1
-            else:
-                _keyboard.press(Key.shift)
-                time.sleep(0.2)
-                _keyboard.release(Key.shift)
-                time.sleep(0.2)
-                mkey.move_relative(int(500 * scale_w), 0) # 0.36 sens
-                time.sleep(0.2)
-                _keyboard.press(Key.shift)
-                time.sleep(0.2)
-                _keyboard.release(Key.shift)
-                time.sleep(0.2)
-                _keyboard.press("w")
-                time.sleep(4.5) # vip +
-                _keyboard.release("w")
-                time.sleep(0.2)
-                _keyboard.press(Key.shift)
-                time.sleep(0.2)
-                _keyboard.release(Key.shift)
-                time.sleep(0.2)
-                mkey.move_relative(int(-500 * scale_w), 0) # 0.36 sens
-                time.sleep(0.2)
-                _keyboard.press("w")
-                time.sleep(2) # vip +
-                _keyboard.release("w")
-                time.sleep(0.2)
-        if item_collection_index == 2:
-            if not settings["collect_items"]["2"]:
-                item_collection_index += 1
-            else:
-                pass
-        if item_collection_index == 3:
-            if not settings["collect_items"]["3"]:
-                item_collection_index += 1
-            else:
-                pass
-        if item_collection_index == 4:
-            if not settings["collect_items"]["4"]:
-                item_collection_index += 1
-            else:
-                pass
-        if item_collection_index == 4:
-            item_collection_index = 1
-        else:
-            item_collection_index += 1
 
 def leave_main_menu():
     if get_latest_equipped_aura(rblx_log_dir) == "In Main Menu":
@@ -651,6 +470,7 @@ class Macro:
         self.listbox_refs = {}
 
         self.threads = []
+        self.snipers = []
         self.running = False
         self.keyboard_lock = threading.Lock()
         self.pause_event = threading.Event()
@@ -663,9 +483,9 @@ class Macro:
             "General": GENERAL_KEYS,
             "Auras": AURAS_KEYS,
             "Biomes": BIOMES_KEYS,
-            "Sniper": SNIPER_KEYS,
             "Merchant": MERCHANT_KEYS,
             "Auto Craft": AUTOCRAFT_KEYS,
+            "Sniper": SNIPER_KEYS,
             "Other": OTHER_KEYS,
         }
 
@@ -688,6 +508,11 @@ class Macro:
                 if not self.tesseract_installed:
                     download_button = ttk.Button(tab_frame, text="Download Tesseract", command=lambda: webbrowser.open("https://github.com/tesseract-ocr/tesseract/releases/latest"))
                     download_button.pack(pady=2, anchor="w", padx=10)
+            if tab_name == "Other":
+                install_btn = ttk.Button(tab_frame, text="Install a Plugin", command=self.install_plugin)
+                install_btn.pack(pady=10, anchor="w", padx=10)
+
+
 
         logs_frame = ttk.Frame(self.notebook)
         self.notebook.add(logs_frame, text="Logs")
@@ -707,15 +532,13 @@ class Macro:
         if self.tesseract_installed and shutil.which("tesseract") is None:
             GLOBAL_LOGGER.write_log("Tesseract was not detected in PATH, but was detected as installed.")
 
-        self.snipers = []
-
         credits_frame = ttk.Frame(self.notebook)
         self.notebook.add(credits_frame, text="Credits")
         
         ttk.Label(credits_frame, text="Created by Baz").pack(pady=10)
 
         if not os.path.isfile(f"{MACROPATH}/baz.png"):
-            img_dl = requests.get("https://github.com/bazthedev/SolsRNGBot/blob/88024a205599dc812d991f36c195923df599e55c/img/baz.png")
+            img_dl = requests.get("https://raw.githubusercontent.com/bazthedev/SolsRNGBot/main/img/baz.png")
             with open(f"{MACROPATH}/baz.png", "wb") as f:
                 f.write(img_dl.content)
                 f.close()
@@ -724,7 +547,7 @@ class Macro:
             image_path = f"{MACROPATH}/baz.png"
             img = Image.open(image_path)
             
-            img_resized = img.resize((150, 150))
+            img_resized = img.resize((100, 100))
             
             img_tk = ImageTk.PhotoImage(img_resized)
             
@@ -733,11 +556,30 @@ class Macro:
             image_label.pack(pady=10)
         except Exception as e:
             GLOBAL_LOGGER.write_log(f"Failed to load and resize image: {e}")
+            os.remove(image_path)
         
-        ttk.Label(credits_frame, text="Root1527 for yay joins").pack(pady=10)
+        ttk.Label(credits_frame, text="Root1527 for yay joins").pack(pady=4)
+        ttk.Label(credits_frame, text="Mountain Shrine Path by AllanQute (_justalin)").pack(pady=4)
+        ttk.Label(credits_frame, text="dolphSol for inspiration").pack(pady=4)
+        ttk.Label(credits_frame, text="vex (vexthecoder) for some ideas about things to add").pack(pady=4)
         
         self.plugins = []
         self.load_plugins()
+        self.start_key_listener()
+
+    def on_press(self, key):
+        try:
+            if key == keyboard.Key.f1:
+                self.start_macro()
+            elif key == keyboard.Key.f2:
+                self.stop_macro()
+        except Exception as e:
+            GLOBAL_LOGGER.write_log(f"Hotkey handling error: {e}")
+
+    def start_key_listener(self):
+        listener = keyboard.Listener(on_press=self.on_press)
+        listener.daemon = True
+        listener.start()
 
     def create_scrollable_tab(self, frame, keys):
         canvas = tk.Canvas(frame)
@@ -766,6 +608,11 @@ class Macro:
     class Logger:
         def __init__(self, text_widget=None):
             self.text_widget = text_widget
+            try:
+                with open(f"{MACROPATH}/solsrngbot.log", "w") as log_file:
+                    log_file.write("")
+            except Exception:
+                pass
             self.write_log(f"Initialising v{LOCALVERSION}\n")
 
         def write_log(self, message):
@@ -773,11 +620,19 @@ class Macro:
                 message = str(message)
             except Exception:
                 return
+
+            try:
+                with open(f"{MACROPATH}/solsrngbot.log", "a") as log_file:
+                    log_file.write(message + "\n")
+            except Exception:
+                pass
+
             if self.text_widget:
                 self.text_widget.configure(state='normal')
                 self.text_widget.insert(tk.END, message + "\n")
                 self.text_widget.see(tk.END)
                 self.text_widget.configure(state='disabled')
+
     
     def load_settings(self):
         try:
@@ -801,7 +656,7 @@ class Macro:
         for item in items:
             listbox.insert(tk.END, item)
 
-        self.entries[key] = items
+        self.entries[key] = list(items)
         self.listbox_refs[key] = listbox
 
         button_frame = ttk.Frame(frame)
@@ -883,23 +738,29 @@ class Macro:
                 if sub_updates:
                     updated_settings[key] = sub_updates
             else:
-                try:
-                    new_value = widget.get()
-                except AttributeError:
+                if isinstance(original_value, list):
                     new_value = widget
-
-                if isinstance(original_value, bool):
-                    new_value = bool(new_value)
-                elif isinstance(original_value, (int, float)):
+                    if new_value != original_value:
+                        updated_settings[key] = new_value
+                else:
                     try:
-                        new_value = int(new_value)
-                    except ValueError:
+                        new_value = widget.get()
+                    except AttributeError:
+                        new_value = widget
+
+                    if isinstance(original_value, bool):
+                        new_value = bool(new_value)
+                    elif isinstance(original_value, (int, float)):
                         try:
-                            new_value = float(new_value)
+                            new_value = int(new_value)
                         except ValueError:
-                            pass
-                if new_value != original_value:
-                    updated_settings[key] = new_value
+                            try:
+                                new_value = float(new_value)
+                            except ValueError:
+                                pass
+                    
+                    if new_value != original_value:
+                        updated_settings[key] = new_value
 
         return updated_settings
 
@@ -938,11 +799,19 @@ class Macro:
         button_frame = ttk.Frame(tab_frame)
         button_frame.pack(side=tk.BOTTOM, fill=tk.X, padx=10, pady=10)
 
-        button1 = ttk.Button(button_frame, text="Start", command=self.start_macro)
+        button1 = ttk.Button(button_frame, text="Start (F1)", command=self.start_macro)
         button1.pack(side=tk.LEFT, padx=5)
 
-        button2 = ttk.Button(button_frame, text="Stop", command=self.stop_macro)
+        button2 = ttk.Button(button_frame, text="Stop (F2)", command=self.stop_macro)
         button2.pack(side=tk.LEFT, padx=5)
+
+
+    def create_discord_file_from_path(self, path, filename):
+        with open(path, "rb") as f:
+            file_bytes = f.read()
+        return discord.File(io.BytesIO(file_bytes), filename=filename)
+
+
 
     def load_plugin_config(self, plugin_name):
         config_path = f"{MACROPATH}/plugins/config/{plugin_name}.json"
@@ -959,6 +828,9 @@ class Macro:
 
         plugin_files = glob.glob(os.path.join(plugin_dir, "*.py"))
 
+        plugin_versions = {p.name: getattr(p, "version", "0") for p in self.plugins}
+        plugin_tabs = {p.name: p.tab for p in self.plugins if hasattr(p, 'tab')}
+
         for plugin_file in plugin_files:
             try:
                 plugin_name = os.path.splitext(os.path.basename(plugin_file))[0]
@@ -968,11 +840,36 @@ class Macro:
 
                 plugin_class = getattr(module, "Plugin", None)
                 if plugin_class:
+                    temp_instance = plugin_class(self)
+                    required_version = getattr(temp_instance, "requires", "1.0.0")
+                    if parse_version(required_version) > parse_version(LOCALVERSION):
+                        self.logger.write_log(
+                            f"Skipped Plugin: {temp_instance.name} requires v{required_version}, current version is v{LOCALVERSION}"
+                        )
+                        continue
+
+                    new_version = getattr(temp_instance, "version", "0")
+                    author = getattr(temp_instance, "author", "Unknown")
+                    
+                    existing_version = plugin_versions.get(temp_instance.name)
+
+                    if existing_version:
+                        if new_version <= existing_version:
+                            self.logger.write_log(f"Skipped Plugin: {temp_instance.name} v{new_version} (older or same version as loaded)")
+                            continue
+
+                        if tab := plugin_tabs.get(temp_instance.name):
+                            tab.destroy()
+                            self.logger.write_log(f"Updated Plugin: {temp_instance.name} v{existing_version} with v{new_version}")
+
+                        self.plugins = [p for p in self.plugins if p.name != temp_instance.name]
+
                     plugin_instance = plugin_class(self)
                     plugin_instance.entries = {}
 
                     tab_frame = ttk.Frame(self.notebook)
                     self.notebook.add(tab_frame, text=plugin_instance.name)
+                    plugin_instance.tab = tab_frame
 
                     plugin_instance.init_tab(tab_frame, {
                         "create_widgets": self.create_widgets,
@@ -984,14 +881,89 @@ class Macro:
                     self.plugins.append(plugin_instance)
 
                     self.logger.write_log(
-                        f"Loaded Plugin: {plugin_instance.name} v{getattr(plugin_instance, 'version', 'Unknown')} by {getattr(plugin_instance, 'author', 'Unknown')}"
+                        f"Loaded Plugin: {plugin_instance.name} v{new_version} by {author}"
                     )
 
             except Exception as e:
                 self.logger.write_log(f"Error loading plugin '{plugin_file}': {e}")
 
 
-    def start_macro(self):
+
+    def install_plugin(self):
+
+        plugin_path = filedialog.askopenfilename(
+            title="Select Plugin File",
+            filetypes=[("Python Files", "*.py")],
+        )
+        
+        if not plugin_path:
+            return
+
+        if not plugin_path.endswith(".py"):
+            messagebox.showerror("Invalid File", "Please select a valid .py plugin file.")
+            return
+
+        try:
+            dest_dir = os.path.join(os.getenv("LOCALAPPDATA"), "Baz's Macro", "plugins")
+            os.makedirs(dest_dir, exist_ok=True)
+
+            filename = os.path.basename(plugin_path)
+            dest_path = os.path.join(dest_dir, filename)
+
+            shutil.copy(plugin_path, dest_path)
+            messagebox.showinfo("Plugin Installed", f"Plugin '{filename}' installed successfully.")
+
+            self.load_plugins()
+            GLOBAL_LOGGER.write_log(f"Plugin '{filename}' installed and loaded.")
+        except Exception as e:
+            messagebox.showerror("Install Failed", f"Failed to install plugin:\n{e}")
+            GLOBAL_LOGGER.write_log(f"Failed to install plugin '{plugin_path}': {e}")
+
+    def reload_plugin_config(self, plugin_instance):
+        for widget in plugin_instance.tab.winfo_children():
+            widget.destroy()
+        
+        updated_config = plugin_instance.load_or_create_config()
+        plugin_instance.config = updated_config
+
+        plugin_instance.init_tab(plugin_instance.tab, {
+            "create_widgets": self.create_widgets,
+            "create_bottom_buttons": self.create_bottom_buttons,
+            "format_key": self.format_key,
+            "entries": plugin_instance.entries
+        })
+
+        self.logger.write_log(f"Reloaded Plugin: {plugin_instance.name} settings.")
+
+    def forward_webhook_msg(self, *, file=None, **kwargs):
+        if not settings.get("SECONDARY_WEBHOOK_URLS"):
+            return
+
+        image_bytes = None
+        filename = None
+
+        if isinstance(file, discord.File):
+            try:
+                file.fp.seek(0)
+                image_bytes = file.fp.read()
+                filename = file.filename
+            except ValueError:
+                pass
+
+        for webhook_url in settings["SECONDARY_WEBHOOK_URLS"]:
+            if webhook_url == settings["WEBHOOK_URL"]:
+                continue
+            _webhook = discord.Webhook.from_url(webhook_url, adapter=discord.RequestsWebhookAdapter())
+
+            if image_bytes and filename:
+                kwargs["file"] = discord.File(io.BytesIO(image_bytes), filename=filename)
+            elif "file" in kwargs:
+                del kwargs["file"]
+
+            _webhook.send(**kwargs)
+
+
+    def start_macro(self, event=None):
         changes = self.save_settings()
         for plugin in self.plugins:
             plugin.save_config()
@@ -1008,7 +980,20 @@ class Macro:
 
         if settings["WEBHOOK_URL"] == "":
             messagebox.showerror("Error", "You need to provide a Webhook URL")
+            GLOBAL_LOGGER.write_log("Macro was not started because there is no Webhook URL")
             return
+        
+        if settings["sniper_enabled"] and len(settings["scan_channels"]) > 4:
+            cont = messagebox.askyesno("Baz's Macro", "Whilst sniping in multiple channels may increase your chance of finding a Glitch server, it can also cause your account to be ratelimited if you have too many. Try keeping the number around 4/5 at the max. Do you want to continue?")
+            if not cont:
+                GLOBAL_LOGGER.write_log("Macro was not started because there are too many Snipers.")
+                return
+            
+        if not exists_procs_by_name("Windows10Universal.exe") and not exists_procs_by_name("RobloxPlayerBeta.exe"):
+            cont = messagebox.askyesno("Baz's Macro", "Roblox was not detected as running, are you sure you want to run the macro?")
+            if not cont:
+                GLOBAL_LOGGER.write_log("Macro was not started because Roblox was not running.")
+                return
 
         self.webhook = discord.Webhook.from_url(settings["WEBHOOK_URL"], adapter=discord.RequestsWebhookAdapter())
 
@@ -1030,12 +1015,11 @@ class Macro:
                 self.running = False
                 return
             time.sleep(1)
-            
+
         previous_thread = None
         for i in range(10):
             if self.stop_event.is_set():
                 break
-
             if i == 0:
                 thread = threading.Thread(target=self.aura_detection, daemon=True)
                 GLOBAL_LOGGER.write_log("Started Aura Detection")
@@ -1084,7 +1068,7 @@ class Macro:
                 thread = threading.Thread(target=self.inventory_screenshot, daemon=True)
                 GLOBAL_LOGGER.write_log("Started Periodic Inventory Screenshots")
             elif i == 9 and settings["periodic_screenshots"]["storage"]:
-                thread = threading.Thread(target=self.inventory_screenshot, daemon=True)
+                thread = threading.Thread(target=self.storage_screenshot, daemon=True)
                 GLOBAL_LOGGER.write_log("Started Periodic Aura Storage Screenshots")
 
             if thread != previous_thread:
@@ -1104,11 +1088,12 @@ class Macro:
         GLOBAL_LOGGER.write_log("Macro has started.")
         emb = discord.Embed(
             title="Macro has started",
-            description=f"Mode: Normal\nStarted at {now.strftime('%d/%m/%Y %H:%M:%S')}",
+            description=f"Mode: Normal\nStarted at {now.strftime('%d/%m/%Y %H:%M:%S')}\nCurrent Aura Equipped: {get_latest_equipped_aura(rblx_log_dir)}\nCurrent Biome: {get_latest_hovertext(rblx_log_dir)}",
             colour=discord.Colour.green()
         )
         emb.set_footer(text=f"bazthedev/SolsRNGBot v{LOCALVERSION}")
         self.webhook.send(avatar_url=WEBHOOK_ICON_URL, embed=emb)
+        self.forward_webhook_msg(avatar_url=WEBHOOK_ICON_URL, embed=emb)
 
     def _run_autocraft(self):
         crafts = ""
@@ -1122,6 +1107,7 @@ class Macro:
         )
         emb.set_footer(text=f"bazthedev/SolsRNGBot v{LOCALVERSION}")
         self.webhook.send(avatar_url=WEBHOOK_ICON_URL, embed=emb)
+        self.forward_webhook_msg(avatar_url=WEBHOOK_ICON_URL, embed=emb)
         GLOBAL_LOGGER.write_log("[WARNING] Auto Craft Mode is on. You will not be able to use certain features whilst this settings is on.")
         GLOBAL_LOGGER.write_log(f"The item(s) you are automatically crafting are:\n{crafts}")
         GLOBAL_LOGGER.write_log("Please ensure that you are standing next to the cauldron so that you can see the \"f\" prompt.")
@@ -1134,9 +1120,9 @@ class Macro:
         thread = threading.Thread(target=self.auto_craft, daemon=True)
         thread.start()
         self.threads.append(thread)
-        GLOBAL_LOGGER.write_log("Started Auto Craft")
+        GLOBAL_LOGGER.write_log("Started Auto Craft.")
 
-    def stop_macro(self):
+    def stop_macro(self, event=None):
         if not self.running:
             messagebox.showerror("Error", "Macro is not running!")
             return
@@ -1154,16 +1140,13 @@ class Macro:
         self.threads.clear()
         self.running = False
 
-        for sniper in self.snipers:
-            sniper.cancel()
-
-        GLOBAL_LOGGER.write_log("Macro was stopped.")
         emb = discord.Embed(
             title="Macro has stopped.",
             colour=discord.Colour.red()
         )
         emb.set_footer(text=f"SolsRNGBot v{LOCALVERSION}", icon_url=WEBHOOK_ICON_URL)
         self.webhook.send(avatar_url=WEBHOOK_ICON_URL, embed=emb)
+        self.forward_webhook_msg(avatar_url=WEBHOOK_ICON_URL, embed=emb)
         messagebox.showinfo("Baz's Macro", "Macro has been stopped.")
 
     def aura_detection(self):
@@ -1224,17 +1207,21 @@ class Macro:
                             emb.set_thumbnail(url=auras[current_aura.lower()]["img_url"])
                     if settings["take_screenshot_on_detection"]:
                         auraimg = pag.screenshot(f"{MACROPATH}/scr/screenshot_aura.png")
-                        up = discord.File(f"{MACROPATH}/scr/screenshot_aura.png", filename="aura.png")
+                        up = self.create_discord_file_from_path(f"{MACROPATH}/scr/screenshot_aura.png", filename="aura.png")
                         emb.set_image(url="attachment://aura.png")
                         if settings["mention"] and settings["mention_id"] != 0 and (int(auras[current_aura.lower()]["rarity"]) > int(settings["minimum_ping"])):
                             self.webhook.send(avatar_url=WEBHOOK_ICON_URL, content=f"<@{settings['mention_id']}>", embed=emb, file=up)
+                            self.forward_webhook_msg(avatar_url=WEBHOOK_ICON_URL, content=f"<@{settings['mention_id']}>", embed=emb, file=up)
                         else:
                             self.webhook.send(avatar_url=WEBHOOK_ICON_URL, embed=emb, file=up)
+                            self.forward_webhook_msg(avatar_url=WEBHOOK_ICON_URL, embed=emb, file=up)
                     else:
                         if settings["mention"] and settings["mention_id"] != 0 and (int(auras[current_aura.lower()]["rarity"]) > int(settings["minimum_ping"])):
                             self.webhook.send(avatar_url=WEBHOOK_ICON_URL, content=f"<@{settings['mention_id']}>", embed=emb)
+                            self.forward_webhook_msg(avatar_url=WEBHOOK_ICON_URL, content=f"<@{settings['mention_id']}>", embed=emb)
                         else:
                             self.webhook.send(avatar_url=WEBHOOK_ICON_URL, embed=emb)
+                            self.forward_webhook_msg(avatar_url=WEBHOOK_ICON_URL, embed=emb)
                     GLOBAL_LOGGER.write_log(f"Rolled Aura: {current_aura}\nWith chances of 1/{auras[current_aura.lower()]["rarity"]}\nAt time: {rnow.strftime('%d/%m/%Y %H:%M:%S')}")
                     if settings["reset_aura"] != "":
                         if current_aura == settings["reset_aura"]:
@@ -1261,6 +1248,7 @@ class Macro:
                 pass
             except Exception as e:
                 GLOBAL_LOGGER.write_log(f"Error with Aura Detection: {e}")
+        GLOBAL_LOGGER.write_log("Aura Detection was stopped.")
 
     def biome_detection(self):
         global previous_biome
@@ -1269,14 +1257,24 @@ class Macro:
             if previous_biome == None:
                 previous_biome = current_biome
                 continue
-            if current_biome == previous_biome:
+            if current_biome == None:
+                continue
+            if current_biome.lower() == previous_biome.lower():
                 continue
             try:
                 if current_biome.lower() in settings["biomes"].keys():
+                    rnow = datetime.now()
+                    if previous_biome.lower() != "normal":
+                        emb = discord.Embed(
+                            title=f"Biome Ended: {previous_biome}",
+                            description=f"Biome {previous_biome} has ended at time {rnow.strftime('%d/%m/%Y %H:%M:%S')}",
+                            colour=discord.Colour.from_rgb(biome_cols[previous_biome.lower()][0], biome_cols[previous_biome.lower()][1], biome_cols[previous_biome.lower()][2])
+                        )
+                        self.webhook.send(avatar_url=WEBHOOK_ICON_URL, embed=emb)
+                        self.forward_webhook_msg(avatar_url=WEBHOOK_ICON_URL, embed=emb)
                     previous_biome = current_biome
                     if current_biome.lower() == "normal":
                         continue
-                    rnow = datetime.now()
                     if settings["biomes"][current_biome.lower()]:
                         if valid_ps:
                             emb = discord.Embed(
@@ -1290,16 +1288,20 @@ class Macro:
                                 description=f"Biome {current_biome} has started at time: {rnow.strftime('%d/%m/%Y %H:%M:%S')}",
                                 colour=discord.Colour.from_rgb(biome_cols[current_biome.lower()][0], biome_cols[current_biome.lower()][1], biome_cols[current_biome.lower()][2])
                             )
-                        if current_biome.lower() == "glitched":
+                        if current_biome.lower() == "glitched" or current_biome.lower() == "dreamspace":
                             self.webhook.send(avatar_url=WEBHOOK_ICON_URL, content="@everyone", embed=emb)
+                            self.forward_webhook_msg(avatar_url=WEBHOOK_ICON_URL, content="@everyone", embed=emb)
+                            GLOBAL_LOGGER.write_log(f"{current_biome} has started.")
                         else:
                             self.webhook.send(avatar_url=WEBHOOK_ICON_URL, embed=emb)
+                            self.forward_webhook_msg(avatar_url=WEBHOOK_ICON_URL, embed=emb)
             except KeyError:
                 pass
             except AttributeError:
                 pass
             except Exception as e:
                 GLOBAL_LOGGER.write_log(f"Error with Biome Detection: {e}")
+        GLOBAL_LOGGER.write_log("Biome Detection was stopped.")
 
     def auto_craft(self):
         global auto_mode_swap, auto_craft_index
@@ -1478,12 +1480,17 @@ class Macro:
                 auto_mode_swap += 1
             auto_craft_index += 1
             time.sleep(60)
+        GLOBAL_LOGGER.write_log("Auto Craft was stopped.")
 
 
     def merchant_detection(self):
         while not self.stop_event.is_set():
             time.sleep(90)
+            if self.stop_event.is_set():
+                break
             with self.keyboard_lock:
+                mkey.left_click_xy_natural(close_pos[0], close_pos[1])
+                time.sleep(0.2)
                 use_item("Merchant Teleport", 1, False)
                 rnow = datetime.now()
                 mkey.left_click_xy_natural(close_pos[0], close_pos[1])
@@ -1496,7 +1503,7 @@ class Macro:
                 time.sleep(2)
                 merchimg = pag.screenshot(f"{MACROPATH}/scr/screenshot_merchant.png")
                 time.sleep(0.2)
-                up = discord.File(f"{MACROPATH}/scr/screenshot_merchant.png", filename="merchant.png")
+                up = self.create_discord_file_from_path(f"{MACROPATH}/scr/screenshot_merchant.png", filename="merchant.png")
                 try:
                     image_path = f"{MACROPATH}/scr/screenshot_merchant.png"
                     image = cv2.imread(image_path)
@@ -1527,7 +1534,7 @@ class Macro:
 
                     if detected_full:
                         merchant_name = detected_full.split("'")[0]
-                        GLOBAL_LOGGER.write_log(f"\nMerchant Detected: {merchant_name} (OCR: {ocr_merchant})")
+                        GLOBAL_LOGGER.write_log(f"Merchant Detected: {merchant_name} (OCR: {ocr_merchant})")
                     else:
                         continue
                     
@@ -1554,6 +1561,7 @@ class Macro:
 
                     for name, (x1, y1, x2, y2) in manual_boxes.items():
                         cropped = image[y1:y2, x1:x2]
+                        cv2.imwrite(f"./test_scripts/buff_extraction/dbg_{x1}_{y1}.png", cropped)
                         ocr_raw = pytesseract.image_to_string(cropped).strip()
                         if merchant_name == None:
                             break
@@ -1564,7 +1572,24 @@ class Macro:
                         GLOBAL_LOGGER.write_log(f"[{name}] -> {matched} (OCR: {ocr_raw})")
                         detected_items[name] = matched
                         emb.add_field(name=f"{name}", value=f"Detected Item: {matched}\n\nRaw OCR input: `{ocr_raw}`", inline=True)
-                    self.webhook.send(avatar_url=WEBHOOK_ICON_URL, embed=emb, file=up)
+                    if settings["mention"] and settings["mention_id"] != 0:
+                        self.webhook.send(avatar_url=WEBHOOK_ICON_URL, content=f"<@{settings['mention_id']}>", embed=emb, file=up)
+                        self.forward_webhook_msg(avatar_url=WEBHOOK_ICON_URL, content=f"<@{settings['mention_id']}>", embed=emb, file=up)
+                    elif settings["mention"] and settings["mention_id"] != 0 and merchant_name == "Mari" and settings["mari_ping_id"] != 0:
+                        self.webhook.send(avatar_url=WEBHOOK_ICON_URL, content=f"<@{settings['mention_id']}> <@{settings['mari_ping_id']}>", embed=emb, file=up)
+                        self.forward_webhook_msg(avatar_url=WEBHOOK_ICON_URL, content=f"<@{settings['mention_id']}> <@{settings['mari_ping_id']}>", embed=emb, file=up)
+                    elif settings["mention"] and settings["mention_id"] != 0 and merchant_name == "Jester" and settings["jester_ping_id"] != 0:
+                        self.webhook.send(avatar_url=WEBHOOK_ICON_URL, content=f"<@{settings['mention_id']}> <@{settings['jester_ping_id']}>", embed=emb, file=up)
+                        self.forward_webhook_msg(avatar_url=WEBHOOK_ICON_URL, content=f"<@{settings['mention_id']}> <@{settings['jester_ping_id']}>", embed=emb, file=up)
+                    elif merchant_name == "Mari" and settings["mari_ping_id"] != 0:
+                        self.webhook.send(avatar_url=WEBHOOK_ICON_URL, content=f"<@{settings['mari_ping_id']}>", embed=emb, file=up)
+                        self.forward_webhook_msg(avatar_url=WEBHOOK_ICON_URL, content=f"<@{settings['mari_ping_id']}>", embed=emb, file=up)
+                    elif merchant_name == "Jester" and settings["jester_ping_id"] != 0:
+                        self.webhook.send(avatar_url=WEBHOOK_ICON_URL, content=f"<@{settings['jester_ping_id']}>", embed=emb, file=up)
+                        self.forward_webhook_msg(avatar_url=WEBHOOK_ICON_URL, content=f"<@{settings['jester_ping_id']}>", embed=emb, file=up)
+                    else:
+                        self.webhook.send(avatar_url=WEBHOOK_ICON_URL, embed=emb, file=up)
+                        self.forward_webhook_msg(avatar_url=WEBHOOK_ICON_URL, embed=emb, file=up)
                     if merchant_name == "Mari":
                         for item in detected_items.keys():
                             if settings["auto_purchase_items_mari"][detected_items[item]]:
@@ -1620,6 +1645,7 @@ class Macro:
                                 )
                                 emb.set_thumbnail(url="https://static.wikia.nocookie.net/sol-rng/images/3/37/MARI_HIGH_QUALITYY.png/revision/latest")
                                 self.webhook.send(avatar_url=WEBHOOK_ICON_URL, embed=emb)
+                                self.forward_webhook_msg(avatar_url=WEBHOOK_ICON_URL, embed=emb)
                                 GLOBAL_LOGGER.write_log(f"Item purchased from Mari: {detected_items[item]}")
                                 time.sleep(5)
                     elif merchant_name == "Jester":
@@ -1677,12 +1703,14 @@ class Macro:
                                 )
                                 emb.set_thumbnail(url="https://static.wikia.nocookie.net/sol-rng/images/d/db/Headshot_of_Jester.png/revision/latest")
                                 self.webhook.send(avatar_url=WEBHOOK_ICON_URL, embed=emb)
+                                self.forward_webhook_msg(avatar_url=WEBHOOK_ICON_URL, embed=emb)
                                 GLOBAL_LOGGER.write_log(f"Item purchased from Jester: {detected_items[item]}")
                                 time.sleep(5)
                     detected_items = {}
                     time.sleep(180)
                 except Exception as e:
                     GLOBAL_LOGGER.write_log(f"Error with Merchant Detection: {e}")
+        GLOBAL_LOGGER.write_log("Merchant Detection was stopped.")
 
     def keep_alive(self):
         while not self.stop_event.is_set():
@@ -1692,6 +1720,7 @@ class Macro:
                 mkey.left_click_xy_natural(close_pos[0], close_pos[1])
                 time.sleep(0.2)
             time.sleep(random.randint(550, 650))
+        GLOBAL_LOGGER.write_log("Auto Kick prevention was stopped.")
 
 
     def disconnect_prevention(self):
@@ -1730,14 +1759,13 @@ class Macro:
                             _attempt += 1
                     leave_main_menu()
                     GLOBAL_LOGGER.write_log("Successfully rejoined!")
+        GLOBAL_LOGGER.write_log("Disconnect Prevention was stopped.")
 
     
     def storage_screenshot(self):
         while not self.stop_event.is_set():
             with self.keyboard_lock:
-                mkey.left_click_xy_natural(inv_button_pos[0], inv_button_pos[1])
-                time.sleep(0.2)
-                mkey.left_click_xy_natural(items_pos[0], items_pos[1])
+                mkey.left_click_xy_natural(aura_button_pos[0], aura_button_pos[1])
                 time.sleep(0.2)
                 mkey.left_click_xy_natural(search_pos[0], search_pos[1])
                 time.sleep(0.2)
@@ -1747,10 +1775,12 @@ class Macro:
                 emb = discord.Embed(
                     title="Aura Storage"
                 )
-                file=discord.File(f"{MACROPATH}/scr/screenshot_storage.png", filename="storage.png")
+                file=self.create_discord_file_from_path(f"{MACROPATH}/scr/screenshot_storage.png", filename="storage.png")
                 emb.set_image(url="attachment://storage.png")
                 self.webhook.send(embed=emb, file=file)
+                self.forward_webhook_msg(embed=emb, file=file)
             time.sleep(1260)
+        GLOBAL_LOGGER.write_log("Aura Storage Screenshots was stopped.")
 
     def inventory_screenshot(self):
         while not self.stop_event.is_set():
@@ -1767,22 +1797,26 @@ class Macro:
                 emb = discord.Embed(
                     title="Inventory"
                 )
-                file=discord.File(f"{MACROPATH}/scr/screenshot_inventory.png", filename="inventory.png")
+                file=self.create_discord_file_from_path(f"{MACROPATH}/scr/screenshot_inventory.png", filename="inventory.png")
                 emb.set_image(url="attachment://inventory.png")
                 self.webhook.send(embed=emb, file=file)
+                self.forward_webhook_msg(embed=emb, file=file)
             time.sleep(1140)
+        GLOBAL_LOGGER.write_log("Inventory Screenshots was stopped.")
 
     def auto_br(self):
         while not self.stop_event.is_set():
             with self.keyboard_lock:
                 use_item("Biome Random", 1, True)
-            time.sleep(2100)
+            time.sleep(2160)
+        GLOBAL_LOGGER.write_log("Auto Biome Randomizer was stopped.")
     
     def auto_sc(self):
         while not self.stop_event.is_set():
             with self.keyboard_lock:
                 use_item("Strange Control", 1, True)
-            time.sleep(1200)
+            time.sleep(1260)
+        GLOBAL_LOGGER.write_log("Auto Strange Controller was stopped.")
 
     def auto_pop(self, biome : str):
         global ps_link_code, detected_snipe, rblx_log_dir
@@ -1791,7 +1825,7 @@ class Macro:
             if detected_snipe and rblx_log_dir == ms_rblx_log_dir:
                 rblx_log_dir = ms_rblx_log_dir
                 while not exists_procs_by_name("Windows10Universal.exe"):
-                    pass # Wait for roblox to start
+                    pass
                 ps_rblxms = get_process_by_name("Windows10Universal.exe")
                 rblxms_window = match_rblx_hwnd_to_pid(ps_rblxms.pid)
                 mkey.activate_window(rblxms_window.hwnd)
@@ -1834,7 +1868,7 @@ class Macro:
                     mkey.left_click_xy_natural(menu_btn_pos[0], menu_btn_pos[1])
                     time.sleep(0.2)
             if biome.lower() == "glitched" and settings["pop_in_glitch"]:
-                original_hp2_amt = settings["auto_use_items_in_glitch"]["Heavenly Potion II"]["amount"]
+                original_hp2_amt = settings["auto_use_items_in_glitch"]["Heavenly Potion"]["amount"]
                 for item in reversed(settings["auto_use_items_in_glitch"].keys()):
                     with self.keyboard_lock:
                         if biome.lower() != get_latest_hovertext(rblx_log_dir).lower():
@@ -1843,7 +1877,7 @@ class Macro:
                             break
                         if not settings["auto_use_items_in_glitch"][item]["use"]:
                             continue
-                        if item == "Heavenly Potion II" or item == "Oblivion Potion":
+                        if item == "Heavenly Potion" or item == "Oblivion Potion":
                             while not self.stop_event.is_set():
                                 if get_latest_hovertext(rblx_log_dir).lower() != biome:
                                     GLOBAL_LOGGER.write_log("Biome has ended")
@@ -1922,7 +1956,7 @@ class Macro:
                 if self.config["sniper_logs"]:
                     GLOBAL_LOGGER.write_log(f"[SNIPER] Error: {e}")
         
-        def get_guild_id(self, channel_id):
+        async def get_guild_id(self, channel_id):
             headers = {
                 "Authorization": self.config['DISCORD_TOKEN']
             }
@@ -1940,7 +1974,7 @@ class Macro:
             subscription_payload = {
                 "op": 14,
                 "d": {
-                        "guild_id": self.get_guild_id(self.channel_id),
+                        "guild_id": str(await self.get_guild_id(self.channel_id)),
                         "channels_ranges": {str(self.channel_id): [[0, 99]]},
                         "typing": True,
                         "threads": False,
@@ -1959,7 +1993,7 @@ class Macro:
                         'd': 'null'
                     }
                     await ws.send(json.dumps(heartbeat_json))
-                    time.sleep(interval)
+                    await asyncio.sleep(interval)
                 except Exception as e:
                     if self.config["sniper_logs"]:
                         GLOBAL_LOGGER.write_log(f"[SNIPER] Error: {e}")
@@ -1971,16 +2005,24 @@ class Macro:
                     if event["t"] == "MESSAGE_CREATE":
                         channel_id = event["d"]["channel_id"]
                         content = event["d"]["content"]
-                        for choice_id in self.cycle_index:
-                            if int(channel_id) == [self.channel_id, self.channel_id][choice_id]:
-                                await self.process_message(content, choice_id)
+                        if str(channel_id) == self.channel_id:
+                            await self.process_message(content)
                 except Exception as e:
                     if self.config["sniper_logs"]:
                         GLOBAL_LOGGER.write_log(f"[SNIPER] Error: {e}")
 
-        def _should_process_message(self, message: str, choice_id: int) -> bool:          
-            if not self.word_patterns[choice_id].search(message.lower()):
-                return False
+        def _should_process_message(self, message: str) -> bool:
+            _found = False
+            i = 0
+            for pattern in self.word_patterns:      
+                if pattern.search(message.lower()):
+                    choice_id = i
+                    _found = True
+                    break
+                i += 1
+            
+            if not _found:
+                return _found
 
             if self.blacklists[choice_id].search(message.lower()):
                 if self.config["sniper_logs"]:
@@ -1997,9 +2039,6 @@ class Macro:
                 share_code = link_match_2.group(0).split("code=")[-1].split("&")[0]
                 return await self._convert_link(share_code)
             
-            if "locked" in message.lower():
-                GLOBAL_LOGGER.write_log("The #biomes channel has been locked!")
-            return None
 
         async def _convert_link(self, link_id: str) -> typing.Optional[str]:
             payload = {"linkId": link_id, "linkType": "Server"}
@@ -2042,7 +2081,6 @@ class Macro:
         async def _send_notification(self, choice_id: int, server_code: str):
 
             colors = [11206400, 16744703]
-
             embed_link = f"{BASE_ROBLOX_URL}?privateServerLinkCode={server_code}"
             embed = discord.Embed(
                 title = f'[{datetime.now().strftime("%H:%M:%S")}] {self.words[choice_id]} Link Sniped!',
@@ -2052,12 +2090,25 @@ class Macro:
             embed.set_footer(text=f"yay joins (modified for bazthedev/SolsRNGBot v{LOCALVERSION})")
 
             self.webhook.send(avatar_url=WEBHOOK_ICON_URL, content=f"<@{self.config['mention_id']}>", embed=embed)
+            self.macro.forward_webhook_msg(avatar_url=WEBHOOK_ICON_URL, content=f"<@{self.config['mention_id']}>", embed=embed)
 
-        async def process_message(self, content: str, choice_id: int) -> None:
+        async def process_message(self, content: str) -> None:
             try:
-                if not self._should_process_message(content, choice_id):
+                if not self._should_process_message(content):
                     return
+                
+                _found = False
+                i = 0
+                for pattern in self.word_patterns:      
+                    if pattern.search(content.lower()):
+                        choice_id = i
+                        _found = True
+                        break
+                    i += 1
 
+                if not _found:
+                    return
+                
                 server_code = await self._extract_server_code(content)
                 if not server_code:
                     return
@@ -2094,6 +2145,7 @@ class Macro:
                 )
                 emb.set_footer(text=f"yay joins (modified for bazthedev/SolsRNGBot v{LOCALVERSION})")
                 self.webhook.send(avatar_url=WEBHOOK_ICON_URL, embed=emb)
+                self.macro.forward_webhook_msg(avatar_url=WEBHOOK_ICON_URL, embed=emb)
             else:
                 GLOBAL_LOGGER.write_log("Attempting to reconnect sniper.")
             while not self.macro.stop_event.is_set():
@@ -2115,7 +2167,7 @@ class Macro:
 
 
 reload_settings()
-
+print("Loading UI")
 root = tk.Tk()
 app = Macro(root)
 root.withdraw()
@@ -2123,8 +2175,6 @@ root.withdraw()
 if PRERELEASE:
     GLOBAL_LOGGER.write_log(f"Warning! This is a prerelease version of SolsRNGBot, meaning you can expect bugs and some errors to occur!\nYou can find logs relating to events that occur during the prerelease in this folder: {MACROPATH}\n\nYou are currently running prerelease for version {LOCALVERSION}, are you sure you wish to continue?")
     messagebox.showwarning("Baz's Macro", f"Warning! This is a prerelease version of SolsRNGBot, meaning you can expect bugs and some errors to occur!\nYou can find logs relating to events that occur during the prerelease in this folder: {MACROPATH}\n\nYou are currently running prerelease for version {LOCALVERSION}, are you sure you wish to continue?")
-if SERVERMACRO_EDITION or LOCALVERSION.endswith("SE"):
-    GLOBAL_LOGGER.write_log("This is a stripped down version of SolsRNGBot designed for people who macro in Glitch Hunt Servers.")
 
 migrate_settings()
 
@@ -2148,7 +2198,7 @@ for mon in screens:
         monitor = mon
 GLOBAL_LOGGER.write_log(f"Detected Resolution: {str(monitor.width)}x{str(monitor.height)}")
 scale_w = monitor.width / 2560
-scale_h = monitor.height / 1440 
+scale_h = monitor.height / 1440
 merchant_box = (int(1140 * scale_w), int(434 * scale_h), int(1409 * scale_w), int(477 * scale_h))
 manual_boxes = {
     "Box 1": (int(656 * scale_w), int(919 * scale_h), int(890 * scale_w), int(996 * scale_h)),
@@ -2167,25 +2217,25 @@ query_pos = ((1086 * scale_w), (572 * scale_h))
 equip_pos = ((812 * scale_w), (844 * scale_h))
 use_pos = ((910 * scale_w), (772 * scale_h))
 item_amt_pos = ((756 * scale_w), (772 * scale_h))
-items_pos = ((1692 * scale_w), (440 * scale_h)) 
+items_pos = ((1692 * scale_w), (440 * scale_h))
 purchase_btn_pos = ((990 * scale_w), (860 * scale_h))
 quantity_btn_pos = ((910 * scale_w), (796 * scale_h))
 open_merch_pos = ((876 * scale_w), (1256 * scale_h))
-merch_item_pos_1 = (int(656 * scale_w), int(922 * scale_h))
-merch_item_pos_1_end = (int(890 * scale_w), int(994 * scale_h))
 merch_item_pos_1_purchase = ((766 * scale_w), (988 * scale_h))
-merch_item_pos_2 = (int(908 * scale_w), int(922 * scale_h))
-merch_item_pos_2_end = (int(1142 * scale_w), int(994 * scale_h))
 merch_item_pos_2_purchase = ((1024 * scale_w), (986 * scale_h))
-merch_item_pos_3 = (int(1160 * scale_w), int(922 * scale_h))
-merch_item_pos_3_end = (int(1396 * scale_w), int(994 * scale_h))
 merch_item_pos_3_purchase = ((1278 * scale_w), (988 * scale_h))
-merch_item_pos_4 = (int(1416 * scale_w), int(922 * scale_h))
-merch_item_pos_4_end = (int(1650 * scale_w), int(994 * scale_h))
 merch_item_pos_4_purchase = ((1512 * scale_w), (988 * scale_h))
-merch_item_pos_5 = (int(1666 * scale_w), int(922 * scale_h))
-merch_item_pos_5_end = (int(1898 * scale_w), int(994 * scale_h))
 merch_item_pos_5_purchase = ((1762 * scale_w), (986 * scale_h))
+"""item_amt_pos = ((756 * scale_w), (772 * scale_h))
+items_pos = ((1692 * scale_w), (440 * scale_h))
+purchase_btn_pos = ((990 * scale_w), (860 * scale_h))
+quantity_btn_pos = ((910), (796))
+open_merch_pos = ((876 * scale_w), (1256 * scale_h))
+merch_item_pos_1_purchase = ((766), (988))
+merch_item_pos_2_purchase = ((1024), (986))
+merch_item_pos_3_purchase = ((1278), (988))
+merch_item_pos_4_purchase = ((1512), (988))
+merch_item_pos_5_purchase = ((1762), (986))"""
 menu_btn_pos = ((32 * scale_w), (656 * scale_h))
 settings_btn_pos = ((1278 * scale_w), (738 * scale_h))
 rolling_conf_pos = ((888 * scale_w), (498 * scale_h))
@@ -2258,38 +2308,44 @@ if settings["__version__"] > LOCALVERSION:
         
 # Settings integrity check
 validate_settings()
+validate_autopop()
 
 if settings["check_update"]:
     new_ver = requests.get(f"https://api.github.com/repos/bazthedev/SolsRNGBot/releases/latest")
-    new_ver_str = new_ver.json()["name"]
+    try:
+        new_ver_str = new_ver.json()["name"]
 
-    if LOCALVERSION < new_ver_str:
-        DOWNLOADS_DIR = Path.home() / "Downloads"
-        if not settings["auto_install_update"]:
-            confirm_dl = messagebox.askyesno("Baz's Macro", f"A new version has been found ({new_ver_str}), would you like to install it?")
-        else:
-            confirm_dl = True
-            GLOBAL_LOGGER.write_log("Automatically installing new version...")
-        if confirm_dl.lower() == True:
-            GLOBAL_LOGGER.write_log(f"Downloading v{new_ver_str}...")
-            if not os.path.isfile(f"{DOWNLOADS_DIR}/SolsRNGBot_{new_ver_str}.zip"):
-                toupd = requests.get(f"https://github.com/bazthedev/SolsRNGBot/releases/download/{new_ver_str}/SolsRNGBot_{new_ver_str}.zip")
-                with open(f"{DOWNLOADS_DIR}/SolsRNGBot_{new_ver_str}.zip", "wb") as p:
-                    p.write(toupd.content)
-                    p.close()
-                GLOBAL_LOGGER.write_log(f"Downloaded v{new_ver_str}")
+        if LOCALVERSION < new_ver_str:
+            DOWNLOADS_DIR = Path.home() / "Downloads"
+            if not settings["auto_install_update"]:
+                confirm_dl = messagebox.askyesno("Baz's Macro", f"A new version has been found ({new_ver_str}), would you like to install it?")
             else:
-                GLOBAL_LOGGER.write_log("New version zip appears to already be downloaded.")
-            with zipfile.ZipFile(f"{DOWNLOADS_DIR}/SolsRNGBot_{new_ver_str}.zip", "r") as newverzip:
-                if not os.path.exists(f"{DOWNLOADS_DIR}/SolsRNGBot_{new_ver_str}"):
-                    os.mkdir(f"{DOWNLOADS_DIR}/SolsRNGBot_{new_ver_str}")
-                newverzip.extractall(f"{DOWNLOADS_DIR}/SolsRNGBot_{new_ver_str}/")
-                GLOBAL_LOGGER.write_log(f"Extracted v{new_ver_str} to directory {DOWNLOADS_DIR}\\SolsRNGBot_{new_ver_str}")
-                GLOBAL_LOGGER.write_log("Cleaning up...")
-                os.remove(f"{DOWNLOADS_DIR}/SolsRNGBot_{new_ver_str}.zip")
-            sys.exit(f"Downloaded v{new_ver_str}")
-    else:
-        GLOBAL_LOGGER.write_log(f"You are running the latest version.")
+                confirm_dl = True
+                GLOBAL_LOGGER.write_log("Automatically installing new version...")
+            if confirm_dl.lower() == True:
+                GLOBAL_LOGGER.write_log(f"Downloading v{new_ver_str}...")
+                if not os.path.isfile(f"{DOWNLOADS_DIR}/SolsRNGBot_{new_ver_str}.zip"):
+                    toupd = requests.get(f"https://github.com/bazthedev/SolsRNGBot/releases/download/{new_ver_str}/SolsRNGBot_{new_ver_str}.zip")
+                    with open(f"{DOWNLOADS_DIR}/SolsRNGBot_{new_ver_str}.zip", "wb") as p:
+                        p.write(toupd.content)
+                        p.close()
+                    GLOBAL_LOGGER.write_log(f"Downloaded v{new_ver_str}")
+                else:
+                    GLOBAL_LOGGER.write_log("New version zip appears to already be downloaded.")
+                with zipfile.ZipFile(f"{DOWNLOADS_DIR}/SolsRNGBot_{new_ver_str}.zip", "r") as newverzip:
+                    if not os.path.exists(f"{DOWNLOADS_DIR}/SolsRNGBot_{new_ver_str}"):
+                        os.mkdir(f"{DOWNLOADS_DIR}/SolsRNGBot_{new_ver_str}")
+                    newverzip.extractall(f"{DOWNLOADS_DIR}/SolsRNGBot_{new_ver_str}/")
+                    GLOBAL_LOGGER.write_log(f"Extracted v{new_ver_str} to directory {DOWNLOADS_DIR}\\SolsRNGBot_{new_ver_str}")
+                    GLOBAL_LOGGER.write_log("Cleaning up...")
+                    os.remove(f"{DOWNLOADS_DIR}/SolsRNGBot_{new_ver_str}.zip")
+                sys.exit(f"Downloaded v{new_ver_str}")
+        else:
+            GLOBAL_LOGGER.write_log(f"You are running the latest version.")
+    except KeyError:
+        GLOBAL_LOGGER.write_log("Failed to check for new version")
+    except Exception as e:
+        GLOBAL_LOGGER.write_log(f"Failed to check for new version:\n{e}")
 
 if not os.path.exists(ms_rblx_log_dir):
     GLOBAL_LOGGER.write_log("The Microsoft Store Version of Roblox has not been detected as installed. This will break certain features of the macro, such as the Sniper and joining servers.")

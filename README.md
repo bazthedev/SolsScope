@@ -10,8 +10,8 @@
 - Compatibility with most 16:9 monitors
 - Merchant Detection and sending a screenshot with their stock (Merchant Teleporter is required)
 - Automatic crafting of multiple potions
-- Purchase items from merchant via command
-- Glitch and Dreamspace Biome Detection
+- Automatically Purchase
+- Biome Detection
 - Auto Pop in Glitch or Dreamspace (untested)
 - Automatic Biome Randomizer/Strange Controller uses
 - Window for Setting configuration
@@ -19,6 +19,8 @@
 - Disconnect prevention
 - Added Periodic Inventory and/or Storage Screenshots
 - Automatically detect if you are using the MSStore version or the Player and will adjust the script accordingly
+- Plugins
+- Forwarding to more than one webhook
 
 # TBA:
 - Create a feature request if you want something to be added!

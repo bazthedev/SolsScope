@@ -109,9 +109,10 @@ class Plugin:
         return combos
 
     def execute_key_combo(self, combo_list):
-        for combo in combo_list:
-            pyautogui.hotkey(*combo)
-            time.sleep(0.1)
+        with self.macro.keyboard_lock:
+            for combo in combo_list:
+                pyautogui.hotkey(*combo)
+                time.sleep(0.1)
 
     def run(self, stop_event, pause_event):
         if not self.config["enabled"]:

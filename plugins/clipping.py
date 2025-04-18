@@ -10,7 +10,7 @@ class Plugin:
     DEFAULTSETTINGS = {
         "enabled": True,
         "clipping_keycombo" : "alt+right",
-        "clipping_rarity" : 0
+        "clipping_rarity" : 99999999
     }
 
     DISPLAYSETTINGS = ["enabled", "clipping_keycombo", "clipping_rarity"]

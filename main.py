@@ -1,6 +1,6 @@
 #           Baz's Macro/SolsRNGBot
 #   A discord bot for macroing Sol's RNG on Roblox
-#   Version: 1.2.3
+#   Version: 1.2.4
 #   https://github.com/bazthedev/SolsRNGBot
 #
 import sys
@@ -49,20 +49,21 @@ except ImportError as e:
 
 mkey = mk.MouseKey()
 MACROPATH = os.path.expandvars(r"%localappdata%\Baz's Macro") # Windows Roaming Path
-LOCALVERSION = "1.2.3"
+LOCALVERSION = "1.2.4"
 PRERELEASE = False
-DEFAULTSETTINGS = {"WEBHOOK_URL": "", "__version__" :  LOCALVERSION, "use_roblox_player" : True, "global_wait_time" : 0.2, "skip_aura_download": False, "mention" : True, "mention_id" : 0, "minimum_roll" : "99998", "minimum_ping" : "349999", "reset_aura" : "", "merchant_detection" : False, "send_mari" : True, "ping_mari" : False, "send_jester" : True, "ping_jester" : True, "clear_logs" : False, "pop_in_glitch" : False, "auto_use_items_in_glitch": {"Heavenly Potion" : {"use" : True, "amount" : 200}, "Fortune Potion III" : {"use" : True, "amount" : 1}, "Lucky Potion" : {"use" : True, "amount" : 10}, "Pumpkin" : {"use" : True, "amount" : 10}, "Haste Potion III" : {"use" : False, "amount" : 1}, "Warp Potion" : {"use" : True, "amount" : 1}, "Transcended Potion" : {"use" : False, "amount" : 1}, "Mixed Potion" : {"use" : True, "amount" : 10}, "Stella's Candle" : {"use" : True, "amount" : 1}, "Santa Claus Potion" : {"use" : True, "amount" : 5}, "Hwachae" : {"use" : True, "amount" : 1}}, "pop_in_dreamspace" : False, "auto_use_items_in_dreamspace" : {"Heavenly Potion" : {"use" : False, "amount" : 1}, "Fortune Potion III" : {"use" : True, "amount" : 1}, "Lucky Potion" : {"use" : True, "amount" : 10}, "Pumpkin" : {"use" : True, "amount" : 10}, "Haste Potion III" : {"use" : False, "amount" : 1}, "Warp Potion" : {"use" : True, "amount" : 1}, "Transcended Potion" : {"use" : False, "amount" : 1}, "Mixed Potion" : {"use" : True, "amount" : 10}, "Stella's Candle" : {"use" : True, "amount" : 1}, "Santa Claus Potion" : {"use" : True, "amount" : 5}, "Hwachae" : {"use" : True, "amount" : 1}}, "auto_craft_mode" : False, "skip_auto_mode_warning" : False, "auto_craft_item" : {"Potion of Bound" : False, "Heavenly Potion" : True, "Godly Potion (Zeus)" : True, "Godly Potion (Poseidon)" : True, "Godly Potion (Hades)" : True, "Warp Potion" : True, "Godlike Potion" : True}, "auto_biome_randomizer" : False, "auto_strange_controller" : False, "failsafe_key" : "ctrl+e", "merchant_detec_wait" : 0, "private_server_link" : "", "take_screenshot_on_detection" : False, "ROBLOSECURITY_KEY" : "", "DISCORD_TOKEN" : "", "collect_items" : {"1" : False, "2" : False, "3" : False, "4" : False}, "sniper_enabled" : False, "sniper_toggles" : {"Glitched" : True, "Dreamspace" : False}, "sniper_logs" : True, "change_cutscene_on_pop" : True, "disable_autokick_prevention" : False, "periodic_screenshots" : {"inventory" : False, "storage" : False}, "disconnect_prevention" : False, "check_update" : True, "auto_install_update" : False, "biomes" : {"snowy" : False, "windy" : False, "rainy" : False, "sand storm" : False, "hell" : False, "starfall" : False, "corruption" : False, "null" : False, "glitched" : True, "dreamspace" : True}, "auto_purchase_items_mari" : {"Lucky Potion" : False, "Lucky Potion L" : False, "Lucky Potion XL" : False, "Speed Potion" : False, "Speed Potion L" : False, "Speed Potion XL" : False, "Mixed Potion" : False, "Fortune Spoid" : False, "Gear" : False, "Lucky Penny" : False, "Void Coin" : True}, "auto_purchase_items_jester" : {"Lucky Potion" : False, "Speed Potion" : False, "Random Potion Sack" : False, "Stella's Star" : False, "Rune of Wind": False, "Rune of Frost" : False, "Rune of Rainstorm" : False, "Rune of Hell" : False, "Rune of Galaxy" : False, "Rune of Corruption" : False, "Rune of Nothing" : False, "Rune of Everything" : True, "Strange Potion" : True, "Stella's Candle" : True, "Potion of Bound" : True, "Merchant Tracker" : False, "Heavenly Potion" : True, "Oblivion Potion" : True}, "scan_channels" : ["1282542323590496277"], "mari_ping_id" : 0, "jester_ping_id" : 0, "vip" : False, "obby_blessing" : False, "do_item_collection" : False, "SECONDARY_WEBHOOK_URLS" : []}
-VALIDSETTINGSKEYS = ["WEBHOOK_URL", "__version__", "use_roblox_player", "global_wait_time", "skip_aura_download", "mention", "mention_id", "minimum_roll", "minimum_ping", "reset_aura", "merchant_detection", "send_mari", "ping_mari", "send_jester", "ping_jester", "clear_logs", "pop_in_glitch", "auto_use_items_in_glitch", "pop_in_dreamspace", "auto_use_items_in_dreamspace", "auto_craft_mode", "skip_auto_mode_warning", "auto_craft_item", "auto_biome_randomizer", "auto_strange_controller", "failsafe_key", "merchant_detec_wait", "private_server_link", "take_screenshot_on_detection", "ROBLOSECURITY_KEY", "DISCORD_TOKEN", "sniper_enabled", "sniper_toggles", "collect_items", "sniper_logs", "change_cutscene_on_pop", "disable_autokick_prevention", "periodic_screenshots", "disconnect_prevention", "check_update", "auto_install_update", "biomes", "auto_purchase_items_mari", "auto_purchase_items_jester", "scan_channels", "mari_ping_id", "jester_ping_id", "vip", "obby_blessing", "do_item_collection", "SECONDARY_WEBHOOK_URLS"]
+DEFAULTSETTINGS = {"WEBHOOK_URL": "", "__version__" :  LOCALVERSION, "use_roblox_player" : True, "global_wait_time" : 0.2, "skip_aura_download": False, "mention" : True, "mention_id" : 0, "minimum_roll" : "99998", "minimum_ping" : "349999", "reset_aura" : "", "merchant_detection" : False, "ping_mari" : False, "ping_jester" : True, "clear_logs" : False, "pop_in_glitch" : False, "auto_use_items_in_glitch": {"Heavenly Potion" : {"use" : True, "amount" : 200}, "Fortune Potion III" : {"use" : True, "amount" : 1}, "Lucky Potion" : {"use" : True, "amount" : 10}, "Pumpkin" : {"use" : True, "amount" : 10}, "Haste Potion III" : {"use" : False, "amount" : 1}, "Warp Potion" : {"use" : True, "amount" : 1}, "Transcended Potion" : {"use" : False, "amount" : 1}, "Mixed Potion" : {"use" : True, "amount" : 10}, "Stella's Candle" : {"use" : True, "amount" : 1}, "Santa Claus Potion" : {"use" : True, "amount" : 5}, "Hwachae" : {"use" : True, "amount" : 1}}, "pop_in_dreamspace" : False, "auto_use_items_in_dreamspace" : {"Heavenly Potion" : {"use" : False, "amount" : 1}, "Fortune Potion III" : {"use" : True, "amount" : 1}, "Lucky Potion" : {"use" : True, "amount" : 10}, "Pumpkin" : {"use" : True, "amount" : 10}, "Haste Potion III" : {"use" : False, "amount" : 1}, "Warp Potion" : {"use" : True, "amount" : 1}, "Transcended Potion" : {"use" : False, "amount" : 1}, "Mixed Potion" : {"use" : True, "amount" : 10}, "Stella's Candle" : {"use" : True, "amount" : 1}, "Santa Claus Potion" : {"use" : True, "amount" : 5}, "Hwachae" : {"use" : True, "amount" : 1}}, "auto_craft_mode" : False, "skip_auto_mode_warning" : False, "auto_craft_item" : {"Potion of Bound" : False, "Heavenly Potion" : True, "Godly Potion (Zeus)" : True, "Godly Potion (Poseidon)" : True, "Godly Potion (Hades)" : True, "Warp Potion" : True, "Godlike Potion" : True}, "auto_biome_randomizer" : False, "auto_strange_controller" : False, "failsafe_key" : "ctrl+e", "merchant_detec_wait" : 0, "private_server_link" : "", "take_screenshot_on_detection" : False, "ROBLOSECURITY_KEY" : "", "DISCORD_TOKEN" : "", "collect_items" : {"1" : False, "2" : False, "3" : False, "4" : False}, "sniper_enabled" : False, "sniper_toggles" : {"Glitched" : True, "Dreamspace" : False}, "sniper_logs" : True, "change_cutscene_on_pop" : True, "disable_autokick_prevention" : False, "periodic_screenshots" : {"inventory" : False, "storage" : False}, "disconnect_prevention" : False, "check_update" : True, "auto_install_update" : False, "biomes" : {"snowy" : False, "windy" : False, "rainy" : False, "sand storm" : False, "hell" : False, "starfall" : False, "corruption" : False, "null" : False, "glitched" : True, "dreamspace" : True}, "auto_purchase_items_mari" : {"Lucky Potion" : False, "Lucky Potion L" : False, "Lucky Potion XL" : False, "Speed Potion" : False, "Speed Potion L" : False, "Speed Potion XL" : False, "Mixed Potion" : False, "Fortune Spoid" : False, "Gear" : False, "Lucky Penny" : False, "Void Coin" : True}, "auto_purchase_items_jester" : {"Lucky Potion" : False, "Speed Potion" : False, "Random Potion Sack" : False, "Stella's Star" : False, "Rune of Wind": False, "Rune of Frost" : False, "Rune of Rainstorm" : False, "Rune of Hell" : False, "Rune of Galaxy" : False, "Rune of Corruption" : False, "Rune of Nothing" : False, "Rune of Everything" : True, "Strange Potion" : True, "Stella's Candle" : True, "Potion of Bound" : True, "Merchant Tracker" : False, "Heavenly Potion" : True, "Oblivion Potion" : True}, "scan_channels" : ["1282542323590496277"], "mari_ping_id" : 0, "jester_ping_id" : 0, "vip" : False, "do_obby" : False, "do_item_collection" : False, "SECONDARY_WEBHOOK_URLS" : [], "disable_aura_detection" : False, "disable_biome_detection" : False, "always_on_top" : False, "skip_biome_download" : False}
+VALIDSETTINGSKEYS = ["WEBHOOK_URL", "__version__", "use_roblox_player", "global_wait_time", "skip_aura_download", "mention", "mention_id", "minimum_roll", "minimum_ping", "reset_aura", "merchant_detection", "ping_mari", "ping_jester", "clear_logs", "pop_in_glitch", "auto_use_items_in_glitch", "pop_in_dreamspace", "auto_use_items_in_dreamspace", "auto_craft_mode", "skip_auto_mode_warning", "auto_craft_item", "auto_biome_randomizer", "auto_strange_controller", "failsafe_key", "merchant_detec_wait", "private_server_link", "take_screenshot_on_detection", "ROBLOSECURITY_KEY", "DISCORD_TOKEN", "sniper_enabled", "sniper_toggles", "collect_items", "sniper_logs", "change_cutscene_on_pop", "disable_autokick_prevention", "periodic_screenshots", "disconnect_prevention", "check_update", "auto_install_update", "biomes", "auto_purchase_items_mari", "auto_purchase_items_jester", "scan_channels", "mari_ping_id", "jester_ping_id", "vip", "do_obby", "do_item_collection", "SECONDARY_WEBHOOK_URLS", "disable_aura_detection", "disable_biome_detection", "always_on_top", "skip_biome_download"]
 STARTUP_MSGS = ["Let's go gambling!", "Nah, I'd Roll", "I give my life...", "Take a break", "Waste of time", "I can't stop playing this", "Touch the grass", "Eternal time...", "Break the Reality", "Finished work for today", "When is payday???", "-One who stands before God-", "-Flaws in the world-", "We do a little bit of rolling", "Exotic Destiny", "Always bet on yourself", "(Lime shivers quietly in the cold)", "There's no way to stop it!", "[Tip]: Get Lucky", "I'm addicted to Sol's RNG", "The Lost"]
 ACCEPTEDPOTIONS = ["Potion of Bound", "Heavenly Potion", "Godly Potion (Zeus)", "Godly Potion (Poseidon)", "Godly Potion (Hades)", "Warp Potion", "Godlike Potion"]
-ACCEPTEDAUTOPOP = {"Oblivion Potion" : {"use" : False, "amount" : 1}, "Godlike Potion" : {"use" : True, "amount" : 1}, "Godly (Zeus)" : {"use" : False, "amount" : 1}, "Godly (Poseidon)" : {"use" : False, "amount" : 1}, "Godly (Hades)" : {"use" : False, "amount" : 1}, "Heavenly Potion" : {"use" : True, "amount" : 200}, "Fortune Potion III" : {"use" : True, "amount" : 1}, "Lucky Potion" : {"use" : True, "amount" : 10}, "Pumpkin" : {"use" : True, "amount" : 10}, "Haste Potion III" : {"use" : False, "amount" : 1}, "Warp Potion" : {"use" : True, "amount" : 1}, "Transcended Potion" : {"use" : False, "amount" : 1}, "Mixed Potion" : {"use" : True, "amount" : 10}, "Stella's Candle" : {"use" : True, "amount" : 1}, "Santa Claus Potion" : {"use" : True, "amount" : 5}, "Hwachae" : {"use" : True, "amount" : 1}}
-GENERAL_KEYS = ["WEBHOOK_URL", "private_server_link", "SECONDARY_WEBHOOK_URLS", "failsafe_key", "use_roblox_player", "global_wait_time", "skip_aura_download", "mention", "mention_id"]
+ACCEPTEDAUTOPOP = {"Oblivion Potion" : {"use" : False, "amount" : 1}, "Godlike Potion" : {"use" : True, "amount" : 1}, "Godly (Zeus)" : {"use" : False, "amount" : 1}, "Godly (Poseidon)" : {"use" : False, "amount" : 1}, "Godly (Hades)" : {"use" : False, "amount" : 1}, "Heavenly Potion" : {"use" : True, "amount" : 200}, "Potion of Bound" : {"use" : True, "amount" : 10}, "Fortune Potion III" : {"use" : True, "amount" : 1}, "Lucky Potion" : {"use" : True, "amount" : 10}, "Pumpkin" : {"use" : True, "amount" : 10}, "Haste Potion III" : {"use" : False, "amount" : 1}, "Warp Potion" : {"use" : True, "amount" : 1}, "Transcended Potion" : {"use" : False, "amount" : 1}, "Mixed Potion" : {"use" : True, "amount" : 10}, "Stella's Candle" : {"use" : True, "amount" : 1}, "Santa Claus Potion" : {"use" : True, "amount" : 5}, "Hwachae" : {"use" : True, "amount" : 1}}
+GENERAL_KEYS = ["WEBHOOK_URL", "private_server_link", "SECONDARY_WEBHOOK_URLS", "failsafe_key", "use_roblox_player", "global_wait_time", "mention", "mention_id", "skip_aura_download", "skip_biome_download"]
 AURAS_KEYS = ["minimum_roll", "minimum_ping", "reset_aura", "take_screenshot_on_detection"]
 BIOMES_KEYS = ["biomes", "auto_biome_randomizer", "auto_strange_controller", "pop_in_glitch", "auto_use_items_in_glitch", "pop_in_dreamspace", "auto_use_items_in_dreamspace"]
 SNIPER_KEYS = ["sniper_enabled", "sniper_toggles", "DISCORD_TOKEN", "ROBLOSECURITY_KEY", "sniper_logs", "scan_channels"]
-MERCHANT_KEYS = ["merchant_detection", "send_mari", "ping_mari","mari_ping_id", "auto_purchase_items_mari", "send_jester", "ping_jester", "jester_ping_id", "auto_purchase_items_jester"]
+MERCHANT_KEYS = ["merchant_detection", "ping_mari","mari_ping_id", "auto_purchase_items_mari", "ping_jester", "jester_ping_id", "auto_purchase_items_jester"]
 AUTOCRAFT_KEYS = ["auto_craft_mode", "auto_craft_item", "skip_auto_mode_warning"]
-OTHER_KEYS = ["disconnect_prevention", "disable_autokick_prevention", "periodic_screenshots", "check_update", "auto_install_update"]
+PATH_KEYS = ["vip", "do_obby", "do_item_collection", "collect_items"]
+OTHER_KEYS = ["disconnect_prevention", "disable_autokick_prevention", "disable_aura_detection", "disable_biome_detection", "always_on_top", "periodic_screenshots", "check_update", "auto_install_update"]
 
 detected_snipe = False
 
@@ -76,7 +77,7 @@ if not os.path.isfile(f"{MACROPATH}/settings.json"):
         json.dump(DEFAULTSETTINGS, f, indent=4)
 
 PLACE_ID = 15532962292
-BASE_ROBLOX_URL = f"https://www.roblox.com/games/{PLACE_ID}/x1000000000-Sols-RNG"
+BASE_ROBLOX_URL = f"https://www.roblox.com/games/{PLACE_ID}/"
 DISCORD_WS_BASE = "wss://gateway.discord.gg/?v=10&encoding-json"
 SHARELINKS_API = "https://apis.roblox.com/sharelinks/v1/resolve-link"
 
@@ -96,6 +97,17 @@ def get_auras():
         GLOBAL_LOGGER.write_log("Downloaded Aura List")
     except requests.RequestException as e:
         GLOBAL_LOGGER.write_log(f"Failed to download Aura List: {e}")
+
+def get_biomes():
+    GLOBAL_LOGGER.write_log("Downloading Biome List")
+    try:
+        dl = requests.get("https://raw.githubusercontent.com/bazthedev/SolsRNGBot/main/biomes.json", timeout=5)
+        dl.raise_for_status()
+        with open(f"{MACROPATH}/biomes.json", "wb") as f:
+            f.write(dl.content)
+        GLOBAL_LOGGER.write_log("Downloaded Biome List")
+    except requests.RequestException as e:
+        GLOBAL_LOGGER.write_log(f"Failed to download Biome List: {e}")
 
 def update_settings(settings):
     with open(f"{MACROPATH}/settings.json", "w") as f:
@@ -165,6 +177,16 @@ def validate_autopop():
             GLOBAL_LOGGER.write_log("New potions were added to auto pop, please restart the macro for this to take effect.")
             messagebox.showinfo("Baz's Macro", "New potions were added to auto pop, please restart the macro for this to take effect.")
             break
+
+def validate_biomes():
+    for biome in settings["biomes"].keys():
+        if biome not in biomes.keys():
+            del settings["biomes"][biome]
+    for biome in biomes.keys():
+        if biome not in settings["biomes"].keys():
+            settings["biomes"][biome] = False
+    update_settings(settings)
+    reload_settings()
 
 def validate_potions():
     found_keys = []
@@ -319,7 +341,7 @@ def get_latest_hovertext(logs_dir):
     last_hover_text = None
 
     try:
-        with open(temp_file, "r", encoding="utf-8") as file:
+        with open(temp_file, "r", encoding="utf-8", errors="ignore") as file:
             for line in reversed(file.readlines()):
                 match = json_pattern.search(line)
                 if match:
@@ -350,7 +372,7 @@ def get_latest_equipped_aura(logs_dir):
     json_pattern = re.compile(r'\{.*\}')
     
     try:
-        with open(temp_file, "r", encoding="utf-8") as file:
+        with open(temp_file, "r", encoding="utf-8", errors="ignore") as file:
             for line in reversed(file.readlines()):
                 match = json_pattern.search(line)
                 if match:
@@ -386,7 +408,7 @@ def detect_client_disconnect(logs_dir, lines_to_check=10):
     ]
     
     try:
-        with open(temp_file, "r", encoding="utf-8") as file:
+        with open(temp_file, "r", encoding="utf-8", errors="ignore") as file:
             last_lines = file.readlines()[-lines_to_check:]
             for line in reversed(last_lines):
                 if any(re.search(pattern, line) for pattern in disconnect_patterns):
@@ -419,7 +441,7 @@ def detect_client_reconnect(logs_dir, lines_to_check=20):
     ]
     
     try:
-        with open(temp_file, "r", encoding="utf-8") as file:
+        with open(temp_file, "r", encoding="utf-8", errors="ignore") as file:
             last_lines = file.readlines()[-lines_to_check:]
             for line in reversed(last_lines):
                 if any(re.search(pattern, line) for pattern in disconnect_patterns):
@@ -458,6 +480,9 @@ class Macro:
         self.root = root
         self.root.title("Baz's Macro")
 
+        if settings["always_on_top"]:
+            self.root.lift()
+            self.root.attributes("-topmost", True)
         self.root.geometry("600x300")
 
         try:
@@ -475,6 +500,9 @@ class Macro:
         self.keyboard_lock = threading.Lock()
         self.pause_event = threading.Event()
         self.stop_event = threading.Event()
+        self.sniped_event = threading.Event()
+
+        self.ps_link_code = 0
 
         self.notebook = ttk.Notebook(self.root)
         self.notebook.pack(expand=1, fill='both')
@@ -962,6 +990,21 @@ class Macro:
 
             _webhook.send(**kwargs)
 
+    def left_click_drag(self, x, y, delay=0.1):
+        mk._mouse_click(mk.MOUSEEVENTF_LEFTDOWN)
+        time.sleep(delay)
+        mk.move(x, y)
+        time.sleep(delay)
+        mk._mouse_click(mk.MOUSEEVENTF_LEFTUP)
+
+
+    def right_click_drag(self, x, y, delay=0.1):
+        mk._mouse_click(mk.MOUSEEVENTF_RIGHTDOWN)
+        time.sleep(delay)
+        mk.move(x, y)
+        time.sleep(delay)
+        mk._mouse_click(mk.MOUSEEVENTF_RIGHTUP)
+
 
     def start_macro(self, event=None):
         changes = self.save_settings()
@@ -1017,13 +1060,14 @@ class Macro:
             time.sleep(1)
 
         previous_thread = None
-        for i in range(10):
+        thread = None
+        for i in range(11):
             if self.stop_event.is_set():
                 break
-            if i == 0:
+            if i == 0 and not settings["disable_aura_detection"]:
                 thread = threading.Thread(target=self.aura_detection, daemon=True)
                 GLOBAL_LOGGER.write_log("Started Aura Detection")
-            elif i == 1:
+            elif i == 1 and not settings["disable_biome_detection"]:
                 for _ in settings["biomes"].keys():
                     if settings["biomes"][_]:
                         thread = threading.Thread(target=self.biome_detection, daemon=True)
@@ -1043,7 +1087,7 @@ class Macro:
                         asyncio.run(run_all_snipers())
 
                     thread = threading.Thread(target=start_snipers, daemon=True)
-                    GLOBAL_LOGGER.write_log(f"Starting {str(len(self.snipers))} Snipers")
+                    GLOBAL_LOGGER.write_log(f"Starting {str(len(self.snipers))} Sniper(s)")
                 else:
                     GLOBAL_LOGGER.write_log("You must provide both your ROBLOSECURITY cookie and your Discord Token for the sniper to work. You also need to set a sniper logs channel")
             elif i == 4 and settings["disconnect_prevention"]:
@@ -1070,8 +1114,11 @@ class Macro:
             elif i == 9 and settings["periodic_screenshots"]["storage"]:
                 thread = threading.Thread(target=self.storage_screenshot, daemon=True)
                 GLOBAL_LOGGER.write_log("Started Periodic Aura Storage Screenshots")
+            elif i == 10 and settings["do_obby"]:
+                thread = threading.Thread(target=self.do_obby, daemon=True)
+                GLOBAL_LOGGER.write_log("Started Obby Blessing")
 
-            if thread != previous_thread:
+            if thread != previous_thread and thread != None:
                 thread.start()
                 self.threads.append(thread)
             previous_thread = thread
@@ -1117,6 +1164,42 @@ class Macro:
             reload_settings()
         GLOBAL_LOGGER.write_log("Starting auto craft mode. Please click back onto Roblox and wait 10 seconds")
         time.sleep(10)
+        if not settings["disable_aura_detection"]:
+            thread = threading.Thread(target=self.aura_detection, daemon=True)
+            thread.start()
+            self.threads.append(thread)
+        if not settings["disable_biome_detection"]:
+            thread = threading.Thread(target=self.biome_detection, daemon=True)
+            thread.start()
+            self.threads.append(thread)
+        if settings["sniper_enabled"]:
+            if not (settings["ROBLOSECURITY_KEY"] == "" or settings["DISCORD_TOKEN"] == ""):
+                for channel_id in settings["scan_channels"]:
+                    self.snipers.append(self.Sniper(self, channel_id))
+                def start_snipers():
+                    async def run_all_snipers():
+                        await asyncio.gather(*(sniper.run() for sniper in self.snipers))
+
+                    asyncio.run(run_all_snipers())
+
+                thread = threading.Thread(target=start_snipers, daemon=True)
+                thread.start()
+                self.threads.append(thread)
+                GLOBAL_LOGGER.write_log(f"Starting {str(len(self.snipers))} Snipers")
+            else:
+                GLOBAL_LOGGER.write_log("You must provide both your ROBLOSECURITY cookie and your Discord Token for the sniper to work. You also need to set a sniper logs channel")
+        for plugin in self.plugins:
+            try:
+                if plugin.autocraft_compatible:
+                    try:
+                        thread = threading.Thread(target=plugin.run, args=(self.stop_event, self.pause_event), daemon=True)
+                        thread.start()
+                        self.threads.append(thread)
+                        GLOBAL_LOGGER.write_log(f"Started plugin thread: {plugin.name}")
+                    except Exception as e:
+                        GLOBAL_LOGGER.write_log(f"Failed to start plugin thread '{plugin.name}': {e}")
+            except Exception as e:
+                GLOBAL_LOGGER.write_log(f"Failed to detect if plugin can be used with Auto Craft '{plugin.name}': {e}")
         thread = threading.Thread(target=self.auto_craft, daemon=True)
         thread.start()
         self.threads.append(thread)
@@ -1133,7 +1216,6 @@ class Macro:
 
         for thread in self.threads:
             thread.join(timeout=1)
-            GLOBAL_LOGGER.write_log(f"Thread marked for termination: {str(thread)}")
 
         GLOBAL_LOGGER.write_log("Macro will completely stop after the current thread cycle has finished.")
 
@@ -1148,6 +1230,10 @@ class Macro:
         self.webhook.send(avatar_url=WEBHOOK_ICON_URL, embed=emb)
         self.forward_webhook_msg(avatar_url=WEBHOOK_ICON_URL, embed=emb)
         messagebox.showinfo("Baz's Macro", "Macro has been stopped.")
+
+    def join_private_server_link(self, server_code):
+        final_link = f"roblox://placeID={PLACE_ID}^&linkCode={server_code}"
+        subprocess.Popen(["start", final_link], shell=True)
 
     def aura_detection(self):
         global previous_aura
@@ -1170,26 +1256,7 @@ class Macro:
                     rnow = datetime.now()
                     current_biome = get_latest_hovertext(rblx_log_dir)
                     if current_biome.lower() == auras[current_aura.lower()]["native_biome"].lower():
-                        if current_biome.lower() == "snowy":
-                            aura_rarity = int(int(auras[current_aura.lower()]["rarity"]) / SNOWY_MULTIPLIER)
-                        elif current_biome.lower() == "windy":
-                            aura_rarity = int(int(auras[current_aura.lower()]["rarity"]) / WINDY_MULTIPLIER)
-                        elif current_biome.lower() == "rainy":
-                            aura_rarity = int(int(auras[current_aura.lower()]["rarity"]) / RAINY_MULTIPLER)
-                        elif current_biome.lower() == "sand storm":
-                            aura_rarity = int(int(auras[current_aura.lower()]["rarity"]) / SANDSTORM_MULTIPLIER)
-                        elif current_biome.lower() == "hell":
-                            aura_rarity = int(int(auras[current_aura.lower()]["rarity"]) / HELL_MULTIPLIER)
-                        elif current_biome.lower() == "starfall":
-                            aura_rarity = int(int(auras[current_aura.lower()]["rarity"]) / STARFALL_MULTIPLIER)
-                        elif current_biome.lower() == "corruption":
-                            aura_rarity = int(int(auras[current_aura.lower()]["rarity"]) / CORRUPTION_MULTIPLIER)
-                        elif current_biome.lower() == "null":
-                            aura_rarity = int(int(auras[current_aura.lower()]["rarity"]) / NULL_MULTIPLIER)
-                        elif current_biome.lower() == "glitched":
-                            aura_rarity = int(int(auras[current_aura.lower()]["rarity"]) / GLITCHED_MULTIPLIER)
-                        elif current_biome.lower() == "dreamspace":
-                            aura_rarity = int(int(auras[current_aura.lower()]["rarity"]) / DREAMSPACE_MULTIPLIER)
+                        aura_rarity = int(int(auras[current_aura.lower()]["rarity"]) / biomes[current_biome.lower()]["multiplier"])
                         emb = discord.Embed(
                             title=f"Aura Rolled: {current_aura}",
                             description=f"Rolled Aura: {current_aura}\nWith chances of 1/{str(aura_rarity)} (from {auras[current_aura.lower()]["native_biome"]})\nAt time: {rnow.strftime('%d/%m/%Y %H:%M:%S')}",
@@ -1252,7 +1319,7 @@ class Macro:
 
     def biome_detection(self):
         global previous_biome
-        while not self.stop_event.is_set():
+        while not self.stop_event.is_set() and not self.sniped_event.is_set():
             current_biome = get_latest_hovertext(rblx_log_dir)
             if previous_biome == None:
                 previous_biome = current_biome
@@ -1262,16 +1329,17 @@ class Macro:
             if current_biome.lower() == previous_biome.lower():
                 continue
             try:
-                if current_biome.lower() in settings["biomes"].keys():
+                if current_biome.lower() in biomes.keys():
                     rnow = datetime.now()
                     if previous_biome.lower() != "normal":
                         emb = discord.Embed(
                             title=f"Biome Ended: {previous_biome}",
                             description=f"Biome {previous_biome} has ended at time {rnow.strftime('%d/%m/%Y %H:%M:%S')}",
-                            colour=discord.Colour.from_rgb(biome_cols[previous_biome.lower()][0], biome_cols[previous_biome.lower()][1], biome_cols[previous_biome.lower()][2])
+                            colour=discord.Colour.from_rgb(hex2rgb(biomes[previous_biome.lower()]["colour"])[0], hex2rgb(biomes[previous_biome.lower()]["colour"])[1], hex2rgb(biomes[previous_biome.lower()]["colour"])[2])
                         )
                         self.webhook.send(avatar_url=WEBHOOK_ICON_URL, embed=emb)
                         self.forward_webhook_msg(avatar_url=WEBHOOK_ICON_URL, embed=emb)
+                        GLOBAL_LOGGER.write_log(f"{previous_biome} has ended.")
                     previous_biome = current_biome
                     if current_biome.lower() == "normal":
                         continue
@@ -1280,21 +1348,21 @@ class Macro:
                             emb = discord.Embed(
                                 title=f"Biome Started: {current_biome}",
                                 description=f"Biome {current_biome} has started at time: {rnow.strftime('%d/%m/%Y %H:%M:%S')}\nServer Invite: {settings['private_server_link']}",
-                                colour=discord.Colour.from_rgb(biome_cols[current_biome.lower()][0], biome_cols[current_biome.lower()][1], biome_cols[current_biome.lower()][2])
+                                colour=discord.Colour.from_rgb(hex2rgb(biomes[current_biome.lower()]["colour"])[0], hex2rgb(biomes[current_biome.lower()]["colour"])[1], hex2rgb(biomes[current_biome.lower()]["colour"])[2])
                             )
                         else:
                             emb = discord.Embed(
                                 title=f"Biome Started: {current_biome}",
                                 description=f"Biome {current_biome} has started at time: {rnow.strftime('%d/%m/%Y %H:%M:%S')}",
-                                colour=discord.Colour.from_rgb(biome_cols[current_biome.lower()][0], biome_cols[current_biome.lower()][1], biome_cols[current_biome.lower()][2])
+                                colour=discord.Colour.from_rgb(hex2rgb(biomes[current_biome.lower()]["colour"])[0], hex2rgb(biomes[current_biome.lower()]["colour"])[1], hex2rgb(biomes[current_biome.lower()]["colour"])[2])
                             )
-                        if current_biome.lower() == "glitched" or current_biome.lower() == "dreamspace":
+                        if biomes[current_biome.lower()]["rare"]:
                             self.webhook.send(avatar_url=WEBHOOK_ICON_URL, content="@everyone", embed=emb)
                             self.forward_webhook_msg(avatar_url=WEBHOOK_ICON_URL, content="@everyone", embed=emb)
-                            GLOBAL_LOGGER.write_log(f"{current_biome} has started.")
                         else:
                             self.webhook.send(avatar_url=WEBHOOK_ICON_URL, embed=emb)
                             self.forward_webhook_msg(avatar_url=WEBHOOK_ICON_URL, embed=emb)
+                        GLOBAL_LOGGER.write_log(f"{current_biome} has started.")
             except KeyError:
                 pass
             except AttributeError:
@@ -1328,7 +1396,7 @@ class Macro:
             mkey.left_click_xy_natural(potion_search_pos[0], potion_search_pos[1])
             time.sleep(0.2)
 
-        while not self.stop_event.is_set():
+        while not self.stop_event.is_set() and not self.sniped_event.is_set():
             if settings["auto_craft_item"]["Potion of Bound"]:
                 search_for_potion("Bound")
                 mkey.left_click_xy_natural(craft_btn_pos[0], craft_btn_pos[1])
@@ -1386,6 +1454,8 @@ class Macro:
                 time.sleep(0.2)
                 mkey.left_click_xy_natural((1064 * scale_w), (988 * scale_h))
                 time.sleep(0.2)
+                mkey.left_click_xy_natural((1064 * scale_w), (1048 * scale_h))
+                time.sleep(0.2)
                 if auto_craft_index == 3 and len(items_to_craft) > 1:
                     mkey.left_click_xy_natural(auto_btn_pos[0], auto_btn_pos[1])
                     time.sleep(0.2)
@@ -1404,6 +1474,10 @@ class Macro:
                 mkey.left_click_xy_natural(hp1_pos_potions[0], hp1_pos_potions[1])
                 time.sleep(0.2)
                 mkey.left_click_xy_natural(hp2_pos_potions[0], hp2_pos_potions[1])
+                time.sleep(0.2)
+                mkey.left_click_xy_natural((1064 * scale_w), (988 * scale_h))
+                time.sleep(0.2)
+                mkey.left_click_xy_natural((1064 * scale_w), (1048 * scale_h))
                 time.sleep(0.2)
                 if auto_craft_index == 4 and len(items_to_craft) > 1:
                     mkey.left_click_xy_natural(auto_btn_pos[0], auto_btn_pos[1])
@@ -1470,6 +1544,14 @@ class Macro:
                 time.sleep(0.2)
                 mkey.left_click_xy_natural((1064 * scale_w), (988 * scale_h))
                 time.sleep(0.2)
+                mkey.left_click_xy_natural((954 * scale_w), (1048 * scale_h))
+                time.sleep(0.2)
+                mkey.left_click_xy_natural((954 * scale_w), (1048 * scale_h))
+                time.sleep(0.2)
+                _keyboard.type("1000")
+                time.sleep(0.2)
+                mkey.left_click_xy_natural((1064 * scale_w), (1048 * scale_h))
+                time.sleep(0.2)
                 mkey.left_click_xy_natural(potion_search_pos[0], potion_search_pos[1])
                 time.sleep(0.2)
             if auto_craft_index > 6:
@@ -1484,7 +1566,7 @@ class Macro:
 
 
     def merchant_detection(self):
-        while not self.stop_event.is_set():
+        while not self.stop_event.is_set() and not self.sniped_event.is_set():
             time.sleep(90)
             if self.stop_event.is_set():
                 break
@@ -1561,7 +1643,6 @@ class Macro:
 
                     for name, (x1, y1, x2, y2) in manual_boxes.items():
                         cropped = image[y1:y2, x1:x2]
-                        cv2.imwrite(f"./test_scripts/buff_extraction/dbg_{x1}_{y1}.png", cropped)
                         ocr_raw = pytesseract.image_to_string(cropped).strip()
                         if merchant_name == None:
                             break
@@ -1569,9 +1650,9 @@ class Macro:
                             matched = fuzzy_match(ocr_raw, MARI_ITEMS, threshold=0.5)
                         elif merchant_name.lower() == "jester":
                             matched = fuzzy_match(ocr_raw, JESTER_ITEMS, threshold=0.5)
-                        GLOBAL_LOGGER.write_log(f"[{name}] -> {matched} (OCR: {ocr_raw})")
+                        GLOBAL_LOGGER.write_log(f"[{name}] -> {matched} (OCR: {ocr_raw.replace('\n', ' ')})")
                         detected_items[name] = matched
-                        emb.add_field(name=f"{name}", value=f"Detected Item: {matched}\n\nRaw OCR input: `{ocr_raw}`", inline=True)
+                        emb.add_field(name=f"{name}", value=f"Detected Item: {matched}\n\nRaw OCR input: `{ocr_raw.replace('\n', ' ')}`", inline=True)
                     if settings["mention"] and settings["mention_id"] != 0:
                         self.webhook.send(avatar_url=WEBHOOK_ICON_URL, content=f"<@{settings['mention_id']}>", embed=emb, file=up)
                         self.forward_webhook_msg(avatar_url=WEBHOOK_ICON_URL, content=f"<@{settings['mention_id']}>", embed=emb, file=up)
@@ -1591,8 +1672,12 @@ class Macro:
                         self.webhook.send(avatar_url=WEBHOOK_ICON_URL, embed=emb, file=up)
                         self.forward_webhook_msg(avatar_url=WEBHOOK_ICON_URL, embed=emb, file=up)
                     if merchant_name == "Mari":
+                        detected_items = {
+                            k: v for k, v in detected_items.items()
+                            if v in settings["auto_purchase_items_mari"]
+                        }
                         for item in detected_items.keys():
-                            if settings["auto_purchase_items_mari"][detected_items[item]]:
+                            if settings["auto_purchase_items_mari"].get(detected_items[item], False):
                                 if item == "Box 1":
                                     mkey.left_click_xy_natural(merch_item_pos_1_purchase[0], merch_item_pos_1_purchase[1], print_coords=False)
                                     time.sleep(0.2)
@@ -1649,8 +1734,12 @@ class Macro:
                                 GLOBAL_LOGGER.write_log(f"Item purchased from Mari: {detected_items[item]}")
                                 time.sleep(5)
                     elif merchant_name == "Jester":
+                        detected_items = {
+                            k: v for k, v in detected_items.items()
+                            if v in settings["auto_purchase_items_jester"]
+                        }
                         for item in detected_items.keys():
-                            if settings["auto_purchase_items_jester"][detected_items[item]]:
+                            if settings["auto_purchase_items_jester"].get(detected_items[item], False):
                                 if item == "Box 1":
                                     mkey.left_click_xy_natural(merch_item_pos_1_purchase[0], merch_item_pos_1_purchase[1], print_coords=False)
                                     time.sleep(0.2)
@@ -1713,7 +1802,7 @@ class Macro:
         GLOBAL_LOGGER.write_log("Merchant Detection was stopped.")
 
     def keep_alive(self):
-        while not self.stop_event.is_set():
+        while not self.stop_event.is_set() and not self.sniped_event.is_set():
             with self.keyboard_lock:
                 mkey.left_click_xy_natural(close_pos[0], close_pos[1])
                 time.sleep(0.2)
@@ -1725,11 +1814,8 @@ class Macro:
 
     def disconnect_prevention(self):
         global rblx_log_dir
-        while not self.stop_event.is_set():
-            if not exists_procs_by_name("Windows10Universal.exe") and not exists_procs_by_name("RobloxPlayerBeta.exe"):
-                GLOBAL_LOGGER.write_log("There are no instances of Roblox running, the macro will now stop.")
-                sys.exit()
-            if detect_client_disconnect(rblx_log_dir):
+        while not self.stop_event.is_set() and not self.sniped_event.is_set():
+            if detect_client_disconnect(rblx_log_dir) or (not exists_procs_by_name("Windows10Universal.exe") and not exists_procs_by_name("RobloxPlayerBeta.exe")):
                 if valid_ps:
                     if rblx_log_dir != ms_rblx_log_dir:
                         rblx_log_dir = ms_rblx_log_dir
@@ -1740,8 +1826,8 @@ class Macro:
                             GLOBAL_LOGGER.write_log(f"Attempting to rejoin private server (Attempt #{str(_attempt)})")
                             os.system("taskkill /f /im Windows10Universal.exe /t")
                             time.sleep(5)
-                            asyncio.run(self.sniper._join_windows(ps_link_code))
-                            time.sleep(5)                
+                            self.join_private_server_link(self.ps_link_code)
+                            time.sleep(5)
                             ps_rblxms = get_process_by_name("Windows10Universal.exe")
                             rblxms_window = match_rblx_hwnd_to_pid(ps_rblxms.pid)
                             mkey.activate_window(rblxms_window.hwnd)
@@ -1763,7 +1849,7 @@ class Macro:
 
     
     def storage_screenshot(self):
-        while not self.stop_event.is_set():
+        while not self.stop_event.is_set() and not self.sniped_event.is_set():
             with self.keyboard_lock:
                 mkey.left_click_xy_natural(aura_button_pos[0], aura_button_pos[1])
                 time.sleep(0.2)
@@ -1783,7 +1869,7 @@ class Macro:
         GLOBAL_LOGGER.write_log("Aura Storage Screenshots was stopped.")
 
     def inventory_screenshot(self):
-        while not self.stop_event.is_set():
+        while not self.stop_event.is_set() and not self.sniped_event.is_set():
             with self.keyboard_lock:
                 mkey.left_click_xy_natural(inv_button_pos[0], inv_button_pos[1])
                 time.sleep(0.2)
@@ -1805,14 +1891,14 @@ class Macro:
         GLOBAL_LOGGER.write_log("Inventory Screenshots was stopped.")
 
     def auto_br(self):
-        while not self.stop_event.is_set():
+        while not self.stop_event.is_set() and not self.sniped_event.is_set():
             with self.keyboard_lock:
                 use_item("Biome Random", 1, True)
             time.sleep(2160)
         GLOBAL_LOGGER.write_log("Auto Biome Randomizer was stopped.")
     
     def auto_sc(self):
-        while not self.stop_event.is_set():
+        while not self.stop_event.is_set() and not self.sniped_event.is_set():
             with self.keyboard_lock:
                 use_item("Strange Control", 1, True)
             time.sleep(1260)
@@ -1877,7 +1963,7 @@ class Macro:
                             break
                         if not settings["auto_use_items_in_glitch"][item]["use"]:
                             continue
-                        if item == "Heavenly Potion" or item == "Oblivion Potion":
+                        if item == "Heavenly Potion" or item == "Oblivion Potion" or item == "Potion of Bound":
                             while not self.stop_event.is_set():
                                 if get_latest_hovertext(rblx_log_dir).lower() != biome:
                                     GLOBAL_LOGGER.write_log("Biome has ended")
@@ -1897,7 +1983,53 @@ class Macro:
                         else:
                             use_item(item, settings["auto_use_items_in_glitch"][item]["amount"], True)
             if _ended:
+                self.sniped_event.clear()
                 break
+
+    def reset_character(self):
+        _keyboard.press(Key.esc)
+        time.sleep(0.2)
+        _keyboard.release(Key.esc)
+        time.sleep(0.2)
+        _keyboard.press("r")
+        time.sleep(0.2)
+        _keyboard.release("r")
+        time.sleep(0.2)
+        _keyboard.press(Key.enter)
+        time.sleep(0.2)
+        _keyboard.release(Key.enter)
+        time.sleep(0.2)
+
+    def align_camera(self):
+        time.sleep(0.2)
+        self.reset_character()
+        time.sleep(0.2)
+        mkey.left_click_xy_natural(collection_open_pos[0], collection_open_pos[1])
+        time.sleep(0.2)
+        mkey.left_click_xy_natural(exit_collection_pos[0], exit_collection_pos[1])
+        time.sleep(0.2)
+        _keyboard.press(Key.shift)
+        time.sleep(0.2)
+        _keyboard.release(Key.shift)
+        time.sleep(0.2)
+        _keyboard.press(Key.shift)
+        time.sleep(0.2)
+        _keyboard.release(Key.shift)
+        time.sleep(0.2)
+        for i in range(80):
+            _mouse.scroll(0, 30)
+        time.sleep(2)
+        for i in range(3):
+            _mouse.scroll(0, -5)
+            time.sleep(0.2)
+        time.sleep(0.2)
+
+    def do_obby(self):
+        while not self.stop_event.is_set() and not self.sniped_event.is_set():
+            with self.keyboard_lock:
+                time.sleep(0.2)
+                self.align_camera()
+                time.sleep(10)
 
     # THE FOLLOWING CODE IS A SLIGHTLY MODIFIED VERSION OF YAY JOINS SNIPER 1.2.10, WHICH IS OWNED BY Root1527. YOU CAN DOWNLOAD THE REGULAR VERSION OF YAY JOINS HERE: https://github.com/Root1527/yay-joins
 
@@ -1915,7 +2047,7 @@ class Macro:
             self.words = ["Glitched", "Dreamspace"]
 
             self.link_pattern = re.compile(
-                f"https://www.roblox.com/games/{PLACE_ID}/x1000000000-Sols-RNG\\?privateServerLinkCode="
+                f"https://www.roblox.com/games/{PLACE_ID}/*\\?privateServerLinkCode="
             )
             self.link_pattern_2 = re.compile(r"https://.*&type=Server")
 
@@ -2066,9 +2198,7 @@ class Macro:
             global detected_snipe, rblx_log_dir
             detected_snipe = True
             await self._join_windows(server_code)
-            if rblx_log_dir == rblx_player_log_dir:
-                os.system("taskkill /f /im RobloxPlayerBeta.exe /t")
-                rblx_log_dir = ms_rblx_log_dir
+            self.macro.sniped_event.set()
             GLOBAL_LOGGER.write_log(f"[SNIPER] {self.words[choice_id]} link found\nyay joins (modified for bazthedev/SolsRNGBot v{LOCALVERSION})")
             if settings["pop_in_glitch"] and self.words[choice_id] == "Glitched":
                 self.macro.auto_pop(self.macro, "glitched")
@@ -2078,7 +2208,7 @@ class Macro:
             final_link = f"roblox://placeID={PLACE_ID}^&linkCode={server_code}"
             subprocess.Popen(["start", final_link], shell=True)
 
-        async def _send_notification(self, choice_id: int, server_code: str):
+        async def _send_notification(self, choice_id: int, server_code: str, msg : str):
 
             colors = [11206400, 16744703]
             embed_link = f"{BASE_ROBLOX_URL}?privateServerLinkCode={server_code}"
@@ -2087,6 +2217,7 @@ class Macro:
                 colour = colors[choice_id],
             )
             embed.add_field(name =  f"{self.words[choice_id]} Link:", value = embed_link, inline=True)
+            embed.add_field(name =  "Original Message Content", value = msg, inline=True)
             embed.set_footer(text=f"yay joins (modified for bazthedev/SolsRNGBot v{LOCALVERSION})")
 
             self.webhook.send(avatar_url=WEBHOOK_ICON_URL, content=f"<@{self.config['mention_id']}>", embed=embed)
@@ -2116,7 +2247,7 @@ class Macro:
                 GLOBAL_LOGGER.write_log(f"[SNIPER] Found message! content: {content}")
 
                 await self._handle_server_join(choice_id, server_code)
-                await self._send_notification(choice_id, server_code)
+                await self._send_notification(choice_id, server_code, content)
 
             except Exception as e:
                 if self.config["sniper_logs"]:
@@ -2138,7 +2269,9 @@ class Macro:
                 
             if not detect_client_disconnect(rblx_log_dir):
                 GLOBAL_LOGGER.write_log(f"Started yay joins (sniper) for channel {str(self.channel_id)}")
-                ps_link_code = await self._extract_server_code(settings["private_server_link"])
+                if ps_link_code == 0 or self.macro.ps_link_code == 0:
+                    ps_link_code = await self._extract_server_code(settings["private_server_link"])
+                    self.macro.ps_link_code = ps_link_code
                 emb = discord.Embed(
                     title=f"Started Sniper for channel <#{self.channel_id}>!",
                     description = f"Snipe Glitched: {str(glitch)}\nSnipe Dreamspace: {str(dream)}"
@@ -2207,7 +2340,7 @@ manual_boxes = {
     "Box 4":            (int(1416 * scale_w), int(919 * scale_h), int(1650 * scale_w), int(996 * scale_h)),
     "Box 5":       (int(1668 * scale_w), int(919 * scale_h), int(1903 * scale_w), int(996 * scale_h))
 }
-aura_button_pos = ((32 * scale_w), (595 * scale_h))
+aura_button_pos = ((53 * scale_w), (538 * scale_h))
 inv_button_pos = ((32 * scale_w), (692 * scale_h))
 default_pos = ((1280 * scale_w), (720 * scale_h))
 close_pos = ((1887 * scale_w), (399 * scale_h))
@@ -2221,21 +2354,11 @@ items_pos = ((1692 * scale_w), (440 * scale_h))
 purchase_btn_pos = ((990 * scale_w), (860 * scale_h))
 quantity_btn_pos = ((910 * scale_w), (796 * scale_h))
 open_merch_pos = ((876 * scale_w), (1256 * scale_h))
-merch_item_pos_1_purchase = ((766 * scale_w), (988 * scale_h))
-merch_item_pos_2_purchase = ((1024 * scale_w), (986 * scale_h))
-merch_item_pos_3_purchase = ((1278 * scale_w), (988 * scale_h))
-merch_item_pos_4_purchase = ((1512 * scale_w), (988 * scale_h))
-merch_item_pos_5_purchase = ((1762 * scale_w), (986 * scale_h))
-"""item_amt_pos = ((756 * scale_w), (772 * scale_h))
-items_pos = ((1692 * scale_w), (440 * scale_h))
-purchase_btn_pos = ((990 * scale_w), (860 * scale_h))
-quantity_btn_pos = ((910), (796))
-open_merch_pos = ((876 * scale_w), (1256 * scale_h))
-merch_item_pos_1_purchase = ((766), (988))
-merch_item_pos_2_purchase = ((1024), (986))
-merch_item_pos_3_purchase = ((1278), (988))
-merch_item_pos_4_purchase = ((1512), (988))
-merch_item_pos_5_purchase = ((1762), (986))"""
+merch_item_pos_1_purchase = ((766 * scale_w), (948 * scale_h))
+merch_item_pos_2_purchase = ((1024 * scale_w), (948 * scale_h))
+merch_item_pos_3_purchase = ((1278 * scale_w), (948 * scale_h))
+merch_item_pos_4_purchase = ((1512 * scale_w), (948 * scale_h))
+merch_item_pos_5_purchase = ((1762 * scale_w), (948 * scale_h))
 menu_btn_pos = ((32 * scale_w), (656 * scale_h))
 settings_btn_pos = ((1278 * scale_w), (738 * scale_h))
 rolling_conf_pos = ((888 * scale_w), (498 * scale_h))
@@ -2259,7 +2382,6 @@ reconnect_btn_pos = ((1370 * scale_w), (800 * scale_h))
 bound_recipe_pos = ((1524 * scale_w), (994 * scale_h))
 potion_search_pos = ((1237 * scale_w), (449 * scale_h))
 first_potion_pos = ((1520 * scale_w), (554 * scale_h))
-biome_cols = {"windy" : (145, 247, 255), "snowy" : (196, 245, 246), "rainy" : (67, 133, 255), "hell" : (74, 23, 34), "starfall" : (103, 132, 224), "corruption" : (144, 66, 255), "null" : (7, 9, 16), "dreamspace" : (234, 108, 188), "glitched" : (100, 252, 100)}
 previous_biome = None
 previous_aura = None
 popping = False
@@ -2270,16 +2392,6 @@ rblx_player_log_dir = os.path.expandvars(r"%localappdata%\Roblox\logs") # This i
 ms_rblx_log_dir = os.path.expandvars(r"%LOCALAPPDATA%\Packages\ROBLOXCorporation.ROBLOX_55nm5eh3cm0pr\LocalState\logs") # This is for the Microsoft Store version of Roblox
 ms_rblx_spawn_pos = ((820 * scale_w), (548 * scale_h))
 ps_link_code = 0
-WINDY_MULTIPLIER = 3
-SNOWY_MULTIPLIER = 3
-RAINY_MULTIPLER = 4
-SANDSTORM_MULTIPLIER = 4
-HELL_MULTIPLIER = 6
-STARFALL_MULTIPLIER = 5
-CORRUPTION_MULTIPLIER = 5
-NULL_MULTIPLIER = 1000
-GLITCHED_MULTIPLIER = 1
-DREAMSPACE_MULTIPLIER = 1
 GLOBAL_LOGGER.write_log(f"Starting SolsRNGBot v{LOCALVERSION}")
 
 if not os.path.exists(f"{MACROPATH}/settings.json"):
@@ -2347,8 +2459,6 @@ if settings["check_update"]:
     except Exception as e:
         GLOBAL_LOGGER.write_log(f"Failed to check for new version:\n{e}")
 
-if not os.path.exists(ms_rblx_log_dir):
-    GLOBAL_LOGGER.write_log("The Microsoft Store Version of Roblox has not been detected as installed. This will break certain features of the macro, such as the Sniper and joining servers.")
 
 if exists_procs_by_name("Windows10Universal.exe"):
     rblx_log_dir = ms_rblx_log_dir
@@ -2381,8 +2491,19 @@ if not settings["skip_aura_download"]:
 if not os.path.exists(f"{MACROPATH}/auras_new.json"):
     get_auras()
 
-with open(f"{MACROPATH}/auras_new.json", "r", encoding="utf-8") as f:
+if not settings["skip_biome_download"]:
+    get_biomes()
+
+if not os.path.exists(f"{MACROPATH}/biomes.json"):
+    get_biomes()
+
+with open(f"{MACROPATH}/auras_new.json", "r", encoding="utf-8", errors="ignore") as f:
     auras = json.load(f)
+
+with open(f"{MACROPATH}/biomes.json", "r", encoding="utf-8", errors="ignore") as f:
+    biomes = json.load(f)
+
+validate_biomes()
 
 if settings["private_server_link"] != "":
     if not validate_pslink(settings["private_server_link"]):
@@ -2390,8 +2511,10 @@ if settings["private_server_link"] != "":
         valid_ps = False
     else:
         valid_ps = True
+        valid_ps = True
 
 __version__ = settings["__version__"]
 
 root.deiconify()
+print("Loaded UI")
 root.mainloop()

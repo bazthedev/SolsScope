@@ -21,6 +21,7 @@ class Plugin:
         self.version = "1.0.0"
         self.author = "bazthedev"
         self.requires = "1.2.3"
+        self.autocraft_compatible = True
         self.macro = macro
         self.config_path = os.path.join(os.path.expandvars(r"%localappdata%\Baz's Macro"), "plugins", "config", f"{self.name}.json")
         self.WEBHOOK_ICON_URL = "https://raw.githubusercontent.com/bazthedev/SolsRNGBot/a93aaa9a42a7184047f12aa4135f3dab0857f05d/Server%20Edition/whicon.png"
@@ -120,7 +121,7 @@ class Plugin:
             return
         combo_list = self.parse_key_combo(self.config["clipping_keycombo"])
 
-        with open(self.LOG_FILE_PATH, "r", encoding="utf-8") as f:
+        with open(self.LOG_FILE_PATH, "r", encoding="utf-8", errors="ignore") as f:
             f.seek(0, 2)
 
             while not stop_event.is_set():

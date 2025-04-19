@@ -237,7 +237,7 @@
         "emb_colour": "#7841ca",
         "rarity": "1336000",
         "img_url": "https://static.wikia.nocookie.net/sol-rng/images/5/57/Astral_Era9.gif/revision/latest",
-        "native_biome": "Corruption"
+        "native_biome": "Starfall"
     },
     "cosmos" : {
         "emb_colour" : "#ec88ff",
@@ -596,7 +596,7 @@
     ":flushed:: troll" : {
         "emb_colour" : "#ffffff",
         "rarity" : "1000000",
-        "img_url": "",
+        "img_url": "https://static.wikia.nocookie.net/sol-rng/images/f/fb/TrollCollection.gif/revision/latest",
         "native_biome" : ""
     },
     "origin: onion" : {
@@ -609,6 +609,24 @@
         "emb_colour" : "#000000",
         "rarity" : "170000000",
         "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/5/5f/Glock_of_the_sky_in_Collection_%28better_version%29.png/revision/latest",
+        "native_biome" : ""
+    },
+    "anubis" : {
+        "emb_colour" : "#000000",
+        "rarity" : "0",
+        "img_url" : "",
+        "native_biome" : ""
+    },
+    "blizzard" : {
+        "emb_colour" : "#000000",
+        "rarity" : "0",
+        "img_url" : "",
+        "native_biome" : ""
+    },
+    "jazz: orchestra" : {
+        "emb_colour" : "#000000",
+        "rarity" : "336870912",
+        "img_url" : "",
         "native_biome" : ""
     }
 }

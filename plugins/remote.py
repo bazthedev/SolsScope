@@ -22,7 +22,7 @@ class Plugin:
 
     def __init__(self, macro):
         self.name = "Remote Bot"
-        self.version = "1.0.1"
+        self.version = "1.0.2"
         self.author = "bazthedev"
         self.requires = "1.2.3"
         self.macro = macro
@@ -49,7 +49,7 @@ class Plugin:
         self.merch_item_pos_3_purchase = ((1278 * self.scale_w), (988 * self.scale_h))
         self.merch_item_pos_4_purchase = ((1512 * self.scale_w), (988 * self.scale_h))
         self.merch_item_pos_5_purchase = ((1762 * self.scale_w), (986 * self.scale_h))
-        self.aura_button_pos = ((32 * self.scale_w), (595 * self.scale_h))
+        self.aura_button_pos = ((53 * self.scale_w), (538 * self.scale_h))
         self.inv_button_pos = ((32 * self.scale_w), (692 * self.scale_h))
         self.close_pos = ((1887 * self.scale_w), (399 * self.scale_h))
         self.search_pos = ((1164 * self.scale_w), (486 * self.scale_h))

@@ -612,21 +612,21 @@
         "native_biome" : ""
     },
     "anubis" : {
-        "emb_colour" : "#000000",
-        "rarity" : "0",
-        "img_url" : "",
-        "native_biome" : ""
+        "emb_colour" : "#170706",
+        "rarity" : "8500000",
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/a/a7/AnubisC.gif/revision/latest",
+        "native_biome" : "Sand storm"
     },
     "blizzard" : {
-        "emb_colour" : "#000000",
-        "rarity" : "0",
-        "img_url" : "",
-        "native_biome" : ""
+        "emb_colour" : "#3f6c86",
+        "rarity" : "19720000",
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/0/02/Screenshot_2025-04-19_103324.png/revision/latest",
+        "native_biome" : "Snowy"
     },
     "jazz: orchestra" : {
-        "emb_colour" : "#000000",
+        "emb_colour" : "#ffb24e",
         "rarity" : "336870912",
-        "img_url" : "",
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/3/35/Orchestra_jazz.gif/revision/latest",
         "native_biome" : ""
     }
 }

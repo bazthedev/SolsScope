@@ -1548,7 +1548,7 @@ class Macro:
                 time.sleep(0.2)
                 mkey.left_click_xy_natural((954 * scale_w), (1048 * scale_h))
                 time.sleep(0.2)
-                _keyboard.type("1000")
+                _keyboard.type("600")
                 time.sleep(0.2)
                 mkey.left_click_xy_natural((1064 * scale_w), (1048 * scale_h))
                 time.sleep(0.2)

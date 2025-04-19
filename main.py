@@ -480,7 +480,7 @@ class Macro:
         self.root = root
         self.root.title("Baz's Macro")
 
-        if settings["always_on_top"]:
+        if settings.get("always_on_top", False):
             self.root.lift()
             self.root.attributes("-topmost", True)
         self.root.geometry("600x300")

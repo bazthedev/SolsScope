@@ -1,0 +1,52 @@
+{
+    "windy" : {
+        "colour" : "#91f7ff",
+        "multiplier" : 3,
+        "rare" : false
+    },
+    "snowy" : {
+        "colour" : "#c4f5f6",
+        "multiplier" : 3,
+        "rare" : false
+    },
+    "rainy" : {
+        "colour" : "#4385ff",
+        "multiplier" : 4,
+        "rare" : false
+    },
+    "hell" : {
+        "colour" : "#4a1722",
+        "multiplier" : 6,
+        "rare" : false
+    },
+    "sand storm" : {
+        "colour" : "#f4c27c",
+        "multiplier" : 4,
+        "rare" : false
+    },
+    "starfall" : {
+        "colour" : "#6784e0",
+        "multiplier" : 5,
+        "rare" : false
+    },
+    "corruption" : {
+        "colour" : "#9042ff",
+        "multiplier" : 5,
+        "rare" : false
+    },
+    "null" : {
+        "colour" : "#070910",
+        "multiplier" : 1000,
+        "rare" : false
+    },
+    "dreamspace" : {
+        "colour" : "#ea6cbc",
+        "multiplier" : 1,
+        "rare" : true
+    },
+    "glitched" : {
+        "colour" : "#64fc64",
+        "multiplier" : 1,
+        "rare" : true
+    }
+}

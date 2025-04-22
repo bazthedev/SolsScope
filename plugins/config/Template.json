@@ -1,0 +1,6 @@
+{
+    "enabled": true,
+    "message_to_log": "Template plugin reporting in!",
+    "log_interval_seconds": 30,
+    "example_option": false
+}

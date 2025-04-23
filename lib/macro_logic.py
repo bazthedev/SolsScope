@@ -8,6 +8,7 @@ import json
 import threading 
 from datetime import datetime
 import discord 
+import re
 
 try:
     import cv2
@@ -417,7 +418,7 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
 
     while not stop_event.is_set() and not sniped_event.is_set():
 
-        wait_interval = 300 
+        wait_interval = 90
         logger.write_log(f"Merchant Detection: Waiting for {wait_interval} seconds...")
         if stop_event.wait(timeout=wait_interval):
             break
@@ -442,7 +443,7 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
                 kb.press('e')
                 time.sleep(0.1)
                 kb.release('e')
-                time.sleep(settings.get("merchant_detec_wait", 2.0)) 
+                time.sleep(7) 
 
                 logger.write_log("Merchant Detection: Clicking open merchant position...")
                 mkey.left_click_xy_natural(*COORDS["open_merch_pos"])
@@ -452,89 +453,89 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
                 pag.screenshot(screenshot_path)
                 time.sleep(0.2)
 
-            logger.write_log("Merchant Detection: Processing screenshot with OCR...")
-            image = cv2.imread(screenshot_path)
-            if image is None:
-                logger.write_log("Merchant Detection Error: Failed to read screenshot file.")
-                continue
+                logger.write_log("Merchant Detection: Processing screenshot with OCR...")
+                image = cv2.imread(screenshot_path)
+                if image is None:
+                    logger.write_log("Merchant Detection Error: Failed to read screenshot file.")
+                    continue
 
-            x1, y1, x2, y2 = COORDS["merchant_box"]
-            merchant_crop = image[y1:y2, x1:x2]
-            ocr_merchant_raw = pytesseract.image_to_string(merchant_crop).strip()
+                x1, y1, x2, y2 = COORDS["merchant_box"]
+                merchant_crop = image[y1:y2, x1:x2]
+                ocr_merchant_raw = pytesseract.image_to_string(merchant_crop).strip()
 
-            ocr_merchant_clean = re.sub(r"[^a-zA-Z']", "", ocr_merchant_raw).lower()
-            detected_merchant_name = fuzzy_match_merchant(ocr_merchant_clean, POSSIBLE_MERCHANTS)
+                ocr_merchant_clean = re.sub(r"[^a-zA-Z']", "", ocr_merchant_raw).lower()
+                detected_merchant_name = fuzzy_match_merchant(ocr_merchant_clean, POSSIBLE_MERCHANTS)
 
-            if not detected_merchant_name:
-                logger.write_log(f"Merchant Detection: Could not identify merchant from OCR ('{ocr_merchant_raw}'). Skipping.")
+                if not detected_merchant_name:
+                    logger.write_log(f"Merchant Detection: Could not identify merchant from OCR ('{ocr_merchant_raw}'). Skipping.")
 
-                with keyboard_lock:
-                    mkey.left_click_xy_natural(*COORDS["close_pos"])
-                continue 
+                    with keyboard_lock:
+                        mkey.left_click_xy_natural(*COORDS["close_pos"])
+                    continue 
 
-            merchant_short_name = detected_merchant_name.split("'")[0] 
-            logger.write_log(f"Merchant Detected: {merchant_short_name} (Raw OCR: '{ocr_merchant_raw}')")
-            rnow = datetime.now()
+                merchant_short_name = detected_merchant_name.split("'")[0] 
+                logger.write_log(f"Merchant Detected: {merchant_short_name} (Raw OCR: '{ocr_merchant_raw}')")
+                rnow = datetime.now()
 
-            file_to_send = create_discord_file_from_path(screenshot_path, filename="merchant.png")
-            ping_content = ""
-            if merchant_short_name == "Mari":
-                emb_color = discord.Colour.from_rgb(255, 255, 255)
-                thumbnail_url = "https://static.wikia.nocookie.net/sol-rng/images/3/37/MARI_HIGH_QUALITYY.png/revision/latest"
-                if settings.get("ping_mari", False) and settings.get("mari_ping_id", 0) != 0:
-                     ping_content += f" <@{settings['mari_ping_id']}>"
-            elif merchant_short_name == "Jester":
-                emb_color = discord.Colour.from_rgb(176, 49, 255)
-                thumbnail_url = "https://static.wikia.nocookie.net/sol-rng/images/d/db/Headshot_of_Jester.png/revision/latest"
-                if settings.get("ping_jester", False) and settings.get("jester_ping_id", 0) != 0:
-                    ping_content += f" <@{settings['jester_ping_id']}>"
-            else:
-                emb_color = discord.Colour.default()
-                thumbnail_url = None
+                file_to_send = create_discord_file_from_path(screenshot_path, filename="merchant.png")
+                ping_content = ""
+                if merchant_short_name == "Mari":
+                    emb_color = discord.Colour.from_rgb(255, 255, 255)
+                    thumbnail_url = "https://static.wikia.nocookie.net/sol-rng/images/3/37/MARI_HIGH_QUALITYY.png/revision/latest"
+                    if settings.get("ping_mari", False) and settings.get("mari_ping_id", 0) != 0:
+                        ping_content += f" <@{settings['mari_ping_id']}>"
+                elif merchant_short_name == "Jester":
+                    emb_color = discord.Colour.from_rgb(176, 49, 255)
+                    thumbnail_url = "https://static.wikia.nocookie.net/sol-rng/images/d/db/Headshot_of_Jester.png/revision/latest"
+                    if settings.get("ping_jester", False) and settings.get("jester_ping_id", 0) != 0:
+                        ping_content += f" <@{settings['jester_ping_id']}>"
+                else:
+                    emb_color = discord.Colour.default()
+                    thumbnail_url = None
 
-            emb = discord.Embed(
-                title=f"{merchant_short_name} Spawned!",
-                description=f"A **{merchant_short_name}** has been detected.\n**Time:** <t:{str(int(time.time()))}>",
-                colour=emb_color
-            )
-            if thumbnail_url: emb.set_thumbnail(url=thumbnail_url)
-            if file_to_send: emb.set_image(url="attachment://merchant.png")
-            if ps_link_valid: emb.add_field(name="Server Invite", value=settings['private_server_link'], inline=False)
+                emb = discord.Embed(
+                    title=f"{merchant_short_name} Spawned!",
+                    description=f"A **{merchant_short_name}** has been detected.\n**Time:** <t:{str(int(time.time()))}>",
+                    colour=emb_color
+                )
+                if thumbnail_url: emb.set_thumbnail(url=thumbnail_url)
+                if file_to_send: emb.set_image(url="attachment://merchant.png")
+                if ps_link_valid: emb.add_field(name="Server Invite", value=settings['private_server_link'], inline=False)
 
-            logger.write_log("Merchant Detection: Detecting items...")
-            item_list = MARI_ITEMS if merchant_short_name == "Mari" else JESTER_ITEMS
-            manual_boxes = COORDS.get("manual_boxes", {})
-            item_ocr_results = []
-            for box_name, (x1, y1, x2, y2) in manual_boxes.items():
-                 if x1 >= image.shape[1] or y1 >= image.shape[0] or x2 <= x1 or y2 <= y1:
-                     logger.write_log(f"Warning: Invalid coordinates for {box_name}. Skipping OCR.")
-                     continue
-                 cropped = image[y1:y2, x1:x2]
-                 ocr_raw = pytesseract.image_to_string(cropped).strip().replace('\n', ' ')
-                 matched = fuzzy_match(ocr_raw, item_list, threshold=0.5)
-                 logger.write_log(f" > {box_name}: OCR='{ocr_raw}', Match='{matched}'")
-                 detected_items[box_name] = matched
-                 item_ocr_results.append(f"**{box_name}:** `{matched}` (Raw: `{ocr_raw}`)")
-            emb.add_field(name="Detected Items", value="\n".join(item_ocr_results) if item_ocr_results else "None", inline=False)
+                logger.write_log("Merchant Detection: Detecting items...")
+                item_list = MARI_ITEMS if merchant_short_name == "Mari" else JESTER_ITEMS
+                manual_boxes = COORDS.get("manual_boxes", {})
+                item_ocr_results = []
+                for box_name, (x1, y1, x2, y2) in manual_boxes.items():
+                    if x1 >= image.shape[1] or y1 >= image.shape[0] or x2 <= x1 or y2 <= y1:
+                        logger.write_log(f"Warning: Invalid coordinates for {box_name}. Skipping OCR.")
+                        continue
+                    cropped = image[y1:y2, x1:x2]
+                    ocr_raw = pytesseract.image_to_string(cropped).strip().replace('\n', ' ')
+                    matched = fuzzy_match(ocr_raw, item_list, threshold=0.5)
+                    logger.write_log(f" > {box_name}: OCR='{ocr_raw}', Match='{matched}'")
+                    detected_items[box_name] = matched
+                    item_ocr_results.append(f"**{box_name}:** `{matched}` (Raw: `{ocr_raw}`)")
+                emb.add_field(name="Detected Items", value="\n".join(item_ocr_results) if item_ocr_results else "None", inline=False)
 
-            if settings.get("mention", False) and settings.get("mention_id", 0) != 0:
-                 ping_content = f"<@{settings['mention_id']}>{ping_content}"
-            try:
-                 webhook.send(content=ping_content.strip(), embed=emb, file=file_to_send, avatar_url=WEBHOOK_ICON_URL)
-                 forward_webhook_msg(
-                     primary_webhook_url=webhook.url,
-                     secondary_urls=settings.get("SECONDARY_WEBHOOK_URLS", []),
-                     content=ping_content.strip(), embed=emb, file=file_to_send, avatar_url=WEBHOOK_ICON_URL
-                 )
-            except Exception as wh_e:
-                 logger.write_log(f"Error sending merchant detection webhook: {wh_e}")
+                if settings.get("mention", False) and settings.get("mention_id", 0) != 0:
+                    ping_content = f"<@{settings['mention_id']}>{ping_content}"
+                try:
+                    webhook.send(content=ping_content.strip(), embed=emb, file=file_to_send, avatar_url=WEBHOOK_ICON_URL)
+                    forward_webhook_msg(
+                        primary_webhook_url=webhook.url,
+                        secondary_urls=settings.get("SECONDARY_WEBHOOK_URLS", []),
+                        content=ping_content.strip(), embed=emb, file=file_to_send, avatar_url=WEBHOOK_ICON_URL
+                    )
+                except Exception as wh_e:
+                    logger.write_log(f"Error sending merchant detection webhook: {wh_e}")
 
-            purchase_settings = settings.get("auto_purchase_items_mari" if merchant_short_name == "Mari" else "auto_purchase_items_jester", {})
-            items_to_buy = {box_name: item_name for box_name, item_name in detected_items.items() if purchase_settings.get(item_name, False)}
+                purchase_settings = settings.get("auto_purchase_items_mari" if merchant_short_name == "Mari" else "auto_purchase_items_jester", {})
+                items_to_buy = {box_name: item_name for box_name, item_name in detected_items.items() if purchase_settings.get(item_name, False)}
 
-            if items_to_buy:
-                logger.write_log(f"Merchant Detection: Attempting to auto-purchase items: {list(items_to_buy.values())}")
-                with keyboard_lock:
+                if items_to_buy:
+                    logger.write_log(f"Merchant Detection: Attempting to auto-purchase items: {list(items_to_buy.values())}")
+                    
                     for box_name, item_name in items_to_buy.items():
                         try:
 
@@ -573,7 +574,6 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
                             logger.write_log(f"Error auto-purchasing {item_name}: {buy_e}")
                         time.sleep(1) 
 
-            with keyboard_lock:
                 mkey.left_click_xy_natural(*COORDS["close_pos"])
                 time.sleep(0.2)
 

@@ -151,7 +151,7 @@ def aura_detection(settings: dict, webhook, stop_event: threading.Event, keyboar
                 current_biome_key = current_biome.lower()
                 base_rarity_str = aura_data.get("rarity", "0")
 
-                description = f"**Rolled Aura:** {current_aura}\\n"
+                description = f"**Rolled Aura:** {current_aura}\n"
 
                 try:
                     base_rarity = int(base_rarity_str)
@@ -161,20 +161,20 @@ def aura_detection(settings: dict, webhook, stop_event: threading.Event, keyboar
                          biome_multiplier = biomes[current_biome_key].get("multiplier", 1.0)
                          if biome_multiplier > 0:
                              effective_rarity = int(base_rarity / biome_multiplier)
-                             description += f"**Rarity:** 1 / {effective_rarity:,} (in native biome: {current_biome})\\n"
+                             description += f"**Rarity:** 1 / {effective_rarity:,} (in native biome: {current_biome})\n"
                          else:
-                             description += f"**Rarity:** 1 / {base_rarity:,} (Base)\\n" 
+                             description += f"**Rarity:** 1 / {base_rarity:,} (Base)\n" 
                     else:
-                         description += f"**Rarity:** 1 / {base_rarity:,} (Base)\\n"
+                         description += f"**Rarity:** 1 / {base_rarity:,} (Base)\n"
 
-                    description += f"**Time:** {rnow.strftime('%d/%m/%Y %H:%M:%S')}"
+                    description += f"**Time:** <t:{str(int(time.time()))}>"
                     min_ping_val = int(settings.get("minimum_ping", "0"))
                     should_ping = settings.get("mention", False) and settings.get("mention_id", 0) != 0 and base_rarity >= min_ping_val
 
                 except ValueError:
                     logger.write_log(f"Could not parse rarity '{base_rarity_str}' for {current_aura}.")
-                    description += f"**Rarity:** {base_rarity_str} (Raw)\\n"
-                    description += f"**Time:** {rnow.strftime('%d/%m/%Y %H:%M:%S')}"
+                    description += f"**Rarity:** {base_rarity_str} (Raw)\n"
+                    description += f"**Time:** <t:{str(int(time.time()))}>"
                     should_ping = False 
 
                 emb_color_hex = aura_data.get("emb_colour", "#FFFFFF")
@@ -310,7 +310,7 @@ def biome_detection(settings: dict, webhook, stop_event: threading.Event, sniped
                 emb = discord.Embed(
                     title=f"Biome Ended: {previous_biome}",
 
-                    description=f"Biome **{previous_biome}** has ended.\\n**Time:** {rnow.strftime('%d/%m/%Y %H:%M:%S')}",
+                    description=f"Biome **{previous_biome}** has ended.\n**Time:** <t:{str(int(time.time()))}>",
                     colour=discord.Colour.from_rgb(*emb_rgb)
                 )
                 try:
@@ -333,7 +333,7 @@ def biome_detection(settings: dict, webhook, stop_event: threading.Event, sniped
                     emb_color_hex = new_biome_data.get("colour", "#808080")
                     emb_rgb = hex2rgb(emb_color_hex)
 
-                    description = f"Biome **{current_biome}** has started!\\n**Time:** {rnow.strftime('%d/%m/%Y %H:%M:%S')}"
+                    description = f"Biome **{current_biome}** has started!\n**Time:** <t:{str(int(time.time()))}>"
 
                     emb = discord.Embed(
                         title=f"Biome Started: {current_biome}",
@@ -494,7 +494,7 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
 
             emb = discord.Embed(
                 title=f"{merchant_short_name} Spawned!",
-                description=f"A **{merchant_short_name}** has been detected.\\n**Time:** {rnow.strftime('%d/%m/%Y %H:%M:%S')}",
+                description=f"A **{merchant_short_name}** has been detected.\n**Time:** <t:{str(int(time.time()))}>",
                 colour=emb_color
             )
             if thumbnail_url: emb.set_thumbnail(url=thumbnail_url)

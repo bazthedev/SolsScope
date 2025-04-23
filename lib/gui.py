@@ -26,7 +26,7 @@ from PyQt6.QtGui import QIcon, QPixmap, QTextCursor
 from constants import (
     MACROPATH, LOCALVERSION, WEBHOOK_ICON_URL, STARTUP_MSGS,
     GENERAL_KEYS, AURAS_KEYS, BIOMES_KEYS, MERCHANT_KEYS,
-    AUTOCRAFT_KEYS, SNIPER_KEYS, OTHER_KEYS, COORDS, DEFAULTSETTINGS
+    AUTOCRAFT_KEYS, SNIPER_KEYS, OTHER_KEYS, COORDS, DEFAULTSETTINGS, PATH_KEYS
 )
 from utils import (
     get_logger, set_global_logger, Logger, format_key, 
@@ -428,7 +428,7 @@ class MainWindow(QMainWindow):
         layout = QVBoxLayout(credits_tab)
         layout.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignHCenter) 
 
-        title_label = QLabel("Created by Baz")
+        title_label = QLabel("Created by Baz and Cresqnt")
         font = title_label.font()
         font.setPointSize(12)
         font.setBold(True)
@@ -439,6 +439,8 @@ class MainWindow(QMainWindow):
 
         image_label = QLabel()
         image_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        image_label2 = QLabel()
+        image_label2.setAlignment(Qt.AlignmentFlag.AlignCenter)
         if PIL_AVAILABLE:
             try:
                 image_path = os.path.join(MACROPATH, "baz.png")
@@ -472,10 +474,46 @@ class MainWindow(QMainWindow):
             except Exception as e:
                 self.logger.write_log(f"Error processing credits image: {e}")
                 image_label.setText("(Image unavailable)")
+            try:
+                image_path = os.path.join(MACROPATH, "cresqnt.png")
+                img_url = "https://raw.githubusercontent.com/bazthedev/SolsScope/main/img/cresqnt.png"
+
+                if not os.path.exists(image_path):
+                    self.logger.write_log(f"Downloading credits image from {img_url}...")
+                    try:
+
+                        with urllib.request.urlopen(img_url, timeout=10) as response, open(image_path, 'wb') as out_file:
+                            if response.status == 200:
+                                shutil.copyfileobj(response, out_file)
+                                self.logger.write_log("Credits image downloaded.")
+                            else:
+                                self.logger.write_log(f"Failed to download image: Status {response.status}")
+                                raise Exception(f"HTTP Error {response.status}")
+                    except Exception as dl_error:
+                         self.logger.write_log(f"Error downloading credits image: {dl_error}")
+
+                         raise dl_error 
+
+                pixmap = QPixmap(image_path)
+                if not pixmap.isNull():
+
+                    scaled_pixmap = pixmap.scaled(100, 100, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+                    image_label2.setPixmap(scaled_pixmap)
+                else:
+                    self.logger.write_log(f"Failed to load credits image from path: {image_path}")
+                    image_label2.setText("(Failed to load image)")
+
+            except Exception as e:
+                self.logger.write_log(f"Error processing credits image: {e}")
+                image_label2.setText("(Image unavailable)")
         else:
             image_label.setText("(Install Pillow library to see images)")
+            image_label2.setText("(Install Pillow library to see images)")
 
         layout.addWidget(image_label)
+        layout.addSpacing(15)
+
+        layout.addWidget(image_label2)
         layout.addSpacing(15)
 
         separator = QFrame()
@@ -579,7 +617,7 @@ class MainWindow(QMainWindow):
         changes_detected = False 
 
         tab_info = { "General": GENERAL_KEYS, "Auras": AURAS_KEYS, "Biomes": BIOMES_KEYS,
-                     "Merchant": MERCHANT_KEYS, "Auto Craft": AUTOCRAFT_KEYS,
+                     "Merchant": MERCHANT_KEYS, "Path" : PATH_KEYS, "Auto Craft": AUTOCRAFT_KEYS,
                      "Sniper": SNIPER_KEYS, "Other": OTHER_KEYS }
 
         for i in range(self.tab_widget.count()):
@@ -1043,7 +1081,7 @@ class MainWindow(QMainWindow):
                 try:
                     plugin_instance.config = plugin_instance.load_or_create_config() if hasattr(plugin_instance, "load_or_create_config") else {}
                 except Exception as config_e:
-                     self.logger.write_log(f" > Error loading config for plugin '{plugin_display_name}': {config_e}", level="WARN")
+                     self.logger.write_log(f" > Error loading  config for plugin '{plugin_display_name}': {config_e}", level="WARN")
                      plugin_instance.config = {} 
 
                 self.logger.write_log(f"Creating UI tab for plugin: {plugin_display_name}")

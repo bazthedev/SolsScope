@@ -58,8 +58,6 @@ def forward_webhook_msg(primary_webhook_url: str, secondary_urls: list, *, file=
             _webhook.send(**current_kwargs)
             logger.write_log(f"Forwarded webhook message to: {webhook_url[:30]}...")
 
-        except discord.errors.InvalidArgument:
-            logger.write_log(f"Invalid secondary webhook URL: {webhook_url}")
         except discord.errors.NotFound:
             logger.write_log(f"Secondary webhook not found: {webhook_url}")
         except discord.errors.HTTPException as e:

@@ -1,3 +1,10 @@
+"""
+SolsScope/Baz's Macro
+Created by Baz and Cresqnt
+v1.2.5
+Support server: https://discord.gg/6cuCu6ymkX
+"""
+
 import sys
 import os
 sys.path.insert(1, os.path.expandvars(r"%localappdata%/SolsScope/lib"))
@@ -229,7 +236,7 @@ def join_private_server_link(server_code):
         return False
     try:
 
-        final_link = f"roblox://placeID={PLACE_ID}&linkCode={server_code}"
+        final_link = f"roblox://placeID={PLACE_ID}^&linkCode={server_code}"
         logger.write_log(f"Attempting to join server with link code: {server_code[:5]}... (using {final_link[:30]}...)")
 
         subprocess.Popen(["start", "", final_link], shell=True) 

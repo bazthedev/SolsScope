@@ -1,3 +1,10 @@
+"""
+SolsScope/Baz's Macro
+Created by Baz and Cresqnt
+v1.2.5
+Support server: https://discord.gg/6cuCu6ymkX
+"""
+
 import sys
 import os
 sys.path.insert(1, os.path.expandvars(r"%localappdata%/SolsScope/lib"))
@@ -153,6 +160,8 @@ class MainWindow(QMainWindow):
         self.create_tabs()
 
         self.logger.write_log("GUI Logger initialized (PyQt).")
+
+        self.plugin_settings = {}
 
         self.load_plugins() 
 
@@ -358,8 +367,10 @@ class MainWindow(QMainWindow):
 
     def add_merchant_tab_extras(self, layout):
         """Adds Tesseract status and download button to the Merchant tab layout."""
-        status_text = "Tesseract OCR: Installed" if TESSERACT_AVAILABLE else "Tesseract OCR: Not Installed (Merchant Detection Disabled)"
+        status_text = "Tesseract OCR: Installed" if TESSERACT_AVAILABLE and (shutil.which("tesseract") is not None or os.path.exists(r'C:\Program Files\Tesseract-OCR')) else "Tesseract OCR: Not Installed (Merchant Detection Disabled)"
         status_color = "green" if TESSERACT_AVAILABLE else "red"
+        if TESSERACT_AVAILABLE and shutil.which("tesseract") is None and os.path.exists(r'C:\Program Files\Tesseract-OCR'):
+            pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 
         ocr_label = QLabel(status_text)
         ocr_label.setStyleSheet(f"color: {status_color};")
@@ -611,15 +622,17 @@ class MainWindow(QMainWindow):
 
     def save_settings(self):
         """Gathers updated values from all tabs (including plugins) and saves them.
-           Returns a tuple: (save_successful: bool, changes_detected: bool)
+        Returns a tuple: (save_successful: bool, changes_detected: bool)
         """
         self.logger.write_log("Gathering settings from UI (PyQt)...")
         full_updated_values = {}
         changes_detected = False 
 
-        tab_info = { "General": GENERAL_KEYS, "Auras": AURAS_KEYS, "Biomes": BIOMES_KEYS,
-                     "Merchant": MERCHANT_KEYS, "Path" : PATH_KEYS, "Auto Craft": AUTOCRAFT_KEYS,
-                     "Sniper": SNIPER_KEYS, "Other": OTHER_KEYS }
+        tab_info = {
+            "General": GENERAL_KEYS, "Auras": AURAS_KEYS, "Biomes": BIOMES_KEYS,
+            "Merchant": MERCHANT_KEYS, "Path": PATH_KEYS, "Auto Craft": AUTOCRAFT_KEYS,
+            "Sniper": SNIPER_KEYS, "Other": OTHER_KEYS
+        }
 
         for i in range(self.tab_widget.count()):
             tab_name = self.tab_widget.tabText(i)
@@ -628,25 +641,28 @@ class MainWindow(QMainWindow):
                 original_subset = {}
 
                 if tab_name in tab_info:
+                    # Standard tab
                     tab_keys = tab_info[tab_name]
-                    original_subset = {k: self.original_settings.get(k, DEFAULTSETTINGS.get(k)) for k in tab_keys if k != "__version__"}
+                    original_subset = {
+                        k: self.original_settings.get(k, DEFAULTSETTINGS.get(k))
+                        for k in tab_keys if k != "__version__"
+                    }
+                    updated_subset = self.get_updated_values(original_subset, tab_entries_dict)
+                    if updated_subset:
+                        full_updated_values.update(updated_subset)
+                        changes_detected = True
                 else:
-
-                    plugin = next((p for p in self.plugins if hasattr(p, 'name') and p.name == tab_name), None)
+                    # Plugin tab
+                    plugin = next((p for p in self.plugins if getattr(p, 'name', None) == tab_name), None)
                     if plugin and hasattr(plugin, 'config'):
-
-                         original_subset = plugin.config
-                    else:
-                        self.logger.write_log(f"Skipping settings save for tab '{tab_name}': Not found in tab_info or plugin config.")
-                        continue 
-
-                updated_subset = self.get_updated_values(original_subset, tab_entries_dict)
-                if updated_subset:
-                     full_updated_values.update(updated_subset)
-                     changes_detected = True 
+                        updated_subset = self.get_updated_values(plugin.config, tab_entries_dict)
+                        if updated_subset:
+                            plugin.config.update(updated_subset)
+                            changes_detected = True
+                    continue  # Skip merging plugin config into full_updated_values
 
             elif tab_name not in ["Logs", "Credits"]:
-                 self.logger.write_log(f"Warning: Tab '{tab_name}' found in UI but not in tab_entries.")
+                self.logger.write_log(f"Warning: Tab '{tab_name}' found in UI but not in tab_entries.")
 
         if not changes_detected:
             self.logger.write_log("No setting changes detected.")
@@ -668,13 +684,24 @@ class MainWindow(QMainWindow):
         validated_settings, validation_errors = validate_settings(current_file_settings)
 
         if validation_errors:
-             self.logger.write_log(f"Settings validation issues found: {validation_errors}")
-
-             QMessageBox.warning(self, "Validation Warning", f"Settings validation found issues (check logs). Saving anyway.\nIssues: {validation_errors}")
+            self.logger.write_log(f"Settings validation issues found: {validation_errors}")
+            QMessageBox.warning(
+                self, "Validation Warning",
+                f"Settings validation found issues (check logs). Saving anyway.\nIssues: {validation_errors}"
+            )
 
         if update_settings(validated_settings):
+            for plugin in self.plugins:
+                if hasattr(plugin, 'save_config'):
+                    try:
+                        plugin.save_config()
+                        self.logger.write_log(f"Plugin config for '{plugin.name}' saved.")
+                    except Exception as e:
+                        self.logger.write_log(f"Error saving config for plugin '{plugin.name}': {e}", level="ERROR")
+
             self.logger.write_log("Settings saved successfully.")
             QMessageBox.information(self, "Save Settings", "Settings saved successfully!")
+
             self.settings = validated_settings
             self.original_settings = self.settings.copy()
 
@@ -685,15 +712,13 @@ class MainWindow(QMainWindow):
                         self.logger.write_log(f"Updated config for plugin '{plugin.name}'.")
                     except Exception as e:
                         self.logger.write_log(f"Error updating config for plugin '{plugin.name}': {e}")
-                elif hasattr(plugin, 'config'):
-
-                     plugin.config.update(full_updated_values) 
 
             return True, True 
         else:
             self.logger.write_log("Failed to save settings to file.")
             QMessageBox.critical(self, "Save Settings Error", "Failed to save settings. Check logs.")
-            return False, True 
+            return False, True
+
 
     def start_macro(self):
         if self.running:
@@ -823,12 +848,16 @@ class MainWindow(QMainWindow):
 
                 raise ValueError("No items selected for auto-craft")
             if not self.settings.get("skip_auto_mode_warning"):
-                QMessageBox.warning(self, "Auto Craft Mode", "Auto Craft mode is ON. Some features will be disabled. Ensure you are near the cauldron.")
+                self.logger.write_log("Auto Craft mode is ON. Some features will be disabled. Ensure you are near the cauldron.")
 
             targets = {
                 "Auto Craft Logic": (auto_craft, [self.settings, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.mouse_controller]),
                 "Aura Detection": (aura_detection, [self.settings, self.webhook, self.stop_event, self.keyboard_lock, self.mkey, self.keyboard_controller]) if not self.settings.get("disable_aura_detection") else None,
                 "Biome Detection": (biome_detection, [self.settings, self.webhook, self.stop_event, self.sniped_event]) if not self.settings.get("disable_biome_detection") else None,
+                "Auto Biome Randomizer": (auto_br, [self.settings, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller]) if self.settings.get("auto_biome_randomizer") else None,
+                "Auto Strange Controller": (auto_sc, [self.settings, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller]) if self.settings.get("auto_strange_controller") else None,
+                "Inventory Screenshots": (inventory_screenshot, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey]) if self.settings.get("periodic_screenshots", {}).get("inventory") else None,
+                "Storage Screenshots": (storage_screenshot, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey]) if self.settings.get("periodic_screenshots", {}).get("storage") else None,
             }
         else: 
             self.logger.write_log("Starting in Normal Mode.")
@@ -872,7 +901,7 @@ class MainWindow(QMainWindow):
         start_desc = "" 
 
         emb = discord.Embed(
-            title="🚀 Macro Started",
+            title="Macro Started",
             description=start_desc, 
             colour=discord.Colour.green(),
             timestamp=datetime.now() 
@@ -883,17 +912,19 @@ class MainWindow(QMainWindow):
         if is_autocraft_mode:
             enabled_crafts = [item for item, enabled in self.settings.get("auto_craft_item", {}).items() if enabled]
             craft_list = ', '.join(enabled_crafts) if enabled_crafts else "None Selected"
-            emb.add_field(name="Crafting", value=craft_list, inline=False) 
+            emb.add_field(name="Crafting", value=craft_list, inline=False)
         else:
             try:
                 aura = get_latest_equipped_aura()
                 emb.add_field(name="Current Aura", value=aura if aura else "Unknown", inline=True)
-            except Exception:
+            except Exception as e:
+                self.logger.write_log(f"Error sending start aura notification: {e}")
                 emb.add_field(name="Current Aura", value="Unknown", inline=True) 
             try:
                 biome = get_latest_hovertext()
                 emb.add_field(name="Current Biome", value=biome if biome else "Unknown", inline=True)
             except Exception:
+                self.logger.write_log(f"Error sending start biome notification: {e}")
                 emb.add_field(name="Current Biome", value="Unknown", inline=True) 
 
         try:
@@ -966,7 +997,7 @@ class MainWindow(QMainWindow):
         self.stop_event.clear() 
 
         emb = discord.Embed(
-            title="🛑 Macro Stopped",
+            title="Macro Stopped",
             colour=discord.Colour.red(),
             timestamp=datetime.now() 
         )
@@ -1074,16 +1105,20 @@ class MainWindow(QMainWindow):
                     plugin_instance.autocraft_compatible = plugin_autocraft_compatible
                     plugin_instance.file_path = abs_plugin_file
                     plugin_instance.entries = {}
+                    self.plugin_settings[plugin_instance.name] = plugin_instance.config
                 except Exception as init_e:
                     self.logger.write_log(f" > Error initializing plugin '{plugin_display_name}': {init_e}", level="ERROR")
                     continue
 
                 self.logger.write_log(f"Loading config for plugin: {plugin_display_name}")
                 try:
-                    plugin_instance.config = plugin_instance.load_or_create_config() if hasattr(plugin_instance, "load_or_create_config") else {}
+                    if hasattr(plugin_instance, "load_or_create_config"):
+                        plugin_instance.config = plugin_instance.load_or_create_config()
+                    else:
+                        plugin_instance.config = {}
                 except Exception as config_e:
-                     self.logger.write_log(f" > Error loading  config for plugin '{plugin_display_name}': {config_e}", level="WARN")
-                     plugin_instance.config = {} 
+                    self.logger.write_log(f" > Error loading  config for plugin '{plugin_display_name}': {config_e}", level="WARN")
+                    plugin_instance.config = {} 
 
                 self.logger.write_log(f"Creating UI tab for plugin: {plugin_display_name}")
                 plugin_tab = QWidget()

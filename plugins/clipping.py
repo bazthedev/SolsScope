@@ -44,6 +44,7 @@ class Plugin:
 
         self.LOG_FILE_PATH = self.MACROPATH + "\\solsscope.log"
         self.AURA_REGEX = re.compile(r"\[(?P<timestamp>[\d\-:\s]+)\s-\sINFO\] New aura detected: (?P<name>.+)")
+        self.BIOME_REGEX = re.compile(r"Biome change detected: (\w+) -> (?P<biome>\w+)")
         
         macro.logger.write_log(f"[{self.name}] Plugin initialized (v{self.version})")
 
@@ -214,10 +215,13 @@ class Plugin:
 
                     line = line.strip()
 
-                    if "GLITCHED has started" in line or "DREAMSPACE has started" in line:
-                        time.sleep(5)
-                        self.execute_key_combo(combo_list)
-                        continue
+                    biome_match = self.BIOME_REGEX.search(line)
+                    
+                    if biome_match:
+                        if match.group("biome").upper() == "GLITCHED" or match.group("biome").upper() == "DREAMSPACE":
+                            time.sleep(5)
+                            self.execute_key_combo(combo_list)
+                            continue
 
                     if "Rolled Aura:" in line:
                         block = [line]

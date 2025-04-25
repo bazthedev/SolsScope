@@ -8,321 +8,249 @@ Support server: https://discord.gg/6cuCu6ymkX
 import sys
 import os
 sys.path.insert(1, os.path.expandvars(r"%localappdata%/SolsScope/lib"))
-import json
-import requests
-from tkinter import messagebox
+import psutil
+import time
+import tkinter as tk
+from difflib import SequenceMatcher
+import mousekey as mk 
+import io 
+import discord
+import datetime
+import codecs
 
-from constants import (
-    MACROPATH, DEFAULTSETTINGS, VALIDSETTINGSKEYS,
-    ACCEPTEDPOTIONS, ACCEPTEDAUTOPOP 
-)
-from utils import get_logger
+GLOBAL_LOGGER = None
 
-SETTINGS_PATH = os.path.join(MACROPATH, "settings.json")
-LIB_PATH = os.path.join(MACROPATH, "lib")
-AURAS_PATH = os.path.join(MACROPATH, "auras_new.json")
-BIOMES_PATH = os.path.join(MACROPATH, "biomes.json")
+def set_global_logger(logger_instance):
+    global GLOBAL_LOGGER
+    GLOBAL_LOGGER = logger_instance
 
-def get_settings_path():
-    return SETTINGS_PATH
+def get_logger():
+    """Returns the globally accessible logger instance."""
 
-def get_lib_path():
-    return LIB_PATH
+    if GLOBAL_LOGGER is None:
+        print("WARNING: get_logger() called before logger was set!")
 
-def get_auras_path():
-    return AURAS_PATH
+        class DummyLogger:
+            def write_log(self, message):
+                print(f"[DUMMY LOG]: {message}")
+        return DummyLogger()
+    return GLOBAL_LOGGER
 
-def get_biomes_path():
-    return BIOMES_PATH
-
-def get_auras():
-    logger = get_logger()
-    logger.write_log("Downloading Aura List...")
-    try:
-
-        dl = requests.get("https://raw.githubusercontent.com/bazthedev/SolsScope/main/auras_new.json", timeout=10)
-        dl.raise_for_status() 
-        with open(AURAS_PATH, "wb") as f:
-            f.write(dl.content)
-        logger.write_log("Downloaded Aura List successfully.")
-        return True
-    except requests.exceptions.Timeout:
-        logger.write_log("Failed to download Aura List: Request timed out.")
-    except requests.exceptions.RequestException as e:
-        logger.write_log(f"Failed to download Aura List: {e}")
-    except OSError as e:
-        logger.write_log(f"Failed to save Aura List: {e}")
-    return False
-
-def get_biomes():
-    logger = get_logger()
-    logger.write_log("Downloading Biome List...")
-    try:
-        dl = requests.get("https://raw.githubusercontent.com/bazthedev/SolsScope/main/biomes.json", timeout=10)
-        dl.raise_for_status()
-        with open(BIOMES_PATH, "wb") as f:
-            f.write(dl.content)
-        logger.write_log("Downloaded Biome List successfully.")
-        return True
-    except requests.exceptions.Timeout:
-        logger.write_log("Failed to download Biome List: Request timed out.")
-    except requests.exceptions.RequestException as e:
-        logger.write_log(f"Failed to download Biome List: {e}")
-    except OSError as e:
-        logger.write_log(f"Failed to save Biome List: {e}")
-    return False
-
-def load_settings():
-    logger = get_logger()
-    if not os.path.exists(SETTINGS_PATH):
-        logger.write_log(f"Settings file not found at {SETTINGS_PATH}. Creating default settings.")
-        try:
-            with open(SETTINGS_PATH, "w", encoding='utf-8') as f:
-                json.dump(DEFAULTSETTINGS, f, indent=4)
-            logger.write_log("Default settings file created.")
-            return DEFAULTSETTINGS.copy() 
-        except OSError as e:
-            logger.write_log(f"Error creating default settings file: {e}")
-            messagebox.showerror("Settings Error", f"Could not create settings file: {e}")
-            sys.exit(1) 
-        except Exception as e:
-            logger.write_log(f"Unexpected error creating settings file: {e}")
-            messagebox.showerror("Settings Error", f"Unexpected error creating settings file: {e}")
-            sys.exit(1)
-
-    try:
-        with open(SETTINGS_PATH, "r", encoding='utf-8') as f:
-            settings = json.load(f)
-        logger.write_log("Settings loaded successfully.")
-
-        validated_settings, validation_needed = validate_settings(settings)
-        if validation_needed:
-            logger.write_log("Settings validation resulted in changes. Resaving.")
-            update_settings(validated_settings) 
-            return validated_settings
-        return settings
-    except json.JSONDecodeError:
-        logger.write_log("Settings file is corrupt. Attempting to reset.")
-        reset_settings = messagebox.askyesno("Settings Error", "Your settings file appears to be corrupt. Would you like to reset it to defaults?")
-        if reset_settings:
+class Logger:
+    def __init__(self, log_file_path=None):
+        self.log_file_path = log_file_path
+        if self.log_file_path:
             try:
-                os.remove(SETTINGS_PATH)
-                logger.write_log("Removed corrupt settings file.")
+                with codecs.open(self.log_file_path, "a", encoding='utf-8') as log_file:
+                    log_file.write("\n\n--------------------------- Starting new instance of SolsScope ---------------------------\n\n")
+            except Exception as e:
+                print(f"Error initializing log file {self.log_file_path}: {e}")
+                self.log_file_path = None 
 
-                return load_settings()
-            except OSError as e:
-                logger.write_log(f"Failed to delete corrupt settings file: {e}")
-                messagebox.showerror("Settings Error", f"Failed to delete corrupt settings file: {e}")
-                sys.exit(1)
-        else:
-            logger.write_log("User chose not to reset corrupt settings. Exiting.")
-            messagebox.showinfo("Settings Error", "Macro cannot run with corrupt settings.")
-            sys.exit(1)
-    except OSError as e:
-        logger.write_log(f"Error reading settings file: {e}")
-        messagebox.showerror("Settings Error", f"Could not read settings file: {e}")
-        sys.exit(1)
-    except Exception as e:
-        logger.write_log(f"Unexpected error loading settings: {e}")
-        messagebox.showerror("Settings Error", f"Unexpected error loading settings: {e}")
-        sys.exit(1)
+    def write_log(self, message):
+        try:
+            message = str(message)
+        except Exception:
+            print("Failed to convert log message to string.")
+            return
 
-def update_settings(settings_dict):
-    logger = get_logger()
+        if self.log_file_path:
+            try:
+                with codecs.open(self.log_file_path, "a", encoding='utf-8') as log_file:
+                    timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    log_message = f"[{timestamp}] {message}"
+                    log_file.write(log_message)
+            except Exception as e:
+                print(f"Error writing to log file {self.log_file_path}: {e}")
+
+def rgb2hex(r,g,b):
+    return "#{:02x}{:02x}{:02x}".format(r,g,b)
+
+def hex2rgb(_hex):
+    _hex = _hex.lstrip("#")
+    if len(_hex) != 6:
+        get_logger().write_log(f"Invalid hex color format: '{_hex}'. Returning black.")
+        return (0, 0, 0) 
     try:
-        with open(SETTINGS_PATH, "w", encoding='utf-8') as f:
-            json.dump(settings_dict, f, indent=4)
-        logger.write_log("Settings updated successfully.")
-        return True
-    except OSError as e:
-        logger.write_log(f"Error writing settings file: {e}")
-        messagebox.showerror("Settings Save Error", f"Could not save settings: {e}")
-    except TypeError as e:
-        logger.write_log(f"Error saving settings (data type issue): {e}")
-        messagebox.showerror("Settings Save Error", f"Data type error saving settings: {e}")
-    except Exception as e:
-        logger.write_log(f"Unexpected error saving settings: {e}")
-        messagebox.showerror("Settings Save Error", f"Unexpected error saving settings: {e}")
+        return tuple(int(_hex[i:i+2], 16) for i in (0, 2, 4))
+    except ValueError:
+         get_logger().write_log(f"Invalid hex color value: '{_hex}'. Returning black.")
+         return (0, 0, 0)
+
+def fuzzy_match(text, known_items, threshold=0.5):
+    """Finds the best match for text within a list of known_items using sequence matching."""
+    best_match = None
+    best_score = 0
+    text_lower = text.lower()
+    for item in known_items:
+        item_lower = item.lower()
+        score = SequenceMatcher(None, text_lower, item_lower).ratio()
+        if score > best_score:
+            best_score = score
+            best_match = item
+
+    if best_score >= threshold:
+        return best_match
+
+    get_logger().write_log(f"Fuzzy match for '{text}' below threshold ({best_score:.2f} < {threshold}). No match found.")
+    return text 
+
+def fuzzy_match_merchant(text, options, threshold=0.6):
+    """Similar to fuzzy_match, specifically for merchant names."""
+    best_match = None
+    best_score = 0
+    text_lower = text.lower()
+    for name in options:
+        name_lower = name.lower()
+        score = SequenceMatcher(None, text_lower, name_lower).ratio()
+        if score > best_score:
+            best_match = name
+            best_score = score
+    return best_match if best_score >= threshold else None
+
+def parse_version(v):
+    """Converts a version string (e.g., "1.2.3") into a tuple of integers for comparison."""
+    try:
+        return tuple(map(int, v.split('.')))
+    except ValueError:
+        get_logger().write_log(f"Invalid version format: '{v}'. Returning (0,0,0).")
+        return (0, 0, 0) 
+
+def exists_procs_by_name(name):
+    """Checks if a process with the given name exists."""
+    proc_name = name.lower()
+    for p in psutil.process_iter(['name']):
+        try:
+            if p.info['name'].lower() == proc_name:
+                return True
+        except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+            continue 
     return False
 
-def validate_settings(current_settings):
-    logger = get_logger()
-    validated_settings = current_settings.copy()
-    needs_update = False
-    keys_to_remove = []
-    keys_added = []
-
-    for key in validated_settings.keys():
-        if key not in VALIDSETTINGSKEYS:
-            keys_to_remove.append(key)
-            logger.write_log(f"Settings Validation: Found invalid key '{key}'. Marked for removal.")
-            needs_update = True
-
-    for key in keys_to_remove:
-        del validated_settings[key]
-
-    for default_key in VALIDSETTINGSKEYS:
-        if default_key not in validated_settings:
-            validated_settings[default_key] = DEFAULTSETTINGS[default_key]
-            keys_added.append(default_key)
-            logger.write_log(f"Settings Validation: Missing key '{default_key}'. Added default value.")
-            needs_update = True
-
-    try:
-        validated_settings["auto_use_items_in_glitch"], glitch_pop_updated = _validate_auto_pop_structure(validated_settings.get("auto_use_items_in_glitch", {}))
-        validated_settings["auto_use_items_in_dreamspace"], dream_pop_updated = _validate_auto_pop_structure(validated_settings.get("auto_use_items_in_dreamspace", {}))
-        if glitch_pop_updated or dream_pop_updated:
-             logger.write_log("Settings Validation: Auto pop item structure updated.")
-             needs_update = True
-    except Exception as e:
-         logger.write_log(f"Error during auto pop validation: {e}")
-
-    try:
-        validated_settings["auto_craft_item"], craft_updated = _validate_auto_craft_structure(validated_settings.get("auto_craft_item", {}))
-        if craft_updated:
-            logger.write_log("Settings Validation: Auto craft item structure updated.")
-            needs_update = True
-    except Exception as e:
-         logger.write_log(f"Error during auto craft validation: {e}")
-
-    try:
-        if os.path.exists(BIOMES_PATH):
-             with open(BIOMES_PATH, "r", encoding='utf-8') as bf:
-                 biomes_data = json.load(bf)
-             validated_settings["biomes"], biomes_updated = _validate_biome_toggles(validated_settings.get("biomes", {}), biomes_data)
-             if biomes_updated:
-                 logger.write_log("Settings Validation: Biome toggle structure updated.")
-                 needs_update = True
-        else:
-            logger.write_log("Skipping biome toggle validation: Biomes data file not found.")
-    except (json.JSONDecodeError, OSError, KeyError) as e:
-         logger.write_log(f"Error during biome toggle validation: {e}")
-
-    try:
-        validated_settings["ROBLOSECURITY_KEY"], roblosec_updated = _validate_roblo_security(validated_settings.get("ROBLOSECURITY_KEY", ""))
-        if roblosec_updated:
-            logger.write_log("Settings Validation: ROBLOSECURITY format corrected.")
-            needs_update = True
-    except Exception as e:
-        logger.write_log(f"Error during ROBLOSECURITY validation: {e}")
-
-    if needs_update:
-        logger.write_log("Settings validation complete. Changes were made.")
-    else:
-         logger.write_log("Settings validation complete. No changes needed.")
-
-    return validated_settings, needs_update
-
-def _validate_auto_pop_structure(pop_settings):
-    logger = get_logger()
-    validated_pop = pop_settings.copy()
-    needs_update = False
-    for item, default_data in ACCEPTEDAUTOPOP.items():
-        if item not in validated_pop:
-            validated_pop[item] = default_data
-            logger.write_log(f"Auto Pop Validation: Added missing item '{item}'.")
-            needs_update = True
-        elif not isinstance(validated_pop[item], dict) or "use" not in validated_pop[item] or "amount" not in validated_pop[item]:
-            logger.write_log(f"Auto Pop Validation: Correcting structure for item '{item}'.")
-            validated_pop[item] = default_data 
-            needs_update = True
-
-    keys_to_remove = [key for key in validated_pop if key not in ACCEPTEDAUTOPOP]
-    if keys_to_remove:
-         for key in keys_to_remove:
-             del validated_pop[key]
-             logger.write_log(f"Auto Pop Validation: Removed invalid item '{key}'.")
-             needs_update = True
-
-    return validated_pop, needs_update
-
-def _validate_auto_craft_structure(craft_settings):
-    logger = get_logger()
-    validated_craft = craft_settings.copy()
-    needs_update = False
-    for potion in ACCEPTEDPOTIONS:
-        if potion not in validated_craft:
-            validated_craft[potion] = DEFAULTSETTINGS["auto_craft_item"].get(potion, False) 
-            logger.write_log(f"Auto Craft Validation: Added missing potion '{potion}'.")
-            needs_update = True
-        elif not isinstance(validated_craft[potion], bool):
-             logger.write_log(f"Auto Craft Validation: Correcting type for potion '{potion}'.")
-             validated_craft[potion] = DEFAULTSETTINGS["auto_craft_item"].get(potion, False) 
-             needs_update = True
-
-    keys_to_remove = [key for key in validated_craft if key not in ACCEPTEDPOTIONS]
-    if keys_to_remove:
-         for key in keys_to_remove:
-             del validated_craft[key]
-             logger.write_log(f"Auto Craft Validation: Removed invalid potion '{key}'.")
-             needs_update = True
-
-    return validated_craft, needs_update
-
-def _validate_biome_toggles(biome_settings, biomes_data):
-    logger = get_logger()
-    validated_biomes = biome_settings.copy()
-    needs_update = False
-    valid_biome_names = list(biomes_data.keys()) 
-
-    for biome_name in valid_biome_names:
-        if biome_name not in validated_biomes:
-            validated_biomes[biome_name] = DEFAULTSETTINGS["biomes"].get(biome_name, False)
-            logger.write_log(f"Biome Validation: Added missing biome '{biome_name}'.")
-            needs_update = True
-        elif not isinstance(validated_biomes[biome_name], bool):
-             logger.write_log(f"Biome Validation: Correcting type for biome '{biome_name}'.")
-             validated_biomes[biome_name] = DEFAULTSETTINGS["biomes"].get(biome_name, False)
-             needs_update = True
-
-    keys_to_remove = [key for key in validated_biomes if key not in valid_biome_names]
-    if keys_to_remove:
-        for key in keys_to_remove:
-            del validated_biomes[key]
-            logger.write_log(f"Biome Validation: Removed outdated biome '{key}'.")
-            needs_update = True
-
-    return validated_biomes, needs_update
-
-def _validate_roblo_security(current_key):
-
-    warning_text = "_|WARNING:-DO-NOT-SHARE-THIS.--Sharing-this-will-allow-someone-to-log-in-as-you-and-to-steal-your-ROBUX-and-items.|_"
-    if warning_text in current_key:
-        return current_key.replace(warning_text, ""), True 
-    return current_key, False 
-
-def migrate_settings_from_legacy_location():
-    logger = get_logger()
-    legacy_path = "./settings.json" 
-    if os.path.exists(legacy_path) and not os.path.exists(SETTINGS_PATH):
-        logger.write_log(f"Found legacy settings file at '{legacy_path}'. Migrating to '{SETTINGS_PATH}'.")
+def get_process_by_name(name):
+    """Returns the first psutil.Process object matching the name."""
+    proc_name = name.lower()
+    for p in psutil.process_iter(['name']):
         try:
+            if p.info['name'].lower() == proc_name:
+                return p
+        except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+            continue
+    return None 
 
-            os.makedirs(MACROPATH, exist_ok=True)
+def match_rblx_hwnd_to_pid(pid):
+    """Finds the window handle (hwnd) associated with a given process ID."""
+    try:
 
-            os.rename(legacy_path, SETTINGS_PATH)
-            logger.write_log("Settings file successfully migrated.")
-            return True
-        except OSError as e:
-            logger.write_log(f"Error migrating settings file: {e}")
-            messagebox.showerror("Settings Migration Error", f"Could not move settings from {legacy_path} to {SETTINGS_PATH}:\n{e}")
-        except Exception as e:
-             logger.write_log(f"Unexpected error during settings migration: {e}")
-             messagebox.showerror("Settings Migration Error", f"An unexpected error occurred during migration: {e}")
-    legacy_path = os.path.expandvars(r"%localappdata\Baz's Macro\settings.json")
-    if os.path.exists(legacy_path) and not os.path.exists(SETTINGS_PATH):
-        logger.write_log(f"Found legacy settings file at '{legacy_path}'. Migrating to '{SETTINGS_PATH}'.")
+        local_mkey = mk.MouseKey()
+        for w in local_mkey.get_all_windows():
+            if w.pid == pid:
+                return w
+    except Exception as e:
+        get_logger().write_log(f"Error matching HWND to PID {pid}: {e}")
+    return None 
+
+def validate_pslink(ps_server_link : str):
+    """Checks if a string looks like a valid Roblox private server share link."""
+    if not isinstance(ps_server_link, str):
+        return False
+
+    return "https://www.roblox.com/share?code=" in ps_server_link and "&type=Server" in ps_server_link
+
+def create_discord_file_from_path(path, filename):
+    """Creates a discord.File object from a local file path."""
+    try:
+
+        if not os.path.exists(path):
+            get_logger().write_log(f"Error creating discord file: Source file not found at {path}")
+            return None
+        with open(path, "rb") as f:
+            file_bytes = f.read()
+        return discord.File(io.BytesIO(file_bytes), filename=filename)
+    except FileNotFoundError:
+         get_logger().write_log(f"Error creating discord file: File not found at {path}")
+    except IOError as e:
+        get_logger().write_log(f"Error reading file {path} for discord upload: {e}")
+    except Exception as e:
+        get_logger().write_log(f"Unexpected error creating discord file from {path}: {e}")
+    return None
+
+def left_click_drag(x, y, delay=0.1):
+    """Performs a left mouse button drag from current position to (x, y)."""
+    try:
+        local_mkey = mk.MouseKey()
+        local_mkey._mouse_click(mk.MOUSEEVENTF_LEFTDOWN)
+        time.sleep(delay)
+        local_mkey.move(x, y)
+        time.sleep(delay)
+        local_mkey._mouse_click(mk.MOUSEEVENTF_LEFTUP)
+    except Exception as e:
+        get_logger().write_log(f"Error during left_click_drag: {e}")
+
+def right_click_drag(x, y, delay=0.1):
+    """Performs a right mouse button drag from current position to (x, y)."""
+    try:
+        local_mkey = mk.MouseKey()
+        local_mkey._mouse_click(mk.MOUSEEVENTF_RIGHTDOWN)
+        time.sleep(delay)
+        local_mkey.move(x, y)
+        time.sleep(delay)
+        local_mkey._mouse_click(mk.MOUSEEVENTF_RIGHTUP)
+    except Exception as e:
+        get_logger().write_log(f"Error during right_click_drag: {e}")
+
+def calculate_coords(primary_monitor):
+    """Calculates scaled coordinates based on primary monitor resolution."""
+    if not primary_monitor:
+        get_logger().write_log("Error: No primary monitor provided for coordinate calculation.")
+        return None
+
+    try:
+
+        base_w, base_h = 2560, 1440
+        current_w, current_h = primary_monitor.width, primary_monitor.height
+        get_logger().write_log(f"Calculating coordinates based on primary monitor: {current_w}x{current_h} (Base: {base_w}x{base_h})")
+
+        scale_w = current_w / base_w
+        scale_h = current_h / base_h
+
         try:
+            from constants import COORDS as BASE_COORDS
+        except ImportError:
+            get_logger().write_log("Error: Could not import BASE_COORDS from constants for calculation.")
+            return None
 
-            os.makedirs(MACROPATH, exist_ok=True)
+        calculated = {}
+        for key, value in BASE_COORDS.items():
+            if key == "manual_boxes": 
+                calculated[key] = {}
+                for box_name, (x1, y1, x2, y2) in value.items():
+                    calculated[key][box_name] = (
+                        int(x1 * scale_w),
+                        int(y1 * scale_h),
+                        int(x2 * scale_w),
+                        int(y2 * scale_h)
+                    )
+            elif key == "merchant_box": 
+                 x1, y1, x2, y2 = value
+                 calculated[key] = (
+                    int(x1 * scale_w),
+                    int(y1 * scale_h),
+                    int(x2 * scale_w),
+                    int(y2 * scale_h)
+                 )
+            elif isinstance(value, tuple) and len(value) == 2: 
+                x, y = value
+                calculated[key] = (int(x * scale_w), int(y * scale_h))
+            else:
+                 calculated[key] = value 
 
-            os.rename(legacy_path, SETTINGS_PATH)
-            logger.write_log("Settings file successfully migrated.")
-            return True
-        except OSError as e:
-            logger.write_log(f"Error migrating settings file: {e}")
-            messagebox.showerror("Settings Migration Error", f"Could not move settings from {legacy_path} to {SETTINGS_PATH}:\n{e}")
-        except Exception as e:
-             logger.write_log(f"Unexpected error during settings migration: {e}")
-             messagebox.showerror("Settings Migration Error", f"An unexpected error occurred during migration: {e}")
-    return False
+        return calculated
+
+    except Exception as e:
+        get_logger().write_log(f"Error calculating coordinates: {e}")
+        return None
+
+def format_key(key: str) -> str:
+    """Converts a snake_case key into a Title Case string with spaces."""
+    return key.replace("_", " ").title()

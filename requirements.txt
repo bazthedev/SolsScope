@@ -10,3 +10,6 @@ websockets
 psutil
 opencv-python
 pytesseract
+pyqt6
+legacy-cgi
+audioop-lts

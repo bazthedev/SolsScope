@@ -1,3 +1,10 @@
+"""
+SolsScope/Baz's Macro
+Created by Baz and Cresqnt
+v1.2.5
+Support server: https://discord.gg/6cuCu6ymkX
+"""
+
 import sys
 import os
 sys.path.insert(1, os.path.expandvars(r"%localappdata%/SolsScope/lib"))
@@ -287,6 +294,22 @@ def _validate_roblo_security(current_key):
 def migrate_settings_from_legacy_location():
     logger = get_logger()
     legacy_path = "./settings.json" 
+    if os.path.exists(legacy_path) and not os.path.exists(SETTINGS_PATH):
+        logger.write_log(f"Found legacy settings file at '{legacy_path}'. Migrating to '{SETTINGS_PATH}'.")
+        try:
+
+            os.makedirs(MACROPATH, exist_ok=True)
+
+            os.rename(legacy_path, SETTINGS_PATH)
+            logger.write_log("Settings file successfully migrated.")
+            return True
+        except OSError as e:
+            logger.write_log(f"Error migrating settings file: {e}")
+            messagebox.showerror("Settings Migration Error", f"Could not move settings from {legacy_path} to {SETTINGS_PATH}:\n{e}")
+        except Exception as e:
+             logger.write_log(f"Unexpected error during settings migration: {e}")
+             messagebox.showerror("Settings Migration Error", f"An unexpected error occurred during migration: {e}")
+    legacy_path = os.path.expandvars(r"%localappdata\Baz's Macro\settings.json")
     if os.path.exists(legacy_path) and not os.path.exists(SETTINGS_PATH):
         logger.write_log(f"Found legacy settings file at '{legacy_path}'. Migrating to '{SETTINGS_PATH}'.")
         try:

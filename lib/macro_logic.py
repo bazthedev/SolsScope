@@ -1,3 +1,10 @@
+"""
+SolsScope/Baz's Macro
+Created by Baz and Cresqnt
+v1.2.5
+Support server: https://discord.gg/6cuCu6ymkX
+"""
+
 import sys
 import os
 sys.path.insert(1, os.path.expandvars(r"%localappdata%/SolsScope/lib"))
@@ -23,7 +30,7 @@ from pynput import mouse
 
 from constants import (
     MACROPATH, WEBHOOK_ICON_URL, MARI_ITEMS, JESTER_ITEMS,
-    POSSIBLE_MERCHANTS, COORDS 
+    POSSIBLE_MERCHANTS, COORDS, LOCALVERSION
 )
 from utils import (
     get_logger, create_discord_file_from_path, hex2rgb, fuzzy_match,
@@ -38,7 +45,7 @@ from roblox_utils import (
 from discord_utils import forward_webhook_msg
 from settings_manager import get_auras_path, get_biomes_path 
 
-def use_item(item_name: str, amount: int, close_menu: bool, mkey, kb, lock, settings: dict):
+def use_item(item_name: str, amount: int, close_menu: bool, mkey, kb, settings: dict):
     logger = get_logger()
     logger.write_log(f"Attempting to use item: {item_name} (Amount: {amount})")
 
@@ -50,50 +57,48 @@ def use_item(item_name: str, amount: int, close_menu: bool, mkey, kb, lock, sett
         logger.write_log("Error using item: Required coordinates missing.")
         return
 
-    with lock:
+    try:
+        wait_time = settings.get("global_wait_time", 0.2)
+        mkey.left_click_xy_natural(*COORDS["inv_button_pos"])
+        time.sleep(wait_time)
+        mkey.left_click_xy_natural(*COORDS["items_pos"])
+        time.sleep(wait_time)
+        mkey.left_click_xy_natural(*COORDS["search_pos"])
+        time.sleep(wait_time)
+        kb.type(item_name)
+        time.sleep(wait_time + 0.2) 
+        mkey.left_click_xy_natural(*COORDS["query_pos"])
+        time.sleep(wait_time)
+        mkey.left_click_xy_natural(*COORDS["item_amt_pos"])
+        time.sleep(wait_time)
+
+        kb.press(keyboard.Key.ctrl)
+        kb.press("a")
+        time.sleep(0.05)
+        kb.release("a")
+        kb.release(keyboard.Key.ctrl)
+        time.sleep(wait_time)
+        kb.type(str(amount))
+        time.sleep(wait_time)
+        mkey.left_click_xy_natural(*COORDS["use_pos"])
+        time.sleep(wait_time + 0.2) 
+
+        if close_menu:
+            mkey.left_click_xy_natural(*COORDS["close_pos"])
+            time.sleep(wait_time)
+
+            mkey.left_click_xy_natural(*COORDS["close_pos"])
+            time.sleep(wait_time)
+        logger.write_log(f"Used item: {item_name}")
+    except Exception as e:
+        logger.write_log(f"Error during use_item execution: {e}")
+
         try:
-            wait_time = settings.get("global_wait_time", 0.1)
-
-            mkey.left_click_xy_natural(*COORDS["inv_button_pos"])
-            time.sleep(wait_time)
-            mkey.left_click_xy_natural(*COORDS["items_pos"])
-            time.sleep(wait_time)
-            mkey.left_click_xy_natural(*COORDS["search_pos"])
-            time.sleep(wait_time)
-            kb.type(item_name)
-            time.sleep(wait_time + 0.1) 
-            mkey.left_click_xy_natural(*COORDS["query_pos"])
-            time.sleep(wait_time)
-            mkey.left_click_xy_natural(*COORDS["item_amt_pos"])
-            time.sleep(wait_time)
-
-            kb.press(keyboard.Key.ctrl)
-            kb.press("a")
-            time.sleep(0.05)
-            kb.release("a")
-            kb.release(keyboard.Key.ctrl)
-            time.sleep(wait_time)
-            kb.type(str(amount))
-            time.sleep(wait_time)
-            mkey.left_click_xy_natural(*COORDS["use_pos"])
-            time.sleep(wait_time + 0.1) 
-
-            if close_menu:
                 mkey.left_click_xy_natural(*COORDS["close_pos"])
                 time.sleep(wait_time)
-
                 mkey.left_click_xy_natural(*COORDS["close_pos"])
-                time.sleep(wait_time)
-            logger.write_log(f"Used item: {item_name}")
-        except Exception as e:
-            logger.write_log(f"Error during use_item execution: {e}")
-
-            try:
-                 mkey.left_click_xy_natural(*COORDS["close_pos"])
-                 time.sleep(wait_time)
-                 mkey.left_click_xy_natural(*COORDS["close_pos"])
-            except Exception as close_e:
-                 logger.write_log(f"Error trying to close menu after item use error: {close_e}")
+        except Exception as close_e:
+                logger.write_log(f"Error trying to close menu after item use error: {close_e}")
 
 def aura_detection(settings: dict, webhook, stop_event: threading.Event, keyboard_lock: threading.Lock, mkey, kb):
     logger = get_logger()
@@ -176,8 +181,8 @@ def aura_detection(settings: dict, webhook, stop_event: threading.Event, keyboar
                     logger.write_log(f"Could not parse rarity '{base_rarity_str}' for {current_aura}.")
                     description += f"**Rarity:** {base_rarity_str} (Raw)\n"
                     description += f"**Time:** <t:{str(int(time.time()))}>"
-                    should_ping = False 
-
+                    should_ping = False
+                
                 emb_color_hex = aura_data.get("emb_colour", "#FFFFFF")
                 emb_rgb = hex2rgb(emb_color_hex)
                 emb = discord.Embed(
@@ -187,6 +192,8 @@ def aura_detection(settings: dict, webhook, stop_event: threading.Event, keyboar
                 )
                 if img_url := aura_data.get("img_url", ""):
                     emb.set_thumbnail(url=img_url)
+                if base_rarity > 99999998:
+                    emb.set_footer(text=f"SolsScope v{LOCALVERSION}")
 
                 file_to_send = None
                 if settings.get("take_screenshot_on_detection", False):
@@ -203,21 +210,34 @@ def aura_detection(settings: dict, webhook, stop_event: threading.Event, keyboar
 
                 ping_content = f"<@{settings['mention_id']}>" if should_ping else ""
                 try:
-                    webhook.send(
-                        content=ping_content,
-                        embed=emb,
-                        file=file_to_send,
-                        avatar_url=WEBHOOK_ICON_URL
-                    )
-
-                    forward_webhook_msg(
-                        primary_webhook_url=webhook.url,
-                        secondary_urls=settings.get("SECONDARY_WEBHOOK_URLS", []),
-                        content=ping_content,
-                        embed=emb,
-                        file=file_to_send,
-                        avatar_url=WEBHOOK_ICON_URL
-                    )
+                    if file_to_send:
+                        webhook.send(
+                            content=ping_content,
+                            embed=emb,
+                            file=file_to_send,
+                            avatar_url=WEBHOOK_ICON_URL
+                        )
+                        forward_webhook_msg(
+                            primary_webhook_url=webhook.url,
+                            secondary_urls=settings.get("SECONDARY_WEBHOOK_URLS", []),
+                            content=ping_content,
+                            embed=emb,
+                            file=file_to_send,
+                            avatar_url=WEBHOOK_ICON_URL
+                        )
+                    else:
+                        webhook.send(
+                            content=ping_content,
+                            embed=emb,
+                            avatar_url=WEBHOOK_ICON_URL
+                        )
+                        forward_webhook_msg(
+                            primary_webhook_url=webhook.url,
+                            secondary_urls=settings.get("SECONDARY_WEBHOOK_URLS", []),
+                            content=ping_content,
+                            embed=emb,
+                            avatar_url=WEBHOOK_ICON_URL
+                        )
                 except Exception as wh_e:
                     logger.write_log(f"Error sending aura webhook: {wh_e}")
 
@@ -230,13 +250,13 @@ def aura_detection(settings: dict, webhook, stop_event: threading.Event, keyboar
                     else:
                         with keyboard_lock:
                             try:
-                                wait_time = settings.get("global_wait_time", 0.1)
+                                wait_time = settings.get("global_wait_time", 0.2)
                                 mkey.left_click_xy_natural(*COORDS["aura_button_pos"])
                                 time.sleep(wait_time)
                                 mkey.left_click_xy_natural(*COORDS["search_pos"])
                                 time.sleep(wait_time)
                                 kb.type(reset_aura_target)
-                                time.sleep(wait_time + 0.1)
+                                time.sleep(wait_time + 0.2)
                                 mkey.left_click_xy_natural(*COORDS["query_pos"])
                                 time.sleep(wait_time)
 
@@ -334,15 +354,21 @@ def biome_detection(settings: dict, webhook, stop_event: threading.Event, sniped
                     emb_color_hex = new_biome_data.get("colour", "#808080")
                     emb_rgb = hex2rgb(emb_color_hex)
 
-                    description = f"Biome **{current_biome}** has started!\n**Time:** <t:{str(int(time.time()))}>"
+                    description = f"Biome {current_biome} has started!\nTime: <t:{str(int(time.time()))}>"
 
                     emb = discord.Embed(
                         title=f"Biome Started: {current_biome}",
                         description=description,
                         colour=discord.Colour.from_rgb(*emb_rgb)
                     )
+                    if ps_link_valid:
+                        emb.add_field(name="Server Invite:", value=f"{settings.get('private_server_link')}")
 
-                    ping_content = "@everyone" if new_biome_data.get("rare", False) else ""
+                    if new_biome_data.get("rare", False):
+                        ping_content = "@everyone"
+                        emb.set_footer(text=f"SolsScope v{LOCALVERSION}")
+                    else:
+                        ping_content = ""
                     try:
                         webhook.send(content=ping_content, avatar_url=WEBHOOK_ICON_URL, embed=emb)
                         forward_webhook_msg(
@@ -369,6 +395,8 @@ def biome_detection(settings: dict, webhook, stop_event: threading.Event, sniped
 
 def keep_alive(settings: dict, stop_event: threading.Event, sniped_event: threading.Event, keyboard_lock: threading.Lock, mkey):
     logger = get_logger()
+    if stop_event.wait(timeout=5):
+        return
     logger.write_log("Keep Alive (Anti-AFK) thread started.")
     required_coords = ["close_pos"]
     if not all(coord in COORDS for coord in required_coords):
@@ -380,19 +408,19 @@ def keep_alive(settings: dict, stop_event: threading.Event, sniped_event: thread
         logger.write_log(f"Keep Alive: Waiting for {wait_interval} seconds before next action.")
 
         if stop_event.wait(timeout=wait_interval):
-            break 
+            break
 
         if sniped_event.is_set():
-             break 
+            break
 
-        with keyboard_lock: 
-             try:
-                 logger.write_log("Keep Alive: Performing anti-AFK action (clicking close pos).")
-                 mkey.left_click_xy_natural(*COORDS["close_pos"])
-                 time.sleep(0.1)
-                 mkey.left_click_xy_natural(*COORDS["close_pos"])
-             except Exception as e:
-                 logger.write_log(f"Error during Keep Alive action: {e}")
+        with keyboard_lock:
+            try:
+                logger.write_log("Keep Alive: Performing anti-AFK action (clicking close pos).")
+                mkey.left_click_xy_natural(*COORDS["close_pos"])
+                time.sleep(0.2)
+                mkey.left_click_xy_natural(*COORDS["close_pos"])
+            except Exception as e:
+                logger.write_log(f"Error during Keep Alive action: {e}")
 
     logger.write_log("Keep Alive (Anti-AFK) thread stopped.")
 
@@ -400,6 +428,9 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
     logger = get_logger()
     if not MERCHANT_DETECTION_POSSIBLE:
         logger.write_log("Merchant Detection cannot start: Missing dependencies (cv2/pytesseract).")
+        return
+    
+    if stop_event.wait(timeout=5):
         return
 
     logger.write_log("Merchant Detection thread started.")
@@ -430,118 +461,119 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
         detected_items = {}
 
         try:
-
+            logger.write_log("Merchant Detection: Using Merchant Teleport item...")
             with keyboard_lock:
-                logger.write_log("Merchant Detection: Using Merchant Teleport item...")
-                use_item("Merchant Teleport", 1, False, mkey, kb, keyboard_lock, settings) 
-                time.sleep(settings.get("global_wait_time", 0.1) + 0.5) 
+                use_item("Merchant Teleport", 1, False, mkey, kb, settings) 
+                time.sleep(settings.get("global_wait_time", 0.2) + 0.5) 
 
                 mkey.left_click_xy_natural(*COORDS["close_pos"])
-                time.sleep(0.2)
+                time.sleep(1)
 
                 logger.write_log("Merchant Detection: Attempting interaction (E key)...")
                 kb.press('e')
-                time.sleep(0.1)
+                time.sleep(0.2)
                 kb.release('e')
                 time.sleep(7) 
 
                 logger.write_log("Merchant Detection: Clicking open merchant position...")
                 mkey.left_click_xy_natural(*COORDS["open_merch_pos"])
-                time.sleep(2) 
+                time.sleep(3) 
 
-                logger.write_log("Merchant Detection: Taking screenshot...")
-                pag.screenshot(screenshot_path)
-                time.sleep(0.2)
+            logger.write_log("Merchant Detection: Taking screenshot...")
+            pag.screenshot(screenshot_path)
+            time.sleep(0.2)
 
-                logger.write_log("Merchant Detection: Processing screenshot with OCR...")
-                image = cv2.imread(screenshot_path)
-                if image is None:
-                    logger.write_log("Merchant Detection Error: Failed to read screenshot file.")
+            logger.write_log("Merchant Detection: Processing screenshot with OCR...")
+            image = cv2.imread(screenshot_path)
+            if image is None:
+                logger.write_log("Merchant Detection Error: Failed to read screenshot file.")
+                continue
+
+            x1, y1, x2, y2 = COORDS["merchant_box"]
+            merchant_crop = image[y1:y2, x1:x2]
+            ocr_merchant_raw = pytesseract.image_to_string(merchant_crop).strip()
+
+            ocr_merchant_clean = re.sub(r"[^a-zA-Z']", "", ocr_merchant_raw).lower()
+            detected_merchant_name = fuzzy_match_merchant(ocr_merchant_clean, POSSIBLE_MERCHANTS)
+
+            if not detected_merchant_name:
+                logger.write_log(f"Merchant Detection: Could not identify merchant from OCR ('{ocr_merchant_raw}'). Skipping.")
+
+                with keyboard_lock:
+                    mkey.left_click_xy_natural(*COORDS["close_pos"])
+                continue 
+
+            merchant_short_name = detected_merchant_name.split("'")[0] 
+            logger.write_log(f"Merchant Detected: {merchant_short_name} (Raw OCR: '{ocr_merchant_raw}')")
+            rnow = datetime.now()
+
+            file_to_send = create_discord_file_from_path(screenshot_path, filename="merchant.png")
+            ping_content = ""
+            if merchant_short_name == "Mari":
+                emb_color = discord.Colour.from_rgb(255, 255, 255)
+                thumbnail_url = "https://static.wikia.nocookie.net/sol-rng/images/3/37/MARI_HIGH_QUALITYY.png/revision/latest"
+                if settings.get("ping_mari", False) and settings.get("mari_ping_id", 0) != 0:
+                    ping_content += f" <@{settings['mari_ping_id']}>"
+            elif merchant_short_name == "Jester":
+                emb_color = discord.Colour.from_rgb(176, 49, 255)
+                thumbnail_url = "https://static.wikia.nocookie.net/sol-rng/images/d/db/Headshot_of_Jester.png/revision/latest"
+                if settings.get("ping_jester", False) and settings.get("jester_ping_id", 0) != 0:
+                    ping_content += f" <@{settings['jester_ping_id']}>"
+            else:
+                emb_color = discord.Colour.default()
+                thumbnail_url = None
+
+            emb = discord.Embed(
+                title=f"{merchant_short_name} Spawned!",
+                description=f"A **{merchant_short_name}** has been detected.\n**Time:** <t:{str(int(time.time()))}>",
+                colour=emb_color
+            )
+            if thumbnail_url: emb.set_thumbnail(url=thumbnail_url)
+            if file_to_send: emb.set_image(url="attachment://merchant.png")
+            if ps_link_valid: emb.add_field(name="Server Invite", value=settings['private_server_link'], inline=False)
+
+            emb.set_footer(text=f"SolsScope v{LOCALVERSION}")
+
+            logger.write_log("Merchant Detection: Detecting items...")
+            item_list = MARI_ITEMS if merchant_short_name == "Mari" else JESTER_ITEMS
+            manual_boxes = COORDS.get("manual_boxes", {})
+            item_ocr_results = []
+            for box_name, (x1, y1, x2, y2) in manual_boxes.items():
+                if x1 >= image.shape[1] or y1 >= image.shape[0] or x2 <= x1 or y2 <= y1:
+                    logger.write_log(f"Warning: Invalid coordinates for {box_name}. Skipping OCR.")
                     continue
+                cropped = image[y1:y2, x1:x2]
+                ocr_raw = pytesseract.image_to_string(cropped).strip().replace('\n', ' ')
+                matched = fuzzy_match(ocr_raw, item_list, threshold=0.5)
+                logger.write_log(f" > {box_name}: OCR='{ocr_raw}', Match='{matched}'")
+                detected_items[box_name] = matched
+                item_ocr_results.append(f"**{box_name}:** `{matched}` (Raw: `{ocr_raw}`)")
+            emb.add_field(name="Detected Items", value="\n".join(item_ocr_results) if item_ocr_results else "None", inline=False)
 
-                x1, y1, x2, y2 = COORDS["merchant_box"]
-                merchant_crop = image[y1:y2, x1:x2]
-                ocr_merchant_raw = pytesseract.image_to_string(merchant_crop).strip()
-
-                ocr_merchant_clean = re.sub(r"[^a-zA-Z']", "", ocr_merchant_raw).lower()
-                detected_merchant_name = fuzzy_match_merchant(ocr_merchant_clean, POSSIBLE_MERCHANTS)
-
-                if not detected_merchant_name:
-                    logger.write_log(f"Merchant Detection: Could not identify merchant from OCR ('{ocr_merchant_raw}'). Skipping.")
-
-                    with keyboard_lock:
-                        mkey.left_click_xy_natural(*COORDS["close_pos"])
-                    continue 
-
-                merchant_short_name = detected_merchant_name.split("'")[0] 
-                logger.write_log(f"Merchant Detected: {merchant_short_name} (Raw OCR: '{ocr_merchant_raw}')")
-                rnow = datetime.now()
-
-                file_to_send = create_discord_file_from_path(screenshot_path, filename="merchant.png")
-                ping_content = ""
-                if merchant_short_name == "Mari":
-                    emb_color = discord.Colour.from_rgb(255, 255, 255)
-                    thumbnail_url = "https://static.wikia.nocookie.net/sol-rng/images/3/37/MARI_HIGH_QUALITYY.png/revision/latest"
-                    if settings.get("ping_mari", False) and settings.get("mari_ping_id", 0) != 0:
-                        ping_content += f" <@{settings['mari_ping_id']}>"
-                elif merchant_short_name == "Jester":
-                    emb_color = discord.Colour.from_rgb(176, 49, 255)
-                    thumbnail_url = "https://static.wikia.nocookie.net/sol-rng/images/d/db/Headshot_of_Jester.png/revision/latest"
-                    if settings.get("ping_jester", False) and settings.get("jester_ping_id", 0) != 0:
-                        ping_content += f" <@{settings['jester_ping_id']}>"
-                else:
-                    emb_color = discord.Colour.default()
-                    thumbnail_url = None
-
-                emb = discord.Embed(
-                    title=f"{merchant_short_name} Spawned!",
-                    description=f"A **{merchant_short_name}** has been detected.\n**Time:** <t:{str(int(time.time()))}>",
-                    colour=emb_color
+            if settings.get("mention", False) and settings.get("mention_id", 0) != 0:
+                ping_content = f"<@{settings['mention_id']}>{ping_content}"
+            try:
+                webhook.send(content=ping_content.strip(), embed=emb, file=file_to_send, avatar_url=WEBHOOK_ICON_URL)
+                forward_webhook_msg(
+                    primary_webhook_url=webhook.url,
+                    secondary_urls=settings.get("SECONDARY_WEBHOOK_URLS", []),
+                    content=ping_content.strip(), embed=emb, file=file_to_send, avatar_url=WEBHOOK_ICON_URL
                 )
-                if thumbnail_url: emb.set_thumbnail(url=thumbnail_url)
-                if file_to_send: emb.set_image(url="attachment://merchant.png")
-                if ps_link_valid: emb.add_field(name="Server Invite", value=settings['private_server_link'], inline=False)
+            except Exception as wh_e:
+                logger.write_log(f"Error sending merchant detection webhook: {wh_e}")
 
-                logger.write_log("Merchant Detection: Detecting items...")
-                item_list = MARI_ITEMS if merchant_short_name == "Mari" else JESTER_ITEMS
-                manual_boxes = COORDS.get("manual_boxes", {})
-                item_ocr_results = []
-                for box_name, (x1, y1, x2, y2) in manual_boxes.items():
-                    if x1 >= image.shape[1] or y1 >= image.shape[0] or x2 <= x1 or y2 <= y1:
-                        logger.write_log(f"Warning: Invalid coordinates for {box_name}. Skipping OCR.")
-                        continue
-                    cropped = image[y1:y2, x1:x2]
-                    ocr_raw = pytesseract.image_to_string(cropped).strip().replace('\n', ' ')
-                    matched = fuzzy_match(ocr_raw, item_list, threshold=0.5)
-                    logger.write_log(f" > {box_name}: OCR='{ocr_raw}', Match='{matched}'")
-                    detected_items[box_name] = matched
-                    item_ocr_results.append(f"**{box_name}:** `{matched}` (Raw: `{ocr_raw}`)")
-                emb.add_field(name="Detected Items", value="\n".join(item_ocr_results) if item_ocr_results else "None", inline=False)
+            purchase_settings = settings.get("auto_purchase_items_mari" if merchant_short_name == "Mari" else "auto_purchase_items_jester", {})
+            items_to_buy = {box_name: item_name for box_name, item_name in detected_items.items() if purchase_settings.get(item_name, False)}
 
-                if settings.get("mention", False) and settings.get("mention_id", 0) != 0:
-                    ping_content = f"<@{settings['mention_id']}>{ping_content}"
-                try:
-                    webhook.send(content=ping_content.strip(), embed=emb, file=file_to_send, avatar_url=WEBHOOK_ICON_URL)
-                    forward_webhook_msg(
-                        primary_webhook_url=webhook.url,
-                        secondary_urls=settings.get("SECONDARY_WEBHOOK_URLS", []),
-                        content=ping_content.strip(), embed=emb, file=file_to_send, avatar_url=WEBHOOK_ICON_URL
-                    )
-                except Exception as wh_e:
-                    logger.write_log(f"Error sending merchant detection webhook: {wh_e}")
-
-                purchase_settings = settings.get("auto_purchase_items_mari" if merchant_short_name == "Mari" else "auto_purchase_items_jester", {})
-                items_to_buy = {box_name: item_name for box_name, item_name in detected_items.items() if purchase_settings.get(item_name, False)}
-
-                if items_to_buy:
-                    logger.write_log(f"Merchant Detection: Attempting to auto-purchase items: {list(items_to_buy.values())}")
-                    
+            if items_to_buy:
+                logger.write_log(f"Merchant Detection: Attempting to auto-purchase items: {list(items_to_buy.values())}")
+                with keyboard_lock:
                     for box_name, item_name in items_to_buy.items():
                         try:
 
                             coord_key = f"merch_item_pos_{box_name[-1]}_purchase" 
                             if coord_key in COORDS:
-                                wait_time = settings.get("global_wait_time", 0.1)
+                                wait_time = settings.get("global_wait_time", 0.2)
                                 mkey.left_click_xy_natural(*COORDS[coord_key])
                                 time.sleep(wait_time)
 
@@ -559,6 +591,7 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
                                         description=f"Item: **{item_name}**",
                                         colour=emb_color
                                     )
+                                    purch_emb.set_footer(text=f"SolsScope v{LOCALVERSION}")
                                     if thumbnail_url: purch_emb.set_thumbnail(url=thumbnail_url)
                                     webhook.send(embed=purch_emb, avatar_url=WEBHOOK_ICON_URL)
                                     forward_webhook_msg(
@@ -574,8 +607,9 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
                             logger.write_log(f"Error auto-purchasing {item_name}: {buy_e}")
                         time.sleep(1) 
 
+            with keyboard_lock:
                 mkey.left_click_xy_natural(*COORDS["close_pos"])
-                time.sleep(0.2)
+            time.sleep(90)
 
         except Exception as e:
             logger.write_log(f"Error in Merchant Detection loop: {e}")
@@ -592,6 +626,9 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
 
 def auto_craft(settings: dict, stop_event: threading.Event, sniped_event: threading.Event, keyboard_lock: threading.Lock, mkey, kb, ms):
     logger = get_logger()
+    logger.write_log("Starting Auto Craft in 10 seconds")
+    if stop_event.wait(timeout=10):
+        return
     logger.write_log("Auto Craft thread started.")
 
     items_to_craft = [item for item, enabled in settings.get("auto_craft_item", {}).items() if enabled]
@@ -620,11 +657,11 @@ def auto_craft(settings: dict, stop_event: threading.Event, sniped_event: thread
         kb.release('f')
         time.sleep(0.5) 
         mkey.left_click_xy_natural(*COORDS["potion_search_pos"])
-        time.sleep(0.1)
+        time.sleep(0.2)
         mkey.left_click_xy_natural(*COORDS["potion_search_pos"])
-        time.sleep(0.1)
+        time.sleep(0.2)
 
-        kb.press(keyboard.Key.ctrl); kb.press('a'); time.sleep(0.05); kb.release('a'); kb.release(keyboard.Key.ctrl); time.sleep(0.1)
+        kb.press(keyboard.Key.ctrl); kb.press('a'); time.sleep(0.05); kb.release('a'); kb.release(keyboard.Key.ctrl); time.sleep(0.2)
         kb.press(keyboard.Key.backspace); time.sleep(0.05); kb.release(keyboard.Key.backspace)
         time.sleep(0.2)
         kb.type(potion_name)
@@ -635,25 +672,29 @@ def auto_craft(settings: dict, stop_event: threading.Event, sniped_event: thread
         mkey.left_click_xy_natural(*COORDS["potion_search_pos"])
         time.sleep(0.2)
 
-    while not stop_event.is_set() and not sniped_event.is_set():
-        if auto_craft_index >= len(items_to_craft):
-            auto_craft_index = 0 
+    if stop_event.wait(timeout=10):
+        return
 
-        item_to_craft = items_to_craft[auto_craft_index]
-        logger.write_log(f"Auto Craft: Attempting to craft {item_to_craft}...")
+    while not stop_event.is_set() and not sniped_event.is_set():
 
         with keyboard_lock:
             try:
-                wait_time = settings.get("global_wait_time", 0.1)
+                wait_time = settings.get("global_wait_time", 0.2)
 
-                if item_to_craft == "Potion of Bound":
+                if settings["auto_craft_item"].get("Potion of Bound", False):
                     search_for_potion_in_cauldron("Bound")
                     mkey.left_click_xy_natural(*COORDS["craft_btn_pos"])
                     time.sleep(wait_time)
                     mkey.left_click_xy_natural(*COORDS["hp1_pos_potions"]) 
                     time.sleep(wait_time)
+                    mkey.left_click_xy_natural(*COORDS["hp2_pos_potions"])
+                    time.sleep(wait_time)
+                    if auto_craft_index == 1 and len(items_to_craft) > 1 and auto_mode_swap == 5:
+                        mkey.left_click_xy_natural(*COORDS["auto_btn_pos"])
+                        time.sleep(0.2)
+                    time.sleep(1)
 
-                elif item_to_craft == "Heavenly Potion":
+                if settings["auto_craft_item"].get("Heavenly Potion", False):
                     search_for_potion_in_cauldron("Heavenly")
                     mkey.left_click_xy_natural(*COORDS["craft_btn_pos"])
                     time.sleep(wait_time)
@@ -669,8 +710,14 @@ def auto_craft(settings: dict, stop_event: threading.Event, sniped_event: thread
                     time.sleep(wait_time)
                     mkey.left_click_xy_natural(*COORDS["hp2_pos_potions"])
                     time.sleep(wait_time)
+                    mkey.left_click_xy_natural((1064 * COORDS["scale_w"]), (988 * COORDS["scale_h"]))
+                    time.sleep(0.2)
+                    if auto_craft_index == 2 and len(items_to_craft) > 1 and auto_mode_swap == 5:
+                        mkey.left_click_xy_natural(*COORDS["auto_btn_pos"])
+                        time.sleep(0.2)
+                    time.sleep(1)
 
-                elif item_to_craft == "Godly Potion (Zeus)":
+                if settings["auto_craft_item"].get("Godly Potion (Zeus)", False):
                     search_for_potion_in_cauldron("Zeus")
                     mkey.left_click_xy_natural(*COORDS["craft_btn_pos"])
                     time.sleep(wait_time)
@@ -685,8 +732,16 @@ def auto_craft(settings: dict, stop_event: threading.Event, sniped_event: thread
 
                     mkey.left_click_xy_natural(*COORDS["hp1_pos_potions"]); time.sleep(wait_time)
                     mkey.left_click_xy_natural(*COORDS["hp2_pos_potions"]); time.sleep(wait_time)
+                    mkey.left_click_xy_natural((1064 * COORDS["scale_w"]), (988 * COORDS["scale_h"]))
+                    time.sleep(0.2)
+                    mkey.left_click_xy_natural((1064 * COORDS["scale_w"]), (1048 * COORDS["scale_h"]))
+                    time.sleep(0.2)
+                    if auto_craft_index == 3 and len(items_to_craft) > 1 and auto_mode_swap == 5:
+                        mkey.left_click_xy_natural(*COORDS["auto_btn_pos"])
+                        time.sleep(0.2)
+                    time.sleep(1)
 
-                elif item_to_craft == "Godly Potion (Poseidon)":
+                if settings["auto_craft_item"].get("Godly Potion (Poseidon)", False):
                     search_for_potion_in_cauldron("Poseidon")
                     mkey.left_click_xy_natural(*COORDS["craft_btn_pos"])
                     time.sleep(wait_time)
@@ -697,8 +752,16 @@ def auto_craft(settings: dict, stop_event: threading.Event, sniped_event: thread
 
                     mkey.left_click_xy_natural(*COORDS["hp1_pos_potions"]); time.sleep(wait_time)
                     mkey.left_click_xy_natural(*COORDS["hp2_pos_potions"]); time.sleep(wait_time)
+                    mkey.left_click_xy_natural((1064 * COORDS["scale_w"]), (988 * COORDS["scale_h"]))
+                    time.sleep(0.2)
+                    mkey.left_click_xy_natural((1064 * COORDS["scale_w"]), (1048 * COORDS["scale_h"]))
+                    time.sleep(0.2)
+                    if auto_craft_index == 4 and len(items_to_craft) > 1 and auto_mode_swap == 5:
+                        mkey.left_click_xy_natural(*COORDS["auto_btn_pos"])
+                        time.sleep(0.2)
+                    time.sleep(1)
 
-                elif item_to_craft == "Godly Potion (Hades)":
+                if settings["auto_craft_item"].get("Godly Potion (Hades)", False):
                     search_for_potion_in_cauldron("Hades")
                     mkey.left_click_xy_natural(*COORDS["craft_btn_pos"])
                     time.sleep(wait_time)
@@ -709,8 +772,12 @@ def auto_craft(settings: dict, stop_event: threading.Event, sniped_event: thread
 
                     mkey.left_click_xy_natural(*COORDS["hp1_pos_potions"]); time.sleep(wait_time)
                     mkey.left_click_xy_natural(*COORDS["hp2_pos_potions"]); time.sleep(wait_time)
+                    if auto_craft_index == 5 and len(items_to_craft) > 1 and auto_mode_swap == 5:
+                        mkey.left_click_xy_natural(*COORDS["auto_btn_pos"])
+                        time.sleep(0.2)
+                    time.sleep(1)
 
-                elif item_to_craft == "Warp Potion":
+                if settings["auto_craft_item"].get("Warp Potion", False):
                     search_for_potion_in_cauldron("Warp")
                     mkey.left_click_xy_natural(*COORDS["craft_btn_pos"])
                     time.sleep(wait_time)
@@ -728,33 +795,47 @@ def auto_craft(settings: dict, stop_event: threading.Event, sniped_event: thread
 
                     ms.scroll(0, 30); time.sleep(0.2)
                     ms.scroll(0, 30); time.sleep(0.2)
+                    if auto_craft_index == 6 and len(items_to_craft) > 1 and auto_mode_swap == 5:
+                        mkey.left_click_xy_natural(*COORDS["auto_btn_pos"])
+                        time.sleep(0.2)
+                    time.sleep(1)
 
-                elif item_to_craft == "Godlike Potion":
+                if settings["auto_craft_item"].get("Godlike Potion", False):
                     search_for_potion_in_cauldron("Godlike")
                     mkey.left_click_xy_natural(*COORDS["craft_btn_pos"])
                     time.sleep(wait_time)
 
                     mkey.left_click_xy_natural(*COORDS["hp1_pos_potions"]); time.sleep(wait_time)
                     mkey.left_click_xy_natural(*COORDS["hp2_pos_potions"]); time.sleep(wait_time)
+                    mkey.left_click_xy_natural((1064 * COORDS["scale_w"]), (988 * COORDS["scale_h"]))
+                    time.sleep(0.2)
+                    mkey.left_click_xy_natural((954 * COORDS["scale_w"]), (1048 * COORDS["scale_h"]))
+                    time.sleep(0.2)
+                    mkey.left_click_xy_natural((954 * COORDS["scale_w"]), (1048 * COORDS["scale_h"]))
+                    time.sleep(0.2)
+                    kb.type("600")
+                    time.sleep(0.2)
+                    mkey.left_click_xy_natural((1064 * COORDS["scale_w"]), (1048 * COORDS["scale_h"]))
+                    time.sleep(0.2)
+                    mkey.left_click_xy_natural(*COORDS["potion_search_pos"])
+                    time.sleep(0.2)
+                    time.sleep(1)
 
-                else:
-                    logger.write_log(f"Auto Craft: Don't know how to craft {item_to_craft}. Skipping.")
-
-                kb.press(keyboard.Key.esc); time.sleep(0.1); kb.release(keyboard.Key.esc)
-                time.sleep(0.5) 
-                logger.write_log(f"Auto Craft: Finished attempt for {item_to_craft}.")
+                time.sleep(1)
 
             except Exception as craft_e:
-                logger.write_log(f"Error during auto craft for {item_to_craft}: {craft_e}")
+                logger.write_log(f"Error during auto craft: {craft_e}")
 
-                try:
-                    kb.press(keyboard.Key.esc); time.sleep(0.1); kb.release(keyboard.Key.esc)
-                except Exception:
-                     pass
+        if auto_craft_index >= len(items_to_craft):
+            auto_craft_index = 1
+        else:
+            auto_craft_index += 1
+        if auto_mode_swap == 5:
+            auto_mode_swap = 0
+        else:
+            auto_mode_swap += 1
 
-        auto_craft_index += 1
-
-        wait_interval = 60 
+        wait_interval = 60
         logger.write_log(f"Auto Craft: Waiting {wait_interval} seconds...")
         if stop_event.wait(timeout=wait_interval):
             break
@@ -764,10 +845,13 @@ def auto_craft(settings: dict, stop_event: threading.Event, sniped_event: thread
 
 def auto_br(settings: dict, stop_event: threading.Event, sniped_event: threading.Event, keyboard_lock: threading.Lock, mkey, kb):
     logger = get_logger()
+    if stop_event.wait(timeout=5):
+        return
     logger.write_log("Auto Biome Randomizer thread started.")
     while not stop_event.is_set() and not sniped_event.is_set():
         logger.write_log("Auto BR: Using Biome Randomizer...")
-        use_item("Biome Random", 1, True, mkey, kb, keyboard_lock, settings)
+        with keyboard_lock:
+            use_item("Biome Random", 1, True, mkey, kb, settings)
 
         wait_interval = 2160 
         logger.write_log(f"Auto BR: Waiting {wait_interval} seconds...")
@@ -778,10 +862,13 @@ def auto_br(settings: dict, stop_event: threading.Event, sniped_event: threading
 
 def auto_sc(settings: dict, stop_event: threading.Event, sniped_event: threading.Event, keyboard_lock: threading.Lock, mkey, kb):
     logger = get_logger()
+    if stop_event.wait(timeout=5):
+        return
     logger.write_log("Auto Strange Controller thread started.")
     while not stop_event.is_set() and not sniped_event.is_set():
         logger.write_log("Auto SC: Using Strange Controller...")
-        use_item("Strange Control", 1, True, mkey, kb, keyboard_lock, settings)
+        with keyboard_lock:
+            use_item("Strange Control", 1, True, mkey, kb, settings)
 
         wait_interval = 1260 
         logger.write_log(f"Auto SC: Waiting {wait_interval} seconds...")
@@ -792,6 +879,8 @@ def auto_sc(settings: dict, stop_event: threading.Event, sniped_event: threading
 
 def inventory_screenshot(settings: dict, webhook, stop_event: threading.Event, sniped_event: threading.Event, keyboard_lock: threading.Lock, mkey):
     logger = get_logger()
+    if stop_event.wait(timeout=5):
+        return
     logger.write_log("Periodic Inventory Screenshot thread started.")
     required_coords = ["inv_button_pos", "items_pos", "search_pos", "close_pos"]
     if not all(coord in COORDS for coord in required_coords):
@@ -804,7 +893,7 @@ def inventory_screenshot(settings: dict, webhook, stop_event: threading.Event, s
         file_to_send = None
         with keyboard_lock:
             try:
-                wait_time = settings.get("global_wait_time", 0.1)
+                wait_time = settings.get("global_wait_time", 0.2)
                 mkey.left_click_xy_natural(*COORDS["inv_button_pos"])
                 time.sleep(wait_time)
                 mkey.left_click_xy_natural(*COORDS["items_pos"])
@@ -820,7 +909,7 @@ def inventory_screenshot(settings: dict, webhook, stop_event: threading.Event, s
             except Exception as e:
                 logger.write_log(f"Error taking inventory screenshot: {e}")
 
-                try: mkey.left_click_xy_natural(*COORDS["close_pos"]); time.sleep(0.1); mkey.left_click_xy_natural(*COORDS["close_pos"])
+                try: mkey.left_click_xy_natural(*COORDS["close_pos"]); time.sleep(0.2); mkey.left_click_xy_natural(*COORDS["close_pos"])
                 except: pass
 
         if file_to_send:
@@ -846,6 +935,8 @@ def inventory_screenshot(settings: dict, webhook, stop_event: threading.Event, s
 
 def storage_screenshot(settings: dict, webhook, stop_event: threading.Event, sniped_event: threading.Event, keyboard_lock: threading.Lock, mkey):
     logger = get_logger()
+    if stop_event.wait(timeout=5):
+        return
     logger.write_log("Periodic Aura Storage Screenshot thread started.")
     required_coords = ["aura_button_pos", "search_pos", "close_pos"]
     if not all(coord in COORDS for coord in required_coords):
@@ -858,7 +949,7 @@ def storage_screenshot(settings: dict, webhook, stop_event: threading.Event, sni
         file_to_send = None
         with keyboard_lock:
             try:
-                wait_time = settings.get("global_wait_time", 0.1)
+                wait_time = settings.get("global_wait_time", 0.2)
                 mkey.left_click_xy_natural(*COORDS["aura_button_pos"])
                 time.sleep(wait_time)
                 mkey.left_click_xy_natural(*COORDS["search_pos"]) 
@@ -871,7 +962,7 @@ def storage_screenshot(settings: dict, webhook, stop_event: threading.Event, sni
                 file_to_send = create_discord_file_from_path(screenshot_path, filename="storage.png")
             except Exception as e:
                 logger.write_log(f"Error taking storage screenshot: {e}")
-                try: mkey.left_click_xy_natural(*COORDS["close_pos"]); time.sleep(0.1); mkey.left_click_xy_natural(*COORDS["close_pos"])
+                try: mkey.left_click_xy_natural(*COORDS["close_pos"]); time.sleep(0.2); mkey.left_click_xy_natural(*COORDS["close_pos"])
                 except: pass
 
         if file_to_send:
@@ -991,6 +1082,8 @@ def disconnect_prevention(settings: dict, stop_event: threading.Event, sniped_ev
 
 def do_obby(settings: dict, stop_event: threading.Event, sniped_event: threading.Event, keyboard_lock: threading.Lock, mkey, kb, ms):
     logger = get_logger()
+    if stop_event.wait(timeout=5):
+        return
     logger.write_log("Obby/Blessing thread started.")
 
     while not stop_event.is_set() and not sniped_event.is_set():
@@ -1031,7 +1124,7 @@ def auto_pop(biome: str, settings: dict, stop_event: threading.Event, keyboard_l
          else:
              with keyboard_lock:
                 try:
-                    wait_time = settings.get("global_wait_time", 0.1)
+                    wait_time = settings.get("global_wait_time", 0.2)
                     mkey.left_click_xy_natural(*COORDS["menu_btn_pos"])
                     time.sleep(wait_time)
                     mkey.left_click_xy_natural(*COORDS["settings_btn_pos"])
@@ -1054,7 +1147,7 @@ def auto_pop(biome: str, settings: dict, stop_event: threading.Event, keyboard_l
                 except Exception as cs_e:
                     logger.write_log(f"Error changing cutscene settings: {cs_e}")
 
-                    try: mkey.left_click_xy_natural(*COORDS["menu_btn_pos"]); time.sleep(0.1); mkey.left_click_xy_natural(*COORDS["menu_btn_pos"])
+                    try: mkey.left_click_xy_natural(*COORDS["menu_btn_pos"]); time.sleep(0.2); mkey.left_click_xy_natural(*COORDS["menu_btn_pos"])
                     except: pass
 
     item_keys = list(pop_settings.keys()) 
@@ -1079,7 +1172,8 @@ def auto_pop(biome: str, settings: dict, stop_event: threading.Event, keyboard_l
             while remaining_amount > 0 and not stop_event.is_set():
                 use_amount = min(remaining_amount, 10) 
                 logger.write_log(f" > Using {use_amount} of {item} (Remaining: {remaining_amount - use_amount})")
-                use_item(item, use_amount, True, mkey, kb, keyboard_lock, settings)
+                with keyboard_lock:
+                    use_item(item, use_amount, True, mkey, kb, settings)
                 remaining_amount -= use_amount
                 time.sleep(1.5) 
 
@@ -1088,8 +1182,8 @@ def auto_pop(biome: str, settings: dict, stop_event: threading.Event, keyboard_l
                      logger.write_log("Auto Pop: Biome ended during item use. Stopping sequence.")
                      return 
         else:
-
-             use_item(item, amount_to_use, True, mkey, kb, keyboard_lock, settings)
+             with keyboard_lock:
+                use_item(item, amount_to_use, True, mkey, kb, settings)
              time.sleep(1.0) 
 
              current_biome_check = get_latest_hovertext()

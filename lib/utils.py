@@ -7,7 +7,9 @@ import tkinter as tk
 from difflib import SequenceMatcher
 import mousekey as mk 
 import io 
-import discord 
+import discord
+import datetime
+import codecs
 
 GLOBAL_LOGGER = None
 
@@ -32,9 +34,8 @@ class Logger:
         self.log_file_path = log_file_path
         if self.log_file_path:
             try:
-
-                with open(self.log_file_path, "a") as log_file:
-                    log_file.write(f"\n\n--------------------------- Starting new instance of SolsScope ---------------------------\n\n")
+                with codecs.open(self.log_file_path, "a", encoding='utf-8') as log_file:
+                    log_file.write("\n\n--------------------------- Starting new instance of SolsScope ---------------------------\n\n")
             except Exception as e:
                 print(f"Error initializing log file {self.log_file_path}: {e}")
                 self.log_file_path = None 
@@ -48,11 +49,10 @@ class Logger:
 
         if self.log_file_path:
             try:
-                with open(self.log_file_path, "a", encoding='utf-8') as log_file:
-
-                    import datetime
+                with codecs.open(self.log_file_path, "a", encoding='utf-8') as log_file:
                     timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                    log_file.write(f"[{timestamp}] {message}\n")
+                    log_message = f"[{timestamp}] {message}"
+                    log_file.write(log_message)
             except Exception as e:
                 print(f"Error writing to log file {self.log_file_path}: {e}")
 

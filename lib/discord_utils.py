@@ -1,3 +1,10 @@
+"""
+SolsScope/Baz's Macro
+Created by Baz and Cresqnt
+v1.2.5
+Support server: https://discord.gg/6cuCu6ymkX
+"""
+
 import sys
 import os
 sys.path.insert(1, os.path.expandvars(r"%localappdata%/SolsScope/lib"))
@@ -47,7 +54,7 @@ def forward_webhook_msg(primary_webhook_url: str, secondary_urls: list, *, file=
             continue
 
         try:
-            _webhook = discord.Webhook.from_url(webhook_url, adapter=discord.RequestsWebhookAdapter())
+            _webhook = discord.SyncWebhook.from_url(webhook_url)
 
             current_kwargs = kwargs.copy()
             if image_bytes and filename:

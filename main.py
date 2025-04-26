@@ -16,6 +16,8 @@ from tkinter import messagebox
 REQUIRED_LIBS = ["constants.py", "discord_utils.py", "gui.py", "macro_logic.py", "roblox_utils.py", "settings_manager.py", "utils.py"]
 MAIN_VER = "1.2.5"
 
+if not os.path.exists(os.path.expandvars(r"%localappdata%\SolsScope")):
+    os.mkdir(os.path.expandvars(r"%localappdata%\SolsScope"))
 
 if not os.path.exists(os.path.expandvars(r"%localappdata%\SolsScope\lib")):
     os.mkdir(os.path.expandvars(r"%localappdata%\SolsScope\lib"))
@@ -32,6 +34,7 @@ for file in REQUIRED_LIBS:
             f.close()
         print(f"{file} was downloaded and installed.")
 print("All required libraries were downloaded or already installed, proceeding...")
+
 
 try:
     with open(f"{os.path.expandvars(r'%localappdata%\SolsScope')}\\settings.json", "r") as s:

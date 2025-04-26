@@ -29,7 +29,7 @@ for file in REQUIRED_LIBS:
         print(f"{file} was not found, but is required!\nDownloading and installing it now...")
         _download = requests.get(LIB_DOWNLOAD_URL + file, timeout=5)
         _download.raise_for_status()
-        with open(f"{os.path.expandvars(r'%localappdata%\SolsScope\lib')}\\{file}", "w") as f:
+        with open(f"{os.path.expandvars(r'%localappdata%\SolsScope\lib')}\\{file}", "wb") as f:
             f.write(_download.content)
             f.close()
         print(f"{file} was downloaded and installed.")
@@ -46,7 +46,7 @@ try:
                 _download = requests.get(LIB_DOWNLOAD_URL + file, timeout=5)
                 _download.raise_for_status()
                 print("Received response.")
-                with open(f"{os.path.expandvars(r'%localappdata%\SolsScope\lib')}\\{file}", "w") as f:
+                with open(f"{os.path.expandvars(r'%localappdata%\SolsScope\lib')}\\{file}", "wb") as f:
                     f.write(_download.content)
                     f.close()
                 print(f"{file} was downloaded and installed.")

@@ -540,7 +540,8 @@ class MainWindow(QMainWindow):
             "Root1527 for the original YAY Joins Sniper logic",
             "Mountain Shrine Path inspiration by AllanQute (_justalin)",
             "dolphSol for inspiration",
-            "vex (vexthecoder) for ideas"
+            "vex (vexthecoder) for ideas",
+            "Doors_Daisukiman for helping with testing"
         ]
         for text in ack_texts:
             ack_label = QLabel(text)

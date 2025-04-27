@@ -1,10 +1,3 @@
-"""
-SolsScope/Baz's Macro
-Created by Baz and Cresqnt
-v1.2.5
-Support server: https://discord.gg/6cuCu6ymkX
-"""
-
 import sys
 import os
 sys.path.insert(1, os.path.expandvars(r"%localappdata%/SolsScope/lib"))
@@ -91,7 +84,7 @@ class PyQtLogger(Logger):
         if self.log_file_path:
             try:
                 with open(self.log_file_path, "a", encoding='utf-8') as log_file:
-                    log_file.write(formatted_message + '\\n')
+                    log_file.write(formatted_message + '\n')
             except Exception as e:
 
                 print(f"Error writing log to file {self.log_file_path}: {e}")

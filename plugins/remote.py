@@ -1,3 +1,10 @@
+"""
+SolsScope/Baz's Macro
+Created by Baz and Cresqnt
+v1.2.5
+Support server: https://discord.gg/6cuCu6ymkX
+"""
+
 import sys
 import os
 sys.path.insert(1, os.path.expandvars(r"%localappdata%/SolsScope/lib"))
@@ -224,7 +231,7 @@ class Plugin:
                     title="Macro was stopped remotely.",
                     colour=discord.Colour.red()
                 )
-                emb.set_footer(text=f"SolsRNGBot Remote Bot Plugin v{self.version}", icon_url=WEBHOOK_ICON_URL)
+                emb.set_footer(text=f"SolsScope Remote Bot Plugin v{self.version}", icon_url=WEBHOOK_ICON_URL)
                 self.macro.webhook.send(avatar_url=WEBHOOK_ICON_URL, embed=emb)
                 self.macro.logger.write_log("Macro was stopped remotely.")
                 self.macro.stop_event.set()
@@ -241,7 +248,7 @@ class Plugin:
                     title="Macro was stopped remotely.",
                     colour=discord.Colour.red()
                 )
-                emb.set_footer(text=f"SolsRNGBot Remote Bot Plugin v{self.version}", icon_url=WEBHOOK_ICON_URL)
+                emb.set_footer(text=f"SolsScope Remote Bot Plugin v{self.version}", icon_url=WEBHOOK_ICON_URL)
                 self.macro.webhook.send(avatar_url=WEBHOOK_ICON_URL, embed=emb)
                 self.macro.logger.write_log("Macro was stopped remotely.")
                 t = round(time.time())
@@ -337,7 +344,7 @@ class Plugin:
             @client.command()
             @commands.is_owner()
             async def get_log(ctx):
-                log_file_path = f"{self.MACROPATH}/solsrngbot.log"
+                log_file_path = f"{self.MACROPATH}/solsscope.log"
 
                 try:
                     with open(log_file_path, "r") as f:
@@ -390,7 +397,7 @@ class Plugin:
             
             @client.event
             async def on_ready():
-                await client.change_presence(activity=discord.Game(name=f"bazthedev/SolsRNGBot Remote Bot Plugin v{self.version}"))
+                await client.change_presence(activity=discord.Game(name=f"bazthedev/SolsScope Remote Bot Plugin v{self.version}"))
                 self.macro.logger.write_log(f"Remote bot has logged in to {client.user}")
                 stop_checker.start()
 

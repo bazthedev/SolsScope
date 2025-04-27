@@ -1,10 +1,3 @@
-"""
-SolsScope/Baz's Macro
-Created by Baz and Cresqnt
-v1.2.5
-Support server: https://discord.gg/6cuCu6ymkX
-"""
-
 import sys
 import os
 sys.path.insert(1, os.path.expandvars(r"%localappdata%/SolsScope/lib"))

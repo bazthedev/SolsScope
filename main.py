@@ -35,6 +35,12 @@ for file in REQUIRED_LIBS:
         print(f"{file} was downloaded and installed.")
 print("All required libraries were downloaded or already installed, proceeding...")
 
+if not os.path.isfile(f"{os.path.expandvars(r'%localappdata%\SolsScope')}\\settings.json") and os.path.isfile(f"{os.path.expandvars(r'%localappdata%\Baz\'s Macro')}\\settings.json"):
+    os.system(f"xcopy {os.path.expandvars(r'%localappdata%\Baz\'s Macro')}\\settings.json {os.path.expandvars(r'%localappdata%\SolsScope')}")
+elif not os.path.isfile(f"{os.path.expandvars(r'%localappdata%\SolsScope')}\\settings.json"):
+    _temp = open(f"{os.path.expandvars(r'%localappdata%\SolsScope')}\\settings.json", "w")
+    _temp.write("{}")
+    _temp.close()
 
 try:
     with open(f"{os.path.expandvars(r'%localappdata%\SolsScope')}\\settings.json", "r") as s:

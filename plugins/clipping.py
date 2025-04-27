@@ -43,7 +43,7 @@ class Plugin:
         self.entries = {}
 
         self.LOG_FILE_PATH = self.MACROPATH + "\\solsscope.log"
-        self.AURA_REGEX = re.compile(r"\[(?P<timestamp>[\d\-:\s]+)\s-\sINFO\] New aura detected: (?P<name>.+)")
+        self.AURA_REGEX = re.compile(r"\[\s*(?P<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\s*-\s*INFO\s*\]\s*New aura detected:\s*(?P<name>.+)")
         self.BIOME_REGEX = re.compile(r"Biome change detected: (\w+) -> (?P<biome>\w+)")
         
         macro.logger.write_log(f"[{self.name}] Plugin initialized (v{self.version})")
@@ -218,32 +218,31 @@ class Plugin:
                     biome_match = self.BIOME_REGEX.search(line)
                     
                     if biome_match:
-                        if match.group("biome").upper() == "GLITCHED" or match.group("biome").upper() == "DREAMSPACE":
+                        if biome_match.group("biome").upper() == "GLITCHED" or biome_match.group("biome").upper() == "DREAMSPACE":
                             time.sleep(5)
                             self.execute_key_combo(combo_list)
                             continue
 
-                    if "Rolled Aura:" in line:
-                        block = [line]
-                        for _ in range(2):
+                    block = [line]
+                    for _ in range(2):
+                        next_line = f.readline()
+                        while not next_line:
+                            time.sleep(0.1)
                             next_line = f.readline()
-                            while not next_line:
-                                time.sleep(0.1)
-                                next_line = f.readline()
-                            block.append(next_line.strip())
+                        block.append(next_line.strip())
 
-                        block_text = "\n".join(block)
-                        match = self.AURA_REGEX.search(block_text)
-                        if match:
-                            aura_name = match.group("name")
-                            aura_key = auras.get(aura_name.lower(), "Not found")
-                            if aura_key == "Not found":
-                                continue
-                            rarity_val = aura_key.get("rarity")
+                    block_text = "\n".join(block)
+                    match = self.AURA_REGEX.search(block_text)
+                    if match:
+                        aura_name = match.group("name")
+                        aura_key = auras.get(aura_name.lower(), "Not found")
+                        if aura_key == "Not found":
+                            continue
+                        rarity_val = aura_key.get("rarity")
 
-                            if int(rarity_val) >= int(self.config["clipping_rarity"]):
-                                time.sleep(5)
-                                self.execute_key_combo(combo_list)
+                        if int(rarity_val) >= int(self.config["clipping_rarity"]):
+                            time.sleep(5)
+                            self.execute_key_combo(combo_list)
             self.macro.logger.write_log("Clipping was stopped.")
                 
         except Exception as e:

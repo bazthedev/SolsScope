@@ -61,6 +61,9 @@ try:
                     f.close()
                 print(f"{file} was downloaded and installed.")
             print("All required libraries were updated, proceeding...")
+            _tempsettings["__version__"] = MAIN_VER
+            with open(f"{WORK_DIR}\\settings.json", "w") as f:
+                json.dump(_tempsettings, f, indent=4)
         else:
             print("No updates were detected.")
 except Exception as e:

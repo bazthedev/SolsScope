@@ -1,4 +1,4 @@
-discord.py==1.7.3
+discord.py
 pyautogui
 pynput
 requests
@@ -10,3 +10,4 @@ websockets
 psutil
 opencv-python
 pytesseract
+pyqt6

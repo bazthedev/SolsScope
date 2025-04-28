@@ -16,34 +16,38 @@ from tkinter import messagebox
 REQUIRED_LIBS = ["constants.py", "discord_utils.py", "gui.py", "macro_logic.py", "roblox_utils.py", "settings_manager.py", "utils.py"]
 MAIN_VER = "1.2.5"
 
-if not os.path.exists(os.path.expandvars(r"%localappdata%\SolsScope")):
-    os.mkdir(os.path.expandvars(r"%localappdata%\SolsScope"))
+WORK_DIR = os.path.expandvars(r"%localappdata%\SolsScope")
+LIB_DIR = os.path.expandvars(r"%localappdata%\SolsScope\lib")
+LEGACY_DIR = os.path.expandvars(r"%localappdata%\Baz's Macro")
 
-if not os.path.exists(os.path.expandvars(r"%localappdata%\SolsScope\lib")):
-    os.mkdir(os.path.expandvars(r"%localappdata%\SolsScope\lib"))
+if not os.path.exists(WORK_DIR):
+    os.mkdir(WORK_DIR)
+
+if not os.path.exists(LIB_DIR):
+    os.mkdir(LIB_DIR)
 
 LIB_DOWNLOAD_URL = "https://raw.githubusercontent.com/bazthedev/SolsScope/main/lib/"
 
 for file in REQUIRED_LIBS:
-    if file not in os.listdir(os.path.expandvars(r"%localappdata%\SolsScope\lib")):
+    if file not in os.listdir(LIB_DIR):
         print(f"{file} was not found, but is required!\nDownloading and installing it now...")
         _download = requests.get(LIB_DOWNLOAD_URL + file, timeout=5)
         _download.raise_for_status()
-        with open(f"{os.path.expandvars(r'%localappdata%\SolsScope\lib')}\\{file}", "wb") as f:
+        with open(f"{LIB_DIR}\\{file}", "wb") as f:
             f.write(_download.content)
             f.close()
         print(f"{file} was downloaded and installed.")
 print("All required libraries were downloaded or already installed, proceeding...")
 
-if not os.path.isfile(f"{os.path.expandvars(r'%localappdata%\SolsScope')}\\settings.json") and os.path.isfile(f"{os.path.expandvars(r'%localappdata%\Baz\'s Macro')}\\settings.json"):
-    os.system(f"xcopy {os.path.expandvars(r'%localappdata%\Baz\'s Macro')}\\settings.json {os.path.expandvars(r'%localappdata%\SolsScope')}")
-elif not os.path.isfile(f"{os.path.expandvars(r'%localappdata%\SolsScope')}\\settings.json"):
-    _temp = open(f"{os.path.expandvars(r'%localappdata%\SolsScope')}\\settings.json", "w")
+if not os.path.isfile(f"{WORK_DIR}\\settings.json") and os.path.isfile(f"{LEGACY_DIR}\\settings.json"):
+    os.system(f"xcopy {LEGACY_DIR}\\settings.json {WORK_DIR}")
+elif not os.path.isfile(f"{WORK_DIR}\\settings.json"):
+    _temp = open(f"{WORK_DIR}\\settings.json", "w")
     _temp.write("{}")
     _temp.close()
 
 try:
-    with open(f"{os.path.expandvars(r'%localappdata%\SolsScope')}\\settings.json", "r") as s:
+    with open(f"{WORK_DIR}\\settings.json", "r") as s:
         _tempsettings = json.load(s)
         if MAIN_VER > _tempsettings["__version__"]:
             print("Macro update detected, redownloading required libraries...")
@@ -52,7 +56,7 @@ try:
                 _download = requests.get(LIB_DOWNLOAD_URL + file, timeout=5)
                 _download.raise_for_status()
                 print("Received response.")
-                with open(f"{os.path.expandvars(r'%localappdata%\SolsScope\lib')}\\{file}", "wb") as f:
+                with open(f"{LIB_DIR}\\{file}", "wb") as f:
                     f.write(_download.content)
                     f.close()
                 print(f"{file} was downloaded and installed.")
@@ -62,7 +66,7 @@ try:
 except Exception as e:
     messagebox.showerror("SolsScope", f"Error whilst downloading required libraries: {e}")
 
-sys.path.insert(1, os.path.expandvars(r"%localappdata%\SolsScope\lib"))
+sys.path.insert(1, LIB_DIR)
 
 
 from pathlib import Path

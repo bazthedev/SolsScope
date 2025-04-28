@@ -84,7 +84,7 @@ class PyQtLogger(Logger):
         if self.log_file_path:
             try:
                 with open(self.log_file_path, "a", encoding='utf-8') as log_file:
-                    log_file.write(formatted_message + '\\n')
+                    log_file.write(formatted_message + '\n')
             except Exception as e:
 
                 print(f"Error writing log to file {self.log_file_path}: {e}")
@@ -172,7 +172,6 @@ class MainWindow(QMainWindow):
             "Auras": AURAS_KEYS,
             "Biomes": BIOMES_KEYS,
             "Merchant": MERCHANT_KEYS,
-            "Path": PATH_KEYS,
             "Auto Craft": AUTOCRAFT_KEYS,
             "Sniper": SNIPER_KEYS,
             "Other": OTHER_KEYS,
@@ -540,7 +539,8 @@ class MainWindow(QMainWindow):
             "Root1527 for the original YAY Joins Sniper logic",
             "Mountain Shrine Path inspiration by AllanQute (_justalin)",
             "dolphSol for inspiration",
-            "vex (vexthecoder) for ideas"
+            "vex (vexthecoder) for ideas",
+            "Doors_Daisukiman for helping with testing"
         ]
         for text in ack_texts:
             ack_label = QLabel(text)

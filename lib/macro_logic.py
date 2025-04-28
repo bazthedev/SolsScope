@@ -1,3 +1,10 @@
+"""
+SolsScope/Baz's Macro
+Created by Baz and Cresqnt
+v1.2.5
+Support server: https://discord.gg/6cuCu6ymkX
+"""
+
 import sys
 import os
 sys.path.insert(1, os.path.expandvars(r"%localappdata%/SolsScope/lib"))
@@ -323,7 +330,6 @@ def biome_detection(settings: dict, webhook, stop_event: threading.Event, sniped
                 emb_rgb = hex2rgb(emb_color_hex)
                 emb = discord.Embed(
                     title=f"Biome Ended: {previous_biome}",
-
                     description=f"Biome **{previous_biome}** has ended.\n**Time:** <t:{str(int(time.time()))}>",
                     colour=discord.Colour.from_rgb(*emb_rgb)
                 )

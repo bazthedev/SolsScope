@@ -49,7 +49,7 @@ elif not os.path.isfile(f"{WORK_DIR}\\settings.json"):
 try:
     with open(f"{WORK_DIR}\\settings.json", "r") as s:
         _tempsettings = json.load(s)
-        if MAIN_VER > _tempsettings["__version__"]:
+        if MAIN_VER > _tempsettings.get("__version__", "1.0.0"):
             print("Macro update detected, redownloading required libraries...")
             for file in REQUIRED_LIBS:
                 print(f"{file} is being downloaded...")

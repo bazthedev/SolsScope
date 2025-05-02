@@ -15,6 +15,7 @@ from tkinter import messagebox
 
 REQUIRED_LIBS = ["constants.py", "discord_utils.py", "gui.py", "macro_logic.py", "roblox_utils.py", "settings_manager.py", "utils.py"]
 MAIN_VER = "1.2.5"
+PRERELEASE = False
 
 WORK_DIR = os.path.expandvars(r"%localappdata%\SolsScope")
 LIB_DIR = os.path.expandvars(r"%localappdata%\SolsScope\lib")
@@ -109,7 +110,7 @@ if missing_core:
     sys.exit(1)
 
 try:
-    from constants import MACROPATH, LOCALVERSION, PRERELEASE, DEFAULTSETTINGS, COORDS
+    from constants import MACROPATH, LOCALVERSION, DEFAULTSETTINGS, COORDS
     from utils import calculate_coords, set_global_logger, parse_version, Logger, get_logger 
     from settings_manager import (
         migrate_settings_from_legacy_location, load_settings, update_settings,
@@ -196,19 +197,27 @@ def run_initial_setup(logger):
             logger.write_log(f"Unexpected error downloading/saving icon: {e}") 
 
     if not settings.get("skip_aura_download", False):
-        if not os.path.exists(get_auras_path()):
-            logger.write_log("Auras file missing.")
-            if not get_auras():
-                logger.write_log("Failed to download auras data.") 
+        logger.write_log("Downloading auras...")
+        if not get_auras():
+            logger.write_log("Failed to download auras data.")
+            
+    elif not os.path.exists(get_auras_path()):
+        logger.write_log("Auras file missing.")
+        if not get_auras():
+            logger.write_log("Failed to download auras data.")
 
     else:
         logger.write_log("Skipping aura download based on settings.")
 
     if not settings.get("skip_biome_download", False):
-        if not os.path.exists(get_biomes_path()):
-            logger.write_log("Biomes file missing.")
-            if not get_biomes():
-                logger.write_log("Failed to download biomes data.") 
+        logger.write_log("Downloading biomes...")
+        if not get_biomes():
+            logger.write_log("Failed to download biomes data.")
+
+    elif not os.path.exists(get_biomes_path()):
+        logger.write_log("Biomes file missing.")
+        if not get_biomes():
+            logger.write_log("Failed to download biomes data.")
 
     else:
         logger.write_log("Skipping biome download based on settings.")

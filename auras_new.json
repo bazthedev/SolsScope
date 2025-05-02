@@ -197,6 +197,12 @@
         "img_url": "https://static.wikia.nocookie.net/sol-rng/images/6/67/Kyawthuite_Collection2.gif/revision/latest",
         "native_biome": ""
     },
+    "kyawthuite: remembrance": {
+        "emb_colour": "#7764b3",
+        "rarity": "450000000",
+        "img_url": "https://static.wikia.nocookie.net/sol-rng/images/4/47/Placeholder.png/revision/latest",
+        "native_biome": ""
+    },
     "arcane": {
         "emb_colour": "#6e96ff",
         "rarity": "1000000",

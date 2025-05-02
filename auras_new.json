@@ -263,6 +263,12 @@
         "img_url": "https://static.wikia.nocookie.net/sol-rng/images/8/88/VirtualReworkCollection.gif/revision/latest",
         "native_biome": ""
     },
+    "virtual: fatal error": {
+        "emb_colour": "#5b7cff",
+        "rarity": "40413000",
+        "img_url": "https://static.wikia.nocookie.net/sol-rng/images/8/88/VirtualReworkCollection.gif/revision/latest",
+        "native_biome": ""
+    },
     "savior": {
         "emb_colour": "#ff5582",
         "rarity": "3200000",

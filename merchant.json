@@ -1,0 +1,210 @@
+{
+    "mari" : {
+        "selling" : {
+            "lucky potion" : {
+                "max_stock" : 25,
+                "cost_per_item" : 1000,
+                "currency" : 1,
+                "item_image_url" : "https://static.wikia.nocookie.net/sol-rng/images/1/11/Lucky1Potion.png/revision/latest"
+            },
+            "speed potion" : {
+                "max_stock" : 25,
+                "cost_per_item" : 2000,
+                "currency" : 1,
+                "item_image_url" : "https://static.wikia.nocookie.net/sol-rng/images/7/70/Speed1Potion.png/revision/latest"
+            },
+            "mixed potion" : {
+                "max_stock" : 25,
+                "cost_per_item" : 3000,
+                "currency" : 1,
+                "item_image_url" : "https://static.wikia.nocookie.net/sol-rng/images/3/38/Mixed_Potion.GIF/revision/latest"
+            },
+            "fortune spoid" : {
+                "max_stock" : 4,
+                "cost_per_item" : 8000,
+                "currency" : 1,
+                "item_image_url" : "https://static.wikia.nocookie.net/sol-rng/images/a/a5/Fortune_spoid_III.GIF/revision/latest"
+            },
+            "gear" : {
+                "max_stock" : 1,
+                "cost_per_item" : 10000,
+                "currency" : 1,
+                "item_image_url" : "https://static.wikia.nocookie.net/sol-rng/images/c/cf/Gear_B_Transparent.png/revision/latest"
+            },
+            "lucky penny" : {
+                "max_stock" : 3,
+                "cost_per_item" : 77777,
+                "currency" : 1,
+                "item_image_url" : "https://static.wikia.nocookie.net/sol-rng/images/e/ed/Lucky-Penny-INV.jpeg/revision/latest"
+            },
+            "void coin" : {
+                "max_stock" : 2,
+                "cost_per_item" : 500000,
+                "currency" : 1,
+                "item_image_url" : "https://static.wikia.nocookie.net/sol-rng/images/3/3b/Void_Coin_Inv.gif/revision/latest"
+            }
+        },
+        "exchange" : {},
+        "currency" : ["$"]
+    },
+    "jester" : {
+        "items" : {
+            "lucky potion" : {
+                "max_stock" : 45,
+                "cost_per_item" : 1,
+                "currency" : 1,
+                "item_image_url" : "https://static.wikia.nocookie.net/sol-rng/images/1/11/Lucky1Potion.png/revision/latest"
+            },
+            "speed potion" : {
+                "max_stock" : 45,
+                "cost_per_item" : 2,
+                "currency" : 1,
+                "item_image_url" : "https://static.wikia.nocookie.net/sol-rng/images/7/70/Speed1Potion.png/revision/latest"
+            },
+            "random potion sack" : {
+                "max_stock" : 10,
+                "cost_per_item" : 10,
+                "currency" : 1,
+                "item_image_url" : "https://static.wikia.nocookie.net/sol-rng/images/c/cf/Random_Potion_Sack.png/revision/latest"
+            },
+            "stella's star" : {
+                "max_stock" : 1,
+                "cost_per_item" : 5,
+                "currency" : 1,
+                "item_image_url" : "https://static.wikia.nocookie.net/sol-rng/images/f/f1/Stellas_star.png/revision/latest"
+            },
+            "rune of wind" : {
+                "max_stock" : 1,
+                "cost_per_item" : 50,
+                "currency" : 1,
+                "item_image_url" : "https://static.wikia.nocookie.net/sol-rng/images/0/06/Rune_of_rainstorm.png/revision/latest"
+            },
+            "rune of frost" : {
+                "max_stock" : 1,
+                "cost_per_item" : 50,
+                "currency" : 1,
+                "item_image_url" : "https://static.wikia.nocookie.net/sol-rng/images/7/78/Rune_of_Frost.png/revision/latest"
+            },
+            "rune of rainstorm" : {
+                "max_stock" : 1,
+                "cost_per_item" : 50,
+                "currency" : 1,
+                "item_image_url" : "https://static.wikia.nocookie.net/sol-rng/images/5/57/Screenshot_2024-06-30_141253.png/revision/latest"
+            },
+            "rune of dust" : {
+                "max_stock" : 1,
+                "cost_per_item" : 50,
+                "currency" : 1,
+                "item_image_url" : "https://static.wikia.nocookie.net/sol-rng/images/5/53/Rune_Of_Dust.png/revision/latest"
+            },
+            "rune of hell" : {
+                "max_stock" : 1,
+                "cost_per_item" : 300,
+                "currency" : 1,
+                "item_image_url" : "https://static.wikia.nocookie.net/sol-rng/images/8/82/Rune_of_Hell.png/revision/latest"
+            },
+            "rune of galaxy" : {
+                "max_stock" : 1,
+                "cost_per_item" : 370,
+                "currency" : 1,
+                "item_image_url" : "https://static.wikia.nocookie.net/sol-rng/images/d/da/Rune_of_Galaxy.png/revision/latest"
+            },
+            "rune of corruption" : {
+                "max_stock" : 1,
+                "cost_per_item" : 450,
+                "currency" : 1,
+                "item_image_url" : "https://static.wikia.nocookie.net/sol-rng/images/0/0a/Rune_Of_Corruption.png/revision/latest"
+            },
+            "rune of nothing" : {
+                "max_stock" : 1,
+                "cost_per_item" : 650,
+                "currency" : 1,
+                "item_image_url" : "https://static.wikia.nocookie.net/sol-rng/images/d/dc/Rune_of_Nothing.png/revision/latest"
+            },
+            "rune of everything" : {
+                "max_stock" : 1,
+                "cost_per_item" : 3000,
+                "currency" : 1,
+                "item_image_url" : "https://static.wikia.nocookie.net/sol-rng/images/6/69/Rune_of_Everything.png/revision/latest"
+            },
+            "strange potion" : {
+                "max_stock" : 25,
+                "cost_per_item" : 25,
+                "currency" : 1,
+                "item_image_url" : "https://static.wikia.nocookie.net/sol-rng/images/2/2b/Strange_Potion_II.png/revision/latest"
+            },
+            "oblivion potion" : {
+                "max_stock" : 1,
+                "cost_per_item" : 5,
+                "currency" : 2,
+                "item_image_url" : "https://static.wikia.nocookie.net/sol-rng/images/2/21/OblivionPotionRender.png/revision/latest"
+            },
+            "potion of bound" : {
+                "max_stock" : 1,
+                "cost_per_item" : 500,
+                "currency" : 1,
+                "item_image_url" : "https://static.wikia.nocookie.net/sol-rng/images/a/a4/Potionofbound.png/revision/latest"
+            },
+            "heavenly potion" : {
+                "max_stock" : 1,
+                "cost_per_item" : 1000,
+                "currency" : 1,
+                "item_image_url" : "https://static.wikia.nocookie.net/sol-rng/images/e/ea/Heavenly2Potion.png/revision/latest"
+            },
+            "merchant tracker" : {
+                "max_stock" : 1,
+                "cost_per_item" : 1000,
+                "currency" : 1,
+                "item_image_url" : "https://static.wikia.nocookie.net/sol-rng/images/6/6e/Merchant_tracker.png/revision/latest"
+            }
+        },
+        "exchange" : {
+            "icicle" : {
+                "price" : 1,
+                "currency" : 1,
+                "item_image_url" : "https://static.wikia.nocookie.net/sol-rng/images/c/c2/Iciclerender.png/revision/latest"
+            },
+            "wind essence" : {
+                "price" : 1,
+                "currency" : 1,
+                "item_image_url" : "https://static.wikia.nocookie.net/sol-rng/images/4/47/WindEssenceRender.png/revision/latest"
+            },
+            "rainy bottle" : {
+                "price" : 1,
+                "currency" : 1,
+                "item_image_url" : "https://static.wikia.nocookie.net/sol-rng/images/a/a2/RainyBottleRender.png/revision/latest"
+            },
+            "eternal flame" : {
+                "price" : 13,
+                "currency" : 1,
+                "item_image_url" : "https://static.wikia.nocookie.net/sol-rng/images/d/d1/Endless_fire.png/revision/latest"
+            },
+            "piece of star" : {
+                "price" : 15,
+                "currency" : 1,
+                "item_image_url" : "https://static.wikia.nocookie.net/sol-rng/images/e/e6/PieceofStarRender.png/revision/latest"
+            },
+            "curruptaine" : {
+                "price" : 18,
+                "currency" : 1,
+                "item_image_url" : "https://static.wikia.nocookie.net/sol-rng/images/8/8a/CurruptaineRender.png/revision/latest?cb=20240511013437"
+            },
+            "hour glass" : {
+                "price" : 24,
+                "currency" : 1,
+                "item_image_url" : "https://static.wikia.nocookie.net/sol-rng/images/3/36/HourglassInventory.png/revision/latest"
+            },
+            "null" : {
+                "price" : 27,
+                "currency" : 1,
+                "item_image_url" : "https://static.wikia.nocookie.net/sol-rng/images/e/e8/NULL%3F%3F.png/revision/latest"
+            },
+            "void coin" : {
+                "price" : 250,
+                "currency" : 1,
+                "item_image_url" : "https://static.wikia.nocookie.net/sol-rng/images/3/3b/Void_Coin_Inv.gif/revision/latest"
+            }
+        },
+        "currency" : ["P", "Void Coins"]
+    }
+}

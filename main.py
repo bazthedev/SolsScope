@@ -1,7 +1,7 @@
 """
 SolsScope/Baz's Macro
 Created by Baz and Cresqnt
-v1.2.5
+v1.2.6
 Support server: https://discord.gg/6cuCu6ymkX
 """
 
@@ -14,7 +14,8 @@ import tkinter as tk
 from tkinter import messagebox
 
 REQUIRED_LIBS = ["constants.py", "discord_utils.py", "gui.py", "macro_logic.py", "roblox_utils.py", "settings_manager.py", "utils.py"]
-MAIN_VER = "1.2.5"
+MAIN_VER = "1.2.6"
+PRERELEASE = True
 
 WORK_DIR = os.path.expandvars(r"%localappdata%\SolsScope")
 LIB_DIR = os.path.expandvars(r"%localappdata%\SolsScope\lib")
@@ -26,10 +27,13 @@ if not os.path.exists(WORK_DIR):
 if not os.path.exists(LIB_DIR):
     os.mkdir(LIB_DIR)
 
-LIB_DOWNLOAD_URL = "https://raw.githubusercontent.com/bazthedev/SolsScope/main/lib/"
+if not PRERELEASE:
+    LIB_DOWNLOAD_URL = "https://raw.githubusercontent.com/bazthedev/SolsScope/main/lib/"
+else:
+    LIB_DOWNLOAD_URL = "https://raw.githubusercontent.com/bazthedev/SolsScope/Preview/lib/"
 
 for file in REQUIRED_LIBS:
-    if file not in os.listdir(LIB_DIR):
+    if file not in os.listdir(LIB_DIR) or PRERELEASE:
         print(f"{file} was not found, but is required!\nDownloading and installing it now...")
         _download = requests.get(LIB_DOWNLOAD_URL + file, timeout=5)
         _download.raise_for_status()
@@ -49,7 +53,7 @@ elif not os.path.isfile(f"{WORK_DIR}\\settings.json"):
 try:
     with open(f"{WORK_DIR}\\settings.json", "r") as s:
         _tempsettings = json.load(s)
-        if MAIN_VER > _tempsettings["__version__"]:
+        if MAIN_VER > _tempsettings.get("__version__", "1.0.0"):
             print("Macro update detected, redownloading required libraries...")
             for file in REQUIRED_LIBS:
                 print(f"{file} is being downloaded...")
@@ -61,6 +65,9 @@ try:
                     f.close()
                 print(f"{file} was downloaded and installed.")
             print("All required libraries were updated, proceeding...")
+            _tempsettings["__version__"] = MAIN_VER
+            with open(f"{WORK_DIR}\\settings.json", "w") as f:
+                json.dump(_tempsettings, f, indent=4)
         else:
             print("No updates were detected.")
 except Exception as e:
@@ -70,7 +77,7 @@ sys.path.insert(1, LIB_DIR)
 
 
 from pathlib import Path
-import importlib 
+import importlib
 import screeninfo as si 
 import mousekey as mk
 from PyQt6.QtWidgets import QApplication, QMessageBox
@@ -106,11 +113,12 @@ if missing_core:
     sys.exit(1)
 
 try:
-    from constants import MACROPATH, LOCALVERSION, PRERELEASE, DEFAULTSETTINGS, COORDS
+    from constants import MACROPATH, LOCALVERSION, DEFAULTSETTINGS, COORDS
     from utils import calculate_coords, set_global_logger, parse_version, Logger, get_logger 
     from settings_manager import (
         migrate_settings_from_legacy_location, load_settings, update_settings,
         get_auras, get_biomes, get_settings_path, get_auras_path, get_biomes_path,
+        get_merchant, get_merchant_path,
         validate_settings 
     )
     from roblox_utils import set_active_log_directory 
@@ -193,27 +201,49 @@ def run_initial_setup(logger):
             logger.write_log(f"Unexpected error downloading/saving icon: {e}") 
 
     if not settings.get("skip_aura_download", False):
-        if not os.path.exists(get_auras_path()):
-            logger.write_log("Auras file missing.")
-            if not get_auras():
-                logger.write_log("Failed to download auras data.") 
+        logger.write_log("Downloading auras...")
+        if not get_auras():
+            logger.write_log("Failed to download auras data.")
+    elif not os.path.exists(get_auras_path()):
+        logger.write_log("Auras file missing.")
+        if not get_auras():
+            logger.write_log("Failed to download auras data.")
 
     else:
         logger.write_log("Skipping aura download based on settings.")
 
     if not settings.get("skip_biome_download", False):
-        if not os.path.exists(get_biomes_path()):
-            logger.write_log("Biomes file missing.")
-            if not get_biomes():
-                logger.write_log("Failed to download biomes data.") 
+        logger.write_log("Downloading biomes...")
+        if not get_biomes():
+            logger.write_log("Failed to download biomes data.")
+
+    elif not os.path.exists(get_biomes_path()):
+        logger.write_log("Biomes file missing.")
+        if not get_biomes():
+            logger.write_log("Failed to download biomes data.")
 
     else:
         logger.write_log("Skipping biome download based on settings.")
+
+    if not settings.get("skip_merchant_download", False):
+        logger.write_log("Downloading merchants...")
+        if not get_merchant():
+            logger.write_log("Failed to download merchant data.")
+
+    elif not os.path.exists(get_merchant_path()):
+        logger.write_log("Merchant file missing.")
+        if not get_merchant():
+            logger.write_log("Failed to download merchant data.")
+
+    else:
+        logger.write_log("Skipping merchant download based on settings.")
 
     if not os.path.exists(get_auras_path()):
         messagebox.showwarning("Data Missing", f"Auras data file missing and could not be downloaded:\n{get_auras_path()}\n\nAura-related features may not work correctly.")
     if not os.path.exists(get_biomes_path()):
         messagebox.showwarning("Data Missing", f"Biomes data file missing and could not be downloaded:\n{get_biomes_path()}\n\nBiome-related features may not work correctly.")
+    if not os.path.exists(get_merchant_path()):
+        messagebox.showwarning("Data Missing", f"Merchant data file missing and could not be downloaded:\n{get_merchant_path()}\n\nMerchant-related features may not work correctly.")
 
     if settings.get("check_update", True):
         logger.write_log("Checking for updates...")

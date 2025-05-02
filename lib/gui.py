@@ -13,6 +13,7 @@ import urllib.request
 import glob 
 import importlib.util 
 from packaging.version import parse as parse_version 
+from pathlib import Path
 
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QFormLayout, QGroupBox,
@@ -26,7 +27,8 @@ from PyQt6.QtGui import QIcon, QPixmap, QTextCursor
 from constants import (
     MACROPATH, LOCALVERSION, WEBHOOK_ICON_URL, STARTUP_MSGS,
     GENERAL_KEYS, AURAS_KEYS, BIOMES_KEYS, MERCHANT_KEYS,
-    AUTOCRAFT_KEYS, SNIPER_KEYS, OTHER_KEYS, COORDS, DEFAULTSETTINGS, PATH_KEYS
+    AUTOCRAFT_KEYS, SNIPER_KEYS, OTHER_KEYS, COORDS, DEFAULTSETTINGS, PATH_KEYS,
+    DONOTDISPLAY, ALT_TESSERACT_DIR
 )
 from utils import (
     get_logger, set_global_logger, Logger, format_key, 
@@ -172,6 +174,7 @@ class MainWindow(QMainWindow):
             "Auras": AURAS_KEYS,
             "Biomes": BIOMES_KEYS,
             "Merchant": MERCHANT_KEYS,
+            "Path": PATH_KEYS,
             "Auto Craft": AUTOCRAFT_KEYS,
             "Sniper": SNIPER_KEYS,
             "Other": OTHER_KEYS,
@@ -220,10 +223,11 @@ class MainWindow(QMainWindow):
 
         form_layout.setHorizontalSpacing(15) 
         form_layout.setVerticalSpacing(10)   
-        parent_layout.addLayout(form_layout) 
+        parent_layout.addLayout(form_layout)
 
         for key, value in settings_subset.items():
-            if key == "__version__": continue
+            if key in DONOTDISPLAY:
+                continue
 
             formatted_key = format_key(key)
 
@@ -359,14 +363,16 @@ class MainWindow(QMainWindow):
 
     def add_merchant_tab_extras(self, layout):
         """Adds Tesseract status and download button to the Merchant tab layout."""
-        status_text = "Tesseract OCR: Installed" if TESSERACT_AVAILABLE and (shutil.which("tesseract") is not None or os.path.exists(r'C:\Program Files\Tesseract-OCR')) else "Tesseract OCR: Not Installed (Merchant Detection Disabled)"
+        status_text = "Tesseract OCR: Installed" if TESSERACT_AVAILABLE and (shutil.which("tesseract") is not None or os.path.exists(r'C:\Program Files\Tesseract-OCR') or os.path.exists(ALT_TESSERACT_DIR)) else "Tesseract OCR: Not Installed (Merchant Detection Disabled)"
         status_color = "green" if TESSERACT_AVAILABLE else "red"
         if TESSERACT_AVAILABLE and shutil.which("tesseract") is None and os.path.exists(r'C:\Program Files\Tesseract-OCR'):
             pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+        elif os.path.exists(ALT_TESSERACT_DIR) and TESSERACT_AVAILABLE and shutil.which("tesseract") is None:
+            pytesseract.pytesseract.tesseract_cmd = f"{ALT_TESSERACT_DIR}\\tesseract.exe"
 
         ocr_label = QLabel(status_text)
         ocr_label.setStyleSheet(f"color: {status_color};")
-        layout.addWidget(ocr_label) 
+        layout.addWidget(ocr_label)
 
         if not TESSERACT_AVAILABLE:
             download_button = QPushButton("Download Tesseract (External Link)")
@@ -775,8 +781,9 @@ class MainWindow(QMainWindow):
         self.logger.write_log("Starting Macro Threads in 5 seconds...")
 
         is_autocraft_mode = self.settings.get("auto_craft_mode", False)
+        is_idle_mode = self.settings.get("idle_mode", False)
         try:
-            thread_targets = self._get_thread_targets(is_autocraft_mode)
+            thread_targets = self._get_thread_targets(is_autocraft_mode, is_idle_mode)
         except ValueError as e: 
              self.running = False 
              return
@@ -824,15 +831,21 @@ class MainWindow(QMainWindow):
             except Exception as e:
                 self.logger.write_log(f"Error starting plugin thread '{plugin_name}': {e}", level="ERROR")
 
-        self._send_start_notification(is_autocraft_mode)
+        self._send_start_notification(is_autocraft_mode, is_idle_mode)
         self.logger.write_log("Macro started successfully.")
 
-    def _get_thread_targets(self, is_autocraft_mode):
+    def _get_thread_targets(self, is_autocraft_mode, is_idle_mode):
         """Helper to determine which threads to start based on mode."""
 
         MERCHANT_DETECTION_POSSIBLE = TESSERACT_AVAILABLE 
 
-        if is_autocraft_mode:
+        if is_idle_mode:
+            self.logger.write_log("Starting in IDLE Mode.")
+            targets = {
+                "Aura Detection": (aura_detection, [self.settings, self.webhook, self.stop_event, self.keyboard_lock, self.mkey, self.keyboard_controller]) if not self.settings.get("disable_aura_detection") else None,
+                "Biome Detection": (biome_detection, [self.settings, self.webhook, self.stop_event, self.sniped_event]) if not self.settings.get("disable_biome_detection") else None,
+            }
+        elif is_autocraft_mode:
             self.logger.write_log("Starting in Auto Craft Mode.")
             enabled_crafts = [item for item, enabled in self.settings.get("auto_craft_item", {}).items() if enabled]
             if not enabled_crafts:
@@ -859,7 +872,7 @@ class MainWindow(QMainWindow):
                 "Biome Detection": (biome_detection, [self.settings, self.webhook, self.stop_event, self.sniped_event]) if not self.settings.get("disable_biome_detection") else None,
                 "Keep Alive": (keep_alive, [self.settings, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey]) if not self.settings.get("disable_autokick_prevention") else None,
                 "Disconnect Prevention": (disconnect_prevention, [self.settings, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller]) if self.settings.get("disconnect_prevention") else None,
-                "Merchant Detection": (merchant_detection, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller]) if self.settings.get("merchant_detection") and MERCHANT_DETECTION_POSSIBLE else None,
+                "Merchant Detection": (merchant_detection, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller]) if (self.settings.get("merchant_detection") or self.settings.get("auto_sell_to_jester")) and MERCHANT_DETECTION_POSSIBLE else None,
                 "Auto Biome Randomizer": (auto_br, [self.settings, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller]) if self.settings.get("auto_biome_randomizer") else None,
                 "Auto Strange Controller": (auto_sc, [self.settings, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller]) if self.settings.get("auto_strange_controller") else None,
                 "Inventory Screenshots": (inventory_screenshot, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey]) if self.settings.get("periodic_screenshots", {}).get("inventory") else None,
@@ -888,9 +901,14 @@ class MainWindow(QMainWindow):
         sniper_thread.start()
         self.threads.append(sniper_thread)
 
-    def _send_start_notification(self, is_autocraft_mode):
+    def _send_start_notification(self, is_autocraft_mode, is_idle_mode):
         """Sends the start notification webhook."""
-        mode_str = "Auto Craft" if is_autocraft_mode else "Normal"
+        if is_idle_mode:
+            mode_str = "IDLE"
+        elif is_autocraft_mode:
+            mode_str = "Auto Craft"
+        else:
+            mode_str = "Normal"
         start_desc = "" 
 
         emb = discord.Embed(

@@ -2,7 +2,7 @@
 SolsScope/Baz's Macro
 Created by Baz and Cresqnt
 v1.2.6
-Support server: https://discord.gg/6cuCu6ymkX
+Support server: https://discord.gg/8khGXqG7nA
 """
 
 import sys
@@ -604,7 +604,7 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
                 logger.write_log(f"Error sending merchant detection webhook: {wh_e}")
 
             purchase_settings = settings.get("auto_purchase_items_mari" if merchant_short_name == "Mari" else "auto_purchase_items_jester", {})
-            items_to_buy = {box_name: item_name for box_name, item_name in detected_items.items() if purchase_settings.get(item_name).get("Purchase", False)}
+            items_to_buy = {box_name: item_name for box_name, item_name in detected_items.items() if purchase_settings.get(item_name, {"Purchase" : False}).get("Purchase", False)}
 
             if items_to_buy:
                 logger.write_log(f"Merchant Detection: Attempting to auto-purchase items: {list(items_to_buy.values())}")
@@ -632,7 +632,7 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
                                         colour=emb_color
                                     )
                                     purch_emb.set_footer(text=f"SolsScope v{LOCALVERSION}")
-                                    if merchants.get(merchant_short_name.lower()).get(item_name.lower()).get("item_image_url"): purch_emb.set_thumbnail(url=merchants.get(merchant_short_name.lower()).get(item_name.lower()).get("item_image_url"))
+                                    if merchants.get(merchant_short_name.lower()).get("items").get(item_name.lower()).get("item_image_url"): purch_emb.set_thumbnail(url=merchants.get(merchant_short_name.lower()).get("items").get(item_name.lower()).get("item_image_url"))
                                     webhook.send(embed=purch_emb, avatar_url=WEBHOOK_ICON_URL)
                                     forward_webhook_msg(
                                         primary_webhook_url=webhook.url,
@@ -667,7 +667,7 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
                             continue
                         x1, y1, x2, y2 = COORDS["first_sell_item_box_pos"]
                         exchange_crop = image[y1:y2, x1:x2]
-                        ocr_ex_item_raw = pytesseract.image_to_string(exchange_crop).strip()
+                        ocr_ex_item_raw = pytesseract.image_to_string(exchange_crop).strip().replace('\n', ' ')
                         ocr_ex_item_clean = re.sub(r"[^a-zA-Z']", "", ocr_ex_item_raw).lower()
                         detected_item_name = fuzzy_match_auto_sell(ocr_ex_item_clean, JESTER_SELL_ITEMS)
                         logger.write_log(f"Item: {detected_item_name} || OCR: {ocr_ex_item_raw}")
@@ -675,49 +675,80 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
                             logger.write_log("Void Coin detected in first slot, skipping to second slot.")
                             _break_second = False
                             while detected_item_name in JESTER_ITEMS and not stop_event.is_set() and not sniped_event.is_set():
+                                logger.write_log("Auto-Sell: Taking screenshot")
                                 pag.screenshot(ex_screenshot_path)
                                 time.sleep(0.2)
-                                logger.write_log("Merchant Detection: Processing screenshot with OCR...")
-                                image = cv2.imread(screenshot_path)
+                                logger.write_log("Auto-Sell: Processing screenshot with OCR...")
+                                image = cv2.imread(ex_screenshot_path)
                                 if image is None:
-                                    logger.write_log("Merchant Detection Error: Failed to read screenshot file.")
+                                    logger.write_log("Auto-Sell Error: Failed to read screenshot file.")
                                     continue
                                 x1, y1, x2, y2 = COORDS["second_sell_item_box_pos"]
                                 exchange_crop = image[y1:y2, x1:x2]
-                                ocr_ex_item_raw = pytesseract.image_to_string(exchange_crop).strip()
+                                ocr_ex_item_raw = pytesseract.image_to_string(exchange_crop).strip().replace('\n', ' ')
                                 ocr_ex_item_clean = re.sub(r"[^a-zA-Z']", "", ocr_ex_item_raw).lower()
                                 detected_item_name = fuzzy_match_auto_sell(ocr_ex_item_clean, JESTER_SELL_ITEMS)
                                 if detected_item_name == "Void Coin":
                                     _break_second = True
-                                    logger.write_log("Void coin detected in second slot, stopping job.")
+                                    logger.write_log("Auto-Sell: Void coin detected in second slot, stopping job.")
                                     break
                                 elif detected_item_name in JESTER_SELL_ITEMS and settings.get("items_to_sell", {}).get(detected_item_name, False):
-                                    logger.write_log(f"{detected_item_name} was detected")
+                                    logger.write_log(f"Auto-Sell: {detected_item_name} was detected")
+                                    time.sleep(0.2)
+                                    mkey.left_click_xy_natural(*COORDS["second_sell_item_click_pos"])
                                     time.sleep(0.2)
                                     mkey.left_click_xy_natural(*COORDS["quantity_btn_pos"])
                                     time.sleep(0.2)
-                                    kb.type("2")
+                                    kb.type(str(settings.get("amount_of_item_to_buy", 1)))
                                     time.sleep(0.2)
                                     mkey.left_click_xy_natural(*COORDS["purchase_btn_pos"])
                                     time.sleep(4.5)
+                                    sell_emb = discord.Embed(
+                                        title=f"Auto-Sold to {merchant_short_name}",
+                                        description=f"Item: **{detected_item_name}**\nAmount: **{str(settings.get('amount_of_item_to_buy', 1))}**\nMaximum Profit: **{str(settings.get('amount_of_item_to_buy', 1) * merchants.get(merchant_short_name.lower()).get('exchange').get(detected_item_name.lower()).get('price'))}P",
+                                        colour=emb_color
+                                    )
+                                    sell_emb.set_footer(text=f"SolsScope v{LOCALVERSION}")
+                                    if merchants.get(merchant_short_name.lower()).get("exchange").get(detected_item_name.lower()).get("item_image_url"): sell_emb.set_thumbnail(url=merchants.get(merchant_short_name.lower()).get("exchange").get(detected_item_name.lower()).get("item_image_url"))
+                                    webhook.send(embed=sell_emb, avatar_url=WEBHOOK_ICON_URL)
+                                    forward_webhook_msg(
+                                        primary_webhook_url=webhook.url,
+                                        secondary_urls=settings.get("SECONDARY_WEBHOOK_URLS", []),
+                                        embed=sell_emb, avatar_url=WEBHOOK_ICON_URL
+                                    )
                                 else:
-                                    logger.write_log("No items were found in the second box or unsure if Void Coin was not detected, ending auto sell job.")
+                                    logger.write_log("Auto-Sell: No items were found in the second box or unsure if Void Coin was not detected, ending auto sell job.")
                                     _break_second = True
                                     break
                                 time.sleep(1)
                             if _break_second:
                                 break
                         elif detected_item_name in JESTER_SELL_ITEMS:
-                            logger.write_log(f"{detected_item_name} was detected")
+                            logger.write_log(f"Auto-Sell: {detected_item_name} was detected")
+                            time.sleep(0.2)
+                            mkey.left_click_xy_natural(*COORDS["first_sell_item_click_pos"])
                             time.sleep(0.2)
                             mkey.left_click_xy_natural(*COORDS["quantity_btn_pos"])
                             time.sleep(0.2)
-                            kb.type("2")
+                            kb.type(str(settings.get("amount_of_item_to_buy", 0)))
                             time.sleep(0.2)
                             mkey.left_click_xy_natural(*COORDS["purchase_btn_pos"])
                             time.sleep(4.5)
+                            sell_emb = discord.Embed(
+                                title=f"Auto-Sold to {merchant_short_name}",
+                                description=f"Item: **{detected_item_name}**\nAmount: **{str(settings.get('amount_of_item_to_buy', 1))}**\nMaximum Profit: **{str(settings.get('amount_of_item_to_buy', 1) * merchants.get(merchant_short_name.lower()).get('exchange').get(detected_item_name.lower()).get('price'))}P**",
+                                colour=emb_color
+                            )
+                            sell_emb.set_footer(text=f"SolsScope v{LOCALVERSION}")
+                            if merchants.get(merchant_short_name.lower()).get("exchange").get(detected_item_name.lower()).get("item_image_url"): sell_emb.set_thumbnail(url=merchants.get(merchant_short_name.lower()).get("exchange").get(detected_item_name.lower()).get("item_image_url"))
+                            webhook.send(embed=sell_emb, avatar_url=WEBHOOK_ICON_URL)
+                            forward_webhook_msg(
+                                primary_webhook_url=webhook.url,
+                                secondary_urls=settings.get("SECONDARY_WEBHOOK_URLS", []),
+                                embed=sell_emb, avatar_url=WEBHOOK_ICON_URL
+                            )
                         else:
-                            logger.write_log("No item was found or unsure if Void Coin was not detected, ending auto sell job.")
+                            logger.write_log("Auto-Sell: No item was found or unsure if Void Coin was not detected, ending auto sell job.")
                             break
                         time.sleep(1)
             with keyboard_lock:
@@ -799,6 +830,10 @@ def auto_craft(settings: dict, stop_event: threading.Event, sniped_event: thread
                     mkey.left_click_xy_natural(*COORDS["craft_btn_pos"])
                     time.sleep(wait_time)
                     mkey.left_click_xy_natural(*COORDS["hp1_pos_potions"]) 
+                    time.sleep(wait_time)
+                    mkey.left_click_xy_natural(*COORDS["hp2_pos_potions"])
+                    time.sleep(wait_time)
+                    mkey.left_click_xy_natural(*COORDS["hp2_pos_potions"])
                     time.sleep(wait_time)
                     mkey.left_click_xy_natural(*COORDS["hp2_pos_potions"])
                     time.sleep(wait_time)

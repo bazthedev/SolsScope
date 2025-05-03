@@ -1,6 +1,6 @@
 {
     "mari" : {
-        "selling" : {
+        "items" : {
             "lucky potion" : {
                 "max_stock" : 25,
                 "cost_per_item" : 1000,

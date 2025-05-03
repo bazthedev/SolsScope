@@ -1,8 +1,8 @@
 """
 SolsScope/Baz's Macro
 Created by Baz and Cresqnt
-v1.2.5
-Support server: https://discord.gg/6cuCu6ymkX
+v1.2.6
+Support server: https://discord.gg/8khGXqG7nA
 """
 
 import sys

@@ -1,3 +1,10 @@
+"""
+SolsScope/Baz's Macro
+Created by Baz and Cresqnt
+v1.2.6
+Support server: https://discord.gg/8khGXqG7nA
+"""
+
 import sys
 import os
 sys.path.insert(1, os.path.expandvars(r"%localappdata%/SolsScope/lib"))
@@ -665,7 +672,6 @@ class MainWindow(QMainWindow):
 
         if not changes_detected:
             self.logger.write_log("No setting changes detected.")
-            QMessageBox.information(self, "Save Settings", "No changes to save.")
             return True, False 
 
         self.logger.write_log(f"Detected changes: {list(full_updated_values.keys())}")
@@ -699,7 +705,6 @@ class MainWindow(QMainWindow):
                         self.logger.write_log(f"Error saving config for plugin '{plugin.name}': {e}", level="ERROR")
 
             self.logger.write_log("Settings saved successfully.")
-            QMessageBox.information(self, "Save Settings", "Settings saved successfully!")
 
             self.settings = validated_settings
             self.original_settings = self.settings.copy()
@@ -1310,5 +1315,4 @@ class MainWindow(QMainWindow):
 
             event.accept() 
         else:
-            event.ignore() 
-
+            event.ignore()

@@ -1,0 +1,244 @@
+{
+    "Basic Hunt" : {
+        "quest_title" : "Basic Hunt",
+        "difficulty" : 1,
+        "objective" : "Roll",
+        "objective_amount" : 1,
+        "reward" : [
+            {
+                "name" : "Lucky Potion",
+                "type" : "item",
+                "amount" : 5,
+                "chance" : 1
+            },
+            {
+                "name" : "Speed Potion",
+                "type" : "item",
+                "amount" : 5,
+                "chance" : 1
+            }
+        ]
+    },
+    "Epic Hunt" : {
+        "quest_title" : "Epic Hunt",
+        "difficulty" : 2,
+        "objective" : "Roll",
+        "objective_amount" : 1,
+        "reward" : [
+            {
+                "name" : "Lucky Potion",
+                "type" : "item",
+                "amount" : 10,
+                "chance" : 1
+            },
+            {
+                "name" : "Speed Potion",
+                "type" : "item",
+                "amount" : 10,
+                "chance" : 1
+            }
+        ]
+    },
+    "Unique Hunt" : {
+        "quest_title" : "Unique Hunt",
+        "difficulty" : 3,
+        "objective" : "Roll",
+        "objective_amount" : 1,
+        "reward" : [
+            {
+                "name" : "Lucky Potion",
+                "type" : "item",
+                "amount" : 25,
+                "chance" : 1
+            },
+            {
+                "name" : "Speed Potion",
+                "type" : "item",
+                "amount" : 25,
+                "chance" : 1
+            }
+        ]
+    },
+    "Legendary Hunt" : {
+        "quest_title" : "Legendary Hunt",
+        "difficulty" : 4,
+        "objective" : "Roll",
+        "objective_amount" : 1,
+        "reward" : [
+            {
+                "name" : "Lucky Potion",
+                "type" : "item",
+                "amount" : 100,
+                "chance" : 1
+            },
+            {
+                "name" : "Speed Potion",
+                "type" : "item",
+                "amount" : 100,
+                "chance" : 1
+            }
+        ]
+    },
+    "Mythic Hunt" : {
+        "quest_title" : "Mythic Hunt",
+        "difficulty" : 5,
+        "objective" : "Roll",
+        "objective_amount" : 1,
+        "reward" : [
+            {
+                "name" : "Lucky Potion",
+                "type" : "item",
+                "amount" : 1000,
+                "chance" : 1
+            },
+            {
+                "name" : "Speed Potion",
+                "type" : "item",
+                "amount" : 1000,
+                "chance" : 1
+            }
+        ]
+    },
+    "Finding a person" : {
+        "quest_title" : "Finding a person",
+        "difficulty" : 5,
+        "objective" : "Find and talk to Jester",
+        "objective_amount" : 1,
+        "reward" : [
+            {
+                "name" : "Potion of Bound",
+                "type" : "item",
+                "amount" : 1,
+                "chance" : 1
+            },
+            {
+                "name" : "Void Coin",
+                "type" : "item",
+                "amount" : 1,
+                "chance" : 0.1
+            }
+        ]
+    },
+    "Meditation I" : {
+        "quest_title" : "Meditation I",
+        "difficulty" : 1,
+        "objective" : "Play the game for {objective_amount} minutes",
+        "objective_amount" : 10,
+        "reward" : [
+            {
+                "name" : "Incense Burner",
+                "type" : "item",
+                "amount" : 1,
+                "chance" : 1
+            }
+        ]
+    },
+    "Meditation II" : {
+        "quest_title" : "Meditation II",
+        "difficulty" : 2,
+        "objective" : "Play the game for {objective_amount} minutes",
+        "objective_amount" : 30,
+        "reward" : [
+            {
+                "name" : "Incense Burner",
+                "type" : "item",
+                "amount" : 3,
+                "chance" : 1
+            }
+        ]
+    },
+    "Delivery I" : {
+        "quest_title" : "Delivery I",
+        "difficulty" : 1,
+        "objective" : "Give {objective_amount} Lucky Potions and {objective_amount} Speed Potions to Lime",
+        "objective_amount" : 10,
+        "reward" : [
+            {
+                "name" : "Lime's Thanks",
+                "type" : "buff",
+                "amount" : 30,
+                "chance" : 1
+            }
+        ]
+    },
+    "Delivery II" : {
+        "quest_title" : "Delivery II",
+        "difficulty" : 2,
+        "objective" : "Give Eternal Flame to Stella",
+        "objective_amount" : 1,
+        "reward" : [
+            {
+                "name" : "Stella's Candle",
+                "type" : "item",
+                "amount" : 1,
+                "chance" : 1
+            }
+        ]
+    },
+    "Delivery III" : {
+        "quest_title" : "Delivery III",
+        "difficulty" : 3,
+        "objective" : "Give Strange Potion I to Mari",
+        "objective_amount" : 1,
+        "reward" : [
+            {
+                "name" : "Fortune Spoid I",
+                "type" : "item",
+                "amount" : 1,
+                "chance" : 1
+            },
+            {
+                "name" : "Fortune Spoid II",
+                "type" : "item",
+                "amount" : 1,
+                "chance" : 1
+            },
+            {
+                "name" : "Fortune Spoid III",
+                "type" : "item",
+                "amount" : 1,
+                "chance" : 1
+            }
+        ]
+    },
+    "Delivery IV" : {
+        "quest_title" : "Delivery IV",
+        "difficulty" : 4,
+        "objective" : "Give Potion of Bound to Lime",
+        "objective_amount" : 1,
+        "reward" : [
+            {
+                "name" : "Lucky Potion",
+                "type" : "item",
+                "amount" : 200,
+                "chance" : 1
+            },
+            {
+                "name" : "Speed Potion",
+                "type" : "item",
+                "amount" : 200,
+                "chance" : 1
+            },
+            {
+                "name" : "Void Coin",
+                "type" : "item",
+                "amount" : 1,
+                "chance" : 0.1
+            }
+        ]
+    },
+    "Delivery V" : {
+        "quest_title" : "Delivery V",
+        "difficulty" : 5,
+        "objective" : "Give Warp Potion to Jake",
+        "objective_amount" : 1,
+        "reward" : [
+            {
+                "name" : "Portable Device",
+                "type" : "item",
+                "amount" : 1,
+                "chance" : 1
+            }
+        ]
+    }
+}

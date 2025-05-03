@@ -2,7 +2,7 @@
 SolsScope/Baz's Macro
 Created by Baz and Cresqnt
 v1.2.6
-Support server: https://discord.gg/6cuCu6ymkX
+Support server: https://discord.gg/8khGXqG7nA
 """
 
 import sys
@@ -44,7 +44,7 @@ def get_auras():
     logger.write_log("Downloading Aura List...")
     try:
 
-        dl = requests.get("https://raw.githubusercontent.com/bazthedev/SolsScope/main/auras_new.json", timeout=10)
+        dl = requests.get("https://raw.githubusercontent.com/bazthedev/SolsScope/main/auras_new.json", timeout=5)
         dl.raise_for_status() 
         with open(AURAS_PATH, "wb") as f:
             f.write(dl.content)
@@ -62,7 +62,7 @@ def get_biomes():
     logger = get_logger()
     logger.write_log("Downloading Biome List...")
     try:
-        dl = requests.get("https://raw.githubusercontent.com/bazthedev/SolsScope/main/biomes.json", timeout=10)
+        dl = requests.get("https://raw.githubusercontent.com/bazthedev/SolsScope/main/biomes.json", timeout=5)
         dl.raise_for_status()
         with open(BIOMES_PATH, "wb") as f:
             f.write(dl.content)
@@ -80,7 +80,7 @@ def get_merchant():
     logger = get_logger()
     logger.write_log("Downloading Merchant List...")
     try:
-        dl = requests.get("https://raw.githubusercontent.com/bazthedev/SolsScope/main/merchant.json", timeout=10)
+        dl = requests.get("https://raw.githubusercontent.com/bazthedev/SolsScope/main/merchant.json", timeout=5)
         dl.raise_for_status()
         with open(MERCHANT_PATH, "wb") as f:
             f.write(dl.content)

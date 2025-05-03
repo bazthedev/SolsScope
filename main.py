@@ -2,7 +2,7 @@
 SolsScope/Baz's Macro
 Created by Baz and Cresqnt
 v1.2.6
-Support server: https://discord.gg/6cuCu6ymkX
+Support server: https://discord.gg/8khGXqG7nA
 """
 
 import sys
@@ -201,7 +201,6 @@ def run_initial_setup(logger):
             logger.write_log(f"Unexpected error downloading/saving icon: {e}") 
 
     if not settings.get("skip_aura_download", False):
-        logger.write_log("Downloading auras...")
         if not get_auras():
             logger.write_log("Failed to download auras data.")
     elif not os.path.exists(get_auras_path()):
@@ -213,7 +212,6 @@ def run_initial_setup(logger):
         logger.write_log("Skipping aura download based on settings.")
 
     if not settings.get("skip_biome_download", False):
-        logger.write_log("Downloading biomes...")
         if not get_biomes():
             logger.write_log("Failed to download biomes data.")
 
@@ -226,7 +224,6 @@ def run_initial_setup(logger):
         logger.write_log("Skipping biome download based on settings.")
 
     if not settings.get("skip_merchant_download", False):
-        logger.write_log("Downloading merchants...")
         if not get_merchant():
             logger.write_log("Failed to download merchant data.")
 

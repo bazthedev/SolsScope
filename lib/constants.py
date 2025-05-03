@@ -2,7 +2,7 @@
 SolsScope/Baz's Macro
 Created by Baz and Cresqnt
 v1.2.6
-Support server: https://discord.gg/6cuCu6ymkX
+Support server: https://discord.gg/8khGXqG7nA
 """
 
 import sys
@@ -139,7 +139,7 @@ DEFAULTSETTINGS = {
     "always_on_top": False,
     "skip_biome_download": False,
     "auto_sell_to_jester" : False,
-    "amount_of_item_to_leave" : 1,
+    "amount_of_item_to_buy" : 9999,
     "items_to_sell" : {
         "Icicle" : True,
         "Wind Essence" : True,
@@ -163,7 +163,7 @@ GENERAL_KEYS = ["WEBHOOK_URL", "private_server_link", "SECONDARY_WEBHOOK_URLS", 
 AURAS_KEYS = ["minimum_roll", "minimum_ping", "reset_aura", "take_screenshot_on_detection"]
 BIOMES_KEYS = ["biomes", "auto_biome_randomizer", "auto_strange_controller", "pop_in_glitch", "auto_use_items_in_glitch", "pop_in_dreamspace", "auto_use_items_in_dreamspace"]
 SNIPER_KEYS = ["sniper_enabled", "sniper_toggles", "DISCORD_TOKEN", "ROBLOSECURITY_KEY", "sniper_logs", "scan_channels"]
-MERCHANT_KEYS = ["merchant_detection", "ping_mari", "mari_ping_id", "auto_purchase_items_mari", "ping_jester", "jester_ping_id", "auto_purchase_items_jester", "auto_sell_to_jester", "amount_of_item_to_leave", "items_to_sell"]
+MERCHANT_KEYS = ["merchant_detection", "ping_mari", "mari_ping_id", "auto_purchase_items_mari", "ping_jester", "jester_ping_id", "auto_purchase_items_jester", "auto_sell_to_jester", "amount_of_item_to_buy", "items_to_sell"]
 AUTOCRAFT_KEYS = ["auto_craft_mode", "auto_craft_item", "skip_auto_mode_warning"]
 PATH_KEYS = ["vip", "do_obby"]
 
@@ -222,16 +222,6 @@ JESTER_SELL_ITEMS = [
     "Piece of Star", "Curruptaine", "Hour Glass", "NULL?", "Void Coin"
 ]
 
-DARK_POINT_CONVERSIONS : {
-    "Icicle" : 1,
-    "Wind Essence" : 1,
-    "Rainy Bottle" : 1,
-    "Eternal Flame" : 13,
-    "Piece of Star" : 15,
-    "Curruptaine" : 18,
-    "Hour Glass" : 24,
-    "NULL?" : 27,
-}
 
 POSSIBLE_MERCHANTS = ["Mari's Shop", "Jester's Shop"]
 

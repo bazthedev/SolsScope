@@ -478,10 +478,7 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
         before_check_interval = 60
     else:
         cooldown_interval = 90
-        before_check_interval = 90
-    
-    cooldown_interval = 5
-    before_check_interval = 5
+        before_check_interval = 90    
 
     auto_sell = settings.get("auto_sell_to_jester", False)
     if auto_sell:

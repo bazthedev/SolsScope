@@ -474,8 +474,8 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
     ps_link_valid = validate_pslink(settings.get("private_server_link", ""))
 
     if settings.get("auto_sell_to_jester", False):
-        cooldown_interval = 60
-        before_check_interval = 120
+        cooldown_interval = 120
+        before_check_interval = 60
     else:
         cooldown_interval = 90
         before_check_interval = 90    
@@ -761,7 +761,7 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
                 with keyboard_lock:
                     mkey.left_click_xy_natural(*COORDS["close_merchant_pos"])
             except Exception:
-                 pass
+                pass
 
     logger.write_log("Merchant Detection thread stopped.")
 

@@ -2,51 +2,61 @@
     "windy" : {
         "colour" : "#91f7ff",
         "multiplier" : 3,
-        "rare" : false
+        "rare" : false,
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/d/d4/Windy_Icon_%28BloxTrap%29.png/revision/latest"
     },
     "snowy" : {
         "colour" : "#c4f5f6",
         "multiplier" : 3,
-        "rare" : false
+        "rare" : false,
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/d/df/Snowy_Icon_%28BloxTrap%29.png/revision/latest"
     },
     "rainy" : {
         "colour" : "#4385ff",
         "multiplier" : 4,
-        "rare" : false
+        "rare" : false,
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/f/ff/Rainy_Biome_%28BloxTrap_Icon%29.png/revision/latest"
     },
     "hell" : {
         "colour" : "#4a1722",
         "multiplier" : 6,
-        "rare" : false
+        "rare" : false,
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/7/75/Hell_Biome_%28BloxTrap%29.png/revision/latest"
     },
     "sand storm" : {
         "colour" : "#f4c27c",
         "multiplier" : 4,
-        "rare" : false
+        "rare" : false,
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/5/5a/Sand_Storm_Biome_%28BloxTrap%29.png/revision/latest"
     },
     "starfall" : {
         "colour" : "#6784e0",
         "multiplier" : 5,
-        "rare" : false
+        "rare" : false,
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/f/f6/Starfall_Biome_%28Bloxtrap_Icon%29.png/revision/latest"
     },
     "corruption" : {
         "colour" : "#9042ff",
         "multiplier" : 5,
-        "rare" : false
+        "rare" : false,
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/e/ea/Corruption_Biome_%28BloxTrap%29.png/revision/latest"
     },
     "null" : {
         "colour" : "#070910",
         "multiplier" : 1000,
-        "rare" : false
+        "rare" : false,
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/b/bb/Null_Biome_%28BloxTrap%29.png/revision/latest"
     },
     "dreamspace" : {
         "colour" : "#ea6cbc",
         "multiplier" : 1,
-        "rare" : true
+        "rare" : true,
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/6/66/Dreamspace_Door.png/revision/latest"
     },
     "glitched" : {
         "colour" : "#64fc64",
         "multiplier" : 1,
-        "rare" : true
+        "rare" : true,
+        "img_url" : "https://raw.githubusercontent.com/bazthedev/SolsScope/refs/heads/main/img/GLITCHED.png"
     }
 }

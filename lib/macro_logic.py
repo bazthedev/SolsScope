@@ -475,7 +475,7 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
 
     if settings.get("auto_sell_to_jester", False):
         cooldown_interval = 60
-        before_check_interval = 60
+        before_check_interval = 120
     else:
         cooldown_interval = 90
         before_check_interval = 90    
@@ -696,13 +696,13 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
                                     time.sleep(0.2)
                                     mkey.left_click_xy_natural(*COORDS["quantity_btn_pos"])
                                     time.sleep(0.2)
-                                    kb.type(str(settings.get("amount_of_item_to_buy", 1)))
+                                    kb.type(str(settings.get("amount_of_item_to_sell", 1)))
                                     time.sleep(0.2)
                                     mkey.left_click_xy_natural(*COORDS["purchase_btn_pos"])
                                     time.sleep(4.5)
                                     sell_emb = discord.Embed(
                                         title=f"Auto-Sold to {merchant_short_name}",
-                                        description=f"Item: **{detected_item_name}**\nAmount: **{str(settings.get('amount_of_item_to_buy', 1))}**\nMaximum Profit: **{str(settings.get('amount_of_item_to_buy', 1) * merchants.get(merchant_short_name.lower()).get('exchange').get(detected_item_name.lower()).get('price'))}P",
+                                        description=f"Item: **{detected_item_name}**\nAmount: **{str(settings.get('amount_of_item_to_sell', 1))}**\nMaximum Profit: **{str(settings.get('amount_of_item_to_sell', 1) * merchants.get(merchant_short_name.lower()).get('exchange').get(detected_item_name.lower()).get('price'))}P",
                                         colour=emb_color
                                     )
                                     sell_emb.set_footer(text=f"SolsScope v{LOCALVERSION}")
@@ -727,13 +727,13 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
                             time.sleep(0.2)
                             mkey.left_click_xy_natural(*COORDS["quantity_btn_pos"])
                             time.sleep(0.2)
-                            kb.type(str(settings.get("amount_of_item_to_buy", 0)))
+                            kb.type(str(settings.get("amount_of_item_to_sell", 0)))
                             time.sleep(0.2)
                             mkey.left_click_xy_natural(*COORDS["purchase_btn_pos"])
                             time.sleep(4.5)
                             sell_emb = discord.Embed(
                                 title=f"Auto-Sold to {merchant_short_name}",
-                                description=f"Item: **{detected_item_name}**\nAmount: **{str(settings.get('amount_of_item_to_buy', 1))}**\nMaximum Profit: **{str(settings.get('amount_of_item_to_buy', 1) * merchants.get(merchant_short_name.lower()).get('exchange').get(detected_item_name.lower()).get('price'))}P**",
+                                description=f"Item: **{detected_item_name}**\nAmount: **{str(settings.get('amount_of_item_to_sell', 1))}**\nMaximum Profit: **{str(settings.get('amount_of_item_to_sell', 1) * merchants.get(merchant_short_name.lower()).get('exchange').get(detected_item_name.lower()).get('price'))}P**",
                                 colour=emb_color
                             )
                             sell_emb.set_footer(text=f"SolsScope v{LOCALVERSION}")
@@ -1233,6 +1233,22 @@ def disconnect_prevention(settings: dict, stop_event: threading.Event, sniped_ev
 
     logger.write_log("Disconnect Prevention thread stopped.")
 
+def storage_full_detection(settings: dict, webhook, stop_event: threading.Event, sniped_event: threading.Event, keyboard_lock: threading.Lock, mkey):
+
+    logger = get_logger()
+    logger.write_log("Started Storage Full Detection")
+
+    if stop_event.wait(timeout=5):
+        return
+
+    while not stop_event.is_set() and not sniped_event.is_set():
+
+        with keyboard_lock:
+            time.sleep(0.1)
+
+
+
+
 def do_obby(settings: dict, stop_event: threading.Event, sniped_event: threading.Event, keyboard_lock: threading.Lock, mkey, kb, ms):
     logger = get_logger()
     if stop_event.wait(timeout=5):
@@ -1255,6 +1271,8 @@ def do_obby(settings: dict, stop_event: threading.Event, sniped_event: threading
             break
         if sniped_event.is_set(): break
     logger.write_log("Obby/Blessing thread stopped.")
+
+
 
 def auto_pop(biome: str, settings: dict, stop_event: threading.Event, keyboard_lock: threading.Lock, mkey, kb):
     logger = get_logger()
@@ -1345,3 +1363,4 @@ def auto_pop(biome: str, settings: dict, stop_event: threading.Event, keyboard_l
                   return
 
     logger.write_log("Auto Pop sequence finished.")
+

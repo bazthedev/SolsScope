@@ -1,8 +1,8 @@
 """
 SolsScope/Baz's Macro
 Created by Baz and Cresqnt
-v1.2.5
-Support server: https://discord.gg/6cuCu6ymkX
+v1.2.6
+Support server: https://discord.gg/8khGXqG7nA
 """
 
 import sys
@@ -14,7 +14,7 @@ import tkinter as tk
 from tkinter import messagebox
 
 REQUIRED_LIBS = ["constants.py", "discord_utils.py", "gui.py", "macro_logic.py", "roblox_utils.py", "settings_manager.py", "utils.py"]
-MAIN_VER = "1.2.5"
+MAIN_VER = "1.2.6"
 PRERELEASE = False
 
 WORK_DIR = os.path.expandvars(r"%localappdata%\SolsScope")
@@ -27,10 +27,14 @@ if not os.path.exists(WORK_DIR):
 if not os.path.exists(LIB_DIR):
     os.mkdir(LIB_DIR)
 
-LIB_DOWNLOAD_URL = "https://raw.githubusercontent.com/bazthedev/SolsScope/main/lib/"
+if not PRERELEASE:
+    LIB_DOWNLOAD_URL = "https://raw.githubusercontent.com/bazthedev/SolsScope/main/lib/"
+else:
+    LIB_DOWNLOAD_URL = "https://raw.githubusercontent.com/bazthedev/SolsScope/Preview/lib/"
+    print("Pre-Release Version! Thank you for being a tester!")
 
 for file in REQUIRED_LIBS:
-    if file not in os.listdir(LIB_DIR):
+    if file not in os.listdir(LIB_DIR) or PRERELEASE:
         print(f"{file} was not found, but is required!\nDownloading and installing it now...")
         _download = requests.get(LIB_DOWNLOAD_URL + file, timeout=5)
         _download.raise_for_status()
@@ -74,7 +78,7 @@ sys.path.insert(1, LIB_DIR)
 
 
 from pathlib import Path
-import importlib 
+import importlib
 import screeninfo as si 
 import mousekey as mk
 from PyQt6.QtWidgets import QApplication, QMessageBox
@@ -115,6 +119,7 @@ try:
     from settings_manager import (
         migrate_settings_from_legacy_location, load_settings, update_settings,
         get_auras, get_biomes, get_settings_path, get_auras_path, get_biomes_path,
+        get_merchant, get_merchant_path,
         validate_settings 
     )
     from roblox_utils import set_active_log_directory 
@@ -197,10 +202,8 @@ def run_initial_setup(logger):
             logger.write_log(f"Unexpected error downloading/saving icon: {e}") 
 
     if not settings.get("skip_aura_download", False):
-        logger.write_log("Downloading auras...")
         if not get_auras():
             logger.write_log("Failed to download auras data.")
-            
     elif not os.path.exists(get_auras_path()):
         logger.write_log("Auras file missing.")
         if not get_auras():
@@ -210,7 +213,6 @@ def run_initial_setup(logger):
         logger.write_log("Skipping aura download based on settings.")
 
     if not settings.get("skip_biome_download", False):
-        logger.write_log("Downloading biomes...")
         if not get_biomes():
             logger.write_log("Failed to download biomes data.")
 
@@ -222,10 +224,24 @@ def run_initial_setup(logger):
     else:
         logger.write_log("Skipping biome download based on settings.")
 
+    if not settings.get("skip_merchant_download", False):
+        if not get_merchant():
+            logger.write_log("Failed to download merchant data.")
+
+    elif not os.path.exists(get_merchant_path()):
+        logger.write_log("Merchant file missing.")
+        if not get_merchant():
+            logger.write_log("Failed to download merchant data.")
+
+    else:
+        logger.write_log("Skipping merchant download based on settings.")
+
     if not os.path.exists(get_auras_path()):
         messagebox.showwarning("Data Missing", f"Auras data file missing and could not be downloaded:\n{get_auras_path()}\n\nAura-related features may not work correctly.")
     if not os.path.exists(get_biomes_path()):
         messagebox.showwarning("Data Missing", f"Biomes data file missing and could not be downloaded:\n{get_biomes_path()}\n\nBiome-related features may not work correctly.")
+    if not os.path.exists(get_merchant_path()):
+        messagebox.showwarning("Data Missing", f"Merchant data file missing and could not be downloaded:\n{get_merchant_path()}\n\nMerchant-related features may not work correctly.")
 
     if settings.get("check_update", True):
         logger.write_log("Checking for updates...")
@@ -375,6 +391,9 @@ if __name__ == '__main__':
         sys.exit(0)
 
     logger.write_log("Initial setup complete. Initializing GUI...")
+
+    if PRERELEASE:
+        logger.write_log("This is a prerelease version!")
 
     try:
         app = QApplication(sys.argv)

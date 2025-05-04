@@ -591,7 +591,7 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
                 item_ocr_results.append(f"**{box_name}:** `{matched}` (Raw: `{ocr_raw}`)")
             emb.add_field(name="Detected Items", value="\n".join(item_ocr_results) if item_ocr_results else "None", inline=False)
 
-            if not (settings.get("mention", False) and settings.get("mention_id", 0) != 0) and (settings.get(f"ping_{merchant_short_name.lower()}_id", 0) == 0):
+            if not (settings.get("mention", False) and settings.get("mention_id", 0) != 0) and (settings.get(f"{merchant_short_name.lower()}_ping_id", 0) == 0):
                 ping_content = f"<@{settings['mention_id']}>{ping_content}"
             
             if not settings.get(f"ping_{merchant_short_name.lower()}", False):

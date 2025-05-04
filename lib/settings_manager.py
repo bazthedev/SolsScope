@@ -1,8 +1,8 @@
 """
 SolsScope/Baz's Macro
 Created by Baz and Cresqnt
-v1.2.5
-Support server: https://discord.gg/6cuCu6ymkX
+v1.2.6
+Support server: https://discord.gg/8khGXqG7nA
 """
 
 import sys
@@ -22,6 +22,7 @@ SETTINGS_PATH = os.path.join(MACROPATH, "settings.json")
 LIB_PATH = os.path.join(MACROPATH, "lib")
 AURAS_PATH = os.path.join(MACROPATH, "auras_new.json")
 BIOMES_PATH = os.path.join(MACROPATH, "biomes.json")
+MERCHANT_PATH = os.path.join(MACROPATH, "merchant.json")
 
 def get_settings_path():
     return SETTINGS_PATH
@@ -35,12 +36,15 @@ def get_auras_path():
 def get_biomes_path():
     return BIOMES_PATH
 
+def get_merchant_path():
+    return MERCHANT_PATH
+
 def get_auras():
     logger = get_logger()
     logger.write_log("Downloading Aura List...")
     try:
 
-        dl = requests.get("https://raw.githubusercontent.com/bazthedev/SolsScope/main/auras_new.json", timeout=10)
+        dl = requests.get("https://raw.githubusercontent.com/bazthedev/SolsScope/main/auras_new.json", timeout=5)
         dl.raise_for_status() 
         with open(AURAS_PATH, "wb") as f:
             f.write(dl.content)
@@ -58,7 +62,7 @@ def get_biomes():
     logger = get_logger()
     logger.write_log("Downloading Biome List...")
     try:
-        dl = requests.get("https://raw.githubusercontent.com/bazthedev/SolsScope/main/biomes.json", timeout=10)
+        dl = requests.get("https://raw.githubusercontent.com/bazthedev/SolsScope/main/biomes.json", timeout=5)
         dl.raise_for_status()
         with open(BIOMES_PATH, "wb") as f:
             f.write(dl.content)
@@ -70,6 +74,24 @@ def get_biomes():
         logger.write_log(f"Failed to download Biome List: {e}")
     except OSError as e:
         logger.write_log(f"Failed to save Biome List: {e}")
+    return False
+
+def get_merchant():
+    logger = get_logger()
+    logger.write_log("Downloading Merchant List...")
+    try:
+        dl = requests.get("https://raw.githubusercontent.com/bazthedev/SolsScope/main/merchant.json", timeout=5)
+        dl.raise_for_status()
+        with open(MERCHANT_PATH, "wb") as f:
+            f.write(dl.content)
+        logger.write_log("Downloaded Merchant List successfully.")
+        return True
+    except requests.exceptions.Timeout:
+        logger.write_log("Failed to download Merchant List: Request timed out.")
+    except requests.exceptions.RequestException as e:
+        logger.write_log(f"Failed to download Merchant List: {e}")
+    except OSError as e:
+        logger.write_log(f"Failed to save Merchant List: {e}")
     return False
 
 def load_settings():
@@ -151,6 +173,10 @@ def validate_settings(current_settings):
     needs_update = False
     keys_to_remove = []
     keys_added = []
+
+    if isinstance(validated_settings["auto_purchase_items_mari"].get("Void Coin", False), bool):
+        del validated_settings["auto_purchase_items_mari"]
+        del validated_settings["auto_purchase_items_jester"]
 
     for key in validated_settings.keys():
         if key not in VALIDSETTINGSKEYS:

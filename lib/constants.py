@@ -1,8 +1,8 @@
 """
 SolsScope/Baz's Macro
 Created by Baz and Cresqnt
-v1.2.5
-Support server: https://discord.gg/6cuCu6ymkX
+v1.2.6
+Support server: https://discord.gg/8khGXqG7nA
 """
 
 import sys
@@ -10,8 +10,7 @@ import os
 sys.path.insert(1, os.path.expandvars(r"%localappdata%/SolsScope/lib"))
 
 MACROPATH = os.path.expandvars(r"%localappdata%\\SolsScope") 
-LOCALVERSION = "1.2.5"
-PRERELEASE = False
+LOCALVERSION = "1.2.6"
 
 PLACE_ID = 15532962292
 BASE_ROBLOX_URL = f"https://www.roblox.com/games/{PLACE_ID}/"
@@ -21,6 +20,8 @@ MS_RBLX_LOG_DIR = os.path.expandvars(r"%LOCALAPPDATA%\\Packages\\ROBLOXCorporati
 
 DISCORD_WS_BASE = "wss://gateway.discord.gg/?v=10&encoding-json"
 WEBHOOK_ICON_URL = "https://raw.githubusercontent.com/bazthedev/SolsScope/a93aaa9a42a7184047f12aa4135f3dab0857f05d/Server%20Edition/whicon.png"
+
+ALT_TESSERACT_DIR = os.path.expandvars(r"%localappdata%\Programs\Tesseract-OCR")
 
 DEFAULTSETTINGS = {
     "WEBHOOK_URL": "",
@@ -84,7 +85,6 @@ DEFAULTSETTINGS = {
     "take_screenshot_on_detection": False,
     "ROBLOSECURITY_KEY": "",
     "DISCORD_TOKEN": "",
-    "collect_items": {"1": False, "2": False, "3": False, "4": False}, 
     "sniper_enabled": False,
     "sniper_toggles": {"Glitched": True, "Dreamspace": False},
     "sniper_logs": True,
@@ -100,41 +100,72 @@ DEFAULTSETTINGS = {
         "glitched": True, "dreamspace": True
     },
     "auto_purchase_items_mari": {
-        "Lucky Potion": False, "Lucky Potion L": False, "Lucky Potion XL": False,
-        "Speed Potion": False, "Speed Potion L": False, "Speed Potion XL": False,
-        "Mixed Potion": False, "Fortune Spoid": False, "Gear": False,
-        "Lucky Penny": False, "Void Coin": True
+        "Lucky Potion": {"Purchase" : False, "amount" : 25},
+        "Speed Potion": {"Purchase" : False, "amount" : 25},
+        "Mixed Potion": {"Purchase" : False, "amount" : 25},
+        "Fortune Spoid": {"Purchase" : False, "amount" : 4},
+        "Gear": {"Purchase" : False, "amount" : 1},
+        "Lucky Penny": {"Purchase" : False, "amount" : 3},
+        "Void Coin": {"Purchase": True, "amount" : 2}
     },
     "auto_purchase_items_jester": {
-        "Lucky Potion": False, "Speed Potion": False, "Random Potion Sack": False,
-        "Stella's Star": False, "Rune of Wind": False, "Rune of Frost": False,
-        "Rune of Rainstorm": False, "Rune of Hell": False, "Rune of Galaxy": False,
-        "Rune of Corruption": False, "Rune of Nothing": False, "Rune of Everything": True,
-        "Strange Potion": True, "Stella's Candle": True, "Potion of Bound": True,
-        "Merchant Tracker": False, "Heavenly Potion": True, "Oblivion Potion": True
+        "Lucky Potion": {"Purchase" : False, "amount" : 45},
+        "Speed Potion": {"Purchase" : False, "amount" : 45},
+        "Random Potion Sack": {"Purchase" : False, "amount" : 10},
+        "Stella's Star": {"Purchase" : False, "amount" : 1},
+        "Rune of Wind": {"Purchase" : False, "amount" : 1},
+        "Rune of Frost": {"Purchase" : False, "amount" : 1},
+        "Rune of Rainstorm": {"Purchase" : False, "amount" : 1},
+        "Rune of Hell": {"Purchase" : False, "amount" : 1},
+        "Rune of Galaxy": {"Purchase" : False, "amount" : 1},
+        "Rune of Corruption": {"Purchase" : False, "amount" : 1},
+        "Rune of Nothing": {"Purchase" : False, "amount" : 1},
+        "Rune of Everything": {"Purchase" : True, "amount" : 1},
+        "Strange Potion": {"Purchase" : True, "amount" : 25},
+        "Stella's Candle": {"Purchase" : True, "amount" : 5},
+        "Potion of Bound": {"Purchase" : True, "amount" : 1},
+        "Merchant Tracker": {"Purchase" : False, "amount" : 1},
+        "Heavenly Potion": {"Purchase" : True, "amount" : 1},
+        "Oblivion Potion": {"Purchase" : True, "amount" : 1}
     },
     "scan_channels": ["1282542323590496277"], 
     "mari_ping_id": 0,
     "jester_ping_id": 0,
     "vip": False, 
-    "do_obby": False, 
-    "do_item_collection": False, 
+    "do_obby": False,
     "SECONDARY_WEBHOOK_URLS": [],
     "disable_aura_detection": False,
     "disable_biome_detection": False,
     "always_on_top": False,
-    "skip_biome_download": False
+    "skip_biome_download": False,
+    "auto_sell_to_jester" : False,
+    "amount_of_item_to_sell" : 9999,
+    "items_to_sell" : {
+        "Icicle" : True,
+        "Wind Essence" : True,
+        "Rainy Bottle" : True,
+        "Eternal Flame" : True,
+        "Piece of Star" : True,
+        "Curruptaine" : True,
+        "Hour Glass" : True,
+        "NULL?" : True,
+    },
+    "idle_mode" : False,
+    "skip_merchant_download" : False
 }
 
-VALIDSETTINGSKEYS = list(DEFAULTSETTINGS.keys()) 
+VALIDSETTINGSKEYS = list(DEFAULTSETTINGS.keys())
 
-GENERAL_KEYS = ["WEBHOOK_URL", "private_server_link", "SECONDARY_WEBHOOK_URLS", "failsafe_key", "use_roblox_player", "global_wait_time", "mention", "mention_id", "skip_aura_download", "skip_biome_download"]
+DONOTDISPLAY = ["__version__"]
+NOTRECOMMENDED = []
+
+GENERAL_KEYS = ["WEBHOOK_URL", "private_server_link", "SECONDARY_WEBHOOK_URLS", "failsafe_key", "use_roblox_player", "global_wait_time", "mention", "mention_id", "skip_aura_download", "skip_biome_download", "skip_merchant_download"]
 AURAS_KEYS = ["minimum_roll", "minimum_ping", "reset_aura", "take_screenshot_on_detection"]
 BIOMES_KEYS = ["biomes", "auto_biome_randomizer", "auto_strange_controller", "pop_in_glitch", "auto_use_items_in_glitch", "pop_in_dreamspace", "auto_use_items_in_dreamspace"]
 SNIPER_KEYS = ["sniper_enabled", "sniper_toggles", "DISCORD_TOKEN", "ROBLOSECURITY_KEY", "sniper_logs", "scan_channels"]
-MERCHANT_KEYS = ["merchant_detection", "ping_mari", "mari_ping_id", "auto_purchase_items_mari", "ping_jester", "jester_ping_id", "auto_purchase_items_jester"]
+MERCHANT_KEYS = ["merchant_detection", "ping_mari", "mari_ping_id", "auto_purchase_items_mari", "ping_jester", "jester_ping_id", "auto_purchase_items_jester", "auto_sell_to_jester", "amount_of_item_to_sell", "items_to_sell"]
 AUTOCRAFT_KEYS = ["auto_craft_mode", "auto_craft_item", "skip_auto_mode_warning"]
-PATH_KEYS = ["vip", "do_obby", "do_item_collection", "collect_items"]
+PATH_KEYS = ["vip", "do_obby"]
 
 OTHER_KEYS = ["disconnect_prevention", "disable_autokick_prevention", "disable_aura_detection", "disable_biome_detection", "always_on_top", "periodic_screenshots", "check_update", "auto_install_update"]
 
@@ -185,6 +216,12 @@ JESTER_ITEMS = [
     "Strange Potion", "Stella's Candle", "Merchant Tracker", "Potion of Bound",
     "Heavenly Potion", "Oblivion Potion"
 ]
+
+JESTER_SELL_ITEMS = [
+    "Icicle", "Wind Essence", "Rainy Bottle", "Eternal Flame",
+    "Piece of Star", "Curruptaine", "Hour Glass", "NULL?", "Void Coin"
+]
+
 
 POSSIBLE_MERCHANTS = ["Mari's Shop", "Jester's Shop"]
 
@@ -237,5 +274,12 @@ COORDS = {
         "Box 3": (1161, 919, 1396, 996),
         "Box 4": (1416, 919, 1650, 996),
         "Box 5": (1668, 919, 1903, 996)
-    }
+    },
+    "exchange_menu_btn_pos" : (1125, 1255),
+    "exchange_btn_pos" : (1170, 794),
+    "first_sell_item_click_pos" : (740, 960),
+    "first_sell_item_box_pos" : (653, 920, 830, 994),
+    "second_sell_item_click_pos" : (927, 961),
+    "second_sell_item_box_pos" : (843, 918, 1020, 994),
+    "close_merchant_pos" : (1880, 449)
 }

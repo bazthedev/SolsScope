@@ -174,7 +174,7 @@ def validate_settings(current_settings):
     keys_to_remove = []
     keys_added = []
 
-    if isinstance(validated_settings["auto_purchase_items_mari"].get("Void Coin", False), bool):
+    if isinstance(validated_settings.get("auto_purchase_items_mari", {}).get("Void Coin", False), bool):
         del validated_settings["auto_purchase_items_mari"]
         del validated_settings["auto_purchase_items_jester"]
 

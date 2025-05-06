@@ -174,9 +174,9 @@ def validate_settings(current_settings):
     keys_to_remove = []
     keys_added = []
 
-    if isinstance(validated_settings.get("auto_purchase_items_mari", {}).get("Void Coin", False), bool):
-        del validated_settings["auto_purchase_items_mari"]
-        del validated_settings["auto_purchase_items_jester"]
+    if isinstance(validated_settings.get("auto_purchase_items_mari", {}).get("Void Coin"), bool):
+        validated_settings.pop("auto_purchase_items_mari", None)
+        validated_settings.pop("auto_purchase_items_jester", None)
 
     for key in validated_settings.keys():
         if key not in VALIDSETTINGSKEYS:
@@ -185,7 +185,7 @@ def validate_settings(current_settings):
             needs_update = True
 
     for key in keys_to_remove:
-        del validated_settings[key]
+        validated_settings.pop(key, None)
 
     for default_key in VALIDSETTINGSKEYS:
         if default_key not in validated_settings:

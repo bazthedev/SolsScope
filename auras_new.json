@@ -385,7 +385,7 @@
     },
     "sailor: flying dutchman": {
         "emb_colour": "#3898b6",
-        "rarity": "800000000",
+        "rarity": "80000000",
         "img_url": "https://static.wikia.nocookie.net/sol-rng/images/5/53/DutchmanCollectionEon1.gif/revision/latest",
         "native_biome": "Rainy"
     },
@@ -541,7 +541,7 @@
     },
     "luminosity": {
         "emb_colour": "#c2deff",
-        "rarity": "12000000000",
+        "rarity": "1200000000",
         "img_url": "https://static.wikia.nocookie.net/sol-rng/images/e/ea/Luminosity_Collection.gif/revision/latest",
         "native_biome": ""
     },
@@ -557,13 +557,13 @@
         "img_url": "https://static.wikia.nocookie.net/sol-rng/images/c/c1/OppressionCollectionEon1.gif/revision/latest",
         "native_biome": "Glitched"
     },
-    "memory, the fallen": {
+    "memory": {
         "emb_colour": "#5343d4",
         "rarity": "35000000",
         "img_url": "https://static.wikia.nocookie.net/sol-rng/images/a/ad/MemoryCollectionEon1.gif/revision/latest",
         "native_biome": ""
     },
-    "oblivion: the truth seeker": {
+    "oblivion": {
         "emb_colour": "#510e9e",
         "rarity": "700000000",
         "img_url": " ://static.wikia.nocookie.net/sol-rng/images/c/c5/Oblivion_colletion_eon1-1.gif/revision/latest",

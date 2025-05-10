@@ -1,5 +1,12 @@
 # SolsScope
 ## A macro for Sols's RNG, boasting Auto craft, Auto purchase, aura/biome detection and much more. Aiming to be dolphSol for Eon 1+
+![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/bazthedev/SolsScope/total)
+![GitHub commit activity](https://img.shields.io/github/commit-activity/m/bazthedev/SolsScope)
+![GitHub Release](https://img.shields.io/github/v/release/bazthedev/SolsScope)
+![GitHub Release Date](https://img.shields.io/github/release-date/bazthedev/SolsScope)
+![GitHub License](https://img.shields.io/github/license/bazthedev/SolsScope)
+![GitHub Repo stars](https://img.shields.io/github/stars/bazthedev/SolsScope)
+
 # Features:
 - Autokick prevention
 - Aura Detection

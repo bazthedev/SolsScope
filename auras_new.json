@@ -642,21 +642,21 @@
         "native_biome" : ""
     },
     "astral: legendarium" : {
-        "emb_colour" : "#000000",
+        "emb_colour" : "#fea72a",
         "rarity" : "267200000",
         "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/4/47/Placeholder.png/revision/latest",
         "native_biome" : "Starfall"
     },
     "stargazer" : {
-        "emb_colour" : "#000000",
+        "emb_colour" : "#b838ac",
         "rarity" : "9200000",
-        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/4/47/Placeholder.png/revision/latest",
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/9/97/Stargazerincollection.gif/revision/latest",
         "native_biome" : "Starfall"
     },
     "harnesssed": {
-        "emb_colour" : "#000000",
+        "emb_colour" : "#58b1dc",
         "rarity" : "8500000",
-        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/4/47/Placeholder.png/revision/latest",
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/9/94/Harnessed_collec.gif/revision/latest/",
         "native_biome" : ""
     }
 }

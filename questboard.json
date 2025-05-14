@@ -2,7 +2,7 @@
     "Basic Hunt" : {
         "quest_title" : "Basic Hunt",
         "difficulty" : 1,
-        "objective" : "Roll",
+        "objective" : "Roll set Basic rarity Aura. (1-998)",
         "objective_amount" : 1,
         "reward" : [
             {
@@ -17,12 +17,13 @@
                 "amount" : 5,
                 "chance" : 1
             }
-        ]
+        ],
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/e/ef/Common_Aura.gif/revision/latest"
     },
     "Epic Hunt" : {
         "quest_title" : "Epic Hunt",
         "difficulty" : 2,
-        "objective" : "Roll",
+        "objective" : "Roll set Epic rarity Aura. (999-9998)",
         "objective_amount" : 1,
         "reward" : [
             {
@@ -37,12 +38,13 @@
                 "amount" : 10,
                 "chance" : 1
             }
-        ]
+        ],
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/7/78/Glock.gif/revision/latest"
     },
     "Unique Hunt" : {
         "quest_title" : "Unique Hunt",
         "difficulty" : 3,
-        "objective" : "Roll",
+        "objective" : "Roll set Unique rarity Aura. (9999-99998)",
         "objective_amount" : 1,
         "reward" : [
             {
@@ -57,12 +59,13 @@
                 "amount" : 25,
                 "chance" : 1
             }
-        ]
+        ],
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/9/9a/Powered.gif/revision/latest"
     },
     "Legendary Hunt" : {
         "quest_title" : "Legendary Hunt",
         "difficulty" : 4,
-        "objective" : "Roll",
+        "objective" : "Roll set Legendary rarity Aura. (99999-999998)",
         "objective_amount" : 1,
         "reward" : [
             {
@@ -77,12 +80,13 @@
                 "amount" : 100,
                 "chance" : 1
             }
-        ]
+        ],
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/6/67/Kyawthuite_Collection2.gif/revision/latest"
     },
     "Mythic Hunt" : {
         "quest_title" : "Mythic Hunt",
         "difficulty" : 5,
-        "objective" : "Roll",
+        "objective" : "Roll set Mythic rarity Aura. (999999-9999998)",
         "objective_amount" : 1,
         "reward" : [
             {
@@ -97,7 +101,8 @@
                 "amount" : 1000,
                 "chance" : 1
             }
-        ]
+        ],
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/8/88/VirtualReworkCollection.gif/revision/latest"
     },
     "Finding a person" : {
         "quest_title" : "Finding a person",
@@ -122,7 +127,7 @@
     "Meditation I" : {
         "quest_title" : "Meditation I",
         "difficulty" : 1,
-        "objective" : "Play the game for {objective_amount} minutes",
+        "objective" : "Play the game for 10 minutes",
         "objective_amount" : 10,
         "reward" : [
             {
@@ -136,41 +141,13 @@
     "Meditation II" : {
         "quest_title" : "Meditation II",
         "difficulty" : 2,
-        "objective" : "Play the game for {objective_amount} minutes",
+        "objective" : "Play the game for 30 minutes",
         "objective_amount" : 30,
         "reward" : [
             {
                 "name" : "Incense Burner",
                 "type" : "item",
                 "amount" : 3,
-                "chance" : 1
-            }
-        ]
-    },
-    "Delivery I" : {
-        "quest_title" : "Delivery I",
-        "difficulty" : 1,
-        "objective" : "Give {objective_amount} Lucky Potions and {objective_amount} Speed Potions to Lime",
-        "objective_amount" : 10,
-        "reward" : [
-            {
-                "name" : "Lime's Thanks",
-                "type" : "buff",
-                "amount" : 30,
-                "chance" : 1
-            }
-        ]
-    },
-    "Delivery II" : {
-        "quest_title" : "Delivery II",
-        "difficulty" : 2,
-        "objective" : "Give Eternal Flame to Stella",
-        "objective_amount" : 1,
-        "reward" : [
-            {
-                "name" : "Stella's Candle",
-                "type" : "item",
-                "amount" : 1,
                 "chance" : 1
             }
         ]
@@ -195,46 +172,6 @@
             },
             {
                 "name" : "Fortune Spoid III",
-                "type" : "item",
-                "amount" : 1,
-                "chance" : 1
-            }
-        ]
-    },
-    "Delivery IV" : {
-        "quest_title" : "Delivery IV",
-        "difficulty" : 4,
-        "objective" : "Give Potion of Bound to Lime",
-        "objective_amount" : 1,
-        "reward" : [
-            {
-                "name" : "Lucky Potion",
-                "type" : "item",
-                "amount" : 200,
-                "chance" : 1
-            },
-            {
-                "name" : "Speed Potion",
-                "type" : "item",
-                "amount" : 200,
-                "chance" : 1
-            },
-            {
-                "name" : "Void Coin",
-                "type" : "item",
-                "amount" : 1,
-                "chance" : 0.1
-            }
-        ]
-    },
-    "Delivery V" : {
-        "quest_title" : "Delivery V",
-        "difficulty" : 5,
-        "objective" : "Give Warp Potion to Jake",
-        "objective_amount" : 1,
-        "reward" : [
-            {
-                "name" : "Portable Device",
                 "type" : "item",
                 "amount" : 1,
                 "chance" : 1

@@ -122,7 +122,8 @@
                 "amount" : 1,
                 "chance" : 0.1
             }
-        ]
+        ],
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/d/db/Headshot_of_Jester.png/revision/latest"
     },
     "Meditation I" : {
         "quest_title" : "Meditation I",
@@ -136,7 +137,8 @@
                 "amount" : 1,
                 "chance" : 1
             }
-        ]
+        ],
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/4/47/Placeholder.png/revision/latest"
     },
     "Meditation II" : {
         "quest_title" : "Meditation II",
@@ -150,7 +152,8 @@
                 "amount" : 3,
                 "chance" : 1
             }
-        ]
+        ],
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/4/47/Placeholder.png/revision/latest"
     },
     "Delivery III" : {
         "quest_title" : "Delivery III",
@@ -176,6 +179,7 @@
                 "amount" : 1,
                 "chance" : 1
             }
-        ]
+        ],
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/3/37/MARI_HIGH_QUALITYY.png/revision/latest"
     }
 }

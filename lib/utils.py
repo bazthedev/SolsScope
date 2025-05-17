@@ -1,7 +1,7 @@
 """
 SolsScope/Baz's Macro
 Created by Baz and Cresqnt
-v1.2.6
+v1.2.7
 Support server: https://discord.gg/8khGXqG7nA
 """
 
@@ -114,6 +114,19 @@ def fuzzy_match_auto_sell(text, sellable_items, threshold=0.6):
     best_score = 0
     text_lower = text.lower()
     for name in sellable_items:
+        name_lower = name.lower()
+        score = SequenceMatcher(None, text_lower, name_lower).ratio()
+        if score > best_score:
+            best_match = name
+            best_score = score
+    return best_match if best_score >= threshold else None
+
+def fuzzy_match_qb(text, quests, threshold=0.6):
+    """Similar to fuzzy_match, specifically for the Quest Board."""
+    best_match = None
+    best_score = 0
+    text_lower = text.lower()
+    for name in quests:
         name_lower = name.lower()
         score = SequenceMatcher(None, text_lower, name_lower).ratio()
         if score > best_score:

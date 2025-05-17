@@ -849,6 +849,88 @@ def auto_craft(settings: dict, stop_event: threading.Event, sniped_event: thread
             try:
                 wait_time = settings.get("global_wait_time", 0.2)
 
+                if settings["auto_craft_item"].get("Jewelry Potion", False):
+                    search_for_potion_in_cauldron("Jewelry")
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["craft_btn_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["craft_btn_pos"][1] * COORDS["scr_hei"])))
+                    time.sleep(wait_time)
+
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["hp1_pos_potions"][0] * COORDS["scr_wid"])) - round(float(110 / 2560 * COORDS["scr_wid"])), round(float(COORDS_PERCENT["hp1_pos_potions"][1] * COORDS["scr_hei"])))
+                    time.sleep(wait_time)
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["hp1_pos_potions"][0] * COORDS["scr_wid"])) - round(float(110 / 2560 * COORDS["scr_wid"])), round(float(COORDS_PERCENT["hp1_pos_potions"][1] * COORDS["scr_hei"])))
+                    time.sleep(wait_time)
+                    kb.type("20"); time.sleep(wait_time)
+
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["hp1_pos_potions"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["hp1_pos_potions"][1] * COORDS["scr_hei"])))
+                    time.sleep(wait_time)
+
+                    if auto_craft_index == 1 and len(items_to_craft) > 1 and auto_mode_swap == 5:
+                        mkey.left_click_xy_natural(round(float(COORDS_PERCENT["auto_btn_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["auto_btn_pos"][1] * COORDS["scr_hei"])))
+                        time.sleep(0.2)
+                    time.sleep(1)
+
+                if settings["auto_craft_item"].get("Zombie Potion", False):
+                    search_for_potion_in_cauldron("Zombie")
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["craft_btn_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["craft_btn_pos"][1] * COORDS["scr_hei"])))
+                    time.sleep(wait_time)
+
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["hp1_pos_potions"][0] * COORDS["scr_wid"])) - round(float(110 / 2560 * COORDS["scr_wid"])), round(float(COORDS_PERCENT["hp1_pos_potions"][1] * COORDS["scr_hei"])))
+                    time.sleep(wait_time)
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["hp1_pos_potions"][0] * COORDS["scr_wid"])) - round(float(110 / 2560 * COORDS["scr_wid"])), round(float(COORDS_PERCENT["hp1_pos_potions"][1] * COORDS["scr_hei"])))
+                    time.sleep(wait_time)
+                    kb.type("10"); time.sleep(wait_time)
+
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["hp1_pos_potions"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["hp1_pos_potions"][1] * COORDS["scr_hei"])))
+                    time.sleep(wait_time)
+
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["hp2_pos_potions"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["hp2_pos_potions"][1] * COORDS["scr_hei"])))
+                    time.sleep(wait_time)
+
+                    if auto_craft_index == 2 and len(items_to_craft) > 1 and auto_mode_swap == 5:
+                        mkey.left_click_xy_natural(round(float(COORDS_PERCENT["auto_btn_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["auto_btn_pos"][1] * COORDS["scr_hei"])))
+                        time.sleep(0.2)
+                    time.sleep(1)
+
+                if settings["auto_craft_item"].get("Rage Potion", False):
+                    search_for_potion_in_cauldron("Rage")
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["craft_btn_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["craft_btn_pos"][1] * COORDS["scr_hei"])))
+                    time.sleep(wait_time)
+
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["hp1_pos_potions"][0] * COORDS["scr_wid"])) - round(float(110 / 2560 * COORDS["scr_wid"])), round(float(COORDS_PERCENT["hp1_pos_potions"][1] * COORDS["scr_hei"])))
+                    time.sleep(wait_time)
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["hp1_pos_potions"][0] * COORDS["scr_wid"])) - round(float(110 / 2560 * COORDS["scr_wid"])), round(float(COORDS_PERCENT["hp1_pos_potions"][1] * COORDS["scr_hei"])))
+                    time.sleep(wait_time)
+                    kb.type("10"); time.sleep(wait_time)
+
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["hp1_pos_potions"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["hp1_pos_potions"][1] * COORDS["scr_hei"])))
+                    time.sleep(wait_time)
+
+                    if auto_craft_index == 3 and len(items_to_craft) > 1 and auto_mode_swap == 5:
+                        mkey.left_click_xy_natural(round(float(COORDS_PERCENT["auto_btn_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["auto_btn_pos"][1] * COORDS["scr_hei"])))
+                        time.sleep(0.2)
+                    time.sleep(1)
+
+                if settings["auto_craft_item"].get("Diver Potion", False):
+                    search_for_potion_in_cauldron("Diver")
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["craft_btn_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["craft_btn_pos"][1] * COORDS["scr_hei"])))
+                    time.sleep(wait_time)
+
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["hp1_pos_potions"][0] * COORDS["scr_wid"])) - round(float(110 / 2560 * COORDS["scr_wid"])), round(float(COORDS_PERCENT["hp1_pos_potions"][1] * COORDS["scr_hei"])))
+                    time.sleep(wait_time)
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["hp1_pos_potions"][0] * COORDS["scr_wid"])) - round(float(110 / 2560 * COORDS["scr_wid"])), round(float(COORDS_PERCENT["hp1_pos_potions"][1] * COORDS["scr_hei"])))
+                    time.sleep(wait_time)
+                    kb.type("20"); time.sleep(wait_time)
+
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["hp1_pos_potions"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["hp1_pos_potions"][1] * COORDS["scr_hei"])))
+                    time.sleep(wait_time)
+
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["hp2_pos_potions"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["hp2_pos_potions"][1] * COORDS["scr_hei"])))
+                    time.sleep(wait_time)
+
+                    if auto_craft_index == 4 and len(items_to_craft) > 1 and auto_mode_swap == 5:
+                        mkey.left_click_xy_natural(round(float(COORDS_PERCENT["auto_btn_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["auto_btn_pos"][1] * COORDS["scr_hei"])))
+                        time.sleep(0.2)
+                    time.sleep(1)
+
                 if settings["auto_craft_item"].get("Potion of Bound", False):
                     search_for_potion_in_cauldron("Bound")
                     mkey.left_click_xy_natural(round(float(COORDS_PERCENT["craft_btn_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["craft_btn_pos"][1] * COORDS["scr_hei"])))
@@ -869,7 +951,7 @@ def auto_craft(settings: dict, stop_event: threading.Event, sniped_event: thread
                     time.sleep(0.2)
                     mkey.left_click_xy_natural(round(float((1064 / 2560) * COORDS["scr_wid"])), round(float((1048 / 1440) * COORDS["scr_hei"])))
                     time.sleep(0.2)
-                    if auto_craft_index == 1 and len(items_to_craft) > 1 and auto_mode_swap == 5:
+                    if auto_craft_index == 5 and len(items_to_craft) > 1 and auto_mode_swap == 5:
                         mkey.left_click_xy_natural(round(float(COORDS_PERCENT["auto_btn_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["auto_btn_pos"][1] * COORDS["scr_hei"])))
                         time.sleep(0.2)
                     time.sleep(1)
@@ -892,7 +974,7 @@ def auto_craft(settings: dict, stop_event: threading.Event, sniped_event: thread
                     time.sleep(wait_time)
                     mkey.left_click_xy_natural(round(float((1064 / 2560) * COORDS["scr_wid"])), round(float((988 / 1440) * COORDS["scr_hei"])))
                     time.sleep(0.2)
-                    if auto_craft_index == 2 and len(items_to_craft) > 1 and auto_mode_swap == 5:
+                    if auto_craft_index == 6 and len(items_to_craft) > 1 and auto_mode_swap == 5:
                         mkey.left_click_xy_natural(round(float(COORDS_PERCENT["auto_btn_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["auto_btn_pos"][1] * COORDS["scr_hei"])))
                         time.sleep(0.2)
                     time.sleep(1)
@@ -903,7 +985,7 @@ def auto_craft(settings: dict, stop_event: threading.Event, sniped_event: thread
                     time.sleep(wait_time)
 
                     mkey.left_click_xy_natural(round(float(COORDS_PERCENT["hp1_pos_potions"][0] * COORDS["scr_wid"])) - round(float(110 / 2560 * COORDS["scr_wid"])), round(float(COORDS_PERCENT["hp1_pos_potions"][1] * COORDS["scr_hei"])))
-                    time.sleep(wait_time);
+                    time.sleep(wait_time)
                     mkey.left_click_xy_natural(round(float(COORDS_PERCENT["hp1_pos_potions"][0] * COORDS["scr_wid"])) - round(float(110 / 2560 * COORDS["scr_wid"])), round(float(COORDS_PERCENT["hp1_pos_potions"][1] * COORDS["scr_hei"])))
                     time.sleep(wait_time)
                     kb.type("25"); time.sleep(wait_time)
@@ -918,7 +1000,7 @@ def auto_craft(settings: dict, stop_event: threading.Event, sniped_event: thread
                     time.sleep(0.2)
                     mkey.left_click_xy_natural(round(float((1064 / 2560) * COORDS["scr_wid"])), round(float((1048 / 1440) * COORDS["scr_hei"])))
                     time.sleep(0.2)
-                    if auto_craft_index == 3 and len(items_to_craft) > 1 and auto_mode_swap == 5:
+                    if auto_craft_index == 7 and len(items_to_craft) > 1 and auto_mode_swap == 5:
                         mkey.left_click_xy_natural(round(float(COORDS_PERCENT["auto_btn_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["auto_btn_pos"][1] * COORDS["scr_hei"])))
                         time.sleep(0.2)
                     time.sleep(1)
@@ -938,7 +1020,7 @@ def auto_craft(settings: dict, stop_event: threading.Event, sniped_event: thread
                     time.sleep(0.2)
                     mkey.left_click_xy_natural(round(float((1064 / 2560) * COORDS["scr_wid"])), round(float((1048 / 1440) * COORDS["scr_hei"])))
                     time.sleep(0.2)
-                    if auto_craft_index == 4 and len(items_to_craft) > 1 and auto_mode_swap == 5:
+                    if auto_craft_index == 8 and len(items_to_craft) > 1 and auto_mode_swap == 5:
                         mkey.left_click_xy_natural(round(float(COORDS_PERCENT["auto_btn_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["auto_btn_pos"][1] * COORDS["scr_hei"])))
                         time.sleep(0.2)
                     time.sleep(1)
@@ -954,7 +1036,7 @@ def auto_craft(settings: dict, stop_event: threading.Event, sniped_event: thread
 
                     mkey.left_click_xy_natural(round(float(COORDS_PERCENT["hp1_pos_potions"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["hp1_pos_potions"][1] * COORDS["scr_hei"])));time.sleep(wait_time)
                     mkey.left_click_xy_natural(round(float(COORDS_PERCENT["hp2_pos_potions"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["hp2_pos_potions"][1] * COORDS["scr_hei"]))); time.sleep(wait_time)
-                    if auto_craft_index == 5 and len(items_to_craft) > 1 and auto_mode_swap == 5:
+                    if auto_craft_index == 9 and len(items_to_craft) > 1 and auto_mode_swap == 5:
                         mkey.left_click_xy_natural(round(float(COORDS_PERCENT["auto_btn_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["auto_btn_pos"][1] * COORDS["scr_hei"])))
                         time.sleep(0.2)
                     time.sleep(1)
@@ -977,7 +1059,7 @@ def auto_craft(settings: dict, stop_event: threading.Event, sniped_event: thread
 
                     ms.scroll(0, 30); time.sleep(0.2)
                     ms.scroll(0, 30); time.sleep(0.2)
-                    if auto_craft_index == 6 and len(items_to_craft) > 1 and auto_mode_swap == 5:
+                    if auto_craft_index == 10 and len(items_to_craft) > 1 and auto_mode_swap == 5:
                         mkey.left_click_xy_natural(round(float(COORDS_PERCENT["auto_btn_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["auto_btn_pos"][1] * COORDS["scr_hei"])))
                         time.sleep(0.2)
                     time.sleep(1)

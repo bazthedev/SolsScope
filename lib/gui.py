@@ -34,7 +34,7 @@ from PyQt6.QtGui import QIcon, QPixmap, QTextCursor
 from constants import (
     MACROPATH, LOCALVERSION, WEBHOOK_ICON_URL, STARTUP_MSGS,
     GENERAL_KEYS, AURAS_KEYS, BIOMES_KEYS, MERCHANT_KEYS,
-    AUTOCRAFT_KEYS, SNIPER_KEYS, OTHER_KEYS, COORDS, DEFAULTSETTINGS, PATH_KEYS,
+    AUTOCRAFT_KEYS, SNIPER_KEYS, OTHER_KEYS, QUEST_KEYS, COORDS, DEFAULTSETTINGS, PATH_KEYS,
     DONOTDISPLAY, ALT_TESSERACT_DIR
 )
 from utils import (
@@ -54,7 +54,7 @@ from discord_utils import forward_webhook_msg, start_snipers, stop_snipers
 from macro_logic import (
     aura_detection, biome_detection, keep_alive, merchant_detection, auto_craft,
     auto_br, auto_sc, inventory_screenshot, storage_screenshot, disconnect_prevention,
-    do_obby, auto_pop, use_item
+    do_obby, auto_pop, use_item, auto_questboard
 )
 
 try:
@@ -181,7 +181,7 @@ class MainWindow(QMainWindow):
             "Auras": AURAS_KEYS,
             "Biomes": BIOMES_KEYS,
             "Merchant": MERCHANT_KEYS,
-            "Path": PATH_KEYS,
+            "Quest" : QUEST_KEYS,
             "Auto Craft": AUTOCRAFT_KEYS,
             "Sniper": SNIPER_KEYS,
             "Other": OTHER_KEYS,
@@ -414,7 +414,7 @@ class MainWindow(QMainWindow):
         button_layout.addStretch(1) 
 
         save_button = QPushButton("Save Settings")
-        save_button.clicked.connect(self.save_settings)
+        save_button.clicked.connect(self.press_save_button)
         button_layout.addWidget(save_button)
 
         layout.addWidget(button_frame) 
@@ -526,6 +526,22 @@ class MainWindow(QMainWindow):
         else:
             image_label.setText("(Install Pillow library to see images)")
             image_label2.setText("(Install Pillow library to see images)")
+        
+        donation_url = "https://raw.githubusercontent.com/bazthedev/SolsScope/main/donations.json"
+        self.logger.write_log(f"Downloading donation data from {donation_url}...")
+        try:
+
+            with urllib.request.urlopen(donation_url, timeout=10) as response, open(image_path, 'wb') as out_file:
+                if response.status == 200:
+                    shutil.copyfileobj(response, out_file)
+                    self.logger.write_log("Donation data downloaded.")
+                else:
+                    self.logger.write_log(f"Failed to download data: Status {response.status}")
+                    raise Exception(f"HTTP Error {response.status}")
+        except Exception as dl_error:
+                self.logger.write_log(f"Error downloading data: {dl_error}")
+
+                raise dl_error
 
         layout.addWidget(image_label)
         layout.addSpacing(15)
@@ -625,6 +641,11 @@ class MainWindow(QMainWindow):
                     continue 
 
         return updated_subset
+    
+    def press_save_button(self):
+        save_successful, changes_were_present = self.save_settings()
+        if save_successful:
+            QMessageBox.information(self, "Settings Saved", "Settings were saved successfully!")
 
     def save_settings(self):
         """Gathers updated values from all tabs (including plugins) and saves them.
@@ -636,7 +657,7 @@ class MainWindow(QMainWindow):
 
         tab_info = {
             "General": GENERAL_KEYS, "Auras": AURAS_KEYS, "Biomes": BIOMES_KEYS,
-            "Merchant": MERCHANT_KEYS, "Path": PATH_KEYS, "Auto Craft": AUTOCRAFT_KEYS,
+            "Merchant": MERCHANT_KEYS, "Quest" : QUEST_KEYS, "Auto Craft": AUTOCRAFT_KEYS,
             "Sniper": SNIPER_KEYS, "Other": OTHER_KEYS
         }
 
@@ -883,6 +904,7 @@ class MainWindow(QMainWindow):
                 "Inventory Screenshots": (inventory_screenshot, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey]) if self.settings.get("periodic_screenshots", {}).get("inventory") else None,
                 "Storage Screenshots": (storage_screenshot, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey]) if self.settings.get("periodic_screenshots", {}).get("storage") else None,
                 "Obby": (do_obby, [self.settings, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.mouse_controller]) if self.settings.get("do_obby") else None,
+                "Auto Quest Board": (auto_questboard, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.mouse_controller]) if self.settings.get("enable_auto_quest_board") else None,
             }
         return targets
 
@@ -941,7 +963,8 @@ class MainWindow(QMainWindow):
                 emb.add_field(name="Current Biome", value=biome if biome else "Unknown", inline=True)
             except Exception:
                 self.logger.write_log(f"Error sending start biome notification: {e}")
-                emb.add_field(name="Current Biome", value="Unknown", inline=True) 
+                emb.add_field(name="Current Biome", value="Unknown", inline=True)
+        emb.add_field(name="Active Webhooks:", value=f"{len(self.settings.get('SECONDARY_WEBHOOK_URLS', [])) + 1}")
 
         try:
             if self.webhook:

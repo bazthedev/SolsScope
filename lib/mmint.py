@@ -220,7 +220,6 @@ def run_macro(path):
 
             case _:
                 print(f"Unknown command: {cmd}")
-    print("Finished")
 
 def choose_and_run():
     root = tk.Tk()

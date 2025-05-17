@@ -16,6 +16,7 @@ import threading
 from datetime import datetime
 import discord 
 import re
+from PIL import ImageGrab
 
 try:
     import cv2
@@ -30,11 +31,14 @@ from pynput import mouse
 
 from constants import (
     MACROPATH, WEBHOOK_ICON_URL, MARI_ITEMS, JESTER_ITEMS,
-    POSSIBLE_MERCHANTS, COORDS, LOCALVERSION, JESTER_SELL_ITEMS
+    POSSIBLE_MERCHANTS, COORDS, LOCALVERSION, JESTER_SELL_ITEMS, COORDS_PERCENT,
+    ACCEPTED_QUESTBOARD, QUESTBOARD_RARITY_COLOURS, PATH_DIR, ALL_QB, DONOTACCEPT_QB,
+    COMPLETION_COLOURS
 )
 from utils import (
     get_logger, create_discord_file_from_path, hex2rgb, fuzzy_match,
-    fuzzy_match_merchant, exists_procs_by_name, validate_pslink, fuzzy_match_auto_sell
+    fuzzy_match_merchant, exists_procs_by_name, validate_pslink, fuzzy_match_auto_sell,
+    fuzzy_match_qb, rgb2hex
 )
 from roblox_utils import (
     get_latest_equipped_aura, get_latest_hovertext, detect_client_disconnect,
@@ -43,7 +47,9 @@ from roblox_utils import (
     align_camera, reset_character
 )
 from discord_utils import forward_webhook_msg
-from settings_manager import get_auras_path, get_biomes_path, get_merchant_path
+from settings_manager import get_auras_path, get_biomes_path, get_merchant_path, get_questboard_path
+
+from mmint import run_macro
 
 def use_item(item_name: str, amount: int, close_menu: bool, mkey, kb, settings: dict):
     logger = get_logger()
@@ -59,17 +65,17 @@ def use_item(item_name: str, amount: int, close_menu: bool, mkey, kb, settings: 
 
     try:
         wait_time = settings.get("global_wait_time", 0.2)
-        mkey.left_click_xy_natural(*COORDS["inv_button_pos"])
+        mkey.left_click_xy_natural(round(float(COORDS_PERCENT["inv_button_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["inv_button_pos"][1] * COORDS["scr_hei"])))
         time.sleep(wait_time)
-        mkey.left_click_xy_natural(*COORDS["items_pos"])
+        mkey.left_click_xy_natural(round(float(COORDS_PERCENT["items_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["items_pos"][1] * COORDS["scr_hei"])))
         time.sleep(wait_time)
-        mkey.left_click_xy_natural(*COORDS["search_pos"])
+        mkey.left_click_xy_natural(round(float(COORDS_PERCENT["search_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["search_pos"][1] * COORDS["scr_hei"])))
         time.sleep(wait_time)
         kb.type(item_name)
         time.sleep(wait_time + 0.2) 
-        mkey.left_click_xy_natural(*COORDS["query_pos"])
+        mkey.left_click_xy_natural(round(float(COORDS_PERCENT["query_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["query_pos"][1] * COORDS["scr_hei"])))
         time.sleep(wait_time)
-        mkey.left_click_xy_natural(*COORDS["item_amt_pos"])
+        mkey.left_click_xy_natural(round(float(COORDS_PERCENT["item_amt_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["item_amt_pos"][1] * COORDS["scr_hei"])))
         time.sleep(wait_time)
 
         kb.press(keyboard.Key.ctrl)
@@ -80,23 +86,23 @@ def use_item(item_name: str, amount: int, close_menu: bool, mkey, kb, settings: 
         time.sleep(wait_time)
         kb.type(str(amount))
         time.sleep(wait_time)
-        mkey.left_click_xy_natural(*COORDS["use_pos"])
+        mkey.left_click_xy_natural(round(float(COORDS_PERCENT["use_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["use_pos"][1] * COORDS["scr_hei"])))
         time.sleep(wait_time + 0.2) 
 
         if close_menu:
-            mkey.left_click_xy_natural(*COORDS["close_pos"])
+            mkey.left_click_xy_natural(round(float(COORDS_PERCENT["close_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["close_pos"][1] * COORDS["scr_hei"])))
             time.sleep(wait_time)
 
-            mkey.left_click_xy_natural(*COORDS["close_pos"])
+            mkey.left_click_xy_natural(round(float(COORDS_PERCENT["close_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["close_pos"][1] * COORDS["scr_hei"])))
             time.sleep(wait_time)
         logger.write_log(f"Used item: {item_name}")
     except Exception as e:
         logger.write_log(f"Error during use_item execution: {e}")
 
         try:
-                mkey.left_click_xy_natural(*COORDS["close_pos"])
+                mkey.left_click_xy_natural(round(float(COORDS_PERCENT["close_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["close_pos"][1] * COORDS["scr_hei"])))
                 time.sleep(wait_time)
-                mkey.left_click_xy_natural(*COORDS["close_pos"])
+                mkey.left_click_xy_natural(round(float(COORDS_PERCENT["close_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["close_pos"][1] * COORDS["scr_hei"])))
         except Exception as close_e:
                 logger.write_log(f"Error trying to close menu after item use error: {close_e}")
 
@@ -167,7 +173,7 @@ def aura_detection(settings: dict, webhook, stop_event: threading.Event, keyboar
                          biome_multiplier = biomes[current_biome_key].get("multiplier", 1.0)
                          if biome_multiplier > 0:
                              effective_rarity = int(base_rarity / biome_multiplier)
-                             description += f"**Rarity:** 1 / {effective_rarity:,} (in native biome: {current_biome})\n"
+                             description += f"**Rarity:** 1 / {effective_rarity:,} (from {current_biome})\n"
                          else:
                              description += f"**Rarity:** 1 / {base_rarity:,} (Base)\n" 
                     else:
@@ -251,22 +257,22 @@ def aura_detection(settings: dict, webhook, stop_event: threading.Event, keyboar
                         with keyboard_lock:
                             try:
                                 wait_time = settings.get("global_wait_time", 0.2)
-                                mkey.left_click_xy_natural(*COORDS["aura_button_pos"])
+                                mkey.left_click_xy_natural(round(float(COORDS_PERCENT["aura_button_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["aura_button_pos"][1] * COORDS["scr_hei"])))
                                 time.sleep(wait_time)
-                                mkey.left_click_xy_natural(*COORDS["search_pos"])
+                                mkey.left_click_xy_natural(round(float(COORDS_PERCENT["search_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["search_pos"][1] * COORDS["scr_hei"])))
                                 time.sleep(wait_time)
                                 kb.type(reset_aura_target)
                                 time.sleep(wait_time + 0.2)
-                                mkey.left_click_xy_natural(*COORDS["query_pos"])
+                                mkey.left_click_xy_natural(round(float(COORDS_PERCENT["equip_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["equip_pos"][1] * COORDS["scr_hei"])))
                                 time.sleep(wait_time)
 
-                                mkey.left_click_xy_natural(*COORDS["equip_pos"])
+                                mkey.left_click_xy_natural(round(float(COORDS_PERCENT["equip_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["equip_pos"][1] * COORDS["scr_hei"])))
                                 time.sleep(wait_time)
-                                mkey.left_click_xy_natural(*COORDS["equip_pos"])
+                                mkey.left_click_xy_natural(round(float(COORDS_PERCENT["equip_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["equip_pos"][1] * COORDS["scr_hei"])))
                                 time.sleep(wait_time)
-                                mkey.left_click_xy_natural(*COORDS["close_pos"])
+                                mkey.left_click_xy_natural(round(float(COORDS_PERCENT["close_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["close_pos"][1] * COORDS["scr_hei"])))
                                 time.sleep(wait_time)
-                                mkey.left_click_xy_natural(*COORDS["close_pos"])
+                                mkey.left_click_xy_natural(round(float(COORDS_PERCENT["close_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["close_pos"][1] * COORDS["scr_hei"])))
                                 logger.write_log("Aura reset initiated.")
                                 previous_aura = reset_aura_target 
                             except Exception as reset_e:
@@ -317,14 +323,13 @@ def biome_detection(settings: dict, webhook, stop_event: threading.Event, sniped
             previous_biome_key = previous_biome.lower() if previous_biome else None
 
             if previous_biome_key is None or current_biome_key == previous_biome_key:
-                previous_biome = current_biome 
-                time.sleep(settings.get("global_wait_time", 0.2) + 1.0) 
+                previous_biome = current_biome
                 continue
 
             logger.write_log(f"Biome change detected: {previous_biome} -> {current_biome}")
             rnow = datetime.now()
 
-            if previous_biome_key and previous_biome_key != "normal" and previous_biome_key in biomes:
+            if previous_biome_key and previous_biome_key != "normal" and previous_biome_key in biomes and settings.get("biomes", {}).get(previous_biome_key, False):
                 prev_biome_data = biomes[previous_biome_key]
                 emb_color_hex = prev_biome_data.get("colour", "#808080")
                 emb_rgb = hex2rgb(emb_color_hex)
@@ -333,6 +338,7 @@ def biome_detection(settings: dict, webhook, stop_event: threading.Event, sniped
                     description=f"Biome **{previous_biome}** has ended.\n**Time:** <t:{str(int(time.time()))}>",
                     colour=discord.Colour.from_rgb(*emb_rgb)
                 )
+                emb.set_thumbnail(url=biomes.get(previous_biome.lower()).get("img_url"))
                 try:
                     webhook.send(avatar_url=WEBHOOK_ICON_URL, embed=emb)
                     forward_webhook_msg(
@@ -368,6 +374,8 @@ def biome_detection(settings: dict, webhook, stop_event: threading.Event, sniped
                         emb.set_footer(text=f"SolsScope v{LOCALVERSION}")
                     else:
                         ping_content = ""
+
+                    emb.set_thumbnail(url=biomes.get(current_biome.lower()).get("img_url"))
                     try:
                         webhook.send(content=ping_content, avatar_url=WEBHOOK_ICON_URL, embed=emb)
                         forward_webhook_msg(
@@ -415,9 +423,9 @@ def keep_alive(settings: dict, stop_event: threading.Event, sniped_event: thread
         with keyboard_lock:
             try:
                 logger.write_log("Keep Alive: Performing anti-AFK action (clicking close pos).")
-                mkey.left_click_xy_natural(*COORDS["close_pos"])
+                mkey.left_click_xy_natural(round(float(COORDS_PERCENT["close_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["close_pos"][1] * COORDS["scr_hei"])))
                 time.sleep(0.2)
-                mkey.left_click_xy_natural(*COORDS["close_pos"])
+                mkey.left_click_xy_natural(round(float(COORDS_PERCENT["close_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["close_pos"][1] * COORDS["scr_hei"])))
             except Exception as e:
                 logger.write_log(f"Error during Keep Alive action: {e}")
 
@@ -431,15 +439,15 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
 
     _check_config_items = False
     for item in settings.get("auto_purchase_items_mari").keys():
-        if settings["auto_purchase_items_mari"].get(item, False):
+        if settings.get("auto_purchase_items_mari", {}).get(item, {}).get("Purchase", False):
             _check_config_items = True
     for item in settings.get("auto_purchase_items_jester").keys():
-        if settings["auto_purchase_items_jester"].get(item, False):
+        if settings.get("auto_purchase_items_jester", {}).get(item, {}).get("Purchase", False):
             _check_config_items = True
 
     _check_sell_items = False
     for item in settings.get("items_to_sell").keys():
-        if settings["items_to_sell"].get(item, False):
+        if settings.get("items_to_sell").get(item, False):
             _check_sell_items = True
 
     
@@ -504,7 +512,7 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
                 use_item("Merchant Teleport", 1, False, mkey, kb, settings) 
                 time.sleep(settings.get("global_wait_time", 0.2) + 0.5) 
 
-                mkey.left_click_xy_natural(*COORDS["close_pos"])
+                mkey.left_click_xy_natural(round(float(COORDS_PERCENT["close_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["close_pos"][1] * COORDS["scr_hei"])))
                 time.sleep(1)
 
                 logger.write_log("Merchant Detection: Attempting interaction (E key)...")
@@ -514,7 +522,7 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
                 time.sleep(7) 
 
                 logger.write_log("Merchant Detection: Clicking open merchant position...")
-                mkey.left_click_xy_natural(*COORDS["open_merch_pos"])
+                mkey.left_click_xy_natural(round(float(COORDS_PERCENT["open_merch_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["open_merch_pos"][1] * COORDS["scr_hei"])))
                 time.sleep(3) 
 
             logger.write_log("Merchant Detection: Taking screenshot...")
@@ -527,7 +535,11 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
                 logger.write_log("Merchant Detection Error: Failed to read screenshot file.")
                 continue
 
-            x1, y1, x2, y2 = COORDS["merchant_box"]
+            x1p, y1p, x2p, y2p = COORDS_PERCENT["merchant_box"]
+            x1 = round(x1p * COORDS["scr_wid"])
+            y1 = round(y1p * COORDS["scr_hei"])
+            x2 = round(x2p * COORDS["scr_wid"])
+            y2 = round(y2p * COORDS["scr_hei"])
             merchant_crop = image[y1:y2, x1:x2]
             ocr_merchant_raw = pytesseract.image_to_string(merchant_crop).strip()
 
@@ -538,8 +550,8 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
                 logger.write_log(f"Merchant Detection: Could not identify merchant from OCR ('{ocr_merchant_raw}'). Skipping.")
 
                 with keyboard_lock:
-                    mkey.left_click_xy_natural(*COORDS["close_pos"])
-                continue 
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["close_pos"][0]) * COORDS["scr_wid"]), round(float(COORDS_PERCENT["close_pos"][1]) * COORDS["scr_hei"]))
+                continue
 
             merchant_short_name = detected_merchant_name.split("'")[0] 
             logger.write_log(f"Merchant Detected: {merchant_short_name} (Raw OCR: '{ocr_merchant_raw}')")
@@ -551,12 +563,12 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
                 emb_color = discord.Colour.from_rgb(255, 255, 255)
                 thumbnail_url = "https://static.wikia.nocookie.net/sol-rng/images/3/37/MARI_HIGH_QUALITYY.png/revision/latest"
                 if settings.get("ping_mari", False) and settings.get("mari_ping_id", 0) != 0:
-                    ping_content += f" <@{settings['mari_ping_id']}>"
+                    ping_content += f"<@&{settings['mari_ping_id']}>"
             elif merchant_short_name == "Jester":
                 emb_color = discord.Colour.from_rgb(176, 49, 255)
                 thumbnail_url = "https://static.wikia.nocookie.net/sol-rng/images/d/db/Headshot_of_Jester.png/revision/latest"
                 if settings.get("ping_jester", False) and settings.get("jester_ping_id", 0) != 0:
-                    ping_content += f" <@{settings['jester_ping_id']}>"
+                    ping_content += f"<@&{settings['jester_ping_id']}>"
             else:
                 emb_color = discord.Colour.default()
                 thumbnail_url = None
@@ -588,8 +600,11 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
                 item_ocr_results.append(f"**{box_name}:** `{matched}` (Raw: `{ocr_raw}`)")
             emb.add_field(name="Detected Items", value="\n".join(item_ocr_results) if item_ocr_results else "None", inline=False)
 
-            if settings.get("mention", False) and settings.get("mention_id", 0) != 0:
+            if not (settings.get("mention", False) and settings.get("mention_id", 0) == 0) and (settings.get(f"{merchant_short_name.lower()}_ping_id", 0) != 0 and settings.get(f"ping_{merchant_short_name.lower()}", False)):
                 ping_content = f"<@{settings['mention_id']}>{ping_content}"
+
+            if not settings.get(f"ping_{merchant_short_name.lower()}", False):
+                ping_content = ""
             try:
                 webhook.send(content=ping_content.strip(), embed=emb, file=file_to_send, avatar_url=WEBHOOK_ICON_URL)
                 forward_webhook_msg(
@@ -612,13 +627,13 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
                             coord_key = f"merch_item_pos_{box_name[-1]}_purchase"
                             if coord_key in COORDS:
                                 wait_time = settings.get("global_wait_time", 0.2)
-                                mkey.left_click_xy_natural(*COORDS[coord_key])
+                                mkey.left_click_xy_natural(round(float(COORDS_PERCENT[coord_key][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT[coord_key][1] * COORDS["scr_hei"])))
                                 time.sleep(wait_time)
-                                mkey.left_click_xy_natural(*COORDS["quantity_btn_pos"])
+                                mkey.left_click_xy_natural(round(float(COORDS_PERCENT["quantity_btn_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["quantity_btn_pos"][1] * COORDS["scr_hei"])))
                                 time.sleep(wait_time)
                                 kb.type(str(purchase_settings.get(item_name).get("amount", 1)))
                                 time.sleep(wait_time)
-                                mkey.left_click_xy_natural(*COORDS["purchase_btn_pos"])
+                                mkey.left_click_xy_natural(round(float(COORDS_PERCENT["purchase_btn_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["purchase_btn_pos"][1] * COORDS["scr_hei"])))
                                 time.sleep(wait_time + 0.5) 
                                 logger.write_log(f"Auto-purchased: {item_name}")
 
@@ -646,13 +661,13 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
             if auto_sell and merchant_short_name == "Jester":
                 with keyboard_lock:
                     time.sleep(0.2)
-                    mkey.left_click_xy_natural(*COORDS["close_merchant_pos"])
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["close_merchant_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["close_merchant_pos"][1] * COORDS["scr_hei"])))
                     time.sleep(0.2)
                     kb.press('e')
                     time.sleep(0.2)
                     kb.release('e')
                     time.sleep(7)
-                    mkey.left_click_xy_natural(*COORDS["exchange_menu_btn_pos"])
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["exchange_menu_btn_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["exchange_menu_btn_pos"][1] * COORDS["scr_hei"])))
                     time.sleep(9)
                     while not stop_event.is_set() and not sniped_event.is_set():
                         pag.screenshot(ex_screenshot_path)
@@ -662,7 +677,11 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
                         if image is None:
                             logger.write_log("Merchant Detection Error: Failed to read screenshot file.")
                             continue
-                        x1, y1, x2, y2 = COORDS["first_sell_item_box_pos"]
+                        x1p, y1p, x2p, y2p = COORDS_PERCENT["first_sell_item_box_pos"]
+                        x1 = round(x1p * COORDS["scr_wid"])
+                        y1 = round(y1p * COORDS["scr_hei"])
+                        x2 = round(x2p * COORDS["scr_wid"]) 
+                        y2 = round(y2p * COORDS["scr_hei"])
                         exchange_crop = image[y1:y2, x1:x2]
                         ocr_ex_item_raw = pytesseract.image_to_string(exchange_crop).strip().replace('\n', ' ')
                         ocr_ex_item_clean = re.sub(r"[^a-zA-Z']", "", ocr_ex_item_raw).lower()
@@ -680,7 +699,11 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
                                 if image is None:
                                     logger.write_log("Auto-Sell Error: Failed to read screenshot file.")
                                     continue
-                                x1, y1, x2, y2 = COORDS["second_sell_item_box_pos"]
+                                x1p, y1p, x2p, y2p = COORDS_PERCENT["second_sell_item_box_pos"]
+                                x1 = round(x1p * COORDS["scr_wid"])
+                                y1 = round(y1p * COORDS["scr_hei"])
+                                x2 = round(x2p * COORDS["scr_wid"])
+                                y2 = round(y2p * COORDS["scr_hei"])
                                 exchange_crop = image[y1:y2, x1:x2]
                                 ocr_ex_item_raw = pytesseract.image_to_string(exchange_crop).strip().replace('\n', ' ')
                                 ocr_ex_item_clean = re.sub(r"[^a-zA-Z']", "", ocr_ex_item_raw).lower()
@@ -692,13 +715,15 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
                                 elif detected_item_name in JESTER_SELL_ITEMS and settings.get("items_to_sell", {}).get(detected_item_name, False):
                                     logger.write_log(f"Auto-Sell: {detected_item_name} was detected")
                                     time.sleep(0.2)
-                                    mkey.left_click_xy_natural(*COORDS["second_sell_item_click_pos"])
+                                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["second_sell_item_click_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["second_sell_item_click_pos"][1] * COORDS["scr_hei"])))
                                     time.sleep(0.2)
-                                    mkey.left_click_xy_natural(*COORDS["quantity_btn_pos"])
+                                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["quantity_btn_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["quantity_btn_pos"][1] * COORDS["scr_hei"])))
                                     time.sleep(0.2)
                                     kb.type(str(settings.get("amount_of_item_to_sell", 1)))
                                     time.sleep(0.2)
-                                    mkey.left_click_xy_natural(*COORDS["purchase_btn_pos"])
+                                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["purchase_btn_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["purchase_btn_pos"][1] * COORDS["scr_hei"])))
+                                    time.sleep(0.2)
+                                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["exchange_btn_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["exchange_btn_pos"][1] * COORDS["scr_hei"])))
                                     time.sleep(4.5)
                                     sell_emb = discord.Embed(
                                         title=f"Auto-Sold to {merchant_short_name}",
@@ -720,16 +745,18 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
                                 time.sleep(1)
                             if _break_second:
                                 break
-                        elif detected_item_name in JESTER_SELL_ITEMS:
+                        elif detected_item_name in JESTER_SELL_ITEMS and settings.get("items_to_get", {}).get(detected_item_name, False):
                             logger.write_log(f"Auto-Sell: {detected_item_name} was detected")
                             time.sleep(0.2)
-                            mkey.left_click_xy_natural(*COORDS["first_sell_item_click_pos"])
+                            mkey.left_click_xy_natural(round(float(COORDS_PERCENT["first_sell_item_click_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["first_sell_item_click_pos"][1] * COORDS["scr_hei"])))
                             time.sleep(0.2)
-                            mkey.left_click_xy_natural(*COORDS["quantity_btn_pos"])
+                            mkey.left_click_xy_natural(round(float(COORDS_PERCENT["quantity_btn_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["quantity_btn_pos"][1] * COORDS["scr_hei"])))
                             time.sleep(0.2)
                             kb.type(str(settings.get("amount_of_item_to_sell", 0)))
                             time.sleep(0.2)
-                            mkey.left_click_xy_natural(*COORDS["purchase_btn_pos"])
+                            mkey.left_click_xy_natural(round(float(COORDS_PERCENT["purchase_btn_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["purchase_btn_pos"][1] * COORDS["scr_hei"])))
+                            time.sleep(0.2)
+                            mkey.left_click_xy_natural(round(float(COORDS_PERCENT["exchange_btn_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["exchange_btn_pos"][1] * COORDS["scr_hei"])))
                             time.sleep(4.5)
                             sell_emb = discord.Embed(
                                 title=f"Auto-Sold to {merchant_short_name}",
@@ -749,7 +776,7 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
                             break
                         time.sleep(1)
             with keyboard_lock:
-                mkey.left_click_xy_natural(*COORDS["close_merchant_pos"])
+                mkey.left_click_xy_natural(round(float(COORDS_PERCENT["close_merchant_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["close_merchant_pos"][1] * COORDS["scr_hei"])))
             time.sleep(cooldown_interval)
 
         except Exception as e:
@@ -759,7 +786,7 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
 
             try:
                 with keyboard_lock:
-                    mkey.left_click_xy_natural(*COORDS["close_merchant_pos"])
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["close_merchant_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["close_merchant_pos"][1] * COORDS["scr_hei"])))
             except Exception:
                 pass
 
@@ -797,9 +824,9 @@ def auto_craft(settings: dict, stop_event: threading.Event, sniped_event: thread
         time.sleep(0.2)
         kb.release('f')
         time.sleep(0.5) 
-        mkey.left_click_xy_natural(*COORDS["potion_search_pos"])
+        mkey.left_click_xy_natural(round(float(COORDS_PERCENT["potion_search_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["potion_search_pos"][1] * COORDS["scr_hei"])))
         time.sleep(0.2)
-        mkey.left_click_xy_natural(*COORDS["potion_search_pos"])
+        mkey.left_click_xy_natural(round(float(COORDS_PERCENT["potion_search_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["potion_search_pos"][1] * COORDS["scr_hei"])))
         time.sleep(0.2)
 
         kb.press(keyboard.Key.ctrl); kb.press('a'); time.sleep(0.05); kb.release('a'); kb.release(keyboard.Key.ctrl); time.sleep(0.2)
@@ -807,10 +834,10 @@ def auto_craft(settings: dict, stop_event: threading.Event, sniped_event: thread
         time.sleep(0.2)
         kb.type(potion_name)
         time.sleep(0.3)
-        mkey.left_click_xy_natural(*COORDS["first_potion_pos"])
+        mkey.left_click_xy_natural(round(float(COORDS_PERCENT["first_potion_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["first_potion_pos"][1] * COORDS["scr_hei"])))
         time.sleep(0.2)
 
-        mkey.left_click_xy_natural(*COORDS["potion_search_pos"])
+        mkey.left_click_xy_natural(round(float(COORDS_PERCENT["potion_search_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["potion_search_pos"][1] * COORDS["scr_hei"])))
         time.sleep(0.2)
 
     if stop_event.wait(timeout=10):
@@ -824,153 +851,155 @@ def auto_craft(settings: dict, stop_event: threading.Event, sniped_event: thread
 
                 if settings["auto_craft_item"].get("Potion of Bound", False):
                     search_for_potion_in_cauldron("Bound")
-                    mkey.left_click_xy_natural(*COORDS["craft_btn_pos"])
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["craft_btn_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["craft_btn_pos"][1] * COORDS["scr_hei"])))
                     time.sleep(wait_time)
-                    mkey.left_click_xy_natural(*COORDS["hp1_pos_potions"]) 
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["hp1_pos_potions"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["hp1_pos_potions"][1] * COORDS["scr_hei"])))
                     time.sleep(wait_time)
-                    mkey.left_click_xy_natural(*COORDS["hp2_pos_potions"])
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["hp2_pos_potions"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["hp2_pos_potions"][1] * COORDS["scr_hei"])))
                     time.sleep(wait_time)
-                    mkey.left_click_xy_natural(*COORDS["hp2_pos_potions"])
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["hp2_pos_potions"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["hp2_pos_potions"][1] * COORDS["scr_hei"])))
                     time.sleep(wait_time)
-                    mkey.left_click_xy_natural(*COORDS["hp2_pos_potions"])
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["hp2_pos_potions"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["hp2_pos_potions"][1] * COORDS["scr_hei"])))
                     time.sleep(wait_time)
-                    mkey.left_click_xy_natural((954 * COORDS["scale_w"]), (1048 * COORDS["scale_h"]))
+                    mkey.left_click_xy_natural(round(float((954 / 2560) * COORDS["scr_wid"])), round(float((1048 / 1440) * COORDS["scr_hei"])))
                     time.sleep(0.2)
-                    mkey.left_click_xy_natural((954 * COORDS["scale_w"]), (1048 * COORDS["scale_h"]))
+                    mkey.left_click_xy_natural(round(float((954 / 2560) * COORDS["scr_wid"])), round(float((1048 / 1440) * COORDS["scr_hei"])))
                     time.sleep(0.2)
                     kb.type("100")
                     time.sleep(0.2)
-                    mkey.left_click_xy_natural((1064 * COORDS["scale_w"]), (1048 * COORDS["scale_h"]))
+                    mkey.left_click_xy_natural(round(float((1064 / 2560) * COORDS["scr_wid"])), round(float((1048 / 1440) * COORDS["scr_hei"])))
                     time.sleep(0.2)
                     if auto_craft_index == 1 and len(items_to_craft) > 1 and auto_mode_swap == 5:
-                        mkey.left_click_xy_natural(*COORDS["auto_btn_pos"])
+                        mkey.left_click_xy_natural(round(float(COORDS_PERCENT["auto_btn_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["auto_btn_pos"][1] * COORDS["scr_hei"])))
                         time.sleep(0.2)
                     time.sleep(1)
 
                 if settings["auto_craft_item"].get("Heavenly Potion", False):
                     search_for_potion_in_cauldron("Heavenly")
-                    mkey.left_click_xy_natural(*COORDS["craft_btn_pos"])
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["craft_btn_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["craft_btn_pos"][1] * COORDS["scr_hei"])))
                     time.sleep(wait_time)
 
-                    mkey.left_click_xy_natural(COORDS["hp1_pos_potions"][0] - (110 * COORDS['scale_w']), COORDS["hp1_pos_potions"][1]) 
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["hp1_pos_potions"][0] * COORDS["scr_wid"])) - round(float(110 / 2560 * COORDS["scr_wid"])), round(float(COORDS_PERCENT["hp1_pos_potions"][1] * COORDS["scr_hei"])))
                     time.sleep(wait_time)
-                    mkey.left_click_xy_natural(COORDS["hp1_pos_potions"][0] - (110 * COORDS['scale_w']), COORDS["hp1_pos_potions"][1]) 
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["hp1_pos_potions"][0] * COORDS["scr_wid"])) - round(float(110 / 2560 * COORDS["scr_wid"])), round(float(COORDS_PERCENT["hp1_pos_potions"][1] * COORDS["scr_hei"])))
                     time.sleep(wait_time)
                     kb.type("250")
                     time.sleep(wait_time)
 
-                    mkey.left_click_xy_natural(*COORDS["hp1_pos_potions"])
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["hp1_pos_potions"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["hp1_pos_potions"][1] * COORDS["scr_hei"])))
                     time.sleep(wait_time)
-                    mkey.left_click_xy_natural(*COORDS["hp2_pos_potions"])
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["hp2_pos_potions"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["hp2_pos_potions"][1] * COORDS["scr_hei"])))
                     time.sleep(wait_time)
-                    mkey.left_click_xy_natural((1064 * COORDS["scale_w"]), (988 * COORDS["scale_h"]))
+                    mkey.left_click_xy_natural(round(float((1064 / 2560) * COORDS["scr_wid"])), round(float((988 / 1440) * COORDS["scr_hei"])))
                     time.sleep(0.2)
                     if auto_craft_index == 2 and len(items_to_craft) > 1 and auto_mode_swap == 5:
-                        mkey.left_click_xy_natural(*COORDS["auto_btn_pos"])
+                        mkey.left_click_xy_natural(round(float(COORDS_PERCENT["auto_btn_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["auto_btn_pos"][1] * COORDS["scr_hei"])))
                         time.sleep(0.2)
                     time.sleep(1)
 
                 if settings["auto_craft_item"].get("Godly Potion (Zeus)", False):
                     search_for_potion_in_cauldron("Zeus")
-                    mkey.left_click_xy_natural(*COORDS["craft_btn_pos"])
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["craft_btn_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["craft_btn_pos"][1] * COORDS["scr_hei"])))
                     time.sleep(wait_time)
 
-                    mkey.left_click_xy_natural(COORDS["hp1_pos_potions"][0] - (110 * COORDS['scale_w']), COORDS["hp1_pos_potions"][1])
-                    time.sleep(wait_time); mkey.left_click_xy_natural(COORDS["hp1_pos_potions"][0] - (110 * COORDS['scale_w']), COORDS["hp1_pos_potions"][1]); time.sleep(wait_time)
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["hp1_pos_potions"][0] * COORDS["scr_wid"])) - round(float(110 / 2560 * COORDS["scr_wid"])), round(float(COORDS_PERCENT["hp1_pos_potions"][1] * COORDS["scr_hei"])))
+                    time.sleep(wait_time);
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["hp1_pos_potions"][0] * COORDS["scr_wid"])) - round(float(110 / 2560 * COORDS["scr_wid"])), round(float(COORDS_PERCENT["hp1_pos_potions"][1] * COORDS["scr_hei"])))
+                    time.sleep(wait_time)
                     kb.type("25"); time.sleep(wait_time)
 
-                    mkey.left_click_xy_natural(COORDS["hp2_pos_potions"][0] - (110 * COORDS['scale_w']), COORDS["hp2_pos_potions"][1])
-                    time.sleep(wait_time); mkey.left_click_xy_natural(COORDS["hp2_pos_potions"][0] - (110 * COORDS['scale_w']), COORDS["hp2_pos_potions"][1]); time.sleep(wait_time)
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["hp2_pos_potions"][0] * COORDS["scr_wid"])) - round(float(110 / 2560 * COORDS["scr_wid"])), round(float(COORDS_PERCENT["hp2_pos_potions"][1] * COORDS["scr_hei"])) )
+                    time.sleep(wait_time); mkey.left_click_xy_natural(round(float(COORDS_PERCENT["hp2_pos_potions"][0] * COORDS["scr_wid"])) - round(float(110 / 2560 * COORDS["scr_wid"])), round(float(COORDS_PERCENT["hp2_pos_potions"][1] * COORDS["scr_hei"])))
                     kb.type("25"); time.sleep(wait_time)
 
-                    mkey.left_click_xy_natural(*COORDS["hp1_pos_potions"]); time.sleep(wait_time)
-                    mkey.left_click_xy_natural(*COORDS["hp2_pos_potions"]); time.sleep(wait_time)
-                    mkey.left_click_xy_natural((1064 * COORDS["scale_w"]), (988 * COORDS["scale_h"]))
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["hp1_pos_potions"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["hp1_pos_potions"][1] * COORDS["scr_hei"]))); time.sleep(wait_time)
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["hp2_pos_potions"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["hp2_pos_potions"][1] * COORDS["scr_hei"]))); time.sleep(wait_time)
+                    mkey.left_click_xy_natural(round(float((1064 / 2560) * COORDS["scr_wid"])), round(float((988 / 1440) * COORDS["scr_hei"])))
                     time.sleep(0.2)
-                    mkey.left_click_xy_natural((1064 * COORDS["scale_w"]), (1048 * COORDS["scale_h"]))
+                    mkey.left_click_xy_natural(round(float((1064 / 2560) * COORDS["scr_wid"])), round(float((1048 / 1440) * COORDS["scr_hei"])))
                     time.sleep(0.2)
                     if auto_craft_index == 3 and len(items_to_craft) > 1 and auto_mode_swap == 5:
-                        mkey.left_click_xy_natural(*COORDS["auto_btn_pos"])
+                        mkey.left_click_xy_natural(round(float(COORDS_PERCENT["auto_btn_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["auto_btn_pos"][1] * COORDS["scr_hei"])))
                         time.sleep(0.2)
                     time.sleep(1)
 
                 if settings["auto_craft_item"].get("Godly Potion (Poseidon)", False):
                     search_for_potion_in_cauldron("Poseidon")
-                    mkey.left_click_xy_natural(*COORDS["craft_btn_pos"])
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["craft_btn_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["craft_btn_pos"][1] * COORDS["scr_hei"])))
                     time.sleep(wait_time)
 
                     mkey.left_click_xy_natural(COORDS["hp1_pos_potions"][0] - (110 * COORDS['scale_w']), COORDS["hp1_pos_potions"][1])
                     time.sleep(wait_time); mkey.left_click_xy_natural(COORDS["hp1_pos_potions"][0] - (110 * COORDS['scale_w']), COORDS["hp1_pos_potions"][1]); time.sleep(wait_time)
                     kb.type("50"); time.sleep(wait_time)
 
-                    mkey.left_click_xy_natural(*COORDS["hp1_pos_potions"]); time.sleep(wait_time)
-                    mkey.left_click_xy_natural(*COORDS["hp2_pos_potions"]); time.sleep(wait_time)
-                    mkey.left_click_xy_natural((1064 * COORDS["scale_w"]), (988 * COORDS["scale_h"]))
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["hp1_pos_potions"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["hp1_pos_potions"][1] * COORDS["scr_hei"]))); time.sleep(wait_time)
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["hp2_pos_potions"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["hp2_pos_potions"][1] * COORDS["scr_hei"]))); time.sleep(wait_time)
+                    mkey.left_click_xy_natural(round(float((1064 / 2560) * COORDS["scr_wid"])), round(float((988 / 1440) * COORDS["scr_hei"])))
                     time.sleep(0.2)
-                    mkey.left_click_xy_natural((1064 * COORDS["scale_w"]), (1048 * COORDS["scale_h"]))
+                    mkey.left_click_xy_natural(round(float((1064 / 2560) * COORDS["scr_wid"])), round(float((1048 / 1440) * COORDS["scr_hei"])))
                     time.sleep(0.2)
                     if auto_craft_index == 4 and len(items_to_craft) > 1 and auto_mode_swap == 5:
-                        mkey.left_click_xy_natural(*COORDS["auto_btn_pos"])
+                        mkey.left_click_xy_natural(round(float(COORDS_PERCENT["auto_btn_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["auto_btn_pos"][1] * COORDS["scr_hei"])))
                         time.sleep(0.2)
                     time.sleep(1)
 
                 if settings["auto_craft_item"].get("Godly Potion (Hades)", False):
                     search_for_potion_in_cauldron("Hades")
-                    mkey.left_click_xy_natural(*COORDS["craft_btn_pos"])
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["craft_btn_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["craft_btn_pos"][1] * COORDS["scr_hei"])))
                     time.sleep(wait_time)
 
                     mkey.left_click_xy_natural(COORDS["hp1_pos_potions"][0] - (110 * COORDS['scale_w']), COORDS["hp1_pos_potions"][1])
                     time.sleep(wait_time); mkey.left_click_xy_natural(COORDS["hp1_pos_potions"][0] - (110 * COORDS['scale_w']), COORDS["hp1_pos_potions"][1]); time.sleep(wait_time)
                     kb.type("50"); time.sleep(wait_time)
 
-                    mkey.left_click_xy_natural(*COORDS["hp1_pos_potions"]); time.sleep(wait_time)
-                    mkey.left_click_xy_natural(*COORDS["hp2_pos_potions"]); time.sleep(wait_time)
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["hp1_pos_potions"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["hp1_pos_potions"][1] * COORDS["scr_hei"])));time.sleep(wait_time)
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["hp2_pos_potions"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["hp2_pos_potions"][1] * COORDS["scr_hei"]))); time.sleep(wait_time)
                     if auto_craft_index == 5 and len(items_to_craft) > 1 and auto_mode_swap == 5:
-                        mkey.left_click_xy_natural(*COORDS["auto_btn_pos"])
+                        mkey.left_click_xy_natural(round(float(COORDS_PERCENT["auto_btn_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["auto_btn_pos"][1] * COORDS["scr_hei"])))
                         time.sleep(0.2)
                     time.sleep(1)
 
                 if settings["auto_craft_item"].get("Warp Potion", False):
                     search_for_potion_in_cauldron("Warp")
-                    mkey.left_click_xy_natural(*COORDS["craft_btn_pos"])
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["craft_btn_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["craft_btn_pos"][1] * COORDS["scr_hei"])))
                     time.sleep(wait_time)
-                    mkey.left_click_xy_natural(*COORDS["hp1_pos_potions"]); time.sleep(wait_time)
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["hp1_pos_potions"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["hp1_pos_potions"][1] * COORDS["scr_hei"]))); time.sleep(wait_time)
 
                     ms.scroll(0, -30); time.sleep(0.2)
                     ms.scroll(0, -30); time.sleep(0.2)
 
-                    mkey.left_click_xy_natural(COORDS["hp1_pos_celestial"][0] - (110 * COORDS['scale_w']), COORDS["hp1_pos_celestial"][1])
-                    time.sleep(wait_time); mkey.left_click_xy_natural(COORDS["hp1_pos_celestial"][0] - (110 * COORDS['scale_w']), COORDS["hp1_pos_celestial"][1]); time.sleep(wait_time)
+                    mkey.left_click_xy_natural((round(float(COORDS_PERCENT["hp1_pos_celestial"][0] * COORDS["scr_wid"])) - round(float(110 / 2560 * COORDS["scr_wid"]))) , round(float(COORDS_PERCENT["hp1_pos_celestial"][1] * COORDS["scr_hei"])) );time.sleep(wait_time)
+                    mkey.left_click_xy_natural((round(float(COORDS_PERCENT["hp1_pos_celestial"][0] * COORDS["scr_wid"])) - round(float(110 / 2560 * COORDS["scr_wid"]))), round(float(COORDS_PERCENT["hp1_pos_celestial"][1] * COORDS["scr_hei"])) );time.sleep(wait_time)
                     kb.type("1000"); time.sleep(wait_time)
 
-                    mkey.left_click_xy_natural(*COORDS["hp1_pos_potions"]); time.sleep(wait_time)
-                    mkey.left_click_xy_natural(*COORDS["hp1_pos_celestial"]); time.sleep(wait_time)
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["hp1_pos_potions"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["hp1_pos_potions"][1] * COORDS["scr_hei"]))); time.sleep(wait_time)
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["hp1_pos_celestial"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["hp1_pos_celestial"][1] * COORDS["scr_hei"]))); time.sleep(wait_time)
 
                     ms.scroll(0, 30); time.sleep(0.2)
                     ms.scroll(0, 30); time.sleep(0.2)
                     if auto_craft_index == 6 and len(items_to_craft) > 1 and auto_mode_swap == 5:
-                        mkey.left_click_xy_natural(*COORDS["auto_btn_pos"])
+                        mkey.left_click_xy_natural(round(float(COORDS_PERCENT["auto_btn_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["auto_btn_pos"][1] * COORDS["scr_hei"])))
                         time.sleep(0.2)
                     time.sleep(1)
 
                 if settings["auto_craft_item"].get("Godlike Potion", False):
                     search_for_potion_in_cauldron("Godlike")
-                    mkey.left_click_xy_natural(*COORDS["craft_btn_pos"])
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["craft_btn_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["craft_btn_pos"][1] * COORDS["scr_hei"])))
                     time.sleep(wait_time)
 
-                    mkey.left_click_xy_natural(*COORDS["hp1_pos_potions"]); time.sleep(wait_time)
-                    mkey.left_click_xy_natural(*COORDS["hp2_pos_potions"]); time.sleep(wait_time)
-                    mkey.left_click_xy_natural((1064 * COORDS["scale_w"]), (988 * COORDS["scale_h"]))
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["hp1_pos_potions"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["hp1_pos_potions"][1] * COORDS["scr_hei"]))); time.sleep(wait_time)
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["hp2_pos_potions"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["hp2_pos_potions"][1] * COORDS["scr_hei"]))); time.sleep(wait_time)
+                    mkey.left_click_xy_natural(round(float((1064 / 2560) * COORDS["scr_wid"])), round(float((988 / 1440) * COORDS["scr_hei"])))
                     time.sleep(0.2)
-                    mkey.left_click_xy_natural((954 * COORDS["scale_w"]), (1048 * COORDS["scale_h"]))
+                    mkey.left_click_xy_natural(round(float((954 / 2560) * COORDS["scr_wid"])), round(float((1048 / 1440) * COORDS["scr_hei"])))
                     time.sleep(0.2)
-                    mkey.left_click_xy_natural((954 * COORDS["scale_w"]), (1048 * COORDS["scale_h"]))
+                    mkey.left_click_xy_natural(round(float((954 / 2560) * COORDS["scr_wid"])), round(float((1048 / 1440) * COORDS["scr_hei"])))
                     time.sleep(0.2)
                     kb.type("600")
                     time.sleep(0.2)
-                    mkey.left_click_xy_natural((1064 * COORDS["scale_w"]), (1048 * COORDS["scale_h"]))
+                    mkey.left_click_xy_natural(round(float((1064 / 2560) * COORDS["scr_wid"])), round(float((1048 / 1440) * COORDS["scr_hei"])))
                     time.sleep(0.2)
-                    mkey.left_click_xy_natural(*COORDS["potion_search_pos"])
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["potion_search_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["potion_search_pos"][1] * COORDS["scr_hei"])))
                     time.sleep(0.2)
                     time.sleep(1)
 
@@ -1047,22 +1076,22 @@ def inventory_screenshot(settings: dict, webhook, stop_event: threading.Event, s
         with keyboard_lock:
             try:
                 wait_time = settings.get("global_wait_time", 0.2)
-                mkey.left_click_xy_natural(*COORDS["inv_button_pos"])
+                mkey.left_click_xy_natural(round(float(COORDS_PERCENT["inv_button_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["inv_button_pos"][1] * COORDS["scr_hei"])))
                 time.sleep(wait_time)
-                mkey.left_click_xy_natural(*COORDS["items_pos"])
+                mkey.left_click_xy_natural(round(float(COORDS_PERCENT["items_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["items_pos"][1] * COORDS["scr_hei"])))
                 time.sleep(wait_time)
-                mkey.left_click_xy_natural(*COORDS["search_pos"]) 
+                mkey.left_click_xy_natural(round(float(COORDS_PERCENT["search_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["search_pos"][1] * COORDS["scr_hei"])))
                 time.sleep(0.5) 
                 pag.screenshot(screenshot_path)
                 time.sleep(0.2)
-                mkey.left_click_xy_natural(*COORDS["close_pos"])
+                mkey.left_click_xy_natural(round(float(COORDS_PERCENT["close_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["close_pos"][1] * COORDS["scr_hei"])))
                 time.sleep(wait_time)
-                mkey.left_click_xy_natural(*COORDS["close_pos"]) 
+                mkey.left_click_xy_natural(round(float(COORDS_PERCENT["close_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["close_pos"][1] * COORDS["scr_hei"])))
                 file_to_send = create_discord_file_from_path(screenshot_path, filename="inventory.png")
             except Exception as e:
                 logger.write_log(f"Error taking inventory screenshot: {e}")
 
-                try: mkey.left_click_xy_natural(*COORDS["close_pos"]); time.sleep(0.2); mkey.left_click_xy_natural(*COORDS["close_pos"])
+                try: mkey.left_click_xy_natural(round(float(COORDS_PERCENT["close_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["close_pos"][1] * COORDS["scr_hei"]))); time.sleep(0.2); mkey.left_click_xy_natural(round(float(COORDS_PERCENT["close_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["close_pos"][1] * COORDS["scr_hei"])))
                 except: pass
 
         if file_to_send:
@@ -1103,19 +1132,19 @@ def storage_screenshot(settings: dict, webhook, stop_event: threading.Event, sni
         with keyboard_lock:
             try:
                 wait_time = settings.get("global_wait_time", 0.2)
-                mkey.left_click_xy_natural(*COORDS["aura_button_pos"])
+                mkey.left_click_xy_natural(round(float(COORDS_PERCENT["aura_button_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["aura_button_pos"][1] * COORDS["scr_hei"])))
                 time.sleep(wait_time)
-                mkey.left_click_xy_natural(*COORDS["search_pos"]) 
+                mkey.left_click_xy_natural(round(float(COORDS_PERCENT["search_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["search_pos"][1] * COORDS["scr_hei"])))
                 time.sleep(0.5)
                 pag.screenshot(screenshot_path)
                 time.sleep(0.2)
-                mkey.left_click_xy_natural(*COORDS["close_pos"])
+                mkey.left_click_xy_natural(round(float(COORDS_PERCENT["close_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["close_pos"][1] * COORDS["scr_hei"])))
                 time.sleep(wait_time)
-                mkey.left_click_xy_natural(*COORDS["close_pos"])
+                mkey.left_click_xy_natural(round(float(COORDS_PERCENT["close_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["close_pos"][1] * COORDS["scr_hei"])))
                 file_to_send = create_discord_file_from_path(screenshot_path, filename="storage.png")
             except Exception as e:
                 logger.write_log(f"Error taking storage screenshot: {e}")
-                try: mkey.left_click_xy_natural(*COORDS["close_pos"]); time.sleep(0.2); mkey.left_click_xy_natural(*COORDS["close_pos"])
+                try: mkey.left_click_xy_natural(round(float(COORDS_PERCENT["close_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["close_pos"][1] * COORDS["scr_hei"]))); time.sleep(0.2); mkey.left_click_xy_natural(round(float(COORDS_PERCENT["close_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["close_pos"][1] * COORDS["scr_hei"])))
                 except: pass
 
         if file_to_send:
@@ -1247,8 +1276,6 @@ def storage_full_detection(settings: dict, webhook, stop_event: threading.Event,
             time.sleep(0.1)
 
 
-
-
 def do_obby(settings: dict, stop_event: threading.Event, sniped_event: threading.Event, keyboard_lock: threading.Lock, mkey, kb, ms):
     logger = get_logger()
     if stop_event.wait(timeout=5):
@@ -1271,6 +1298,205 @@ def do_obby(settings: dict, stop_event: threading.Event, sniped_event: threading
             break
         if sniped_event.is_set(): break
     logger.write_log("Obby/Blessing thread stopped.")
+
+def auto_questboard(settings: dict, webhook, stop_event: threading.Event, sniped_event: threading.Event, keyboard_lock: threading.Lock, mkey, kb, ms):
+    logger = get_logger()
+    if stop_event.wait(timeout=5):
+        return
+    logger.write_log("Auto Quest Board thread started.")
+
+    screenshot_path = os.path.join(MACROPATH, "scr", "screenshot_questboard.png")
+    try:
+        with open(get_questboard_path(), "r", encoding="utf-8") as f:
+            questboard_data = json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError, OSError) as e:
+        logger.write_log(f"Error loading questboard data: {e}. Auto Quest Board stopped.")
+        return
+    
+    TRACKED_QUESTS_PATH = os.path.join(MACROPATH, "quest_tracker.json")
+    
+    if not os.path.exists(TRACKED_QUESTS_PATH):
+        x = open(TRACKED_QUESTS_PATH, "w")
+        x.write("{\"quest_board\" : []}")
+        x.close()
+
+    try:
+        with open(TRACKED_QUESTS_PATH, "r", encoding="utf-8") as f:
+            tracked_quests = json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError, OSError) as e:
+        logger.write_log(f"Error loading tracked quests: {e}. Auto Quest Board stopped.")
+        return
+    
+    while not stop_event.is_set() and not sniped_event.is_set():
+        wait_interval = 3600
+        time.sleep(2)
+        with keyboard_lock:
+            reset_character()
+            time.sleep(1)
+            mkey.left_click_xy_natural(round(float(COORDS_PERCENT["collection_open_pos"][0]) * COORDS["scr_wid"]), round(float(COORDS_PERCENT["collection_open_pos"][1]) * COORDS["scr_hei"]))
+            time.sleep(0.5)
+            mkey.left_click_xy_natural(round(float(COORDS_PERCENT["exit_collection_pos"][0]) * COORDS["scr_wid"]), round(float(COORDS_PERCENT["exit_collection_pos"][1]) * COORDS["scr_hei"]))
+            time.sleep(1)
+            run_macro(f"{PATH_DIR}/questboard.mms")
+            time.sleep(1)
+            kb.press("e")
+            time.sleep(0.2)
+            kb.release("e")
+            time.sleep(2)
+
+            for i in range(5):
+                pag.screenshot(screenshot_path)            
+
+                image = cv2.imread(screenshot_path)
+                if image is None:
+                    logger.write_log("Auto Quest Board Error: Failed to read screenshot file.")
+                    continue
+                
+                x1p, y1p, x2p, y2p = COORDS_PERCENT["questboard_title_range"]
+                x1 = round(x1p * COORDS["scr_wid"])
+                y1 = round(y1p * COORDS["scr_hei"])
+                x2 = round(x2p * COORDS["scr_wid"])
+                y2 = round(y2p * COORDS["scr_hei"])
+
+                quest_title_crop = image[y1:y2, x1:x2]
+                ocr_quest_raw = pytesseract.image_to_string(quest_title_crop).strip()
+
+                ocr_quest_clean = re.sub(r"[^a-zA-Z']", "", ocr_quest_raw).lower()
+                detected_quest = fuzzy_match_qb(ocr_quest_clean, ALL_QB)
+
+                if not detected_quest:
+                    logger.write_log(f"Auto Quest Board: Could not identify quest from OCR ('{ocr_quest_raw}'). Dismissing.")
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["dismiss_quest_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["dismiss_quest_pos"][1] * COORDS["scr_hei"])))
+                else:
+                    logger.write_log(f"Auto Quest Board: Detected Quest ('{detected_quest})")
+
+                    if detected_quest in ACCEPTED_QUESTBOARD:
+
+                        quest_data = questboard_data.get(detected_quest, None)
+
+                        if not quest_data:
+                            logger.write_log(f"Auto Quest Board: Could not find data for quest ('{detected_quest}'). Skipping")
+                            mkey.left_click_xy_natural(round(float(COORDS_PERCENT["exit_questboard_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["exit_questboard_pos"][1] * COORDS["scr_hei"])))
+                        else:
+                            if settings.get("quests_to_accept", {}).get(detected_quest, False) and detected_quest not in tracked_quests.get("quest_board", []) and len(tracked_quests.get("quest_board", [])) <= 3:
+                                logger.write_log(f"Auto Quest Board: Accepted Quest ('{detected_quest}')")
+                                mkey.left_click_xy_natural(round(float(COORDS_PERCENT["accept_quest_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["accept_quest_pos"][1] * COORDS["scr_hei"])))
+                                time.sleep(0.2)
+                                tracked_quests["quest_board"].append(detected_quest)
+                                with open(TRACKED_QUESTS_PATH, "w") as f:
+                                    json.dump(tracked_quests, f, indent=4)
+                                description = f"**Objective**: {quest_data.get('objective', "Failed to fetch objective.")}\n**Difficulty**: "
+                                for i in range(quest_data.get("difficulty", 1)):
+                                    description += ":star:"
+                                description += "\n**Rewards**:\n"
+                                for rew in quest_data.get("reward", []):
+                                    rew_name = rew.get("name", "Error fetching name of reward")
+                                    rew_amt = rew.get("amount", "Error fetching amount of reward to receive")
+                                    rew_type = rew.get("type", "Error fetching reward type")
+                                    rew_chance = rew.get("chance", "Error fetching reward chance")
+                                    description += f"   Name: {rew_name}\n   Amount: {rew_amt}\n   Type: {rew_type.capitalize()}\n"
+                                    if rew_chance != 1:
+                                        description += f"   Chance: {str(int(rew_chance * 100))}%\n"
+                                    description += "\n"
+                                colour = hex2rgb(QUESTBOARD_RARITY_COLOURS[quest_data.get("difficulty", 1) - 1])
+                                emb = discord.Embed(
+                                    title=f"Accepted Quest: {detected_quest}",
+                                    description=description,
+                                    colour=discord.Colour.from_rgb(*colour)
+                                )
+                                emb.set_thumbnail(url=quest_data.get("img_url", ""))
+                                emb.set_footer(text=f"SolsScope v{LOCALVERSION}")
+                                webhook.send(
+                                    embed=emb,
+                                    avatar_url=WEBHOOK_ICON_URL
+                                )
+                                forward_webhook_msg(
+                                    primary_webhook_url=webhook.url,
+                                    secondary_urls=settings.get("SECONDARY_WEBHOOK_URLS", []),
+                                    embed=emb,
+                                    avatar_url=WEBHOOK_ICON_URL
+                                )
+                                mkey.left_click_xy_natural(round(float(COORDS_PERCENT["right_arrow_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["right_arrow_pos"][1] * COORDS["scr_hei"])))
+                            elif detected_quest in tracked_quests.get("quest_board", []):
+                                logger.write_log("Quest already accepted, attempting to claim.")
+                                mkey.left_click_xy_natural(round(float(COORDS_PERCENT["accept_quest_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["accept_quest_pos"][1] * COORDS["scr_hei"])))
+                                previous_quest = detected_quest
+
+                                time.sleep(2)
+
+                                pag.screenshot(screenshot_path)            
+
+                                image = cv2.imread(screenshot_path)
+                                if image is None:
+                                    logger.write_log("Auto Quest Board Error: Failed to read screenshot file.")
+                                    continue
+                                
+                                x1p, y1p, x2p, y2p = COORDS_PERCENT["questboard_title_range"]
+                                x1 = round(x1p * COORDS["scr_wid"])
+                                y1 = round(y1p * COORDS["scr_hei"])
+                                x2 = round(x2p * COORDS["scr_wid"])
+                                y2 = round(y2p * COORDS["scr_hei"])
+
+                                quest_title_crop = image[y1:y2, x1:x2]
+                                ocr_quest_raw = pytesseract.image_to_string(quest_title_crop).strip()
+
+                                ocr_quest_clean = re.sub(r"[^a-zA-Z']", "", ocr_quest_raw).lower()
+                                detected_quest = fuzzy_match_qb(ocr_quest_clean, ALL_QB)
+                                
+                                if previous_quest == detected_quest:
+                                    logger.write_log("Quest is not yet completed, moving to next quest.")
+                                    time.sleep(2)
+                                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["right_arrow_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["right_arrow_pos"][1] * COORDS["scr_hei"])))
+                                else:
+                                    logger.write_log("Quest was completed, removing from tracked quests.")
+                                    tracked_quests["quest_board"].remove(previous_quest)
+                                    with open(TRACKED_QUESTS_PATH, "w") as f:
+                                        json.dump(tracked_quests, f, indent=4)
+                                    description = f"**Objective**: {quest_data.get('objective', "Failed to fetch objective.")}\n**Difficulty**: "
+                                    for i in range(quest_data.get("difficulty", 1)):
+                                        description += ":star:"
+                                    description += "\n**Rewards**:\n"
+                                    for rew in quest_data.get("reward", []):
+                                        rew_name = rew.get("name", "Error fetching name of reward")
+                                        rew_amt = rew.get("amount", "Error fetching amount of reward to receive")
+                                        rew_type = rew.get("type", "Error fetching reward type")
+                                        rew_chance = rew.get("chance", "Error fetching reward chance")
+                                        description += f"   Name: {rew_name}\n   Amount: {rew_amt}\n   Type: {rew_type.capitalize()}\n"
+                                        if rew_chance != 1:
+                                            description += f"   Chance: {str(int(rew_chance * 100))}%\n"
+                                        description += "\n"
+                                    colour = hex2rgb(QUESTBOARD_RARITY_COLOURS[quest_data.get("difficulty", 1) - 1])
+                                    emb = discord.Embed(
+                                        title=f"Completed Quest: {previous_quest}",
+                                        description=description,
+                                        colour=discord.Colour.from_rgb(*colour)
+                                    )
+                                    emb.set_thumbnail(url=quest_data.get("img_url", ""))
+                                    emb.set_footer(text=f"SolsScope v{LOCALVERSION}")
+                                    webhook.send(
+                                        embed=emb,
+                                        avatar_url=WEBHOOK_ICON_URL
+                                    )
+                                    forward_webhook_msg(
+                                        primary_webhook_url=webhook.url,
+                                        secondary_urls=settings.get("SECONDARY_WEBHOOK_URLS", []),
+                                        embed=emb,
+                                        avatar_url=WEBHOOK_ICON_URL
+                                    )
+                            else:
+                                logger.write_log(f"Auto Quest Board: Quest ('{detected_quest}') is set to be dismissed.")
+                                mkey.left_click_xy_natural(round(float(COORDS_PERCENT["dismiss_quest_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["dismiss_quest_pos"][1] * COORDS["scr_hei"])))
+                    else:
+                        logger.write_log(f"Auto Quest Board: Quest ('{detected_quest}') is not supported yet, dismissing.")
+                        mkey.left_click_xy_natural(round(float(COORDS_PERCENT["dismiss_quest_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["dismiss_quest_pos"][1] * COORDS["scr_hei"])))
+                    time.sleep(2)
+
+            mkey.left_click_xy_natural(round(float(COORDS_PERCENT["exit_questboard_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["exit_questboard_pos"][1] * COORDS["scr_hei"])))
+        logger.write_log(f"Auto Quest Board: Waiting {wait_interval} seconds...")
+        if stop_event.wait(timeout=wait_interval):
+            break
+        if sniped_event.is_set(): break
+    logger.write_log("Auto Quest Board thread stopped.")
 
 
 
@@ -1296,13 +1522,13 @@ def auto_pop(biome: str, settings: dict, stop_event: threading.Event, keyboard_l
              with keyboard_lock:
                 try:
                     wait_time = settings.get("global_wait_time", 0.2)
-                    mkey.left_click_xy_natural(*COORDS["menu_btn_pos"])
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["menu_btn_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["menu_btn_pos"][1] * COORDS["scr_hei"])))
                     time.sleep(wait_time)
-                    mkey.left_click_xy_natural(*COORDS["settings_btn_pos"])
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["settings_btn_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["settings_btn_pos"][1] * COORDS["scr_hei"])))
                     time.sleep(wait_time + 0.2) 
-                    mkey.left_click_xy_natural(*COORDS["rolling_conf_pos"])
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["rolling_conf_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["rolling_conf_pos"][1] * COORDS["scr_hei"])))
                     time.sleep(wait_time)
-                    mkey.left_click_xy_natural(*COORDS["cutscene_conf_pos"])
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["cutscene_conf_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["cutscene_conf_pos"][1] * COORDS["scr_hei"])))
                     time.sleep(wait_time)
 
                     kb.press(keyboard.Key.ctrl); kb.press('a'); time.sleep(0.05); kb.release('a'); kb.release(keyboard.Key.ctrl); time.sleep(wait_time)
@@ -1311,14 +1537,14 @@ def auto_pop(biome: str, settings: dict, stop_event: threading.Event, keyboard_l
                     kb.press(keyboard.Key.enter); time.sleep(0.05); kb.release(keyboard.Key.enter)
                     time.sleep(wait_time)
 
-                    mkey.left_click_xy_natural(*COORDS["menu_btn_pos"]) 
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["menu_btn_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["menu_btn_pos"][1] * COORDS["scr_hei"])))
                     time.sleep(wait_time)
-                    mkey.left_click_xy_natural(*COORDS["menu_btn_pos"])
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["menu_btn_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["menu_btn_pos"][1] * COORDS["scr_hei"])))
                     time.sleep(wait_time)
                 except Exception as cs_e:
                     logger.write_log(f"Error changing cutscene settings: {cs_e}")
 
-                    try: mkey.left_click_xy_natural(*COORDS["menu_btn_pos"]); time.sleep(0.2); mkey.left_click_xy_natural(*COORDS["menu_btn_pos"])
+                    try: mkey.left_click_xy_natural(round(float(COORDS_PERCENT["menu_btn_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["menu_btn_pos"][1] * COORDS["scr_hei"]))); time.sleep(0.2); mkey.left_click_xy_natural(round(float(COORDS_PERCENT["menu_btn_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["menu_btn_pos"][1] * COORDS["scr_hei"])))
                     except: pass
 
     item_keys = list(pop_settings.keys()) 

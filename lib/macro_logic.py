@@ -1564,6 +1564,9 @@ def auto_questboard(settings: dict, webhook, stop_event: threading.Event, sniped
                     time.sleep(2)
 
             mkey.left_click_xy_natural(round(float(COORDS_PERCENT["exit_questboard_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["exit_questboard_pos"][1] * COORDS["scr_hei"])))
+            time.sleep(2)
+            reset_character()
+            time.sleep(3)
         logger.write_log(f"Auto Quest Board: Waiting {wait_interval} seconds...")
         if stop_event.wait(timeout=wait_interval):
             break

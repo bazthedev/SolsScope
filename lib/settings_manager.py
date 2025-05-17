@@ -1,7 +1,7 @@
 """
 SolsScope/Baz's Macro
 Created by Baz and Cresqnt
-v1.2.6
+v1.2.7
 Support server: https://discord.gg/8khGXqG7nA
 """
 
@@ -23,6 +23,7 @@ LIB_PATH = os.path.join(MACROPATH, "lib")
 AURAS_PATH = os.path.join(MACROPATH, "auras_new.json")
 BIOMES_PATH = os.path.join(MACROPATH, "biomes.json")
 MERCHANT_PATH = os.path.join(MACROPATH, "merchant.json")
+QUESTBOARD_PATH = os.path.join(MACROPATH, "questboard.json")
 
 def get_settings_path():
     return SETTINGS_PATH
@@ -38,6 +39,9 @@ def get_biomes_path():
 
 def get_merchant_path():
     return MERCHANT_PATH
+
+def get_questboard_path():
+    return QUESTBOARD_PATH
 
 def get_auras():
     logger = get_logger()
@@ -92,6 +96,24 @@ def get_merchant():
         logger.write_log(f"Failed to download Merchant List: {e}")
     except OSError as e:
         logger.write_log(f"Failed to save Merchant List: {e}")
+    return False
+
+def get_questboard():
+    logger = get_logger()
+    logger.write_log("Downloading Quest Board List...")
+    try:
+        dl = requests.get("https://raw.githubusercontent.com/bazthedev/SolsScope/main/questboard.json", timeout=5)
+        dl.raise_for_status()
+        with open(QUESTBOARD_PATH, "wb") as f:
+            f.write(dl.content)
+        logger.write_log("Downloaded Quest Board List successfully.")
+        return True
+    except requests.exceptions.Timeout:
+        logger.write_log("Failed to download Quest Board List: Request timed out.")
+    except requests.exceptions.RequestException as e:
+        logger.write_log(f"Failed to download Quest Board List: {e}")
+    except OSError as e:
+        logger.write_log(f"Failed to save Quest Board List: {e}")
     return False
 
 def load_settings():
@@ -174,9 +196,9 @@ def validate_settings(current_settings):
     keys_to_remove = []
     keys_added = []
 
-    if isinstance(validated_settings["auto_purchase_items_mari"].get("Void Coin", False), bool):
-        del validated_settings["auto_purchase_items_mari"]
-        del validated_settings["auto_purchase_items_jester"]
+    if isinstance(validated_settings.get("auto_purchase_items_mari", {}).get("Void Coin"), bool):
+        validated_settings.pop("auto_purchase_items_mari", None)
+        validated_settings.pop("auto_purchase_items_jester", None)
 
     for key in validated_settings.keys():
         if key not in VALIDSETTINGSKEYS:
@@ -185,7 +207,7 @@ def validate_settings(current_settings):
             needs_update = True
 
     for key in keys_to_remove:
-        del validated_settings[key]
+        validated_settings.pop(key, None)
 
     for default_key in VALIDSETTINGSKEYS:
         if default_key not in validated_settings:

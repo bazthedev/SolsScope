@@ -1,7 +1,7 @@
 """
 SolsScope/Baz's Macro
 Created by Baz and Cresqnt
-v1.2.6
+v1.2.7
 Support server: https://discord.gg/8khGXqG7nA
 """
 
@@ -10,7 +10,7 @@ import os
 sys.path.insert(1, os.path.expandvars(r"%localappdata%/SolsScope/lib"))
 
 MACROPATH = os.path.expandvars(r"%localappdata%\\SolsScope") 
-LOCALVERSION = "1.2.6"
+LOCALVERSION = "1.2.7"
 
 PLACE_ID = 15532962292
 BASE_ROBLOX_URL = f"https://www.roblox.com/games/{PLACE_ID}/"
@@ -22,6 +22,8 @@ DISCORD_WS_BASE = "wss://gateway.discord.gg/?v=10&encoding-json"
 WEBHOOK_ICON_URL = "https://raw.githubusercontent.com/bazthedev/SolsScope/a93aaa9a42a7184047f12aa4135f3dab0857f05d/Server%20Edition/whicon.png"
 
 ALT_TESSERACT_DIR = os.path.expandvars(r"%localappdata%\Programs\Tesseract-OCR")
+
+PATH_DIR = os.path.expandvars(r"%localappdata%\SolsScope\path")
 
 DEFAULTSETTINGS = {
     "WEBHOOK_URL": "",
@@ -40,7 +42,9 @@ DEFAULTSETTINGS = {
     "clear_logs": False, 
     "pop_in_glitch": False,
     "auto_use_items_in_glitch": {
+        "Godlike Potion" : {"use" : True, "amount" : 10},
         "Heavenly Potion": {"use": True, "amount": 200},
+        "Wish Star" : {"use" : True, "amount" : 5},
         "Fortune Potion III": {"use": True, "amount": 1},
         "Lucky Potion": {"use": True, "amount": 10},
         "Pumpkin": {"use": True, "amount": 10},
@@ -139,7 +143,7 @@ DEFAULTSETTINGS = {
     "always_on_top": False,
     "skip_biome_download": False,
     "auto_sell_to_jester" : False,
-    "amount_of_item_to_buy" : 9999,
+    "amount_of_item_to_sell" : 9999,
     "items_to_sell" : {
         "Icicle" : True,
         "Wind Essence" : True,
@@ -151,7 +155,22 @@ DEFAULTSETTINGS = {
         "NULL?" : True,
     },
     "idle_mode" : False,
-    "skip_merchant_download" : False
+    "skip_merchant_download" : False,
+    "redownload_libs_on_run" : False,
+    "enable_auto_quest_board" : False,
+    "quests_to_accept" : {
+        "Basic Hunt": True,
+        "Epic Hunt": True,
+        "Unique Hunt": True,
+        "Legendary Hunt": True,
+        "Mythic Hunt": True,
+        "Finding a person": True,
+        "Meditation I": True,
+        "Meditation II": True,
+        "Meditation III": True,
+        "Delivery III": True
+    },
+    "skip_questboard_download" : False
 }
 
 VALIDSETTINGSKEYS = list(DEFAULTSETTINGS.keys())
@@ -159,13 +178,14 @@ VALIDSETTINGSKEYS = list(DEFAULTSETTINGS.keys())
 DONOTDISPLAY = ["__version__"]
 NOTRECOMMENDED = []
 
-GENERAL_KEYS = ["WEBHOOK_URL", "private_server_link", "SECONDARY_WEBHOOK_URLS", "failsafe_key", "idle_mode", "use_roblox_player", "global_wait_time", "mention", "mention_id", "skip_aura_download", "skip_biome_download", "skip_merchant_download"]
+GENERAL_KEYS = ["WEBHOOK_URL", "private_server_link", "SECONDARY_WEBHOOK_URLS", "failsafe_key", "idle_mode", "use_roblox_player", "global_wait_time", "mention", "mention_id", "skip_aura_download", "skip_biome_download", "skip_merchant_download", "skip_questboard_download"]
 AURAS_KEYS = ["minimum_roll", "minimum_ping", "reset_aura", "take_screenshot_on_detection"]
 BIOMES_KEYS = ["biomes", "auto_biome_randomizer", "auto_strange_controller", "pop_in_glitch", "auto_use_items_in_glitch", "pop_in_dreamspace", "auto_use_items_in_dreamspace"]
 SNIPER_KEYS = ["sniper_enabled", "sniper_toggles", "DISCORD_TOKEN", "ROBLOSECURITY_KEY", "sniper_logs", "scan_channels"]
-MERCHANT_KEYS = ["merchant_detection", "ping_mari", "mari_ping_id", "auto_purchase_items_mari", "ping_jester", "jester_ping_id", "auto_purchase_items_jester", "auto_sell_to_jester", "amount_of_item_to_buy", "items_to_sell"]
+MERCHANT_KEYS = ["merchant_detection", "ping_mari", "mari_ping_id", "auto_purchase_items_mari", "ping_jester", "jester_ping_id", "auto_purchase_items_jester", "auto_sell_to_jester", "amount_of_item_to_sell", "items_to_sell"]
 AUTOCRAFT_KEYS = ["auto_craft_mode", "auto_craft_item", "skip_auto_mode_warning"]
 PATH_KEYS = ["vip", "do_obby"]
+QUEST_KEYS = ["enable_auto_quest_board", "quests_to_accept"]
 
 OTHER_KEYS = ["disconnect_prevention", "disable_autokick_prevention", "disable_aura_detection", "disable_biome_detection", "always_on_top", "periodic_screenshots", "check_update", "auto_install_update"]
 
@@ -192,6 +212,7 @@ ACCEPTEDAUTOPOP = {
     "Godly (Hades)": {"use": False, "amount": 1},
     "Heavenly Potion": {"use": True, "amount": 200},
     "Potion of Bound": {"use": True, "amount": 10},
+    "Wish Star": {"use": False, "amount": 1},
     "Fortune Potion III": {"use": True, "amount": 1},
     "Lucky Potion": {"use": True, "amount": 10},
     "Pumpkin": {"use": True, "amount": 10},
@@ -276,10 +297,142 @@ COORDS = {
         "Box 5": (1668, 919, 1903, 996)
     },
     "exchange_menu_btn_pos" : (1125, 1255),
-    "exchange_btn_pos" : (1170, 794),
+    "exchange_btn_pos" : (1151, 785),
     "first_sell_item_click_pos" : (740, 960),
     "first_sell_item_box_pos" : (653, 920, 830, 994),
     "second_sell_item_click_pos" : (927, 961),
     "second_sell_item_box_pos" : (843, 918, 1020, 994),
     "close_merchant_pos" : (1880, 449)
 }
+
+COORDS_PERCENT = {
+    "aura_button_pos": (53/2560, 538/1440),
+    "inv_button_pos": (32/2560, 692/1440),
+    "default_pos": (1280/2560, 720/1440),
+    "close_pos": (1887/2560, 399/1440),
+    "search_pos": (1164/2560, 486/1440),
+    "secondary_pos": (564/2560, 401/1440),
+    "query_pos": (1086/2560, 572/1440),
+    "equip_pos": (812/2560, 844/1440),
+    "use_pos": (910/2560, 772/1440),
+    "item_amt_pos": (756/2560, 772/1440),
+    "items_pos": (1692/2560, 440/1440),
+    "purchase_btn_pos": (990/2560, 860/1440),
+    "quantity_btn_pos": (910/2560, 796/1440),
+    "open_merch_pos": (876/2560, 1256/1440),
+    "merch_item_pos_1_purchase": (766/2560, 948/1440),
+    "merch_item_pos_2_purchase": (1024/2560, 948/1440),
+    "merch_item_pos_3_purchase": (1278/2560, 948/1440),
+    "merch_item_pos_4_purchase": (1512/2560, 948/1440),
+    "merch_item_pos_5_purchase": (1762/2560, 948/1440),
+    "menu_btn_pos": (32/2560, 656/1440),
+    "settings_btn_pos": (1278/2560, 738/1440),
+    "rolling_conf_pos": (888/2560, 498/1440),
+    "cutscene_conf_pos": (1518/2560, 812/1440),
+    "craft_btn_pos": (764/2560, 764/1440),
+    "hp1_pos_potions": (1064/2560, 840/1440),
+    "hp1_pos_celestial": (1064/2560, 1024/1440),
+    "hp2_pos_potions": (1064/2560, 910/1440),
+    "auto_btn_pos": (940/2560, 762/1440),
+    "hp1_recipe_pos": (1516/2560, 684/1440),
+    "hp2_recipe_pos": (1516/2560, 836/1440),
+    "warp_recipe_pos": (1516/2560, 980/1440),
+    "merchant_face_pos_1": (841/2560, 1056/1440),
+    "merchant_face_pos_2": (855/2560, 1063/1440),
+    "collection_open_pos": (32/2560, 641/1440),
+    "exit_collection_pos": (510/2560, 146/1440),
+    "start_btn_pos": (1252/2560, 1206/1440),
+    "reconnect_btn_pos": (1370/2560, 800/1440),
+    "bound_recipe_pos": (1524/2560, 994/1440),
+    "potion_search_pos": (1237/2560, 449/1440),
+    "first_potion_pos": (1520/2560, 554/1440),
+    "ms_rblx_spawn_pos": (820/2560, 548/1440),
+    "merchant_box": (1140/2560, 434/1440, 1409/2560, 477/1440),
+    "manual_boxes": {
+        "Box 1": (656/2560, 919/1440, 890/2560, 996/1440),
+        "Box 2": (908/2560, 919/1440, 1143/2560, 996/1440),
+        "Box 3": (1161/2560, 919/1440, 1396/2560, 996/1440),
+        "Box 4": (1416/2560, 919/1440, 1650/2560, 996/1440),
+        "Box 5": (1668/2560, 919/1440, 1903/2560, 996/1440)
+    },
+    "exchange_menu_btn_pos": (1125/2560, 1255/1440),
+    "exchange_btn_pos": (1151/2560, 785/1440),
+    "first_sell_item_click_pos": (740/2560, 960/1440),
+    "first_sell_item_box_pos": (653/2560, 920/1440, 830/2560, 994/1440),
+    "second_sell_item_click_pos": (927/2560, 961/1440),
+    "second_sell_item_box_pos": (843/2560, 918/1440, 1020/2560, 994/1440),
+    "close_merchant_pos": (1880/2560, 449/1440),
+    "questboard_title_range" : (2010/2560, 350/1440, 2492/2560, 422/1440),
+    "accept_quest_pos" : (2131/2560, 1085/1440),
+    "dismiss_quest_pos" : (2378/2560, 1089/1440),
+    "right_arrow_pos" : (1815/2560, 718/1440),
+    "left_arrow_pos" : (744/2560, 715/1440),
+    "exit_questboard_pos" : (1281/2560, 1250/1440),
+    "sidequest_btn_pos" : (40/2560, 750/1440),
+    "sidequest_check_complete_pos" : (1076/2560, 510/1440, 1446/2560, 508/1440),
+    "quest_completion_title" : (1055/2560, 445/1440, 1459/2560, 471/1440)
+}
+
+COMPLETION_COLOURS = [
+    "#478e00",
+    "#478f00"
+]
+
+ALL_QB = [
+    "Basic Hunt",
+    "Epic Hunt",
+    "Unique Hunt",
+    "Legendary Hunt",
+    "Mythic Hunt",
+    "Finding a person",
+    "Meditation I",
+    "Meditation II",
+    "Meditation III",
+    "Delivery III",
+    "Delivery I",
+    "Delivery II",
+    "Delivery IV",
+    "Delivery V",
+    "Player Hunt #1",
+    "Player Hunt #2",
+    "Player Hunt #3",
+    "Breakthrough",
+    "Resonance",
+    "A symbol of luck #1",
+    "A symbol of luck #2"
+]
+
+ACCEPTED_QUESTBOARD = [
+    "Basic Hunt",
+    "Epic Hunt",
+    "Unique Hunt",
+    "Legendary Hunt",
+    "Mythic Hunt",
+    "Finding a person",
+    "Meditation I",
+    "Meditation II",
+    "Meditation III",
+    "Delivery III"
+]
+
+DONOTACCEPT_QB = [
+    "Delivery I",
+    "Delivery II",
+    "Delivery IV",
+    "Delivery V",
+    "Player Hunt #1",
+    "Player Hunt #2",
+    "Player Hunt #3",
+    "Breakthrough",
+    "Resonance",
+    "A symbol of luck #1",
+    "A symbol of luck #2"
+]
+
+QUESTBOARD_RARITY_COLOURS = [
+    "#e3e3e3",
+    "#6ae085", 
+    "#6ca4ff",
+    "#ff4b4b",
+    "#928aff"
+]

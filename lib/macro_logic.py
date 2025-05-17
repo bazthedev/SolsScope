@@ -220,29 +220,25 @@ def aura_detection(settings: dict, webhook, stop_event: threading.Event, keyboar
                         webhook.send(
                             content=ping_content,
                             embed=emb,
-                            file=file_to_send,
-                            avatar_url=WEBHOOK_ICON_URL
+                            file=file_to_send
                         )
                         forward_webhook_msg(
                             primary_webhook_url=webhook.url,
                             secondary_urls=settings.get("SECONDARY_WEBHOOK_URLS", []),
                             content=ping_content,
                             embed=emb,
-                            file=file_to_send,
-                            avatar_url=WEBHOOK_ICON_URL
+                            file=file_to_send
                         )
                     else:
                         webhook.send(
                             content=ping_content,
-                            embed=emb,
-                            avatar_url=WEBHOOK_ICON_URL
+                            embed=emb
                         )
                         forward_webhook_msg(
                             primary_webhook_url=webhook.url,
                             secondary_urls=settings.get("SECONDARY_WEBHOOK_URLS", []),
                             content=ping_content,
-                            embed=emb,
-                            avatar_url=WEBHOOK_ICON_URL
+                            embed=emb
                         )
                 except Exception as wh_e:
                     logger.write_log(f"Error sending aura webhook: {wh_e}")
@@ -340,12 +336,11 @@ def biome_detection(settings: dict, webhook, stop_event: threading.Event, sniped
                 )
                 emb.set_thumbnail(url=biomes.get(previous_biome.lower()).get("img_url"))
                 try:
-                    webhook.send(avatar_url=WEBHOOK_ICON_URL, embed=emb)
+                    webhook.send(embed=emb)
                     forward_webhook_msg(
                         primary_webhook_url=webhook.url,
                         secondary_urls=settings.get("SECONDARY_WEBHOOK_URLS", []),
-                        embed=emb,
-                        avatar_url=WEBHOOK_ICON_URL
+                        embed=emb
                     )
                 except Exception as wh_e:
                     logger.write_log(f"Error sending biome ended webhook: {wh_e}")
@@ -377,13 +372,12 @@ def biome_detection(settings: dict, webhook, stop_event: threading.Event, sniped
 
                     emb.set_thumbnail(url=biomes.get(current_biome.lower()).get("img_url"))
                     try:
-                        webhook.send(content=ping_content, avatar_url=WEBHOOK_ICON_URL, embed=emb)
+                        webhook.send(content=ping_content, embed=emb)
                         forward_webhook_msg(
                             primary_webhook_url=webhook.url,
                             secondary_urls=settings.get("SECONDARY_WEBHOOK_URLS", []),
                             content=ping_content,
-                            embed=emb,
-                            avatar_url=WEBHOOK_ICON_URL
+                            embed=emb
                         )
                         logger.write_log(f"Sent notification for biome start: {current_biome}")
                     except Exception as wh_e:
@@ -606,11 +600,11 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
             if not settings.get(f"ping_{merchant_short_name.lower()}", False):
                 ping_content = ""
             try:
-                webhook.send(content=ping_content.strip(), embed=emb, file=file_to_send, avatar_url=WEBHOOK_ICON_URL)
+                webhook.send(content=ping_content.strip(), embed=emb, file=file_to_send)
                 forward_webhook_msg(
                     primary_webhook_url=webhook.url,
                     secondary_urls=settings.get("SECONDARY_WEBHOOK_URLS", []),
-                    content=ping_content.strip(), embed=emb, file=file_to_send, avatar_url=WEBHOOK_ICON_URL
+                    content=ping_content.strip(), embed=emb, file=file_to_send
                 )
             except Exception as wh_e:
                 logger.write_log(f"Error sending merchant detection webhook: {wh_e}")
@@ -645,11 +639,11 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
                                     )
                                     purch_emb.set_footer(text=f"SolsScope v{LOCALVERSION}")
                                     if merchants.get(merchant_short_name.lower()).get("items").get(item_name.lower()).get("item_image_url"): purch_emb.set_thumbnail(url=merchants.get(merchant_short_name.lower()).get("items").get(item_name.lower()).get("item_image_url"))
-                                    webhook.send(embed=purch_emb, avatar_url=WEBHOOK_ICON_URL)
+                                    webhook.send(embed=purch_emb)
                                     forward_webhook_msg(
                                         primary_webhook_url=webhook.url,
                                         secondary_urls=settings.get("SECONDARY_WEBHOOK_URLS", []),
-                                        embed=purch_emb, avatar_url=WEBHOOK_ICON_URL
+                                        embed=purch_emb
                                     )
                                 except Exception as purch_wh_e:
                                     logger.write_log(f"Error sending purchase confirmation webhook: {purch_wh_e}")
@@ -732,11 +726,11 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
                                     )
                                     sell_emb.set_footer(text=f"SolsScope v{LOCALVERSION}")
                                     if merchants.get(merchant_short_name.lower()).get("exchange").get(detected_item_name.lower()).get("item_image_url"): sell_emb.set_thumbnail(url=merchants.get(merchant_short_name.lower()).get("exchange").get(detected_item_name.lower()).get("item_image_url"))
-                                    webhook.send(embed=sell_emb, avatar_url=WEBHOOK_ICON_URL)
+                                    webhook.send(embed=sell_emb)
                                     forward_webhook_msg(
                                         primary_webhook_url=webhook.url,
                                         secondary_urls=settings.get("SECONDARY_WEBHOOK_URLS", []),
-                                        embed=sell_emb, avatar_url=WEBHOOK_ICON_URL
+                                        embed=sell_emb
                                     )
                                 else:
                                     logger.write_log("Auto-Sell: No items were found in the second box or unsure if Void Coin was not detected, ending auto sell job.")
@@ -765,11 +759,11 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
                             )
                             sell_emb.set_footer(text=f"SolsScope v{LOCALVERSION}")
                             if merchants.get(merchant_short_name.lower()).get("exchange").get(detected_item_name.lower()).get("item_image_url"): sell_emb.set_thumbnail(url=merchants.get(merchant_short_name.lower()).get("exchange").get(detected_item_name.lower()).get("item_image_url"))
-                            webhook.send(embed=sell_emb, avatar_url=WEBHOOK_ICON_URL)
+                            webhook.send(embed=sell_emb)
                             forward_webhook_msg(
                                 primary_webhook_url=webhook.url,
                                 secondary_urls=settings.get("SECONDARY_WEBHOOK_URLS", []),
-                                embed=sell_emb, avatar_url=WEBHOOK_ICON_URL
+                                embed=sell_emb
                             )
                         else:
                             logger.write_log("Auto-Sell: No item was found or unsure if Void Coin was not detected, ending auto sell job.")
@@ -1181,11 +1175,11 @@ def inventory_screenshot(settings: dict, webhook, stop_event: threading.Event, s
                 emb = discord.Embed(title="Inventory Screenshot")
                 emb.set_image(url="attachment://inventory.png")
                 emb.timestamp = datetime.now()
-                webhook.send(embed=emb, file=file_to_send, avatar_url=WEBHOOK_ICON_URL)
+                webhook.send(embed=emb, file=file_to_send)
                 forward_webhook_msg(
                      primary_webhook_url=webhook.url,
                      secondary_urls=settings.get("SECONDARY_WEBHOOK_URLS", []),
-                     embed=emb, file=file_to_send, avatar_url=WEBHOOK_ICON_URL
+                     embed=emb, file=file_to_send
                  )
             except Exception as wh_e:
                 logger.write_log(f"Error sending inventory screenshot webhook: {wh_e}")
@@ -1234,11 +1228,11 @@ def storage_screenshot(settings: dict, webhook, stop_event: threading.Event, sni
                 emb = discord.Embed(title="Aura Storage Screenshot")
                 emb.set_image(url="attachment://storage.png")
                 emb.timestamp = datetime.now()
-                webhook.send(embed=emb, file=file_to_send, avatar_url=WEBHOOK_ICON_URL)
+                webhook.send(embed=emb, file=file_to_send)
                 forward_webhook_msg(
                      primary_webhook_url=webhook.url,
                      secondary_urls=settings.get("SECONDARY_WEBHOOK_URLS", []),
-                     embed=emb, file=file_to_send, avatar_url=WEBHOOK_ICON_URL
+                     embed=emb, file=file_to_send
                  )
             except Exception as wh_e:
                 logger.write_log(f"Error sending storage screenshot webhook: {wh_e}")
@@ -1489,14 +1483,12 @@ def auto_questboard(settings: dict, webhook, stop_event: threading.Event, sniped
                                 emb.set_thumbnail(url=quest_data.get("img_url", ""))
                                 emb.set_footer(text=f"SolsScope v{LOCALVERSION}")
                                 webhook.send(
-                                    embed=emb,
-                                    avatar_url=WEBHOOK_ICON_URL
+                                    embed=emb
                                 )
                                 forward_webhook_msg(
                                     primary_webhook_url=webhook.url,
                                     secondary_urls=settings.get("SECONDARY_WEBHOOK_URLS", []),
-                                    embed=emb,
-                                    avatar_url=WEBHOOK_ICON_URL
+                                    embed=emb
                                 )
                                 mkey.left_click_xy_natural(round(float(COORDS_PERCENT["right_arrow_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["right_arrow_pos"][1] * COORDS["scr_hei"])))
                             elif detected_quest in tracked_quests.get("quest_board", []):
@@ -1556,14 +1548,12 @@ def auto_questboard(settings: dict, webhook, stop_event: threading.Event, sniped
                                     emb.set_thumbnail(url=quest_data.get("img_url", ""))
                                     emb.set_footer(text=f"SolsScope v{LOCALVERSION}")
                                     webhook.send(
-                                        embed=emb,
-                                        avatar_url=WEBHOOK_ICON_URL
+                                        embed=emb
                                     )
                                     forward_webhook_msg(
                                         primary_webhook_url=webhook.url,
                                         secondary_urls=settings.get("SECONDARY_WEBHOOK_URLS", []),
-                                        embed=emb,
-                                        avatar_url=WEBHOOK_ICON_URL
+                                        embed=emb
                                     )
                             else:
                                 logger.write_log(f"Auto Quest Board: Quest ('{detected_quest}') is set to be dismissed.")

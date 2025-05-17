@@ -1,7 +1,7 @@
 """
 SolsScope/Baz's Macro
 Created by Baz and Cresqnt
-v1.2.6
+v1.2.7
 Support server: https://discord.gg/8khGXqG7nA
 """
 
@@ -429,8 +429,7 @@ class Sniper:
         try:
             self.main_webhook.send(
                 content=content_ping,
-                embed=embed,
-                avatar_url=WEBHOOK_ICON_URL
+                embed=embed
             )
             self.logger.write_log(f"[SNIPER] Sent notification for {self.words[choice_id]} link.")
 
@@ -438,8 +437,7 @@ class Sniper:
                 primary_webhook_url=self.main_webhook.url,
                 secondary_urls=self.settings.get("SECONDARY_WEBHOOK_URLS", []),
                 content=content_ping,
-                embed=embed,
-                avatar_url=WEBHOOK_ICON_URL
+                embed=embed
             )
 
         except Exception as e:

@@ -16,7 +16,7 @@ from tkinter import messagebox
 REQUIRED_LIBS = ["constants.py", "discord_utils.py", "gui.py", "macro_logic.py", "roblox_utils.py", "settings_manager.py", "utils.py", "mmint.py"]
 REQUIRED_PATHS = ["questboard.mms"]
 MAIN_VER = "1.2.7"
-PRERELEASE = False
+PRERELEASE = True
 
 WORK_DIR = os.path.expandvars(r"%localappdata%\SolsScope")
 PATH_DIR = os.path.expandvars(r"%localappdata%\SolsScope\path")

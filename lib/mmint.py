@@ -10,8 +10,6 @@ import os
 sys.path.insert(1, os.path.expandvars(r"%localappdata%/SolsScope/lib"))
 
 import time
-import tkinter as tk
-from tkinter import filedialog
 import pyautogui
 import threading
 from pynput import keyboard
@@ -220,21 +218,3 @@ def run_macro(path):
 
             case _:
                 print(f"Unknown command: {cmd}")
-
-def choose_and_run():
-    root = tk.Tk()
-    root.withdraw()
-    file_path = filedialog.askopenfilename(filetypes=[("MiniMacro Script", "*.mms")])
-    time.sleep(5)
-    if file_path:
-        print(f"Running macro from: {file_path}")
-        run_macro(file_path)
-
-if __name__ == "__main__":
-    print("Press F3 to start playback...")
-    def on_press(key):
-        if key == keyboard.Key.f3:
-            threading.Thread(target=choose_and_run, daemon=True).start()
-
-    with keyboard.Listener(on_press=on_press) as listener:
-        listener.join()

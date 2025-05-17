@@ -182,6 +182,7 @@ class MainWindow(QMainWindow):
             "Biomes": BIOMES_KEYS,
             "Merchant": MERCHANT_KEYS,
             "Quest" : QUEST_KEYS,
+            "Path": PATH_KEYS,
             "Auto Craft": AUTOCRAFT_KEYS,
             "Sniper": SNIPER_KEYS,
             "Other": OTHER_KEYS,
@@ -657,7 +658,7 @@ class MainWindow(QMainWindow):
 
         tab_info = {
             "General": GENERAL_KEYS, "Auras": AURAS_KEYS, "Biomes": BIOMES_KEYS,
-            "Merchant": MERCHANT_KEYS, "Quest" : QUEST_KEYS, "Auto Craft": AUTOCRAFT_KEYS,
+            "Merchant": MERCHANT_KEYS, "Quest" : QUEST_KEYS, "Path": PATH_KEYS, "Auto Craft": AUTOCRAFT_KEYS,
             "Sniper": SNIPER_KEYS, "Other": OTHER_KEYS
         }
 
@@ -968,8 +969,8 @@ class MainWindow(QMainWindow):
 
         try:
             if self.webhook:
-                self.webhook.send(avatar_url=WEBHOOK_ICON_URL, embed=emb)
-                forward_webhook_msg(self.webhook.url, self.settings.get("SECONDARY_WEBHOOK_URLS", []), embed=emb, avatar_url=WEBHOOK_ICON_URL)
+                self.webhook.send(embed=emb)
+                forward_webhook_msg(self.webhook.url, self.settings.get("SECONDARY_WEBHOOK_URLS", []), embed=emb)
         except Exception as e:
             self.logger.write_log(f"Error sending start notification: {e}")
 
@@ -1043,8 +1044,8 @@ class MainWindow(QMainWindow):
         emb.set_footer(text=f"SolsScope v{LOCALVERSION}")
         if self.webhook:
             try:
-                self.webhook.send(avatar_url=WEBHOOK_ICON_URL, embed=emb)
-                forward_webhook_msg(self.webhook.url, self.settings.get("SECONDARY_WEBHOOK_URLS", []), embed=emb, avatar_url=WEBHOOK_ICON_URL)
+                self.webhook.send(embed=emb)
+                forward_webhook_msg(self.webhook.url, self.settings.get("SECONDARY_WEBHOOK_URLS", []), embed=emb)
             except Exception as e:
                 self.logger.write_log(f"Error sending stop notification: {e}")
         QMessageBox.information(self, "Macro Stopped", "Macro has been stopped.")

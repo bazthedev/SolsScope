@@ -898,7 +898,7 @@ def auto_craft(settings: dict, stop_event: threading.Event, sniped_event: thread
     if stop_event.wait(timeout=10):
         return
     
-    logger.write_log("Walking back to Stella's")
+    logger.write_log("Auto Craft: Walking To Stella's")
     with keyboard_lock:
         try:
             reset_character()

@@ -38,7 +38,7 @@ from constants import (
 from utils import (
     get_logger, create_discord_file_from_path, hex2rgb, fuzzy_match,
     fuzzy_match_merchant, exists_procs_by_name, validate_pslink, fuzzy_match_auto_sell,
-    fuzzy_match_qb, rgb2hex
+    fuzzy_match_qb, rgb2hex, right_click_drag, left_click_drag
 )
 from roblox_utils import (
     get_latest_equipped_aura, get_latest_hovertext, detect_client_disconnect,
@@ -486,6 +486,8 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
     if auto_sell:
         logger.write_log("Auto sell for Jester is enabled.")
 
+    is_autocraft = settings.get("auto_craft_mode", False)
+
     while not stop_event.is_set() and not sniped_event.is_set():
 
         wait_interval = before_check_interval
@@ -494,15 +496,16 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
             break
         if sniped_event.is_set(): break
 
-        logger.write_log("Merchant Detection: Checking for merchant...")
+        logger.write_log("Merchant Detection: Merchant Check Scheduled")
         screenshot_path = os.path.join(MACROPATH, "scr", "screenshot_merchant.png")
         ex_screenshot_path = os.path.join(MACROPATH, "scr", "screenshot_exchange.png")
         detected_merchant_name = None
         detected_items = {}
+        
+        with keyboard_lock:
 
-        try:
-            logger.write_log("Merchant Detection: Using Merchant Teleport item...")
-            with keyboard_lock:
+            try:
+                logger.write_log("Merchant Detection: Using Merchant Teleport item...")
                 use_item("Merchant Teleport", 1, False, mkey, kb, settings) 
                 time.sleep(settings.get("global_wait_time", 0.2) + 0.5) 
 
@@ -519,102 +522,100 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
                 mkey.left_click_xy_natural(round(float(COORDS_PERCENT["open_merch_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["open_merch_pos"][1] * COORDS["scr_hei"])))
                 time.sleep(3) 
 
-            logger.write_log("Merchant Detection: Taking screenshot...")
-            pag.screenshot(screenshot_path)
-            time.sleep(0.2)
+                logger.write_log("Merchant Detection: Taking screenshot...")
+                pag.screenshot(screenshot_path)
+                time.sleep(0.2)
 
-            logger.write_log("Merchant Detection: Processing screenshot with OCR...")
-            image = cv2.imread(screenshot_path)
-            if image is None:
-                logger.write_log("Merchant Detection Error: Failed to read screenshot file.")
-                continue
-
-            x1p, y1p, x2p, y2p = COORDS_PERCENT["merchant_box"]
-            x1 = round(x1p * COORDS["scr_wid"])
-            y1 = round(y1p * COORDS["scr_hei"])
-            x2 = round(x2p * COORDS["scr_wid"])
-            y2 = round(y2p * COORDS["scr_hei"])
-            merchant_crop = image[y1:y2, x1:x2]
-            ocr_merchant_raw = pytesseract.image_to_string(merchant_crop).strip()
-
-            ocr_merchant_clean = re.sub(r"[^a-zA-Z']", "", ocr_merchant_raw).lower()
-            detected_merchant_name = fuzzy_match_merchant(ocr_merchant_clean, POSSIBLE_MERCHANTS)
-
-            if not detected_merchant_name:
-                logger.write_log(f"Merchant Detection: Could not identify merchant from OCR ('{ocr_merchant_raw}'). Skipping.")
-
-                with keyboard_lock:
-                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["close_pos"][0]) * COORDS["scr_wid"]), round(float(COORDS_PERCENT["close_pos"][1]) * COORDS["scr_hei"]))
-                continue
-
-            merchant_short_name = detected_merchant_name.split("'")[0] 
-            logger.write_log(f"Merchant Detected: {merchant_short_name} (Raw OCR: '{ocr_merchant_raw}')")
-            rnow = datetime.now()
-
-            file_to_send = create_discord_file_from_path(screenshot_path, filename="merchant.png")
-            ping_content = ""
-            if merchant_short_name == "Mari":
-                emb_color = discord.Colour.from_rgb(255, 255, 255)
-                thumbnail_url = "https://static.wikia.nocookie.net/sol-rng/images/3/37/MARI_HIGH_QUALITYY.png/revision/latest"
-                if settings.get("ping_mari", False) and settings.get("mari_ping_id", 0) != 0:
-                    ping_content += f"<@&{settings['mari_ping_id']}>"
-            elif merchant_short_name == "Jester":
-                emb_color = discord.Colour.from_rgb(176, 49, 255)
-                thumbnail_url = "https://static.wikia.nocookie.net/sol-rng/images/d/db/Headshot_of_Jester.png/revision/latest"
-                if settings.get("ping_jester", False) and settings.get("jester_ping_id", 0) != 0:
-                    ping_content += f"<@&{settings['jester_ping_id']}>"
-            else:
-                emb_color = discord.Colour.default()
-                thumbnail_url = None
-
-            emb = discord.Embed(
-                title=f"{merchant_short_name} Spawned!",
-                description=f"A **{merchant_short_name}** has been detected.\n**Time:** <t:{str(int(time.time()))}>",
-                colour=emb_color
-            )
-            if thumbnail_url: emb.set_thumbnail(url=thumbnail_url)
-            if file_to_send: emb.set_image(url="attachment://merchant.png")
-            if ps_link_valid: emb.add_field(name="Server Invite", value=settings['private_server_link'], inline=False)
-
-            emb.set_footer(text=f"SolsScope v{LOCALVERSION}")
-
-            logger.write_log("Merchant Detection: Detecting items...")
-            item_list = MARI_ITEMS if merchant_short_name == "Mari" else JESTER_ITEMS
-            manual_boxes = COORDS.get("manual_boxes", {})
-            item_ocr_results = []
-            for box_name, (x1, y1, x2, y2) in manual_boxes.items():
-                if x1 >= image.shape[1] or y1 >= image.shape[0] or x2 <= x1 or y2 <= y1:
-                    logger.write_log(f"Warning: Invalid coordinates for {box_name}. Skipping OCR.")
+                logger.write_log("Merchant Detection: Processing screenshot with OCR...")
+                image = cv2.imread(screenshot_path)
+                if image is None:
+                    logger.write_log("Merchant Detection Error: Failed to read screenshot file.")
                     continue
-                cropped = image[y1:y2, x1:x2]
-                ocr_raw = pytesseract.image_to_string(cropped).strip().replace('\n', ' ')
-                matched = fuzzy_match(ocr_raw, item_list, threshold=0.5)
-                logger.write_log(f" > {box_name}: OCR='{ocr_raw}', Match='{matched}'")
-                detected_items[box_name] = matched
-                item_ocr_results.append(f"**{box_name}:** `{matched}` (Raw: `{ocr_raw}`)")
-            emb.add_field(name="Detected Items", value="\n".join(item_ocr_results) if item_ocr_results else "None", inline=False)
 
-            if not (settings.get("mention", False) and settings.get("mention_id", 0) == 0) and (settings.get(f"{merchant_short_name.lower()}_ping_id", 0) != 0 and settings.get(f"ping_{merchant_short_name.lower()}", False)):
-                ping_content = f"<@{settings['mention_id']}>{ping_content}"
+                x1p, y1p, x2p, y2p = COORDS_PERCENT["merchant_box"]
+                x1 = round(x1p * COORDS["scr_wid"])
+                y1 = round(y1p * COORDS["scr_hei"])
+                x2 = round(x2p * COORDS["scr_wid"])
+                y2 = round(y2p * COORDS["scr_hei"])
+                merchant_crop = image[y1:y2, x1:x2]
+                ocr_merchant_raw = pytesseract.image_to_string(merchant_crop).strip()
 
-            if not settings.get(f"ping_{merchant_short_name.lower()}", False):
+                ocr_merchant_clean = re.sub(r"[^a-zA-Z']", "", ocr_merchant_raw).lower()
+                detected_merchant_name = fuzzy_match_merchant(ocr_merchant_clean, POSSIBLE_MERCHANTS)
+
+                if not detected_merchant_name:
+                    logger.write_log(f"Merchant Detection: Could not identify merchant from OCR ('{ocr_merchant_raw}'). Skipping.")
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["close_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["close_pos"][1] * COORDS["scr_hei"])))
+                    continue
+
+                merchant_short_name = detected_merchant_name.split("'")[0] 
+                logger.write_log(f"Merchant Detected: {merchant_short_name} (Raw OCR: '{ocr_merchant_raw}')")
+                rnow = datetime.now()
+
+                file_to_send = create_discord_file_from_path(screenshot_path, filename="merchant.png")
                 ping_content = ""
-            try:
-                webhook.send(content=ping_content.strip(), embed=emb, file=file_to_send)
-                forward_webhook_msg(
-                    primary_webhook_url=webhook.url,
-                    secondary_urls=settings.get("SECONDARY_WEBHOOK_URLS", []),
-                    content=ping_content.strip(), embed=emb, file=file_to_send
+                if merchant_short_name == "Mari":
+                    emb_color = discord.Colour.from_rgb(255, 255, 255)
+                    thumbnail_url = "https://static.wikia.nocookie.net/sol-rng/images/3/37/MARI_HIGH_QUALITYY.png/revision/latest"
+                    if settings.get("ping_mari", False) and settings.get("mari_ping_id", 0) != 0:
+                        ping_content += f"<@&{settings['mari_ping_id']}>"
+                elif merchant_short_name == "Jester":
+                    emb_color = discord.Colour.from_rgb(176, 49, 255)
+                    thumbnail_url = "https://static.wikia.nocookie.net/sol-rng/images/d/db/Headshot_of_Jester.png/revision/latest"
+                    if settings.get("ping_jester", False) and settings.get("jester_ping_id", 0) != 0:
+                        ping_content += f"<@&{settings['jester_ping_id']}>"
+                else:
+                    emb_color = discord.Colour.default()
+                    thumbnail_url = None
+
+                emb = discord.Embed(
+                    title=f"{merchant_short_name} Spawned!",
+                    description=f"A **{merchant_short_name}** has been detected.\n**Time:** <t:{str(int(time.time()))}>",
+                    colour=emb_color
                 )
-            except Exception as wh_e:
-                logger.write_log(f"Error sending merchant detection webhook: {wh_e}")
+                if thumbnail_url: emb.set_thumbnail(url=thumbnail_url)
+                if file_to_send: emb.set_image(url="attachment://merchant.png")
+                if ps_link_valid: emb.add_field(name="Server Invite", value=settings['private_server_link'], inline=False)
 
-            purchase_settings = settings.get("auto_purchase_items_mari" if merchant_short_name == "Mari" else "auto_purchase_items_jester", {})
-            items_to_buy = {box_name: item_name for box_name, item_name in detected_items.items() if purchase_settings.get(item_name, {"Purchase" : False}).get("Purchase", False)}
+                emb.set_footer(text=f"SolsScope v{LOCALVERSION}")
 
-            if items_to_buy:
-                logger.write_log(f"Merchant Detection: Attempting to auto-purchase items: {list(items_to_buy.values())}")
-                with keyboard_lock:
+                logger.write_log("Merchant Detection: Detecting items...")
+                item_list = MARI_ITEMS if merchant_short_name == "Mari" else JESTER_ITEMS
+                manual_boxes = COORDS.get("manual_boxes", {})
+                item_ocr_results = []
+                for box_name, (x1, y1, x2, y2) in manual_boxes.items():
+                    if x1 >= image.shape[1] or y1 >= image.shape[0] or x2 <= x1 or y2 <= y1:
+                        logger.write_log(f"Warning: Invalid coordinates for {box_name}. Skipping OCR.")
+                        continue
+                    cropped = image[y1:y2, x1:x2]
+                    ocr_raw = pytesseract.image_to_string(cropped).strip().replace('\n', ' ')
+                    matched = fuzzy_match(ocr_raw, item_list, threshold=0.5)
+                    logger.write_log(f" > {box_name}: OCR='{ocr_raw}', Match='{matched}'")
+                    detected_items[box_name] = matched
+                    item_ocr_results.append(f"**{box_name}:** `{matched}` (Raw: `{ocr_raw}`)")
+                emb.add_field(name="Detected Items", value="\n".join(item_ocr_results) if item_ocr_results else "None", inline=False)
+
+                if not (settings.get("mention", False) and settings.get("mention_id", 0) == 0) and (settings.get(f"{merchant_short_name.lower()}_ping_id", 0) != 0 and settings.get(f"ping_{merchant_short_name.lower()}", False)):
+                    ping_content = f"<@{settings['mention_id']}>{ping_content}"
+
+                if not settings.get(f"ping_{merchant_short_name.lower()}", False):
+                    ping_content = ""
+
+                try:
+                    webhook.send(content=ping_content.strip(), embed=emb, file=file_to_send)
+                    forward_webhook_msg(
+                        primary_webhook_url=webhook.url,
+                        secondary_urls=settings.get("SECONDARY_WEBHOOK_URLS", []),
+                        content=ping_content.strip(), embed=emb, file=file_to_send
+                    )
+                except Exception as wh_e:
+                    logger.write_log(f"Error sending merchant detection webhook: {wh_e}")
+
+                purchase_settings = settings.get("auto_purchase_items_mari" if merchant_short_name == "Mari" else "auto_purchase_items_jester", {})
+                items_to_buy = {box_name: item_name for box_name, item_name in detected_items.items() if purchase_settings.get(item_name, {"Purchase" : False}).get("Purchase", False)}
+
+                if items_to_buy:
+                    logger.write_log(f"Merchant Detection: Attempting to auto-purchase items: {list(items_to_buy.values())}")
                     for box_name, item_name in items_to_buy.items():
                         try:
 
@@ -652,8 +653,8 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
                         except Exception as buy_e:
                             logger.write_log(f"Error auto-purchasing {item_name}: {buy_e}")
                         time.sleep(1)
-            if auto_sell and merchant_short_name == "Jester":
-                with keyboard_lock:
+
+                if auto_sell and merchant_short_name == "Jester":
                     time.sleep(0.2)
                     mkey.left_click_xy_natural(round(float(COORDS_PERCENT["close_merchant_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["close_merchant_pos"][1] * COORDS["scr_hei"])))
                     time.sleep(0.2)
@@ -769,20 +770,80 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
                             logger.write_log("Auto-Sell: No item was found or unsure if Void Coin was not detected, ending auto sell job.")
                             break
                         time.sleep(1)
-            with keyboard_lock:
-                mkey.left_click_xy_natural(round(float(COORDS_PERCENT["close_merchant_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["close_merchant_pos"][1] * COORDS["scr_hei"])))
-            time.sleep(cooldown_interval)
 
-        except Exception as e:
-            logger.write_log(f"Error in Merchant Detection loop: {e}")
-            import traceback
-            logger.write_log(traceback.format_exc()) 
-
-            try:
-                with keyboard_lock:
                     mkey.left_click_xy_natural(round(float(COORDS_PERCENT["close_merchant_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["close_merchant_pos"][1] * COORDS["scr_hei"])))
-            except Exception:
-                pass
+                    time.sleep(1)
+            
+                if is_autocraft:
+                    logger.write_log("Walking back to Stella's")
+                    try:
+                        reset_character()
+                        time.sleep(1)
+                        mkey.left_click_xy_natural(round(float(COORDS_PERCENT["collection_open_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["collection_open_pos"][1] * COORDS["scr_hei"])))
+                        time.sleep(0.5)
+                        mkey.left_click_xy_natural(round(float(COORDS_PERCENT["exit_collection_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["exit_collection_pos"][1] * COORDS["scr_hei"])))
+                        time.sleep(1)
+                    except Exception as e:
+                        logger.write_log(f"Error during camera alignment: {e}")
+                        continue
+
+                    logger.write_log("Begin position alignment.")
+
+                    try:
+                        mkey.move_to_natural(round(float(COORDS_PERCENT["close_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["close_pos"][1] * COORDS["scr_hei"])))
+                        time.sleep(0.4)
+                        right_click_drag(1000, 0)
+                        time.sleep(0.4)
+                        kb.press("d")
+                        time.sleep(3)
+                        kb.release("d")
+                        time.sleep(0.4)
+                        kb.press("w")
+                        time.sleep(8)
+                        kb.release("w")
+                        time.sleep(0.4)
+                        kb.press("a")
+                        time.sleep(3)
+                        kb.release("a")
+                        time.sleep(0.4)
+                        kb.press("w")
+                        time.sleep(1)
+                        kb.release("w")
+                        time.sleep(0.4)
+                        kb.press("d")
+                        time.sleep(0.75)
+                        kb.release("d")
+                        time.sleep(0.4)
+                        kb.press("w")
+                        time.sleep(1)
+                        kb.release("w")
+                    except Exception as e:
+                        logger.write_log(f"Error during position alignment: {e}")
+                        continue
+
+                    logger.write_log("Finished position alignment, walking to Stella.")
+
+                    try:
+                        right_click_drag(0, 600)
+                        time.sleep(1)
+                        run_macro(f"{PATH_DIR}/stella.mms")
+                        time.sleep(1)
+                    except Exception as e:
+                        logger.write_log(f"Error during walk to Stella's: {e}")
+                        continue
+
+                else:
+                    time.sleep(cooldown_interval)
+
+            except Exception as e:
+                logger.write_log(f"Error in Merchant Detection loop: {e}")
+                import traceback
+                logger.write_log(traceback.format_exc()) 
+
+                try:
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["close_merchant_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["close_merchant_pos"][1] * COORDS["scr_hei"])))
+                except Exception:
+                    pass
 
     logger.write_log("Merchant Detection thread stopped.")
 
@@ -836,6 +897,61 @@ def auto_craft(settings: dict, stop_event: threading.Event, sniped_event: thread
 
     if stop_event.wait(timeout=10):
         return
+    
+    logger.write_log("Walking back to Stella's")
+    with keyboard_lock:
+        try:
+            reset_character()
+            time.sleep(1)
+            mkey.left_click_xy_natural(round(float(COORDS_PERCENT["collection_open_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["collection_open_pos"][1] * COORDS["scr_hei"])))
+            time.sleep(0.5)
+            mkey.left_click_xy_natural(round(float(COORDS_PERCENT["exit_collection_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["exit_collection_pos"][1] * COORDS["scr_hei"])))
+            time.sleep(1)
+        except Exception as e:
+            logger.write_log(f"Error during camera alignment: {e}")
+
+        logger.write_log("Begin position alignment.")
+
+        try:
+            mkey.move_to_natural(round(float(COORDS_PERCENT["close_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["close_pos"][1] * COORDS["scr_hei"])))
+            time.sleep(0.4)
+            right_click_drag(1000, 0)
+            time.sleep(0.4)
+            kb.press("d")
+            time.sleep(3)
+            kb.release("d")
+            time.sleep(0.4)
+            kb.press("w")
+            time.sleep(8)
+            kb.release("w")
+            time.sleep(0.4)
+            kb.press("a")
+            time.sleep(3)
+            kb.release("a")
+            time.sleep(0.4)
+            kb.press("w")
+            time.sleep(1)
+            kb.release("w")
+            time.sleep(0.4)
+            kb.press("d")
+            time.sleep(0.75)
+            kb.release("d")
+            time.sleep(0.4)
+            kb.press("w")
+            time.sleep(1)
+            kb.release("w")
+        except Exception as e:
+            logger.write_log(f"Error during position alignment: {e}")
+
+        logger.write_log("Finished position alignment, walking to Stella.")
+
+        try:
+            right_click_drag(0, 600)
+            time.sleep(1)
+            run_macro(f"{PATH_DIR}/stella.mms")
+            time.sleep(1)
+        except Exception as e:
+            logger.write_log(f"Error during walk to Stella's: {e}")
 
     while not stop_event.is_set() and not sniped_event.is_set():
 
@@ -963,6 +1079,8 @@ def auto_craft(settings: dict, stop_event: threading.Event, sniped_event: thread
                     time.sleep(wait_time)
 
                     mkey.left_click_xy_natural(round(float(COORDS_PERCENT["hp1_pos_potions"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["hp1_pos_potions"][1] * COORDS["scr_hei"])))
+                    time.sleep(wait_time)
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["hp2_pos_potions"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["hp2_pos_potions"][1] * COORDS["scr_hei"])))
                     time.sleep(wait_time)
                     mkey.left_click_xy_natural(round(float(COORDS_PERCENT["hp2_pos_potions"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["hp2_pos_potions"][1] * COORDS["scr_hei"])))
                     time.sleep(wait_time)
@@ -1352,27 +1470,188 @@ def storage_full_detection(settings: dict, webhook, stop_event: threading.Event,
             time.sleep(0.1)
 
 
-def do_obby(settings: dict, stop_event: threading.Event, sniped_event: threading.Event, keyboard_lock: threading.Lock, mkey, kb, ms):
+def do_obby(settings: dict, webhook, stop_event: threading.Event, sniped_event: threading.Event, keyboard_lock: threading.Lock, mkey, kb, ms):
     logger = get_logger()
     if stop_event.wait(timeout=5):
         return
     logger.write_log("Obby/Blessing thread started.")
 
+    is_autocraft = settings.get("auto_craft_mode", False)
+
     while not stop_event.is_set() and not sniped_event.is_set():
         with keyboard_lock:
-             try:
-                 logger.write_log("Obby: Aligning camera (part of original logic)...")
-                 align_camera() 
+            try:
+                reset_character()
+                time.sleep(1)
+                mkey.left_click_xy_natural(round(float(COORDS_PERCENT["collection_open_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["collection_open_pos"][1] * COORDS["scr_hei"])))
+                time.sleep(0.5)
+                mkey.left_click_xy_natural(round(float(COORDS_PERCENT["exit_collection_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["exit_collection_pos"][1] * COORDS["scr_hei"])))
+                time.sleep(1)
+            except Exception as e:
+                logger.write_log(f"Error during obby alignment: {e}")
+                continue
 
-                 logger.write_log("Obby: Placeholder - Obby movement logic not implemented.")
-             except Exception as e:
-                 logger.write_log(f"Error during obby alignment: {e}")
+            logger.write_log("Begin Phase 1 of Obby")
+            try:
+                mkey.move_to_natural(round(float(COORDS_PERCENT["close_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["close_pos"][1] * COORDS["scr_hei"])))
+                time.sleep(0.4)
+                right_click_drag(500, 0)
+                time.sleep(0.4)
+                kb.press("w")
+                time.sleep(10)
+                kb.release("w")
+                time.sleep(0.4)
+                right_click_drag(-500, 0)
+                time.sleep(0.4)
+                kb.press("w")
+                time.sleep(2)
+                kb.release("w")
+                time.sleep(0.4)
+                right_click_drag(500, 0)
+                time.sleep(0.4)
+                kb.press("w")
+                time.sleep(3)
+                kb.release("w")
+                time.sleep(0.4)
+                kb.press("d")
+                time.sleep(4)
+                kb.release("d")
+                time.sleep(0.4)
+                kb.press("w")
+                time.sleep(1)
+                kb.release("w")
+                time.sleep(0.4)
+                kb.press("a")
+                time.sleep(0.6)
+                kb.release("a")
+                time.sleep(0.4)
+                kb.press("w")
+                time.sleep(1)
+                kb.release("w")
+                time.sleep(1)
+            except Exception as e:
+                logger.write_log(f"Error during obby phase 1: {e}")
+                continue
 
-        wait_interval = 1800 
+            logger.write_log("Phase 1 complete, begin phase 2.")
+
+            try:
+                run_macro(f"{PATH_DIR}/obby1.mms")
+                time.sleep(1)
+            except Exception as e:
+                logger.write_log(f"Error during obby phase 2: {e}")
+                continue
+
+            logger.write_log("Phase 2 complete, begin phase 3.")
+
+            try:
+                right_click_drag(0, 600)
+                time.sleep(1)
+            except Exception as e:
+                logger.write_log(f"Error during obby phase 3: {e}")
+                continue
+
+            logger.write_log("Phase 3 complete, begin phase 4.")
+
+            try:
+                run_macro(f"{PATH_DIR}/obby2.mms")
+                time.sleep(1)
+            except Exception as e:
+                logger.write_log(f"Error during obby phase 4: {e}")
+                continue
+
+            logger.write_log("Completed obby, realigning incase of failure.")
+            try:
+                reset_character()
+                time.sleep(1)
+                mkey.left_click_xy_natural(round(float(COORDS_PERCENT["collection_open_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["collection_open_pos"][1] * COORDS["scr_hei"])))
+                time.sleep(0.5)
+                mkey.left_click_xy_natural(round(float(COORDS_PERCENT["exit_collection_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["exit_collection_pos"][1] * COORDS["scr_hei"])))
+                time.sleep(1)
+            except Exception as e:
+                logger.write_log(f"Error during obby alignment: {e}")
+                continue
+
+            if settings.get("notify_obby_completion", False):
+                emb = discord.Embed(
+                    title="Completed Obby Blessing",
+                    description="Enjoy a 30% luck boost!"
+                )
+                emb.set_footer(text=f"SolsScope v{LOCALVERSION}")
+                emb.set_thumbnail(url="https://static.wikia.nocookie.net/sol-rng/images/a/a5/Basicblessingactualsize.png/revision/latest")
+                webhook.send(
+                    embed=emb
+                )
+                forward_webhook_msg(
+                    primary_webhook_url=webhook.url,
+                    secondary_urls=settings.get("SECONDARY_WEBHOOK_URLS", []),
+                    embed=emb
+                )
+            
+            if is_autocraft:
+                logger.write_log("Walking back to Stella's")
+                try:
+                    reset_character()
+                    time.sleep(1)
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["collection_open_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["collection_open_pos"][1] * COORDS["scr_hei"])))
+                    time.sleep(0.5)
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["exit_collection_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["exit_collection_pos"][1] * COORDS["scr_hei"])))
+                    time.sleep(1)
+                except Exception as e:
+                    logger.write_log(f"Error during camera alignment: {e}")
+                    continue
+
+                logger.write_log("Begin position alignment.")
+
+                try:
+                    mkey.move_to_natural(round(float(COORDS_PERCENT["close_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["close_pos"][1] * COORDS["scr_hei"])))
+                    time.sleep(0.4)
+                    right_click_drag(1000, 0)
+                    time.sleep(0.4)
+                    kb.press("d")
+                    time.sleep(3)
+                    kb.release("d")
+                    time.sleep(0.4)
+                    kb.press("w")
+                    time.sleep(8)
+                    kb.release("w")
+                    time.sleep(0.4)
+                    kb.press("a")
+                    time.sleep(3)
+                    kb.release("a")
+                    time.sleep(0.4)
+                    kb.press("w")
+                    time.sleep(1)
+                    kb.release("w")
+                    time.sleep(0.4)
+                    kb.press("d")
+                    time.sleep(0.75)
+                    kb.release("d")
+                    time.sleep(0.4)
+                    kb.press("w")
+                    time.sleep(1)
+                    kb.release("w")
+                except Exception as e:
+                    logger.write_log(f"Error during position alignment: {e}")
+                    continue
+
+                logger.write_log("Finished position alignment, walking to Stella.")
+
+                try:
+                    right_click_drag(0, 600)
+                    time.sleep(1)
+                    run_macro(f"{PATH_DIR}/stella.mms")
+                    time.sleep(1)
+                except Exception as e:
+                    logger.write_log(f"Error during walk to Stella's: {e}")
+                    continue
+
+        wait_interval = 600 
         logger.write_log(f"Obby: Waiting {wait_interval} seconds...")
         if stop_event.wait(timeout=wait_interval):
             break
         if sniped_event.is_set(): break
+
     logger.write_log("Obby/Blessing thread stopped.")
 
 def auto_questboard(settings: dict, webhook, stop_event: threading.Event, sniped_event: threading.Event, keyboard_lock: threading.Lock, mkey, kb, ms):
@@ -1409,16 +1688,23 @@ def auto_questboard(settings: dict, webhook, stop_event: threading.Event, sniped
         with keyboard_lock:
             reset_character()
             time.sleep(1)
-            mkey.left_click_xy_natural(round(float(COORDS_PERCENT["collection_open_pos"][0]) * COORDS["scr_wid"]), round(float(COORDS_PERCENT["collection_open_pos"][1]) * COORDS["scr_hei"]))
+            mkey.left_click_xy_natural(round(float(COORDS_PERCENT["collection_open_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["collection_open_pos"][1] * COORDS["scr_hei"])))
             time.sleep(0.5)
-            mkey.left_click_xy_natural(round(float(COORDS_PERCENT["exit_collection_pos"][0]) * COORDS["scr_wid"]), round(float(COORDS_PERCENT["exit_collection_pos"][1]) * COORDS["scr_hei"]))
+            mkey.left_click_xy_natural(round(float(COORDS_PERCENT["exit_collection_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["exit_collection_pos"][1] * COORDS["scr_hei"])))
             time.sleep(1)
             run_macro(f"{PATH_DIR}/questboard.mms")
             time.sleep(1)
             kb.press("e")
             time.sleep(0.2)
             kb.release("e")
-            time.sleep(2)
+            time.sleep(3)
+
+            previous_quest = None
+
+            detected_quests = []
+
+            mkey.left_click_xy_natural(round(float(COORDS_PERCENT["right_arrow_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["right_arrow_pos"][1] * COORDS["scr_hei"])))
+            time.sleep(1)
 
             for i in range(5):
                 pag.screenshot(screenshot_path)            
@@ -1459,6 +1745,7 @@ def auto_questboard(settings: dict, webhook, stop_event: threading.Event, sniped
                                 mkey.left_click_xy_natural(round(float(COORDS_PERCENT["accept_quest_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["accept_quest_pos"][1] * COORDS["scr_hei"])))
                                 time.sleep(0.2)
                                 tracked_quests["quest_board"].append(detected_quest)
+                                previous_quest = detected_quest
                                 with open(TRACKED_QUESTS_PATH, "w") as f:
                                     json.dump(tracked_quests, f, indent=4)
                                 description = f"**Objective**: {quest_data.get('objective', "Failed to fetch objective.")}\n**Difficulty**: "
@@ -1492,6 +1779,9 @@ def auto_questboard(settings: dict, webhook, stop_event: threading.Event, sniped
                                 )
                                 mkey.left_click_xy_natural(round(float(COORDS_PERCENT["right_arrow_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["right_arrow_pos"][1] * COORDS["scr_hei"])))
                             elif detected_quest in tracked_quests.get("quest_board", []):
+                                if previous_quest == detected_quest:
+                                    logger.write_log("Quest already accepted and same as previous quest, therefore no more quests.")
+                                    break
                                 logger.write_log("Quest already accepted, attempting to claim.")
                                 mkey.left_click_xy_natural(round(float(COORDS_PERCENT["accept_quest_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["accept_quest_pos"][1] * COORDS["scr_hei"])))
                                 previous_quest = detected_quest
@@ -1519,7 +1809,7 @@ def auto_questboard(settings: dict, webhook, stop_event: threading.Event, sniped
                                 
                                 if previous_quest == detected_quest:
                                     logger.write_log("Quest is not yet completed, moving to next quest.")
-                                    time.sleep(2)
+                                    time.sleep(3)
                                     mkey.left_click_xy_natural(round(float(COORDS_PERCENT["right_arrow_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["right_arrow_pos"][1] * COORDS["scr_hei"])))
                                 else:
                                     logger.write_log("Quest was completed, removing from tracked quests.")
@@ -1558,13 +1848,17 @@ def auto_questboard(settings: dict, webhook, stop_event: threading.Event, sniped
                             else:
                                 logger.write_log(f"Auto Quest Board: Quest ('{detected_quest}') is set to be dismissed.")
                                 mkey.left_click_xy_natural(round(float(COORDS_PERCENT["dismiss_quest_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["dismiss_quest_pos"][1] * COORDS["scr_hei"])))
+                                previous_quest = detected_quest
                     else:
                         logger.write_log(f"Auto Quest Board: Quest ('{detected_quest}') is not supported yet, dismissing.")
                         mkey.left_click_xy_natural(round(float(COORDS_PERCENT["dismiss_quest_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["dismiss_quest_pos"][1] * COORDS["scr_hei"])))
-                    time.sleep(2)
+                        previous_quest = detected_quest
+                    time.sleep(3)
+
+                    print(detected_quest, "\n", previous_quest)
 
             mkey.left_click_xy_natural(round(float(COORDS_PERCENT["exit_questboard_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["exit_questboard_pos"][1] * COORDS["scr_hei"])))
-            time.sleep(2)
+            time.sleep(3)
             reset_character()
             time.sleep(3)
         logger.write_log(f"Auto Quest Board: Waiting {wait_interval} seconds...")

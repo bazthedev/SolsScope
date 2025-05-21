@@ -181,7 +181,7 @@ class MainWindow(QMainWindow):
             "Auras": AURAS_KEYS,
             "Biomes": BIOMES_KEYS,
             "Merchant": MERCHANT_KEYS,
-            "Quest" : QUEST_KEYS,
+            #"Quest" : QUEST_KEYS,
             "Path": PATH_KEYS,
             "Auto Craft": AUTOCRAFT_KEYS,
             "Sniper": SNIPER_KEYS,
@@ -658,7 +658,7 @@ class MainWindow(QMainWindow):
 
         tab_info = {
             "General": GENERAL_KEYS, "Auras": AURAS_KEYS, "Biomes": BIOMES_KEYS,
-            "Merchant": MERCHANT_KEYS, "Quest" : QUEST_KEYS, "Path": PATH_KEYS, "Auto Craft": AUTOCRAFT_KEYS,
+            "Merchant": MERCHANT_KEYS, "Path": PATH_KEYS, "Auto Craft": AUTOCRAFT_KEYS, #"Quest" : QUEST_KEYS, "Path": PATH_KEYS, "Auto Craft": AUTOCRAFT_KEYS,
             "Sniper": SNIPER_KEYS, "Other": OTHER_KEYS
         }
 
@@ -887,10 +887,15 @@ class MainWindow(QMainWindow):
                 "Auto Craft Logic": (auto_craft, [self.settings, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.mouse_controller]),
                 "Aura Detection": (aura_detection, [self.settings, self.webhook, self.stop_event, self.keyboard_lock, self.mkey, self.keyboard_controller]) if not self.settings.get("disable_aura_detection") else None,
                 "Biome Detection": (biome_detection, [self.settings, self.webhook, self.stop_event, self.sniped_event]) if not self.settings.get("disable_biome_detection") else None,
+                "Keep Alive": (keep_alive, [self.settings, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey]) if not self.settings.get("disable_autokick_prevention") else None,
+                "Disconnect Prevention": (disconnect_prevention, [self.settings, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller]) if self.settings.get("disconnect_prevention") else None,
+                "Merchant Detection": (merchant_detection, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller]) if (self.settings.get("merchant_detection") or self.settings.get("auto_sell_to_jester")) and MERCHANT_DETECTION_POSSIBLE else None,
                 "Auto Biome Randomizer": (auto_br, [self.settings, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller]) if self.settings.get("auto_biome_randomizer") else None,
                 "Auto Strange Controller": (auto_sc, [self.settings, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller]) if self.settings.get("auto_strange_controller") else None,
                 "Inventory Screenshots": (inventory_screenshot, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey]) if self.settings.get("periodic_screenshots", {}).get("inventory") else None,
                 "Storage Screenshots": (storage_screenshot, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey]) if self.settings.get("periodic_screenshots", {}).get("storage") else None,
+                "Obby": (do_obby, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.mouse_controller]) if self.settings.get("do_obby") else None,
+                #"Auto Quest Board": (auto_questboard, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.mouse_controller]) if self.settings.get("enable_auto_quest_board") else None,
             }
         else: 
             self.logger.write_log("Starting in Normal Mode.")
@@ -904,8 +909,8 @@ class MainWindow(QMainWindow):
                 "Auto Strange Controller": (auto_sc, [self.settings, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller]) if self.settings.get("auto_strange_controller") else None,
                 "Inventory Screenshots": (inventory_screenshot, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey]) if self.settings.get("periodic_screenshots", {}).get("inventory") else None,
                 "Storage Screenshots": (storage_screenshot, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey]) if self.settings.get("periodic_screenshots", {}).get("storage") else None,
-                "Obby": (do_obby, [self.settings, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.mouse_controller]) if self.settings.get("do_obby") else None,
-                "Auto Quest Board": (auto_questboard, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.mouse_controller]) if self.settings.get("enable_auto_quest_board") else None,
+                "Obby": (do_obby, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.mouse_controller]) if self.settings.get("do_obby") else None,
+                #"Auto Quest Board": (auto_questboard, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.mouse_controller]) if self.settings.get("enable_auto_quest_board") else None,
             }
         return targets
 
@@ -934,7 +939,10 @@ class MainWindow(QMainWindow):
         if is_idle_mode:
             mode_str = "IDLE"
         elif is_autocraft_mode:
-            mode_str = "Auto Craft"
+            if self.settings.get("merchant_detection", False):
+                mode_str = "Auto Craft, with Merchant Detection"
+            else:
+                mode_str = "Auto Craft"
         else:
             mode_str = "Normal"
         start_desc = "" 

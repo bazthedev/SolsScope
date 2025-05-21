@@ -202,26 +202,24 @@ def create_discord_file_from_path(path, filename):
     return None
 
 def left_click_drag(x, y, delay=0.1):
-    """Performs a left mouse button drag from current position to (x, y)."""
+    """Performs a left mouse button drag relative of the current position based on (x, y)."""
     try:
-        local_mkey = mk.MouseKey()
-        local_mkey._mouse_click(mk.MOUSEEVENTF_LEFTDOWN)
+        mk._mouse_click(mk.MOUSEEVENTF_LEFTDOWN)
         time.sleep(delay)
-        local_mkey.move(x, y)
+        mk.MouseKey().move_relative(x, y)
         time.sleep(delay)
-        local_mkey._mouse_click(mk.MOUSEEVENTF_LEFTUP)
+        mk._mouse_click(mk.MOUSEEVENTF_LEFTUP)
     except Exception as e:
         get_logger().write_log(f"Error during left_click_drag: {e}")
 
 def right_click_drag(x, y, delay=0.1):
-    """Performs a right mouse button drag from current position to (x, y)."""
+    """Performs a right mouse button drag relative of the current position based on (x, y)."""
     try:
-        local_mkey = mk.MouseKey()
-        local_mkey._mouse_click(mk.MOUSEEVENTF_RIGHTDOWN)
+        mk._mouse_click(mk.MOUSEEVENTF_RIGHTDOWN)
         time.sleep(delay)
-        local_mkey.move(x, y)
+        mk.MouseKey().move_relative(x, y)
         time.sleep(delay)
-        local_mkey._mouse_click(mk.MOUSEEVENTF_RIGHTUP)
+        mk._mouse_click(mk.MOUSEEVENTF_RIGHTUP)
     except Exception as e:
         get_logger().write_log(f"Error during right_click_drag: {e}")
 

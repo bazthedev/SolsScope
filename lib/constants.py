@@ -135,7 +135,6 @@ DEFAULTSETTINGS = {
     "scan_channels": ["1282542323590496277"], 
     "mari_ping_id": 0,
     "jester_ping_id": 0,
-    "vip": False, 
     "do_obby": False,
     "SECONDARY_WEBHOOK_URLS": [],
     "disable_aura_detection": False,
@@ -170,7 +169,8 @@ DEFAULTSETTINGS = {
         "Meditation III": True,
         "Delivery III": True
     },
-    "skip_questboard_download" : False
+    "skip_questboard_download" : False,
+    "notify_obby_completion" : False
 }
 
 VALIDSETTINGSKEYS = list(DEFAULTSETTINGS.keys())
@@ -184,7 +184,7 @@ BIOMES_KEYS = ["biomes", "auto_biome_randomizer", "auto_strange_controller", "po
 SNIPER_KEYS = ["sniper_enabled", "sniper_toggles", "DISCORD_TOKEN", "ROBLOSECURITY_KEY", "sniper_logs", "scan_channels"]
 MERCHANT_KEYS = ["merchant_detection", "ping_mari", "mari_ping_id", "auto_purchase_items_mari", "ping_jester", "jester_ping_id", "auto_purchase_items_jester", "auto_sell_to_jester", "amount_of_item_to_sell", "items_to_sell"]
 AUTOCRAFT_KEYS = ["auto_craft_mode", "auto_craft_item", "skip_auto_mode_warning"]
-PATH_KEYS = ["vip", "do_obby"]
+PATH_KEYS = ["do_obby", "notify_obby_completion"]
 QUEST_KEYS = ["enable_auto_quest_board", "quests_to_accept"]
 
 OTHER_KEYS = ["disconnect_prevention", "disable_autokick_prevention", "disable_aura_detection", "disable_biome_detection", "always_on_top", "periodic_screenshots", "check_update", "auto_install_update"]

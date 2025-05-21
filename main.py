@@ -14,7 +14,7 @@ import tkinter as tk
 from tkinter import messagebox
 
 REQUIRED_LIBS = ["constants.py", "discord_utils.py", "gui.py", "macro_logic.py", "roblox_utils.py", "settings_manager.py", "utils.py", "mmint.py"]
-REQUIRED_PATHS = ["questboard.mms"]
+REQUIRED_PATHS = ["questboard.mms", "stella.mms", "obby1.mms", "obby2.mms"]
 MAIN_VER = "1.2.7"
 PRERELEASE = True
 
@@ -87,6 +87,7 @@ try:
             _tempsettings["__version__"] = MAIN_VER
             with open(f"{WORK_DIR}\\settings.json", "w") as f:
                 json.dump(_tempsettings, f, indent=4)
+            messagebox.showinfo("SolsScope", "If you paid for this software, then you have been scammed and should demand a refund. The only official download page for this software is https://github.com/bazthedev/SolsScope")
         elif _tempsettings.get("redownload_libs_on_run", False):
             for file in REQUIRED_LIBS:
                 print(f"{file} is being downloaded...")
@@ -100,6 +101,7 @@ try:
             _tempsettings["redownload_libs_on_run"] = False
             with open(f"{WORK_DIR}\\settings.json", "w") as f:
                 json.dump(_tempsettings, f, indent=4)
+            messagebox.showinfo("SolsScope", "If you paid for this software, then you have been scammed and should demand a refund. The only official download page for this software is https://github.com/bazthedev/SolsScope")
         else:
             print("No updates were detected.")
 except Exception as e:
@@ -303,7 +305,7 @@ def run_initial_setup(logger):
             if not latest_version_str:
                 logger.write_log("Could not determine latest version from GitHub API response.")
             else:
-                if latest_version_str.startswith('v'): 
+                if latest_version_str.startswith('v'):
                     latest_version_str = latest_version_str[1:]
 
                 if parse_version(latest_version_str) > parse_version(LOCALVERSION):

@@ -88,7 +88,7 @@ try:
             with open(f"{WORK_DIR}\\settings.json", "w") as f:
                 json.dump(_tempsettings, f, indent=4)
             messagebox.showinfo("SolsScope", "If you paid for this software, then you have been scammed and should demand a refund. The only official download page for this software is https://github.com/bazthedev/SolsScope")
-        elif _tempsettings.get("redownload_libs_on_run", False):
+        elif _tempsettings.get("redownload_libs_on_run", False) or PRERELEASE:
             for file in REQUIRED_LIBS:
                 print(f"{file} is being downloaded...")
                 _download = requests.get(LIB_DOWNLOAD_URL + file, timeout=5)
@@ -101,7 +101,6 @@ try:
             _tempsettings["redownload_libs_on_run"] = False
             with open(f"{WORK_DIR}\\settings.json", "w") as f:
                 json.dump(_tempsettings, f, indent=4)
-            messagebox.showinfo("SolsScope", "If you paid for this software, then you have been scammed and should demand a refund. The only official download page for this software is https://github.com/bazthedev/SolsScope")
         else:
             print("No updates were detected.")
 except Exception as e:

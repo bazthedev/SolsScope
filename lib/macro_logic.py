@@ -779,6 +779,8 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
                     try:
                         reset_character()
                         time.sleep(1)
+                        reset_character()
+                        time.sleep(1)
                         mkey.left_click_xy_natural(round(float(COORDS_PERCENT["collection_open_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["collection_open_pos"][1] * COORDS["scr_hei"])))
                         time.sleep(0.5)
                         mkey.left_click_xy_natural(round(float(COORDS_PERCENT["exit_collection_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["exit_collection_pos"][1] * COORDS["scr_hei"])))
@@ -901,6 +903,8 @@ def auto_craft(settings: dict, stop_event: threading.Event, sniped_event: thread
     logger.write_log("Auto Craft: Walking To Stella's")
     with keyboard_lock:
         try:
+            reset_character()
+            time.sleep(1)
             reset_character()
             time.sleep(1)
             mkey.left_click_xy_natural(round(float(COORDS_PERCENT["collection_open_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["collection_open_pos"][1] * COORDS["scr_hei"])))
@@ -1483,6 +1487,8 @@ def do_obby(settings: dict, webhook, stop_event: threading.Event, sniped_event: 
             try:
                 reset_character()
                 time.sleep(1)
+                reset_character()
+                time.sleep(1)
                 mkey.left_click_xy_natural(round(float(COORDS_PERCENT["collection_open_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["collection_open_pos"][1] * COORDS["scr_hei"])))
                 time.sleep(0.5)
                 mkey.left_click_xy_natural(round(float(COORDS_PERCENT["exit_collection_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["exit_collection_pos"][1] * COORDS["scr_hei"])))
@@ -1518,7 +1524,7 @@ def do_obby(settings: dict, webhook, stop_event: threading.Event, sniped_event: 
                 kb.release("d")
                 time.sleep(0.4)
                 kb.press("w")
-                time.sleep(1)
+                time.sleep(0.4)
                 kb.release("w")
                 time.sleep(0.4)
                 kb.press("a")
@@ -1564,6 +1570,8 @@ def do_obby(settings: dict, webhook, stop_event: threading.Event, sniped_event: 
             try:
                 reset_character()
                 time.sleep(1)
+                reset_character()
+                time.sleep(1)
                 mkey.left_click_xy_natural(round(float(COORDS_PERCENT["collection_open_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["collection_open_pos"][1] * COORDS["scr_hei"])))
                 time.sleep(0.5)
                 mkey.left_click_xy_natural(round(float(COORDS_PERCENT["exit_collection_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["exit_collection_pos"][1] * COORDS["scr_hei"])))
@@ -1575,7 +1583,8 @@ def do_obby(settings: dict, webhook, stop_event: threading.Event, sniped_event: 
             if settings.get("notify_obby_completion", False):
                 emb = discord.Embed(
                     title="Completed Obby Blessing",
-                    description="Enjoy a 30% luck boost!"
+                    description="Enjoy a 30% luck boost!",
+                    colour=discord.Colour.from_rgb(158, 255, 172)
                 )
                 emb.set_footer(text=f"SolsScope v{LOCALVERSION}")
                 emb.set_thumbnail(url="https://static.wikia.nocookie.net/sol-rng/images/a/a5/Basicblessingactualsize.png/revision/latest")
@@ -1591,6 +1600,8 @@ def do_obby(settings: dict, webhook, stop_event: threading.Event, sniped_event: 
             if is_autocraft:
                 logger.write_log("Walking back to Stella's")
                 try:
+                    reset_character()
+                    time.sleep(1)
                     reset_character()
                     time.sleep(1)
                     mkey.left_click_xy_natural(round(float(COORDS_PERCENT["collection_open_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["collection_open_pos"][1] * COORDS["scr_hei"])))
@@ -1686,6 +1697,8 @@ def auto_questboard(settings: dict, webhook, stop_event: threading.Event, sniped
         wait_interval = 3600
         time.sleep(2)
         with keyboard_lock:
+            reset_character()
+            time.sleep(1)
             reset_character()
             time.sleep(1)
             mkey.left_click_xy_natural(round(float(COORDS_PERCENT["collection_open_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["collection_open_pos"][1] * COORDS["scr_hei"])))
@@ -1859,6 +1872,8 @@ def auto_questboard(settings: dict, webhook, stop_event: threading.Event, sniped
 
             mkey.left_click_xy_natural(round(float(COORDS_PERCENT["exit_questboard_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["exit_questboard_pos"][1] * COORDS["scr_hei"])))
             time.sleep(3)
+            reset_character()
+            time.sleep(1)
             reset_character()
             time.sleep(3)
         logger.write_log(f"Auto Quest Board: Waiting {wait_interval} seconds...")

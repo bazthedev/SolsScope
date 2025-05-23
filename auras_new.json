@@ -491,7 +491,7 @@
         "img_url": "https://static.wikia.nocookie.net/sol-rng/images/0/0b/Atlas_collection.gif/revision/latest",
         "native_biome": "Sand storm"
     },
-    "abyssal hunter": {
+    "abyssalhunter": {
         "emb_colour": "#0055ff",
         "rarity": "400000000",
         "img_url": "https://static.wikia.nocookie.net/sol-rng/images/2/25/Abyssal_Hunter_Max_Graphics.gif/revision/latest",
@@ -559,13 +559,13 @@
     },
     "memory": {
         "emb_colour": "#5343d4",
-        "rarity": "35000000",
+        "rarity": "60000000",
         "img_url": "https://static.wikia.nocookie.net/sol-rng/images/a/ad/MemoryCollectionEon1.gif/revision/latest",
         "native_biome": ""
     },
     "oblivion": {
         "emb_colour": "#510e9e",
-        "rarity": "700000000",
+        "rarity": "1200000000",
         "img_url": " ://static.wikia.nocookie.net/sol-rng/images/c/c5/Oblivion_colletion_eon1-1.gif/revision/latest",
         "native_biome": ""
     },

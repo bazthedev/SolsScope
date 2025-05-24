@@ -170,7 +170,9 @@ DEFAULTSETTINGS = {
         "Delivery III": True
     },
     "skip_questboard_download" : False,
-    "notify_obby_completion" : False
+    "notify_obby_completion" : False,
+    "has_abyssal_hunter" : False,
+    "do_no_walk_to_stella" : False
 }
 
 VALIDSETTINGSKEYS = list(DEFAULTSETTINGS.keys())
@@ -183,8 +185,8 @@ AURAS_KEYS = ["minimum_roll", "minimum_ping", "reset_aura", "take_screenshot_on_
 BIOMES_KEYS = ["biomes", "auto_biome_randomizer", "auto_strange_controller", "pop_in_glitch", "auto_use_items_in_glitch", "pop_in_dreamspace", "auto_use_items_in_dreamspace"]
 SNIPER_KEYS = ["sniper_enabled", "sniper_toggles", "DISCORD_TOKEN", "ROBLOSECURITY_KEY", "sniper_logs", "scan_channels"]
 MERCHANT_KEYS = ["merchant_detection", "ping_mari", "mari_ping_id", "auto_purchase_items_mari", "ping_jester", "jester_ping_id", "auto_purchase_items_jester", "auto_sell_to_jester", "amount_of_item_to_sell", "items_to_sell"]
-AUTOCRAFT_KEYS = ["auto_craft_mode", "auto_craft_item", "skip_auto_mode_warning"]
-PATH_KEYS = ["do_obby", "notify_obby_completion"]
+AUTOCRAFT_KEYS = ["auto_craft_mode", "auto_craft_item", "skip_auto_mode_warning", "do_no_walk_to_stella"]
+PATH_KEYS = ["do_obby", "notify_obby_completion", "has_abyssal_hunter"]
 QUEST_KEYS = ["enable_auto_quest_board", "quests_to_accept"]
 
 OTHER_KEYS = ["disconnect_prevention", "disable_autokick_prevention", "disable_aura_detection", "disable_biome_detection", "always_on_top", "periodic_screenshots", "check_update", "auto_install_update"]
@@ -370,7 +372,8 @@ COORDS_PERCENT = {
     "exit_questboard_pos" : (1281/2560, 1250/1440),
     "sidequest_btn_pos" : (40/2560, 750/1440),
     "sidequest_check_complete_pos" : (1076/2560, 510/1440, 1446/2560, 508/1440),
-    "quest_completion_title" : (1055/2560, 445/1440, 1459/2560, 471/1440)
+    "quest_completion_title" : (1055/2560, 445/1440, 1459/2560, 471/1440),
+    "equip_aura_btn" : (829/2560, 845/1440)
 }
 
 COMPLETION_COLOURS = [

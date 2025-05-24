@@ -38,7 +38,7 @@ from constants import (
 from utils import (
     get_logger, create_discord_file_from_path, hex2rgb, fuzzy_match,
     fuzzy_match_merchant, exists_procs_by_name, validate_pslink, fuzzy_match_auto_sell,
-    fuzzy_match_qb, rgb2hex, right_click_drag, left_click_drag
+    fuzzy_match_qb, rgb2hex, right_click_drag, left_click_drag, resolve_full_aura_name
 )
 from roblox_utils import (
     get_latest_equipped_aura, get_latest_hovertext, detect_client_disconnect,
@@ -100,13 +100,67 @@ def use_item(item_name: str, amount: int, close_menu: bool, mkey, kb, settings: 
         logger.write_log(f"Error during use_item execution: {e}")
 
         try:
-                mkey.left_click_xy_natural(round(float(COORDS_PERCENT["close_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["close_pos"][1] * COORDS["scr_hei"])))
-                time.sleep(wait_time)
-                mkey.left_click_xy_natural(round(float(COORDS_PERCENT["close_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["close_pos"][1] * COORDS["scr_hei"])))
+            mkey.left_click_xy_natural(round(float(COORDS_PERCENT["close_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["close_pos"][1] * COORDS["scr_hei"])))
+            time.sleep(wait_time)
+            mkey.left_click_xy_natural(round(float(COORDS_PERCENT["close_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["close_pos"][1] * COORDS["scr_hei"])))
         except Exception as close_e:
-                logger.write_log(f"Error trying to close menu after item use error: {close_e}")
+            logger.write_log(f"Error trying to close menu after item use error: {close_e}")
 
-def aura_detection(settings: dict, webhook, stop_event: threading.Event, keyboard_lock: threading.Lock, mkey, kb):
+def equip_aura(aura_name, unequip, mkey, kb, settings: dict, ignore_next_detection: set, ignore_lock: threading.Lock):
+    logger = get_logger()
+    try:
+        with open(get_auras_path(), "r", encoding="utf-8") as f:
+            auras = json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError, OSError) as e:
+        logger.write_log(f"Error loading auras data for detection: {e}. Aura detection stopped.")
+        return
+    
+    full_aura_name = resolve_full_aura_name(aura_name, auras)
+    _ = None
+    while _ is None:
+        _ = get_latest_equipped_aura()
+        try:
+            if _.lower() == full_aura_name.lower():
+                if not unequip:
+                    logger.write_log(f"Aura {full_aura_name} is already equipped.")
+                    return
+            elif full_aura_name.lower() == "glock: shieldofthesky":
+                full_aura_name = "Glock"
+        except Exception as e:
+            logger.write_log(f"Error checking current equipped aura: {e}.")
+
+    if unequip:
+        logger.write_log(f"Unequipping Aura: {aura_name} (resolved as '{full_aura_name}')")
+    else:
+        logger.write_log(f"Equipping Aura: {aura_name} (resolved as '{full_aura_name}')")
+        with ignore_lock:
+            ignore_next_detection.add(full_aura_name.lower())
+    try:
+        wait_time = settings.get("global_wait_time", 0.2)
+        mkey.left_click_xy_natural(round(float(COORDS_PERCENT["aura_button_pos"][0] * COORDS["scr_wid"])),
+                                    round(float(COORDS_PERCENT["aura_button_pos"][1] * COORDS["scr_hei"])))
+        time.sleep(wait_time)
+        mkey.left_click_xy_natural(round(float(COORDS_PERCENT["search_pos"][0] * COORDS["scr_wid"])),
+                                    round(float(COORDS_PERCENT["search_pos"][1] * COORDS["scr_hei"])))
+        time.sleep(wait_time)
+        kb.type(aura_name)
+        time.sleep(wait_time)
+        mkey.left_click_xy_natural(round(float(COORDS_PERCENT["query_pos"][0] * COORDS["scr_wid"])),
+                                    round(float(COORDS_PERCENT["query_pos"][1] * COORDS["scr_hei"])))
+        time.sleep(wait_time)
+        mkey.left_click_xy_natural(round(float(COORDS_PERCENT["equip_aura_btn"][0] * COORDS["scr_wid"])),
+                                    round(float(COORDS_PERCENT["equip_aura_btn"][1] * COORDS["scr_hei"])))
+        time.sleep(wait_time)
+        mkey.left_click_xy_natural(round(float(COORDS_PERCENT["close_pos"][0] * COORDS["scr_wid"])),
+                                    round(float(COORDS_PERCENT["close_pos"][1] * COORDS["scr_hei"])))
+        time.sleep(wait_time)
+        mkey.left_click_xy_natural(round(float(COORDS_PERCENT["close_pos"][0] * COORDS["scr_wid"])),
+                                    round(float(COORDS_PERCENT["close_pos"][1] * COORDS["scr_hei"])))
+    except Exception as e:
+        logger.write_log(f"Unable to equip aura: {e}")
+
+
+def aura_detection(settings: dict, webhook, stop_event: threading.Event, keyboard_lock: threading.Lock, mkey, kb, ignore_lock, ignore_next_detection):
     logger = get_logger()
     logger.write_log("Aura Detection thread started.")
 
@@ -130,14 +184,23 @@ def aura_detection(settings: dict, webhook, stop_event: threading.Event, keyboar
         previous_aura = get_latest_equipped_aura()
         logger.write_log(f"Initial aura state: {previous_aura}")
     except Exception as e:
-         logger.write_log(f"Error getting initial aura state: {e}")
+        logger.write_log(f"Error getting initial aura state: {e}")
 
     while not stop_event.is_set():
         try:
             current_aura = get_latest_equipped_aura()
+
             if current_aura is None:
                 time.sleep(2) 
                 continue
+            
+            with ignore_lock:
+                if current_aura.lower() in ignore_next_detection:
+                    ignore_next_detection.remove(current_aura.lower())
+                    logger.write_log(f"Ignoring detection for aura '{current_aura}' due to recent equip.")
+                    previous_aura = current_aura
+                    time.sleep(settings.get("global_wait_time", 0.2) + 0.5)
+                    continue
 
             if previous_aura is None or current_aura == previous_aura:
                 previous_aura = current_aura
@@ -148,11 +211,7 @@ def aura_detection(settings: dict, webhook, stop_event: threading.Event, keyboar
                 previous_aura = current_aura
                 time.sleep(1)
                 continue
-            if settings.get("reset_aura", "") and current_aura == settings["reset_aura"]:
-                 previous_aura = current_aura
-                 time.sleep(1)
-                 continue
-
+            
             aura_key = current_aura.lower()
             if aura_key in auras:
                 aura_data = auras[aura_key]
@@ -252,25 +311,8 @@ def aura_detection(settings: dict, webhook, stop_event: threading.Event, keyboar
                     else:
                         with keyboard_lock:
                             try:
-                                wait_time = settings.get("global_wait_time", 0.2)
-                                mkey.left_click_xy_natural(round(float(COORDS_PERCENT["aura_button_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["aura_button_pos"][1] * COORDS["scr_hei"])))
-                                time.sleep(wait_time)
-                                mkey.left_click_xy_natural(round(float(COORDS_PERCENT["search_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["search_pos"][1] * COORDS["scr_hei"])))
-                                time.sleep(wait_time)
-                                kb.type(reset_aura_target)
-                                time.sleep(wait_time + 0.2)
-                                mkey.left_click_xy_natural(round(float(COORDS_PERCENT["equip_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["equip_pos"][1] * COORDS["scr_hei"])))
-                                time.sleep(wait_time)
-
-                                mkey.left_click_xy_natural(round(float(COORDS_PERCENT["equip_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["equip_pos"][1] * COORDS["scr_hei"])))
-                                time.sleep(wait_time)
-                                mkey.left_click_xy_natural(round(float(COORDS_PERCENT["equip_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["equip_pos"][1] * COORDS["scr_hei"])))
-                                time.sleep(wait_time)
-                                mkey.left_click_xy_natural(round(float(COORDS_PERCENT["close_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["close_pos"][1] * COORDS["scr_hei"])))
-                                time.sleep(wait_time)
-                                mkey.left_click_xy_natural(round(float(COORDS_PERCENT["close_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["close_pos"][1] * COORDS["scr_hei"])))
-                                logger.write_log("Aura reset initiated.")
-                                previous_aura = reset_aura_target 
+                                equip_aura(reset_aura_target, False, mkey, kb, settings, ignore_next_detection, ignore_lock)
+                                previous_aura = reset_aura_target
                             except Exception as reset_e:
                                 logger.write_log(f"Error during aura reset: {reset_e}")
 
@@ -425,7 +467,7 @@ def keep_alive(settings: dict, stop_event: threading.Event, sniped_event: thread
 
     logger.write_log("Keep Alive (Anti-AFK) thread stopped.")
 
-def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sniped_event: threading.Event, keyboard_lock: threading.Lock, mkey, kb):
+def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sniped_event: threading.Event, keyboard_lock: threading.Lock, mkey, kb, ignore_lock, ignore_next_detection):
     logger = get_logger()
     if not MERCHANT_DETECTION_POSSIBLE:
         logger.write_log("Merchant Detection cannot start: Missing dependencies (cv2/pytesseract).")
@@ -487,6 +529,7 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
         logger.write_log("Auto sell for Jester is enabled.")
 
     is_autocraft = settings.get("auto_craft_mode", False)
+    has_abyssal = settings.get("has_abyssal_hunter", False)
 
     while not stop_event.is_set() and not sniped_event.is_set():
 
@@ -791,51 +834,112 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
 
                     logger.write_log("Begin position alignment.")
 
-                    try:
-                        mkey.move_to_natural(round(float(COORDS_PERCENT["close_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["close_pos"][1] * COORDS["scr_hei"])))
-                        time.sleep(0.4)
-                        right_click_drag(1000, 0)
-                        time.sleep(0.4)
-                        kb.press("d")
-                        time.sleep(3)
-                        kb.release("d")
-                        time.sleep(0.4)
-                        kb.press("w")
-                        time.sleep(8)
-                        kb.release("w")
-                        time.sleep(0.4)
-                        kb.press("a")
-                        time.sleep(3)
-                        kb.release("a")
-                        time.sleep(0.4)
-                        kb.press("w")
-                        time.sleep(1)
-                        kb.release("w")
-                        time.sleep(0.4)
-                        kb.press("d")
-                        time.sleep(0.75)
-                        kb.release("d")
-                        time.sleep(0.4)
-                        kb.press("w")
-                        time.sleep(1)
-                        kb.release("w")
-                    except Exception as e:
-                        logger.write_log(f"Error during position alignment: {e}")
-                        continue
+                    if not has_abyssal:
+                        try:
+                            mkey.move_to_natural(round(float(COORDS_PERCENT["close_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["close_pos"][1] * COORDS["scr_hei"])))
+                            time.sleep(0.4)
+                            right_click_drag(1000, 0)
+                            time.sleep(0.4)
+                            kb.press("d")
+                            time.sleep(3)
+                            kb.release("d")
+                            time.sleep(0.4)
+                            kb.press("w")
+                            time.sleep(8)
+                            kb.release("w")
+                            time.sleep(0.4)
+                            kb.press("a")
+                            time.sleep(3)
+                            kb.release("a")
+                            time.sleep(0.4)
+                            kb.press("w")
+                            time.sleep(1)
+                            kb.release("w")
+                            time.sleep(0.4)
+                            kb.press("d")
+                            time.sleep(0.75)
+                            kb.release("d")
+                            time.sleep(0.4)
+                            kb.press("w")
+                            time.sleep(1)
+                            kb.release("w")
+                        except Exception as e:
+                            logger.write_log(f"Error during position alignment: {e}")
+                            continue
+
+                    else:
+                        saved_aura = None
+                        while saved_aura is None:
+                            try:
+                                saved_aura = get_latest_equipped_aura().lower()
+                            except Exception as e:
+                                logger.write_log(f"Error checking current equipped aura: {e}.")
+                        logger.write_log("Walking to Stella with Abyssal Hunter")
+                        time.sleep(2)
+                        equip_aura("Abyssal", False, mkey, kb, settings, ignore_next_detection, ignore_lock)
+                        time.sleep(2)
+                        try:
+                            mkey.move_to_natural(round(float(COORDS_PERCENT["close_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["close_pos"][1] * COORDS["scr_hei"])))
+                            time.sleep(0.4)
+                            right_click_drag(1000, 0)
+                            time.sleep(0.4)
+                            kb.press("d")
+                            time.sleep(1.8)
+                            kb.release("d")
+                            time.sleep(0.4)
+                            kb.press("w")
+                            time.sleep(6)
+                            kb.release("w")
+                            time.sleep(0.4)
+                            kb.press("a")
+                            time.sleep(1.3)
+                            kb.release("a")
+                            time.sleep(0.4)
+                            kb.press("w")
+                            time.sleep(0.5)
+                            kb.release("w")
+                            time.sleep(0.4)
+                            kb.press("d")
+                            time.sleep(0.4)
+                            kb.release("d")
+                            time.sleep(0.4)
+                            kb.press("w")
+                            time.sleep(0.5)
+                            kb.release("w")
+                        except Exception as e:
+                            logger.write_log(f"Error during position alignment: {e}")
+                            continue
 
                     logger.write_log("Finished position alignment, walking to Stella.")
 
-                    try:
-                        right_click_drag(0, 600)
-                        time.sleep(1)
-                        run_macro(f"{PATH_DIR}/stella.mms")
-                        time.sleep(1)
-                    except Exception as e:
-                        logger.write_log(f"Error during walk to Stella's: {e}")
-                        continue
+                    time.sleep(1)
 
-                else:
-                    time.sleep(cooldown_interval)
+                    if not has_abyssal:
+                        try:
+                            right_click_drag(0, 600)
+                            time.sleep(1)
+                            run_macro(f"{PATH_DIR}/stella.mms")
+                            time.sleep(1)
+                        except Exception as e:
+                            logger.write_log(f"Error during walk to Stella's: {e}")
+                            continue
+                    else:
+                        try:
+                            right_click_drag(0, 600)
+                            time.sleep(1)
+                            run_macro(f"{PATH_DIR}/stella_abyssal.mms")
+                            time.sleep(1)
+                        except Exception as e:
+                            logger.write_log(f"Error during walk to Stella's: {e}")
+                            continue
+                        if saved_aura:
+                            equip_aura(saved_aura, False, mkey, kb, settings, ignore_next_detection, ignore_lock)
+                        else:
+                            equip_aura("Abyssal", True, mkey, kb, settings, ignore_next_detection, ignore_lock)
+                        
+
+                if stop_event.wait(timeout=cooldown_interval):
+                    break
 
             except Exception as e:
                 logger.write_log(f"Error in Merchant Detection loop: {e}")
@@ -849,7 +953,7 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
 
     logger.write_log("Merchant Detection thread stopped.")
 
-def auto_craft(settings: dict, stop_event: threading.Event, sniped_event: threading.Event, keyboard_lock: threading.Lock, mkey, kb, ms):
+def auto_craft(settings: dict, stop_event: threading.Event, sniped_event: threading.Event, keyboard_lock: threading.Lock, mkey, kb, ms, ignore_lock, ignore_next_detection):
     logger = get_logger()
     logger.write_log("Starting Auto Craft in 10 seconds")
     if stop_event.wait(timeout=10):
@@ -875,6 +979,9 @@ def auto_craft(settings: dict, stop_event: threading.Event, sniped_event: thread
     if not all(coord in COORDS for coord in required_coords):
          logger.write_log("Cannot start Auto Craft: Required coordinates missing.")
          return
+    
+
+    has_abyssal = settings.get("has_abyssal_hunter", False)
 
     def search_for_potion_in_cauldron(potion_name):
         kb.press('f') 
@@ -900,62 +1007,122 @@ def auto_craft(settings: dict, stop_event: threading.Event, sniped_event: thread
     if stop_event.wait(timeout=10):
         return
     
-    logger.write_log("Auto Craft: Walking To Stella's")
-    with keyboard_lock:
-        try:
-            reset_character()
-            time.sleep(1)
-            reset_character()
-            time.sleep(1)
-            mkey.left_click_xy_natural(round(float(COORDS_PERCENT["collection_open_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["collection_open_pos"][1] * COORDS["scr_hei"])))
-            time.sleep(0.5)
-            mkey.left_click_xy_natural(round(float(COORDS_PERCENT["exit_collection_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["exit_collection_pos"][1] * COORDS["scr_hei"])))
-            time.sleep(1)
-        except Exception as e:
-            logger.write_log(f"Error during camera alignment: {e}")
+    if not settings.get("do_no_walk_to_stella", False):
+        logger.write_log("Auto Craft: Walking To Stella's")
+        with keyboard_lock:
+            logger.write_log("Walking back to Stella's")
+            try:
+                reset_character()
+                time.sleep(1)
+                reset_character()
+                time.sleep(1)
+                mkey.left_click_xy_natural(round(float(COORDS_PERCENT["collection_open_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["collection_open_pos"][1] * COORDS["scr_hei"])))
+                time.sleep(0.5)
+                mkey.left_click_xy_natural(round(float(COORDS_PERCENT["exit_collection_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["exit_collection_pos"][1] * COORDS["scr_hei"])))
+                time.sleep(1)
+            except Exception as e:
+                logger.write_log(f"Error during camera alignment: {e}")
 
-        logger.write_log("Begin position alignment.")
+            logger.write_log("Begin position alignment.")
 
-        try:
-            mkey.move_to_natural(round(float(COORDS_PERCENT["close_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["close_pos"][1] * COORDS["scr_hei"])))
-            time.sleep(0.4)
-            right_click_drag(1000, 0)
-            time.sleep(0.4)
-            kb.press("d")
-            time.sleep(3)
-            kb.release("d")
-            time.sleep(0.4)
-            kb.press("w")
-            time.sleep(8)
-            kb.release("w")
-            time.sleep(0.4)
-            kb.press("a")
-            time.sleep(3)
-            kb.release("a")
-            time.sleep(0.4)
-            kb.press("w")
-            time.sleep(1)
-            kb.release("w")
-            time.sleep(0.4)
-            kb.press("d")
-            time.sleep(0.75)
-            kb.release("d")
-            time.sleep(0.4)
-            kb.press("w")
-            time.sleep(1)
-            kb.release("w")
-        except Exception as e:
-            logger.write_log(f"Error during position alignment: {e}")
+            if not has_abyssal:
+                try:
+                    mkey.move_to_natural(round(float(COORDS_PERCENT["close_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["close_pos"][1] * COORDS["scr_hei"])))
+                    time.sleep(0.4)
+                    right_click_drag(1000, 0)
+                    time.sleep(0.4)
+                    kb.press("d")
+                    time.sleep(3)
+                    kb.release("d")
+                    time.sleep(0.4)
+                    kb.press("w")
+                    time.sleep(8)
+                    kb.release("w")
+                    time.sleep(0.4)
+                    kb.press("a")
+                    time.sleep(3)
+                    kb.release("a")
+                    time.sleep(0.4)
+                    kb.press("w")
+                    time.sleep(1)
+                    kb.release("w")
+                    time.sleep(0.4)
+                    kb.press("d")
+                    time.sleep(0.75)
+                    kb.release("d")
+                    time.sleep(0.4)
+                    kb.press("w")
+                    time.sleep(1)
+                    kb.release("w")
+                except Exception as e:
+                    logger.write_log(f"Error during position alignment: {e}")
 
-        logger.write_log("Finished position alignment, walking to Stella.")
+            else:
+                saved_aura = None
+                while saved_aura is None:
+                    try:
+                        saved_aura = get_latest_equipped_aura().lower()
+                    except Exception as e:
+                        logger.write_log(f"Error checking current equipped aura: {e}.")
+                logger.write_log("Walking to Stella with Abyssal Hunter")
+                time.sleep(2)
+                equip_aura("Abyssal", False, mkey, kb, settings, ignore_next_detection, ignore_lock)
+                time.sleep(2)
+                try:
+                    mkey.move_to_natural(round(float(COORDS_PERCENT["close_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["close_pos"][1] * COORDS["scr_hei"])))
+                    time.sleep(0.4)
+                    right_click_drag(1000, 0)
+                    time.sleep(0.4)
+                    kb.press("d")
+                    time.sleep(1.8)
+                    kb.release("d")
+                    time.sleep(0.4)
+                    kb.press("w")
+                    time.sleep(6)
+                    kb.release("w")
+                    time.sleep(0.4)
+                    kb.press("a")
+                    time.sleep(1.3)
+                    kb.release("a")
+                    time.sleep(0.4)
+                    kb.press("w")
+                    time.sleep(0.5)
+                    kb.release("w")
+                    time.sleep(0.4)
+                    kb.press("d")
+                    time.sleep(0.4)
+                    kb.release("d")
+                    time.sleep(0.4)
+                    kb.press("w")
+                    time.sleep(0.5)
+                    kb.release("w")
+                except Exception as e:
+                    logger.write_log(f"Error during position alignment: {e}")
 
-        try:
-            right_click_drag(0, 600)
+            logger.write_log("Finished position alignment, walking to Stella.")
+
             time.sleep(1)
-            run_macro(f"{PATH_DIR}/stella.mms")
-            time.sleep(1)
-        except Exception as e:
-            logger.write_log(f"Error during walk to Stella's: {e}")
+
+            if not has_abyssal:
+                try:
+                    right_click_drag(0, 600)
+                    time.sleep(1)
+                    run_macro(f"{PATH_DIR}/stella.mms")
+                    time.sleep(1)
+                except Exception as e:
+                    logger.write_log(f"Error during walk to Stella's: {e}")
+            else:
+                try:
+                    right_click_drag(0, 600)
+                    time.sleep(1)
+                    run_macro(f"{PATH_DIR}/stella_abyssal.mms")
+                    time.sleep(1)
+                except Exception as e:
+                    logger.write_log(f"Error during walk to Stella's: {e}")
+                if saved_aura:
+                    equip_aura(saved_aura, False, mkey, kb, settings, ignore_next_detection, ignore_lock)
+                else:
+                    equip_aura("Abyssal", True, mkey, kb, settings, ignore_next_detection, ignore_lock)
 
     while not stop_event.is_set() and not sniped_event.is_set():
 
@@ -1474,16 +1641,18 @@ def storage_full_detection(settings: dict, webhook, stop_event: threading.Event,
             time.sleep(0.1)
 
 
-def do_obby(settings: dict, webhook, stop_event: threading.Event, sniped_event: threading.Event, keyboard_lock: threading.Lock, mkey, kb, ms):
+def do_obby(settings: dict, webhook, stop_event: threading.Event, sniped_event: threading.Event, keyboard_lock: threading.Lock, mkey, kb, ignore_lock, ignore_next_detection):
     logger = get_logger()
     if stop_event.wait(timeout=5):
         return
     logger.write_log("Obby/Blessing thread started.")
 
     is_autocraft = settings.get("auto_craft_mode", False)
+    has_abyssal = settings.get("has_abyssal_hunter", False)
 
     while not stop_event.is_set() and not sniped_event.is_set():
         with keyboard_lock:
+
             try:
                 reset_character()
                 time.sleep(1)
@@ -1497,74 +1666,161 @@ def do_obby(settings: dict, webhook, stop_event: threading.Event, sniped_event: 
                 logger.write_log(f"Error during obby alignment: {e}")
                 continue
 
-            logger.write_log("Begin Phase 1 of Obby")
-            try:
-                mkey.move_to_natural(round(float(COORDS_PERCENT["close_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["close_pos"][1] * COORDS["scr_hei"])))
-                time.sleep(0.4)
-                right_click_drag(500, 0)
-                time.sleep(0.4)
-                kb.press("w")
-                time.sleep(10)
-                kb.release("w")
-                time.sleep(0.4)
-                right_click_drag(-500, 0)
-                time.sleep(0.4)
-                kb.press("w")
+            if not has_abyssal:
+                logger.write_log("Begin Phase 1 of Obby")
+                try:
+                    mkey.move_to_natural(round(float(COORDS_PERCENT["close_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["close_pos"][1] * COORDS["scr_hei"])))
+                    time.sleep(0.4)
+                    right_click_drag(500, 0)
+                    time.sleep(0.4)
+                    kb.press("w")
+                    time.sleep(10)
+                    kb.release("w")
+                    time.sleep(0.4)
+                    right_click_drag(-500, 0)
+                    time.sleep(0.4)
+                    kb.press("w")
+                    time.sleep(2)
+                    kb.release("w")
+                    time.sleep(0.4)
+                    right_click_drag(500, 0)
+                    time.sleep(0.4)
+                    kb.press("w")
+                    time.sleep(3)
+                    kb.release("w")
+                    time.sleep(0.4)
+                    kb.press("d")
+                    time.sleep(4)
+                    kb.release("d")
+                    time.sleep(0.4)
+                    kb.press("w")
+                    time.sleep(0.4)
+                    kb.release("w")
+                    time.sleep(0.4)
+                    kb.press("a")
+                    time.sleep(0.6)
+                    kb.release("a")
+                    time.sleep(0.4)
+                    kb.press("w")
+                    time.sleep(1)
+                    kb.release("w")
+                    time.sleep(1)
+                except Exception as e:
+                    logger.write_log(f"Error during obby phase 1: {e}")
+                    continue
+
+                logger.write_log("Phase 1 complete, begin phase 2.")
+
+                try:
+                    run_macro(f"{PATH_DIR}/obby1.mms")
+                    time.sleep(1)
+                except Exception as e:
+                    logger.write_log(f"Error during obby phase 2: {e}")
+                    continue
+
+                logger.write_log("Phase 2 complete, begin phase 3.")
+
+                try:
+                    right_click_drag(0, 600)
+                    time.sleep(1)
+                except Exception as e:
+                    logger.write_log(f"Error during obby phase 3: {e}")
+                    continue
+
+                logger.write_log("Phase 3 complete, begin phase 4.")
+
+                try:
+                    run_macro(f"{PATH_DIR}/obby2.mms")
+                    time.sleep(1)
+                except Exception as e:
+                    logger.write_log(f"Error during obby phase 4: {e}")
+                    continue
+            else:
+                saved_aura = None
+                while saved_aura is None:
+                    try:
+                        saved_aura = get_latest_equipped_aura().lower()
+                    except Exception as e:
+                        logger.write_log(f"Error checking current equipped aura: {e}.")
+                logger.write_log("Completing Obby with Abyssal Hunter")
+                equip_aura("Abyssal", False, mkey, kb, settings, ignore_next_detection, ignore_lock)
                 time.sleep(2)
-                kb.release("w")
-                time.sleep(0.4)
-                right_click_drag(500, 0)
-                time.sleep(0.4)
-                kb.press("w")
-                time.sleep(3)
-                kb.release("w")
-                time.sleep(0.4)
-                kb.press("d")
-                time.sleep(4)
-                kb.release("d")
-                time.sleep(0.4)
-                kb.press("w")
-                time.sleep(0.4)
-                kb.release("w")
-                time.sleep(0.4)
-                kb.press("a")
-                time.sleep(0.6)
-                kb.release("a")
-                time.sleep(0.4)
-                kb.press("w")
-                time.sleep(1)
-                kb.release("w")
-                time.sleep(1)
-            except Exception as e:
-                logger.write_log(f"Error during obby phase 1: {e}")
-                continue
+                logger.write_log("Begin Phase 1 of Obby")
+                try:
+                    time.sleep(1)
+                    mkey.move_to_natural(round(float(COORDS_PERCENT["close_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["close_pos"][1] * COORDS["scr_hei"])))
+                    time.sleep(0.4)
+                    right_click_drag(500, 0)
+                    time.sleep(0.4)
+                    kb.press("w")
+                    time.sleep(5)
+                    kb.release("w")
+                    time.sleep(0.4)
+                    right_click_drag(-500, 0)
+                    time.sleep(0.4)
+                    kb.press("w")
+                    time.sleep(1.2)
+                    kb.release("w")
+                    time.sleep(0.4)
+                    right_click_drag(500, 0)
+                    time.sleep(0.4)
+                    kb.press("w")
+                    time.sleep(1)
+                    kb.release("w")
+                    time.sleep(0.4)
+                    kb.press("d")
+                    time.sleep(1)
+                    kb.release("d")
+                    time.sleep(0.4)
+                    kb.press("w")
+                    time.sleep(0.2)
+                    kb.release("w")
+                    time.sleep(0.4)
+                    kb.press("a")
+                    time.sleep(0.4)
+                    kb.release("a")
+                    time.sleep(0.4)
+                    kb.press("w")
+                    time.sleep(0.5)
+                    kb.release("w")
+                    time.sleep(1)
+                except Exception as e:
+                    logger.write_log(f"Error during obby phase 1: {e}")
+                    continue
 
-            logger.write_log("Phase 1 complete, begin phase 2.")
+                logger.write_log("Phase 1 complete, begin phase 2.")
 
-            try:
-                run_macro(f"{PATH_DIR}/obby1.mms")
-                time.sleep(1)
-            except Exception as e:
-                logger.write_log(f"Error during obby phase 2: {e}")
-                continue
+                try:
+                    right_click_drag(0, 600)
+                    time.sleep(1)
+                except Exception as e:
+                    logger.write_log(f"Error during obby phase 2: {e}")
+                    continue
 
-            logger.write_log("Phase 2 complete, begin phase 3.")
+                logger.write_log("Phase 2 complete, begin phase 3.")
 
-            try:
-                right_click_drag(0, 600)
-                time.sleep(1)
-            except Exception as e:
-                logger.write_log(f"Error during obby phase 3: {e}")
-                continue
+                try:
+                    run_macro(f"{PATH_DIR}/obby1_abyssal.mms")
+                    time.sleep(1)
+                except Exception as e:
+                    logger.write_log(f"Error during obby phase 3: {e}")
+                    continue
 
-            logger.write_log("Phase 3 complete, begin phase 4.")
+                logger.write_log("Phase 3 complete, begin phase 4.")
 
-            try:
-                run_macro(f"{PATH_DIR}/obby2.mms")
-                time.sleep(1)
-            except Exception as e:
-                logger.write_log(f"Error during obby phase 4: {e}")
-                continue
+                try:
+                    run_macro(f"{PATH_DIR}/obby2_abyssal.mms")
+                    time.sleep(1)
+                except Exception as e:
+                    logger.write_log(f"Error during obby phase 4: {e}")
+                    continue
+
+                logger.write_log("Phase 4 complete")
+
+                if saved_aura:
+                    equip_aura(saved_aura, False, mkey, kb, settings, ignore_next_detection, ignore_lock)
+                else:
+                    equip_aura("Abyssal", True, mkey, kb, settings, ignore_next_detection, ignore_lock)
 
             logger.write_log("Completed obby, realigning incase of failure.")
             try:
@@ -1614,48 +1870,108 @@ def do_obby(settings: dict, webhook, stop_event: threading.Event, sniped_event: 
 
                 logger.write_log("Begin position alignment.")
 
-                try:
-                    mkey.move_to_natural(round(float(COORDS_PERCENT["close_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["close_pos"][1] * COORDS["scr_hei"])))
-                    time.sleep(0.4)
-                    right_click_drag(1000, 0)
-                    time.sleep(0.4)
-                    kb.press("d")
-                    time.sleep(3)
-                    kb.release("d")
-                    time.sleep(0.4)
-                    kb.press("w")
-                    time.sleep(8)
-                    kb.release("w")
-                    time.sleep(0.4)
-                    kb.press("a")
-                    time.sleep(3)
-                    kb.release("a")
-                    time.sleep(0.4)
-                    kb.press("w")
-                    time.sleep(1)
-                    kb.release("w")
-                    time.sleep(0.4)
-                    kb.press("d")
-                    time.sleep(0.75)
-                    kb.release("d")
-                    time.sleep(0.4)
-                    kb.press("w")
-                    time.sleep(1)
-                    kb.release("w")
-                except Exception as e:
-                    logger.write_log(f"Error during position alignment: {e}")
-                    continue
+                if not has_abyssal:
+                    try:
+                        mkey.move_to_natural(round(float(COORDS_PERCENT["close_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["close_pos"][1] * COORDS["scr_hei"])))
+                        time.sleep(0.4)
+                        right_click_drag(1000, 0)
+                        time.sleep(0.4)
+                        kb.press("d")
+                        time.sleep(3)
+                        kb.release("d")
+                        time.sleep(0.4)
+                        kb.press("w")
+                        time.sleep(8)
+                        kb.release("w")
+                        time.sleep(0.4)
+                        kb.press("a")
+                        time.sleep(3)
+                        kb.release("a")
+                        time.sleep(0.4)
+                        kb.press("w")
+                        time.sleep(1)
+                        kb.release("w")
+                        time.sleep(0.4)
+                        kb.press("d")
+                        time.sleep(0.75)
+                        kb.release("d")
+                        time.sleep(0.4)
+                        kb.press("w")
+                        time.sleep(1)
+                        kb.release("w")
+                    except Exception as e:
+                        logger.write_log(f"Error during position alignment: {e}")
+                        continue
+
+                else:
+                    saved_aura = None
+                    while saved_aura is None:
+                        try:
+                            saved_aura = get_latest_equipped_aura().lower()
+                        except Exception as e:
+                            logger.write_log(f"Error checking current equipped aura: {e}.")
+                    logger.write_log("Walking to Stella with Abyssal Hunter")
+                    time.sleep(2)
+                    equip_aura("Abyssal", False, mkey, kb, settings, ignore_next_detection, ignore_lock)
+                    time.sleep(2)
+                    try:
+                        mkey.move_to_natural(round(float(COORDS_PERCENT["close_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["close_pos"][1] * COORDS["scr_hei"])))
+                        time.sleep(0.4)
+                        right_click_drag(1000, 0)
+                        time.sleep(0.4)
+                        kb.press("d")
+                        time.sleep(1.8)
+                        kb.release("d")
+                        time.sleep(0.4)
+                        kb.press("w")
+                        time.sleep(6)
+                        kb.release("w")
+                        time.sleep(0.4)
+                        kb.press("a")
+                        time.sleep(1.3)
+                        kb.release("a")
+                        time.sleep(0.4)
+                        kb.press("w")
+                        time.sleep(0.5)
+                        kb.release("w")
+                        time.sleep(0.4)
+                        kb.press("d")
+                        time.sleep(0.4)
+                        kb.release("d")
+                        time.sleep(0.4)
+                        kb.press("w")
+                        time.sleep(0.5)
+                        kb.release("w")
+                    except Exception as e:
+                        logger.write_log(f"Error during position alignment: {e}")
+                        continue
 
                 logger.write_log("Finished position alignment, walking to Stella.")
 
-                try:
-                    right_click_drag(0, 600)
-                    time.sleep(1)
-                    run_macro(f"{PATH_DIR}/stella.mms")
-                    time.sleep(1)
-                except Exception as e:
-                    logger.write_log(f"Error during walk to Stella's: {e}")
-                    continue
+                time.sleep(1)
+
+                if not has_abyssal:
+                    try:
+                        right_click_drag(0, 600)
+                        time.sleep(1)
+                        run_macro(f"{PATH_DIR}/stella.mms")
+                        time.sleep(1)
+                    except Exception as e:
+                        logger.write_log(f"Error during walk to Stella's: {e}")
+                        continue
+                else:
+                    try:
+                        right_click_drag(0, 600)
+                        time.sleep(1)
+                        run_macro(f"{PATH_DIR}/stella_abyssal.mms")
+                        time.sleep(1)
+                    except Exception as e:
+                        logger.write_log(f"Error during walk to Stella's: {e}")
+                        continue
+                    if saved_aura:
+                        equip_aura(saved_aura, False, mkey, kb, settings, ignore_next_detection, ignore_lock)
+                    else:
+                        equip_aura("Abyssal", True, mkey, kb, settings, ignore_next_detection, ignore_lock)
 
         wait_interval = 600 
         logger.write_log(f"Obby: Waiting {wait_interval} seconds...")
@@ -1961,7 +2277,7 @@ def auto_pop(biome: str, settings: dict, stop_event: threading.Event, keyboard_l
                 current_biome_check = get_latest_hovertext()
                 if current_biome_check is None or current_biome_check.lower() != biome_lower:
                      logger.write_log("Auto Pop: Biome ended during item use. Stopping sequence.")
-                     return 
+                     return
         else:
              with keyboard_lock:
                 use_item(item, amount_to_use, True, mkey, kb, settings)

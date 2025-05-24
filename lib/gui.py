@@ -1,7 +1,7 @@
 """
 SolsScope/Baz's Macro
 Created by Baz and Cresqnt
-v1.2.6
+v1.2.7
 Support server: https://discord.gg/8khGXqG7nA
 """
 
@@ -10,7 +10,7 @@ import os
 sys.path.insert(1, os.path.expandvars(r"%localappdata%/SolsScope/lib"))
 
 import time 
-
+import json
 import threading
 import asyncio
 from datetime import datetime
@@ -34,7 +34,7 @@ from PyQt6.QtGui import QIcon, QPixmap, QTextCursor
 from constants import (
     MACROPATH, LOCALVERSION, WEBHOOK_ICON_URL, STARTUP_MSGS,
     GENERAL_KEYS, AURAS_KEYS, BIOMES_KEYS, MERCHANT_KEYS,
-    AUTOCRAFT_KEYS, SNIPER_KEYS, OTHER_KEYS, COORDS, DEFAULTSETTINGS, PATH_KEYS,
+    AUTOCRAFT_KEYS, SNIPER_KEYS, OTHER_KEYS, QUEST_KEYS, COORDS, DEFAULTSETTINGS, PATH_KEYS,
     DONOTDISPLAY, ALT_TESSERACT_DIR
 )
 from utils import (
@@ -54,7 +54,7 @@ from discord_utils import forward_webhook_msg, start_snipers, stop_snipers
 from macro_logic import (
     aura_detection, biome_detection, keep_alive, merchant_detection, auto_craft,
     auto_br, auto_sc, inventory_screenshot, storage_screenshot, disconnect_prevention,
-    do_obby, auto_pop, use_item
+    do_obby, auto_pop, use_item, auto_questboard
 )
 
 try:
@@ -130,6 +130,9 @@ class MainWindow(QMainWindow):
         self.stop_event = threading.Event()
         self.sniped_event = threading.Event()
 
+        self.ignore_next_detection = set()
+        self.ignore_lock = threading.Lock()
+
         self.plugins = [] 
 
         self.plugin_file_paths = {}
@@ -181,6 +184,8 @@ class MainWindow(QMainWindow):
             "Auras": AURAS_KEYS,
             "Biomes": BIOMES_KEYS,
             "Merchant": MERCHANT_KEYS,
+            "Quest" : QUEST_KEYS,
+            "Path": PATH_KEYS,
             "Auto Craft": AUTOCRAFT_KEYS,
             "Sniper": SNIPER_KEYS,
             "Other": OTHER_KEYS,
@@ -209,7 +214,7 @@ class MainWindow(QMainWindow):
             if tab_name == "Other":
                 self.add_other_tab_extras(content_layout) 
 
-            self.create_bottom_buttons(tab_layout) 
+            self.create_bottom_buttons(tab_layout, tab_name) 
 
             self.tab_widget.addTab(tab_widget, tab_name)
 
@@ -396,7 +401,7 @@ class MainWindow(QMainWindow):
          layout.addWidget(install_btn)
          layout.addSpacing(10)
 
-    def create_bottom_buttons(self, layout):
+    def create_bottom_buttons(self, layout, tab_name):
         """Creates the Start/Stop/Save buttons at the bottom of a tab."""
         button_frame = QFrame() 
         button_layout = QHBoxLayout(button_frame)
@@ -416,7 +421,37 @@ class MainWindow(QMainWindow):
         save_button.clicked.connect(self.press_save_button)
         button_layout.addWidget(save_button)
 
-        layout.addWidget(button_frame) 
+        if tab_name.lower() == "other":
+            rdl_button = QPushButton("Redownload Libraries")
+            rdl_button.clicked.connect(self.toggle_redownload)
+            button_layout.addWidget(rdl_button)
+        else:
+            donate_button = QPushButton("Donate")
+            donate_button.clicked.connect(self.open_donation_url)
+            button_layout.addWidget(donate_button)
+
+        layout.addWidget(button_frame)
+
+    def toggle_redownload(self):
+        
+        save_success, error_occured = self.save_settings()
+        
+        if save_success:
+            self.logger.write_log("Settings were saved")
+        else:
+            self.logger.write_log(f"Error Occured saving settings: {error_occured}")
+
+        if not self.settings.get("redownload_libs_on_run", False):
+            self.settings["redownload_libs_on_run"] = True
+            QMessageBox.information(self, "SolsScope", "Required Libraries and paths will be redownloaded the next time the macro is run.")
+            self.logger.write_log("Required Libraries and paths will be redownloaded the next time the macro is run.")
+        else:
+            self.settings["redownload_libs_on_run"] = False
+            self.logger.write_log("Required Libraries and paths will not be redownloaded the next time the macro is run.")
+
+        with open(get_settings_path(), "w") as f:
+            json.dump(self.settings, f, indent=4)
+            self.logger.write_log("Updated config to decide redownload.")
 
     def create_logs_tab(self):
         logs_tab = QWidget()
@@ -486,19 +521,23 @@ class MainWindow(QMainWindow):
                 else:
                     self.logger.write_log(f"Failed to load credits image from path: {image_path}")
                     image_label.setText("(Failed to load image)")
+                    try:
+                        os.remove(image_path)
+                    except Exception as e:
+                        self.logger.write_log(f"Failed to remove file for redownload: {e}")
 
             except Exception as e:
                 self.logger.write_log(f"Error processing credits image: {e}")
                 image_label.setText("(Image unavailable)")
             try:
-                image_path = os.path.join(MACROPATH, "cresqnt.png")
+                image_path2 = os.path.join(MACROPATH, "cresqnt.png")
                 img_url = "https://raw.githubusercontent.com/bazthedev/SolsScope/main/img/cresqnt.png"
 
-                if not os.path.exists(image_path):
+                if not os.path.exists(image_path2):
                     self.logger.write_log(f"Downloading credits image from {img_url}...")
                     try:
 
-                        with urllib.request.urlopen(img_url, timeout=10) as response, open(image_path, 'wb') as out_file:
+                        with urllib.request.urlopen(img_url, timeout=10) as response, open(image_path2, 'wb') as out_file:
                             if response.status == 200:
                                 shutil.copyfileobj(response, out_file)
                                 self.logger.write_log("Credits image downloaded.")
@@ -510,14 +549,18 @@ class MainWindow(QMainWindow):
 
                          raise dl_error 
 
-                pixmap = QPixmap(image_path)
+                pixmap = QPixmap(image_path2)
                 if not pixmap.isNull():
 
                     scaled_pixmap = pixmap.scaled(100, 100, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
                     image_label2.setPixmap(scaled_pixmap)
                 else:
-                    self.logger.write_log(f"Failed to load credits image from path: {image_path}")
+                    self.logger.write_log(f"Failed to load credits image from path: {image_path2}")
                     image_label2.setText("(Failed to load image)")
+                    try:
+                        os.remove(image_path2)
+                    except Exception as e:
+                        self.logger.write_log(f"Failed to remove file for redownload: {e}")
 
             except Exception as e:
                 self.logger.write_log(f"Error processing credits image: {e}")
@@ -525,11 +568,30 @@ class MainWindow(QMainWindow):
         else:
             image_label.setText("(Install Pillow library to see images)")
             image_label2.setText("(Install Pillow library to see images)")
+        
+        donation_url = "https://raw.githubusercontent.com/bazthedev/SolsScope/main/donations.json"
+        self.logger.write_log(f"Downloading donation data from {donation_url}...")
+        try:
 
-        layout.addWidget(image_label)
-        layout.addSpacing(15)
+            with urllib.request.urlopen(donation_url, timeout=3) as response, open(f"{MACROPATH}/donations.json", 'wb') as out_file:
+                if response.status == 200:
+                    shutil.copyfileobj(response, out_file)
+                    self.logger.write_log("Donation data downloaded.")
+                else:
+                    self.logger.write_log(f"Failed to download data: Status {response.status}")
+                    raise Exception(f"HTTP Error {response.status}")
+        except Exception as dl_error:
+                self.logger.write_log(f"Error downloading data: {dl_error}")
+                raise dl_error
 
-        layout.addWidget(image_label2)
+        image_layout = QHBoxLayout()
+        image_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        image_layout.addWidget(image_label)
+        image_layout.addSpacing(20)
+        image_layout.addWidget(image_label2)
+
+        layout.addLayout(image_layout)
         layout.addSpacing(15)
 
         separator = QFrame()
@@ -559,9 +621,47 @@ class MainWindow(QMainWindow):
             ack_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             layout.addWidget(ack_label)
 
+        layout.addSpacing(15)
+
+        separator2 = QFrame()
+        separator2.setFrameShape(QFrame.Shape.HLine) 
+        separator2.setFrameShadow(QFrame.Shadow.Sunken)
+        layout.addWidget(separator2)
+        layout.addSpacing(15)
+
+        try:
+            with open(f"{MACROPATH}/donations.json", "r") as f:
+                donors = json.load(f)
+                don_title = QLabel("Donators:")
+                font = don_title.font()
+                font.setPointSize(10)
+                font.setBold(True)
+                don_title.setFont(font)
+                don_title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+                layout.addWidget(don_title)
+                layout.addSpacing(5)
+
+                if len(donors) < 1:
+                    don_label = QLabel("No donations yet :(")
+                    don_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+                    layout.addWidget(don_label)
+                else:
+                    for text in donors:
+                        don_label = QLabel(text)
+                        don_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+                        layout.addWidget(don_label)
+                    don_label = QLabel("Want your name here? All you have to do is donate any amount!")
+                    don_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+                    layout.addWidget(don_label)
+        except Exception as e:
+            self.logger.write_log(f"Failed to load donation data: {e}")
+
         layout.addStretch(1)
 
         self.tab_widget.addTab(credits_tab, "Credits")
+
+    def open_donation_url(self):
+        webbrowser.open("https://www.roblox.com/games/4998237654/GeoffDoes90ss-Place#!/store")
 
     def get_updated_values(self, original_settings_subset, entries_subset):
         """Compares current widget values to original values for a subset."""
@@ -640,7 +740,7 @@ class MainWindow(QMainWindow):
 
         tab_info = {
             "General": GENERAL_KEYS, "Auras": AURAS_KEYS, "Biomes": BIOMES_KEYS,
-            "Merchant": MERCHANT_KEYS, "Auto Craft": AUTOCRAFT_KEYS,
+            "Merchant": MERCHANT_KEYS, "Quest" : QUEST_KEYS, "Path": PATH_KEYS, "Auto Craft": AUTOCRAFT_KEYS,
             "Sniper": SNIPER_KEYS, "Other": OTHER_KEYS
         }
 
@@ -786,6 +886,7 @@ class MainWindow(QMainWindow):
         self.running = True
         self.stop_event.clear()
         self.sniped_event.clear()
+        self.ignore_next_detection.clear()
         self.threads = []
         self.logger.write_log("Starting Macro Threads in 5 seconds...")
 
@@ -866,27 +967,33 @@ class MainWindow(QMainWindow):
                 self.logger.write_log("Auto Craft mode is ON. Some features will be disabled. Ensure you are near the cauldron.")
 
             targets = {
-                "Auto Craft Logic": (auto_craft, [self.settings, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.mouse_controller]),
-                "Aura Detection": (aura_detection, [self.settings, self.webhook, self.stop_event, self.keyboard_lock, self.mkey, self.keyboard_controller]) if not self.settings.get("disable_aura_detection") else None,
+                "Auto Craft Logic": (auto_craft, [self.settings, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.mouse_controller, self.ignore_lock, self.ignore_next_detection]),
+                "Aura Detection": (aura_detection, [self.settings, self.webhook, self.stop_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.ignore_lock, self.ignore_next_detection]) if not self.settings.get("disable_aura_detection") else None,
                 "Biome Detection": (biome_detection, [self.settings, self.webhook, self.stop_event, self.sniped_event]) if not self.settings.get("disable_biome_detection") else None,
+                "Keep Alive": (keep_alive, [self.settings, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey]) if not self.settings.get("disable_autokick_prevention") else None,
+                "Disconnect Prevention": (disconnect_prevention, [self.settings, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller]) if self.settings.get("disconnect_prevention") else None,
+                #"Merchant Detection": (merchant_detection, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.ignore_lock, self.ignore_next_detection]) if (self.settings.get("merchant_detection") or self.settings.get("auto_sell_to_jester")) and MERCHANT_DETECTION_POSSIBLE else None,
                 "Auto Biome Randomizer": (auto_br, [self.settings, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller]) if self.settings.get("auto_biome_randomizer") else None,
                 "Auto Strange Controller": (auto_sc, [self.settings, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller]) if self.settings.get("auto_strange_controller") else None,
                 "Inventory Screenshots": (inventory_screenshot, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey]) if self.settings.get("periodic_screenshots", {}).get("inventory") else None,
                 "Storage Screenshots": (storage_screenshot, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey]) if self.settings.get("periodic_screenshots", {}).get("storage") else None,
+                "Obby": (do_obby, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.ignore_lock, self.ignore_next_detection]) if self.settings.get("do_obby") and not self.settings.get("do_no_walk_to_stella", False) else None,
+                #"Auto Quest Board": (auto_questboard, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.mouse_controller]) if self.settings.get("enable_auto_quest_board") else None,
             }
         else: 
             self.logger.write_log("Starting in Normal Mode.")
             targets = {
-                "Aura Detection": (aura_detection, [self.settings, self.webhook, self.stop_event, self.keyboard_lock, self.mkey, self.keyboard_controller]) if not self.settings.get("disable_aura_detection") else None,
+                "Aura Detection": (aura_detection, [self.settings, self.webhook, self.stop_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.ignore_lock, self.ignore_next_detection]) if not self.settings.get("disable_aura_detection") else None,
                 "Biome Detection": (biome_detection, [self.settings, self.webhook, self.stop_event, self.sniped_event]) if not self.settings.get("disable_biome_detection") else None,
                 "Keep Alive": (keep_alive, [self.settings, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey]) if not self.settings.get("disable_autokick_prevention") else None,
                 "Disconnect Prevention": (disconnect_prevention, [self.settings, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller]) if self.settings.get("disconnect_prevention") else None,
-                "Merchant Detection": (merchant_detection, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller]) if (self.settings.get("merchant_detection") or self.settings.get("auto_sell_to_jester")) and MERCHANT_DETECTION_POSSIBLE else None,
+                "Merchant Detection": (merchant_detection, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.ignore_lock, self.ignore_next_detection]) if (self.settings.get("merchant_detection") or self.settings.get("auto_sell_to_jester")) and MERCHANT_DETECTION_POSSIBLE else None,
                 "Auto Biome Randomizer": (auto_br, [self.settings, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller]) if self.settings.get("auto_biome_randomizer") else None,
                 "Auto Strange Controller": (auto_sc, [self.settings, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller]) if self.settings.get("auto_strange_controller") else None,
                 "Inventory Screenshots": (inventory_screenshot, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey]) if self.settings.get("periodic_screenshots", {}).get("inventory") else None,
                 "Storage Screenshots": (storage_screenshot, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey]) if self.settings.get("periodic_screenshots", {}).get("storage") else None,
-                "Obby": (do_obby, [self.settings, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.mouse_controller]) if self.settings.get("do_obby") else None,
+                "Obby": (do_obby, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.ignore_lock, self.ignore_next_detection]) if self.settings.get("do_obby") else None,
+                #"Auto Quest Board": (auto_questboard, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.mouse_controller]) if self.settings.get("enable_auto_quest_board") else None,
             }
         return targets
 
@@ -915,7 +1022,10 @@ class MainWindow(QMainWindow):
         if is_idle_mode:
             mode_str = "IDLE"
         elif is_autocraft_mode:
-            mode_str = "Auto Craft"
+            if self.settings.get("merchant_detection", False):
+                mode_str = "Auto Craft, with Merchant Detection"
+            else:
+                mode_str = "Auto Craft"
         else:
             mode_str = "Normal"
         start_desc = "" 
@@ -945,12 +1055,13 @@ class MainWindow(QMainWindow):
                 emb.add_field(name="Current Biome", value=biome if biome else "Unknown", inline=True)
             except Exception:
                 self.logger.write_log(f"Error sending start biome notification: {e}")
-                emb.add_field(name="Current Biome", value="Unknown", inline=True) 
+                emb.add_field(name="Current Biome", value="Unknown", inline=True)
+        emb.add_field(name="Active Webhooks:", value=f"{len(self.settings.get('SECONDARY_WEBHOOK_URLS', [])) + 1}")
 
         try:
             if self.webhook:
-                self.webhook.send(avatar_url=WEBHOOK_ICON_URL, embed=emb)
-                forward_webhook_msg(self.webhook.url, self.settings.get("SECONDARY_WEBHOOK_URLS", []), embed=emb, avatar_url=WEBHOOK_ICON_URL)
+                self.webhook.send(embed=emb)
+                forward_webhook_msg(self.webhook.url, self.settings.get("SECONDARY_WEBHOOK_URLS", []), embed=emb)
         except Exception as e:
             self.logger.write_log(f"Error sending start notification: {e}")
 
@@ -1013,7 +1124,8 @@ class MainWindow(QMainWindow):
 
         self.logger.write_log("All threads signaled/joined.")
         self.running = False
-        self.threads.clear() 
+        self.threads.clear()
+        self.ignore_next_detection.clear()
         self.stop_event.clear() 
 
         emb = discord.Embed(
@@ -1024,8 +1136,8 @@ class MainWindow(QMainWindow):
         emb.set_footer(text=f"SolsScope v{LOCALVERSION}")
         if self.webhook:
             try:
-                self.webhook.send(avatar_url=WEBHOOK_ICON_URL, embed=emb)
-                forward_webhook_msg(self.webhook.url, self.settings.get("SECONDARY_WEBHOOK_URLS", []), embed=emb, avatar_url=WEBHOOK_ICON_URL)
+                self.webhook.send(embed=emb)
+                forward_webhook_msg(self.webhook.url, self.settings.get("SECONDARY_WEBHOOK_URLS", []), embed=emb)
             except Exception as e:
                 self.logger.write_log(f"Error sending stop notification: {e}")
         QMessageBox.information(self, "Macro Stopped", "Macro has been stopped.")
@@ -1180,7 +1292,7 @@ class MainWindow(QMainWindow):
                     default_label = QLabel("Plugin has no UI defined.")
                     plugin_tab_layout.addWidget(default_label)
 
-                self.create_bottom_buttons(plugin_tab_layout)
+                self.create_bottom_buttons(plugin_tab_layout, plugin_display_name)
 
                 self.plugins.append(plugin_instance)
                 self.plugin_file_paths[plugin_display_name] = plugin_instance.file_path

@@ -1,7 +1,7 @@
 """
 SolsScope/Baz's Macro
 Created by Baz and Cresqnt
-v1.2.6
+v1.2.7
 Support server: https://discord.gg/8khGXqG7nA
 """
 
@@ -46,7 +46,7 @@ def forward_webhook_msg(primary_webhook_url: str, secondary_urls: list, *, file=
             file.fp.seek(original_pos) 
         except (ValueError, AttributeError, io.UnsupportedOperation) as e:
             logger.write_log(f"Error preparing file for forwarding: {e}")
-            image_bytes = None 
+            image_bytes = None
 
     for webhook_url in secondary_urls:
 
@@ -107,7 +107,7 @@ class Sniper:
             re.compile(pattern, re.IGNORECASE) 
             for pattern in [
                 r"g[liotc]+h", 
-                r"d[rea]+ms"   
+                r"d[rea]+ms"
             ]
         ]
 
@@ -429,8 +429,7 @@ class Sniper:
         try:
             self.main_webhook.send(
                 content=content_ping,
-                embed=embed,
-                avatar_url=WEBHOOK_ICON_URL
+                embed=embed
             )
             self.logger.write_log(f"[SNIPER] Sent notification for {self.words[choice_id]} link.")
 
@@ -438,8 +437,7 @@ class Sniper:
                 primary_webhook_url=self.main_webhook.url,
                 secondary_urls=self.settings.get("SECONDARY_WEBHOOK_URLS", []),
                 content=content_ping,
-                embed=embed,
-                avatar_url=WEBHOOK_ICON_URL
+                embed=embed
             )
 
         except Exception as e:
@@ -594,4 +592,24 @@ async def stop_snipers():
          await asyncio.sleep(1) 
 
      logger.write_log(f"Cancellation requested for {cancelled_count} sniper task(s). Tasks may take time to fully stop.")
-     _SNIPER_TASKS = [] 
+     _SNIPER_TASKS = []
+
+
+def get_webook_info(webhook_url) -> dict:    
+    response = requests.get()
+    if response.status_code == 200:
+        data = response.json()
+        return data
+    else:
+        return {}
+
+def validate_glitch_hunts(guild_ids : list):
+
+    matches = 0
+    KNOWN_GLITCH_HUNTS = []
+
+    for guild_id in guild_ids:
+        if guild_id in KNOWN_GLITCH_HUNTS:
+            matches += 1
+    
+    return True if matches > 1 else False

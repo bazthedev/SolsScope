@@ -1,7 +1,7 @@
 """
 SolsScope/Baz's Macro
 Created by Baz and Cresqnt
-v1.2.6
+v1.2.7
 Support server: https://discord.gg/8khGXqG7nA
 """
 
@@ -16,7 +16,7 @@ import mousekey as mk
 import io 
 import discord
 import datetime
-import codecs
+import json
 
 GLOBAL_LOGGER = None
 
@@ -41,7 +41,7 @@ class Logger:
         self.log_file_path = log_file_path
         if self.log_file_path:
             try:
-                with codecs.open(self.log_file_path, "a", encoding='utf-8') as log_file:
+                with open(self.log_file_path, "a", encoding='utf-8') as log_file:
                     log_file.write("\n\n--------------------------- Starting new instance of SolsScope ---------------------------\n\n")
             except Exception as e:
                 print(f"Error initializing log file {self.log_file_path}: {e}")
@@ -56,7 +56,7 @@ class Logger:
 
         if self.log_file_path:
             try:
-                with codecs.open(self.log_file_path, "a", encoding='utf-8') as log_file:
+                with open(self.log_file_path, "a", encoding='utf-8') as log_file:
                     timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                     log_message = f"[{timestamp}] {message}"
                     log_file.write(log_message)
@@ -114,6 +114,19 @@ def fuzzy_match_auto_sell(text, sellable_items, threshold=0.6):
     best_score = 0
     text_lower = text.lower()
     for name in sellable_items:
+        name_lower = name.lower()
+        score = SequenceMatcher(None, text_lower, name_lower).ratio()
+        if score > best_score:
+            best_match = name
+            best_score = score
+    return best_match if best_score >= threshold else None
+
+def fuzzy_match_qb(text, quests, threshold=0.6):
+    """Similar to fuzzy_match, specifically for the Quest Board."""
+    best_match = None
+    best_score = 0
+    text_lower = text.lower()
+    for name in quests:
         name_lower = name.lower()
         score = SequenceMatcher(None, text_lower, name_lower).ratio()
         if score > best_score:
@@ -189,26 +202,24 @@ def create_discord_file_from_path(path, filename):
     return None
 
 def left_click_drag(x, y, delay=0.1):
-    """Performs a left mouse button drag from current position to (x, y)."""
+    """Performs a left mouse button drag relative of the current position based on (x, y)."""
     try:
-        local_mkey = mk.MouseKey()
-        local_mkey._mouse_click(mk.MOUSEEVENTF_LEFTDOWN)
+        mk._mouse_click(mk.MOUSEEVENTF_LEFTDOWN)
         time.sleep(delay)
-        local_mkey.move(x, y)
+        mk.MouseKey().move_relative(x, y)
         time.sleep(delay)
-        local_mkey._mouse_click(mk.MOUSEEVENTF_LEFTUP)
+        mk._mouse_click(mk.MOUSEEVENTF_LEFTUP)
     except Exception as e:
         get_logger().write_log(f"Error during left_click_drag: {e}")
 
 def right_click_drag(x, y, delay=0.1):
-    """Performs a right mouse button drag from current position to (x, y)."""
+    """Performs a right mouse button drag relative of the current position based on (x, y)."""
     try:
-        local_mkey = mk.MouseKey()
-        local_mkey._mouse_click(mk.MOUSEEVENTF_RIGHTDOWN)
+        mk._mouse_click(mk.MOUSEEVENTF_RIGHTDOWN)
         time.sleep(delay)
-        local_mkey.move(x, y)
+        mk.MouseKey().move_relative(x, y)
         time.sleep(delay)
-        local_mkey._mouse_click(mk.MOUSEEVENTF_RIGHTUP)
+        mk._mouse_click(mk.MOUSEEVENTF_RIGHTUP)
     except Exception as e:
         get_logger().write_log(f"Error during right_click_drag: {e}")
 
@@ -267,3 +278,15 @@ def calculate_coords(primary_monitor):
 def format_key(key: str) -> str:
     """Converts a snake_case key into a Title Case string with spaces."""
     return key.replace("_", " ").title()
+
+def resolve_full_aura_name(partial_name: str, aura_dict : dict) -> str:
+   
+    partial_lower = partial_name.lower()
+    matches = [full_name for full_name in aura_dict if full_name.lower().startswith(partial_lower)]
+
+    if not matches:
+        return partial_name
+    if len(matches) == 1:
+        return matches[0]
+
+    return min(matches, key=len)

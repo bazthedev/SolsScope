@@ -8,1427 +8,2284 @@ Support server: https://discord.gg/8khGXqG7nA
 import sys
 import os
 sys.path.insert(1, os.path.expandvars(r"%localappdata%/SolsScope/lib"))
-
-import time 
-import json
-import threading
-import asyncio
+import time
+import random
+import pyautogui as pag
+import json 
+import threading 
 from datetime import datetime
-import webbrowser
-import shutil 
-import urllib.request 
-import glob 
-import importlib.util 
-from packaging.version import parse as parse_version 
-from pathlib import Path
+import discord 
+import re
+from PIL import ImageGrab
 
-from PyQt6.QtWidgets import (
-    QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QFormLayout, QGroupBox,
-    QTabWidget, QLabel, QLineEdit, QCheckBox, QPushButton, QTextEdit,
-    QScrollArea, QFrame, QMessageBox, QFileDialog, QListWidget, QListWidgetItem,
-    QSizePolicy, QSpacerItem 
-)
-from PyQt6.QtCore import Qt, pyqtSignal, QObject, QMetaObject, Q_ARG, pyqtSlot 
-from PyQt6.QtGui import QIcon, QPixmap, QTextCursor 
+try:
+    import cv2
+    import pytesseract
+    MERCHANT_DETECTION_POSSIBLE = True
+except ImportError:
+    MERCHANT_DETECTION_POSSIBLE = False
+    print("Optional modules for Merchant Detection (cv2, pytesseract) not found. Feature disabled.")
+
+from pynput import keyboard
+from pynput import mouse
 
 from constants import (
-    MACROPATH, LOCALVERSION, WEBHOOK_ICON_URL, STARTUP_MSGS,
-    GENERAL_KEYS, AURAS_KEYS, BIOMES_KEYS, MERCHANT_KEYS,
-    AUTOCRAFT_KEYS, SNIPER_KEYS, OTHER_KEYS, QUEST_KEYS, COORDS, DEFAULTSETTINGS, PATH_KEYS,
-    DONOTDISPLAY, ALT_TESSERACT_DIR
+    MACROPATH, WEBHOOK_ICON_URL, MARI_ITEMS, JESTER_ITEMS,
+    POSSIBLE_MERCHANTS, COORDS, LOCALVERSION, JESTER_SELL_ITEMS, COORDS_PERCENT,
+    ACCEPTED_QUESTBOARD, QUESTBOARD_RARITY_COLOURS, PATH_DIR, ALL_QB, DONOTACCEPT_QB,
+    COMPLETION_COLOURS
 )
 from utils import (
-    get_logger, set_global_logger, Logger, format_key, 
-    create_discord_file_from_path, left_click_drag, right_click_drag, validate_pslink
-)
-from settings_manager import (
-    load_settings, update_settings, get_settings_path, get_auras_path, get_biomes_path,
-    validate_settings
+    get_logger, create_discord_file_from_path, hex2rgb, fuzzy_match,
+    fuzzy_match_merchant, exists_procs_by_name, validate_pslink, fuzzy_match_auto_sell,
+    fuzzy_match_qb, rgb2hex, right_click_drag, left_click_drag, resolve_full_aura_name
 )
 from roblox_utils import (
-    set_active_log_directory, get_active_log_directory, exists_procs_by_name,
-    get_latest_equipped_aura, get_latest_hovertext
+    get_latest_equipped_aura, get_latest_hovertext, detect_client_disconnect,
+    detect_client_reconnect, join_private_server_link, leave_main_menu,
+    activate_ms_store_roblox, click_ms_store_spawn_button, toggle_fullscreen_ms_store,
+    align_camera, reset_character
 )
-from discord_utils import forward_webhook_msg, start_snipers, stop_snipers
+from discord_utils import forward_webhook_msg
+from settings_manager import get_auras_path, get_biomes_path, get_merchant_path, get_questboard_path
 
-from macro_logic import (
-    aura_detection, biome_detection, keep_alive, merchant_detection, auto_craft,
-    auto_br, auto_sc, inventory_screenshot, storage_screenshot, disconnect_prevention,
-    do_obby, auto_pop, use_item, auto_questboard
-)
+from mmint import run_macro
 
-try:
-    from PIL import Image
+def use_item(item_name: str, amount: int, close_menu: bool, mkey, kb, settings: dict):
+    logger = get_logger()
+    logger.write_log(f"Attempting to use item: {item_name} (Amount: {amount})")
 
-    PIL_AVAILABLE = True
-except ImportError:
-    PIL_AVAILABLE = False
+    required_coords = [
+        "inv_button_pos", "items_pos", "search_pos", "query_pos",
+        "item_amt_pos", "use_pos", "close_pos"
+    ]
+    if not all(coord in COORDS for coord in required_coords):
+        logger.write_log("Error using item: Required coordinates missing.")
+        return
 
-try:
-    import pytesseract
+    try:
+        wait_time = settings.get("global_wait_time", 0.2)
+        mkey.left_click_xy_natural(round(float(COORDS_PERCENT["inv_button_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["inv_button_pos"][1] * COORDS["scr_hei"])))
+        time.sleep(wait_time)
+        mkey.left_click_xy_natural(round(float(COORDS_PERCENT["items_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["items_pos"][1] * COORDS["scr_hei"])))
+        time.sleep(wait_time)
+        mkey.left_click_xy_natural(round(float(COORDS_PERCENT["search_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["search_pos"][1] * COORDS["scr_hei"])))
+        time.sleep(wait_time)
+        kb.type(item_name)
+        time.sleep(wait_time + 0.2) 
+        mkey.left_click_xy_natural(round(float(COORDS_PERCENT["query_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["query_pos"][1] * COORDS["scr_hei"])))
+        time.sleep(wait_time)
+        mkey.left_click_xy_natural(round(float(COORDS_PERCENT["item_amt_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["item_amt_pos"][1] * COORDS["scr_hei"])))
+        time.sleep(wait_time)
 
-    TESSERACT_AVAILABLE = True
-except ImportError:
-    TESSERACT_AVAILABLE = False
+        kb.press(keyboard.Key.ctrl)
+        kb.press("a")
+        time.sleep(0.05)
+        kb.release("a")
+        kb.release(keyboard.Key.ctrl)
+        time.sleep(wait_time)
+        kb.type(str(amount))
+        time.sleep(wait_time)
+        mkey.left_click_xy_natural(round(float(COORDS_PERCENT["use_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["use_pos"][1] * COORDS["scr_hei"])))
+        time.sleep(wait_time + 0.2) 
 
-from pynput import keyboard, mouse
-import mousekey as mk
+        if close_menu:
+            mkey.left_click_xy_natural(round(float(COORDS_PERCENT["close_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["close_pos"][1] * COORDS["scr_hei"])))
+            time.sleep(wait_time)
 
-import discord
+            mkey.left_click_xy_natural(round(float(COORDS_PERCENT["close_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["close_pos"][1] * COORDS["scr_hei"])))
+            time.sleep(wait_time)
+        logger.write_log(f"Used item: {item_name}")
+    except Exception as e:
+        logger.write_log(f"Error during use_item execution: {e}")
 
-class PyQtLogSignal(QObject):
-    log_signal = pyqtSignal(str)
+        try:
+            mkey.left_click_xy_natural(round(float(COORDS_PERCENT["close_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["close_pos"][1] * COORDS["scr_hei"])))
+            time.sleep(wait_time)
+            mkey.left_click_xy_natural(round(float(COORDS_PERCENT["close_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["close_pos"][1] * COORDS["scr_hei"])))
+        except Exception as close_e:
+            logger.write_log(f"Error trying to close menu after item use error: {close_e}")
 
-class PyQtLogger(Logger):
-    """Logger implementation that emits a PyQt signal for GUI updates."""
-    def __init__(self, log_file='macro.log'):
+def equip_aura(aura_name, unequip, mkey, kb, settings: dict, ignore_next_detection: set, ignore_lock: threading.Lock):
+    logger = get_logger()
+    try:
+        with open(get_auras_path(), "r", encoding="utf-8") as f:
+            auras = json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError, OSError) as e:
+        logger.write_log(f"Error loading auras data for detection: {e}. Aura detection stopped.")
+        return
+    
+    full_aura_name = resolve_full_aura_name(aura_name, auras)
+    _ = None
+    while _ is None:
+        _ = get_latest_equipped_aura()
+        try:
+            if _.lower() == full_aura_name.lower():
+                if not unequip:
+                    logger.write_log(f"Aura {full_aura_name} is already equipped.")
+                    return
+            elif full_aura_name.lower() == "glock: shieldofthesky":
+                full_aura_name = "Glock"
+        except Exception as e:
+            logger.write_log(f"Error checking current equipped aura: {e}.")
 
-        super().__init__(log_file_path=log_file) 
-        self.signal_emitter = PyQtLogSignal()
+    if unequip:
+        logger.write_log(f"Unequipping Aura: {aura_name} (resolved as '{full_aura_name}')")
+    else:
+        logger.write_log(f"Equipping Aura: {aura_name} (resolved as '{full_aura_name}')")
+        with ignore_lock:
+            ignore_next_detection.add(full_aura_name.lower())
+    try:
+        wait_time = settings.get("global_wait_time", 0.2)
+        mkey.left_click_xy_natural(round(float(COORDS_PERCENT["aura_button_pos"][0] * COORDS["scr_wid"])),
+                                    round(float(COORDS_PERCENT["aura_button_pos"][1] * COORDS["scr_hei"])))
+        time.sleep(wait_time)
+        mkey.left_click_xy_natural(round(float(COORDS_PERCENT["search_pos"][0] * COORDS["scr_wid"])),
+                                    round(float(COORDS_PERCENT["search_pos"][1] * COORDS["scr_hei"])))
+        time.sleep(wait_time)
+        kb.type(aura_name)
+        time.sleep(wait_time)
+        mkey.left_click_xy_natural(round(float(COORDS_PERCENT["query_pos"][0] * COORDS["scr_wid"])),
+                                    round(float(COORDS_PERCENT["query_pos"][1] * COORDS["scr_hei"])))
+        time.sleep(wait_time)
+        mkey.left_click_xy_natural(round(float(COORDS_PERCENT["equip_aura_btn"][0] * COORDS["scr_wid"])),
+                                    round(float(COORDS_PERCENT["equip_aura_btn"][1] * COORDS["scr_hei"])))
+        time.sleep(wait_time)
+        mkey.left_click_xy_natural(round(float(COORDS_PERCENT["close_pos"][0] * COORDS["scr_wid"])),
+                                    round(float(COORDS_PERCENT["close_pos"][1] * COORDS["scr_hei"])))
+        time.sleep(wait_time)
+        mkey.left_click_xy_natural(round(float(COORDS_PERCENT["close_pos"][0] * COORDS["scr_wid"])),
+                                    round(float(COORDS_PERCENT["close_pos"][1] * COORDS["scr_hei"])))
+    except Exception as e:
+        logger.write_log(f"Unable to equip aura: {e}")
 
-    def write_log(self, message, level='INFO'):
-        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        formatted_message = f"[{timestamp} - {level}] {message}"
 
-        if self.log_file_path:
-            try:
-                with open(self.log_file_path, "a", encoding='utf-8') as log_file:
-                    log_file.write(formatted_message + '\n')
-            except Exception as e:
+def aura_detection(settings: dict, webhook, stop_event: threading.Event, keyboard_lock: threading.Lock, mkey, kb, ignore_lock, ignore_next_detection):
+    logger = get_logger()
+    logger.write_log("Aura Detection thread started.")
 
-                print(f"Error writing log to file {self.log_file_path}: {e}")
-                print(formatted_message) 
+    try:
+        with open(get_auras_path(), "r", encoding="utf-8") as f:
+            auras = json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError, OSError) as e:
+        logger.write_log(f"Error loading auras data for detection: {e}. Aura detection stopped.")
+        return
 
-        if self.signal_emitter:
+    try:
+         with open(get_biomes_path(), "r", encoding="utf-8") as f:
+             biomes = json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError, OSError) as e:
+         logger.write_log(f"Error loading biomes data for aura detection: {e}. Biome-specific rarity disabled.")
+         biomes = {} 
 
-            self.signal_emitter.log_signal.emit(formatted_message)
+    previous_aura = None
 
-        return formatted_message
+    try:
+        previous_aura = get_latest_equipped_aura()
+        logger.write_log(f"Initial aura state: {previous_aura}")
+    except Exception as e:
+        logger.write_log(f"Error getting initial aura state: {e}")
 
-    def connect_log_widget(self, slot_function):
-        """Connects the logger's signal to a GUI slot."""
-        self.signal_emitter.log_signal.connect(slot_function)
+    while not stop_event.is_set():
+        try:
+            current_aura = get_latest_equipped_aura()
 
-class MainWindow(QMainWindow):
+            if current_aura is None:
+                time.sleep(2) 
+                continue
+            
+            with ignore_lock:
+                if current_aura.lower() in ignore_next_detection:
+                    ignore_next_detection.remove(current_aura.lower())
+                    logger.write_log(f"Ignoring detection for aura '{current_aura}' due to recent equip.")
+                    previous_aura = current_aura
+                    time.sleep(settings.get("global_wait_time", 0.2) + 0.5)
+                    continue
 
-    start_macro_signal = pyqtSignal()
-    stop_macro_signal = pyqtSignal()
-
-    def __init__(self):
-        super().__init__()
-
-        self.logger = get_logger()
-
-        self.settings = load_settings()
-        self.original_settings = self.settings.copy()
-
-        self.webhook = None
-        self.threads = []
-        self.sniper_task = None
-        self.running = False
-        self.keyboard_lock = threading.Lock()
-        self.stop_event = threading.Event()
-        self.sniped_event = threading.Event()
-
-        self.ignore_next_detection = set()
-        self.ignore_lock = threading.Lock()
-
-        self.plugins = [] 
-
-        self.plugin_file_paths = {}
-
-        self.mkey = mk.MouseKey()
-        self.keyboard_controller = keyboard.Controller()
-        self.mouse_controller = mouse.Controller()
-
-        self.MACROPATH = os.path.expandvars(r"%localappdata%\SolsScope")
-
-        self.setWindowTitle(f"SolsScope v{LOCALVERSION} (PyQt)")
-        self.setGeometry(100, 100, 750, 550) 
-
-        icon_path = os.path.join(MACROPATH, "icon.ico")
-        if os.path.exists(icon_path):
-            self.setWindowIcon(QIcon(icon_path))
-
-        if self.settings.get("always_on_top", False):
-            self.setWindowFlag(Qt.WindowType.WindowStaysOnTopHint) 
-
-        central_widget = QWidget()
-        self.setCentralWidget(central_widget)
-        main_layout = QVBoxLayout(central_widget)
-
-        self.tab_widget = QTabWidget()
-        main_layout.addWidget(self.tab_widget)
-
-        self.tab_entries = {}
-
-        self.create_tabs()
-
-        self.logger.write_log("GUI Logger initialized (PyQt).")
-
-        self.plugin_settings = {}
-
-        self.load_plugins() 
-
-        self.start_key_listener()
-
-        self.start_macro_signal.connect(self.start_macro)
-        self.stop_macro_signal.connect(self.stop_macro)
-
-        self.logger.write_log("GUI setup complete (PyQt).")
-
-    def create_tabs(self):
-
-        tab_info = {
-            "General": GENERAL_KEYS,
-            "Auras": AURAS_KEYS,
-            "Biomes": BIOMES_KEYS,
-            "Merchant": MERCHANT_KEYS,
-            #"Quest" : QUEST_KEYS,
-            "Path": PATH_KEYS,
-            "Auto Craft": AUTOCRAFT_KEYS,
-            "Sniper": SNIPER_KEYS,
-            "Other": OTHER_KEYS,
-        }
-
-        for tab_name, keys in tab_info.items():
-            tab_widget = QWidget()
-            tab_layout = QVBoxLayout(tab_widget) 
-
-            scroll_area = QScrollArea()
-            scroll_area.setWidgetResizable(True)
-            scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-            scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
-            tab_layout.addWidget(scroll_area)
-
-            scroll_content_widget = QWidget()
-            scroll_area.setWidget(scroll_content_widget)
-            content_layout = QVBoxLayout(scroll_content_widget) 
-            content_layout.setAlignment(Qt.AlignmentFlag.AlignTop) 
-
-            self.tab_entries[tab_name] = {}
-            self.populate_tab(content_layout, keys, self.tab_entries[tab_name])
-
-            if tab_name == "Merchant":
-                self.add_merchant_tab_extras(content_layout) 
-            if tab_name == "Other":
-                self.add_other_tab_extras(content_layout) 
-
-            self.create_bottom_buttons(tab_layout, tab_name) 
-
-            self.tab_widget.addTab(tab_widget, tab_name)
-
-        self.create_logs_tab()
-
-        self.create_credits_tab()
-
-    def populate_tab(self, layout, keys, entry_dict):
-        """Populates a tab layout with widgets based on settings keys."""
-        settings_subset = {k: self.settings.get(k, DEFAULTSETTINGS.get(k)) for k in keys}
-        self.create_widgets(settings_subset, layout, entry_dict)
-
-    def create_widgets(self, settings_subset, parent_layout, entry_dict):
-        """Recursively creates widgets for settings items using PyQt layouts."""
-
-        form_layout = QFormLayout()
-
-        form_layout.setHorizontalSpacing(15) 
-        form_layout.setVerticalSpacing(10)   
-        parent_layout.addLayout(form_layout)
-
-        for key, value in settings_subset.items():
-            if key in DONOTDISPLAY:
+            if previous_aura is None or current_aura == previous_aura:
+                previous_aura = current_aura
+                time.sleep(settings.get("global_wait_time", 0.2) + 0.5) 
                 continue
 
-            formatted_key = format_key(key)
+            if current_aura == "In Main Menu":
+                previous_aura = current_aura
+                time.sleep(1)
+                continue
+            
+            aura_key = current_aura.lower()
+            if aura_key in auras:
+                aura_data = auras[aura_key]
+                logger.write_log(f"New aura detected: {current_aura}")
+                previous_aura = current_aura 
+                rnow = datetime.now()
+                current_biome = get_latest_hovertext() or "Unknown"
+                current_biome_key = current_biome.lower()
+                base_rarity_str = aura_data.get("rarity", "0")
 
-            if isinstance(value, dict):
+                description = f"**Rolled Aura:** {current_aura}\n"
 
-                group_box = QGroupBox(formatted_key) 
-                group_box.setCheckable(False) 
-                group_layout = QVBoxLayout(group_box) 
-                group_layout.setContentsMargins(10, 15, 10, 10)
+                try:
+                    base_rarity = int(base_rarity_str)
+                    native_biome = aura_data.get("native_biome", "").lower()
+                    biome_multiplier = 1.0
+                    if current_biome_key == native_biome and current_biome_key in biomes:
+                         biome_multiplier = biomes[current_biome_key].get("multiplier", 1.0)
+                         if biome_multiplier > 0:
+                             effective_rarity = int(base_rarity / biome_multiplier)
+                             description += f"**Rarity:** 1 / {effective_rarity:,} (from {current_biome})\n"
+                         else:
+                             description += f"**Rarity:** 1 / {base_rarity:,} (Base)\n" 
+                    else:
+                         description += f"**Rarity:** 1 / {base_rarity:,} (Base)\n"
 
-                form_layout.addRow(group_box) 
+                    description += f"**Time:** <t:{str(int(time.time()))}>"
+                    min_ping_val = int(settings.get("minimum_ping", "0"))
+                    should_ping = settings.get("mention", False) and settings.get("mention_id", 0) != 0 and base_rarity >= min_ping_val
 
-                entry_dict[key] = {}
+                except ValueError:
+                    logger.write_log(f"Could not parse rarity '{base_rarity_str}' for {current_aura}.")
+                    description += f"**Rarity:** {base_rarity_str} (Raw)\n"
+                    description += f"**Time:** <t:{str(int(time.time()))}>"
+                    should_ping = False
+                
+                emb_color_hex = aura_data.get("emb_colour", "#FFFFFF")
+                emb_rgb = hex2rgb(emb_color_hex)
+                emb = discord.Embed(
+                    title=f"Aura Rolled: {current_aura}",
+                    description=description,
+                    colour=discord.Colour.from_rgb(*emb_rgb)
+                )
+                if img_url := aura_data.get("img_url", ""):
+                    emb.set_thumbnail(url=img_url)
+                if base_rarity > 99999998:
+                    emb.set_footer(text=f"SolsScope v{LOCALVERSION}")
 
-                self.create_widgets(value, group_layout, entry_dict[key])
+                file_to_send = None
+                if settings.get("take_screenshot_on_detection", False):
+                    screenshot_path = os.path.join(MACROPATH, "scr", "screenshot_aura.png")
+                    try:
+                        pag.screenshot(screenshot_path)
+                        file_to_send = create_discord_file_from_path(screenshot_path, filename="aura.png")
+                        if file_to_send:
+                            emb.set_image(url="attachment://aura.png")
+                        else:
+                            logger.write_log("Failed to create discord file from screenshot.")
+                    except Exception as scr_e:
+                        logger.write_log(f"Failed to take or process screenshot: {scr_e}")
 
-            elif isinstance(value, list):
+                ping_content = f"<@{settings['mention_id']}>" if should_ping else ""
+                try:
+                    if file_to_send:
+                        webhook.send(
+                            content=ping_content,
+                            embed=emb,
+                            file=file_to_send
+                        )
+                        forward_webhook_msg(
+                            primary_webhook_url=webhook.url,
+                            secondary_urls=settings.get("SECONDARY_WEBHOOK_URLS", []),
+                            content=ping_content,
+                            embed=emb,
+                            file=file_to_send
+                        )
+                    else:
+                        webhook.send(
+                            content=ping_content,
+                            embed=emb
+                        )
+                        forward_webhook_msg(
+                            primary_webhook_url=webhook.url,
+                            secondary_urls=settings.get("SECONDARY_WEBHOOK_URLS", []),
+                            content=ping_content,
+                            embed=emb
+                        )
+                except Exception as wh_e:
+                    logger.write_log(f"Error sending aura webhook: {wh_e}")
 
-                label = QLabel(formatted_key + ":")
+                reset_aura_target = settings.get("reset_aura", "")
+                if reset_aura_target and current_aura != reset_aura_target:
+                    logger.write_log(f"Resetting aura back to {reset_aura_target}...")
 
-                list_container_widget = QWidget()
-                list_layout = QVBoxLayout(list_container_widget)
-                list_layout.setContentsMargins(0,0,0,0) 
-
-                list_widget_data = self.create_list_widget(list_layout, key, value, entry_dict)
-
-                form_layout.addRow(label, list_container_widget)
-
-                entry_dict[key] = list_widget_data
-
-            elif isinstance(value, bool):
-
-                widget = QCheckBox()
-                widget.setChecked(value)
-                form_layout.addRow(formatted_key + ":", widget)
-                entry_dict[key] = widget
+                    if not all(c in COORDS for c in ["aura_button_pos", "search_pos", "query_pos", "equip_pos", "close_pos"]):
+                        logger.write_log("Cannot reset aura: Coordinates missing.")
+                    else:
+                        with keyboard_lock:
+                            try:
+                                equip_aura(reset_aura_target, False, mkey, kb, settings, ignore_next_detection, ignore_lock)
+                                previous_aura = reset_aura_target
+                            except Exception as reset_e:
+                                logger.write_log(f"Error during aura reset: {reset_e}")
 
             else: 
+                logger.write_log(f"Detected unknown aura: {current_aura}")
+                previous_aura = current_aura 
 
-                widget = QLineEdit(str(value))
-
-                form_layout.addRow(formatted_key + ":", widget)
-                entry_dict[key] = widget
-
-    def create_list_widget(self, parent_layout, key, items, entry_dict_ignored):
-        """Creates a QListWidget with Add/Remove buttons within the provided layout.
-           Returns a dictionary containing the list widget and add entry widget.
-        """
-
-        list_widget = QListWidget()
-
-        list_widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.MinimumExpanding) 
-        list_widget.addItems([str(item) for item in items])
-        parent_layout.addWidget(list_widget) 
-
-        controls_layout = QHBoxLayout()
-        parent_layout.addLayout(controls_layout) 
-
-        add_entry = QLineEdit()
-        add_entry.setPlaceholderText("Enter item to add...")
-        controls_layout.addWidget(add_entry)
-
-        add_button = QPushButton("Add")
-        add_button.setFixedWidth(60)
-        controls_layout.addWidget(add_button)
-
-        remove_button = QPushButton("Remove")
-        remove_button.setFixedWidth(60)
-        controls_layout.addWidget(remove_button)
-
-        add_button.clicked.connect(lambda _, k=key: self.add_to_list(k))
-        remove_button.clicked.connect(lambda _, k=key: self.remove_from_list(k))
-
-        list_widget_data = {"list_widget": list_widget, "add_entry": add_entry}
-
-        return list_widget_data
-
-    def add_to_list(self, key):
-        list_data = self._find_list_data(key)
-        if not list_data:
-            self.logger.write_log(f"Error adding to list: Could not find list data for key '{key}'.")
-            return
-
-        list_widget = list_data["list_widget"]
-        add_entry = list_data["add_entry"]
-        new_item_text = add_entry.text().strip()
-
-        if not new_item_text: return
-
-        items = [list_widget.item(i).text() for i in range(list_widget.count())]
-        if new_item_text in items:
-            QMessageBox.warning(self, "Duplicate Item", f"'{new_item_text}' is already in the list.")
-            return
-
-        list_widget.addItem(new_item_text)
-        add_entry.clear()
-
-    def remove_from_list(self, key):
-        list_data = self._find_list_data(key)
-        if not list_data:
-            self.logger.write_log(f"Error removing from list: Could not find list data for key '{key}'.")
-            return
-
-        list_widget = list_data["list_widget"]
-        selected_items = list_widget.selectedItems()
-
-        if not selected_items:
-            QMessageBox.warning(self, "No Selection", "Please select an item to remove from the list.")
-            return
-
-        for item in selected_items:
-            list_widget.takeItem(list_widget.row(item)) 
-
-    def _find_list_data(self, key):
-        """Helper to find list widget and add entry based on key."""
-
-        def search_dict(d):
-            if key in d and isinstance(d[key], dict) and "list_widget" in d[key]:
-                return d[key]
-            for sub_key, sub_data in d.items():
-                if isinstance(sub_data, dict):
-                    found = search_dict(sub_data)
-                    if found:
-                        return found
-            return None
-
-        for tab_name, tab_data in self.tab_entries.items():
-            found = search_dict(tab_data)
-            if found:
-                return found
-
-        return None 
-
-    def add_merchant_tab_extras(self, layout):
-        """Adds Tesseract status and download button to the Merchant tab layout."""
-        status_text = "Tesseract OCR: Installed" if TESSERACT_AVAILABLE and (shutil.which("tesseract") is not None or os.path.exists(r'C:\Program Files\Tesseract-OCR') or os.path.exists(ALT_TESSERACT_DIR)) else "Tesseract OCR: Not Installed (Merchant Detection Disabled)"
-        status_color = "green" if TESSERACT_AVAILABLE else "red"
-        if TESSERACT_AVAILABLE and shutil.which("tesseract") is None and os.path.exists(r'C:\Program Files\Tesseract-OCR'):
-            pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
-        elif os.path.exists(ALT_TESSERACT_DIR) and TESSERACT_AVAILABLE and shutil.which("tesseract") is None:
-            pytesseract.pytesseract.tesseract_cmd = f"{ALT_TESSERACT_DIR}\\tesseract.exe"
-
-        ocr_label = QLabel(status_text)
-        ocr_label.setStyleSheet(f"color: {status_color};")
-        layout.addWidget(ocr_label)
-
-        if not TESSERACT_AVAILABLE:
-            download_button = QPushButton("Download Tesseract (External Link)")
-            download_button.clicked.connect(lambda: webbrowser.open("https://github.com/tesseract-ocr/tesseract#installing-tesseract"))
-            download_button.setStyleSheet("text-align: left; padding: 2px;") 
-            download_button.setSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Fixed) 
-            layout.addWidget(download_button)
-            layout.addSpacing(10) 
-
-    def add_other_tab_extras(self, layout):
-         """Adds Plugin install button to the Other tab layout."""
-         install_btn = QPushButton("Install Plugin...")
-         install_btn.clicked.connect(self.install_plugin) 
-         install_btn.setSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Fixed)
-         layout.addWidget(install_btn)
-         layout.addSpacing(10)
-
-    def create_bottom_buttons(self, layout, tab_name):
-        """Creates the Start/Stop/Save buttons at the bottom of a tab."""
-        button_frame = QFrame() 
-        button_layout = QHBoxLayout(button_frame)
-        button_layout.setContentsMargins(0, 10, 0, 0) 
-
-        start_button = QPushButton("Start (F1)")
-        start_button.clicked.connect(self.start_macro)
-        button_layout.addWidget(start_button)
-
-        stop_button = QPushButton("Stop (F2)")
-        stop_button.clicked.connect(self.stop_macro)
-        button_layout.addWidget(stop_button)
-
-        button_layout.addStretch(1) 
-
-        save_button = QPushButton("Save Settings")
-        save_button.clicked.connect(self.press_save_button)
-        button_layout.addWidget(save_button)
-
-        if tab_name.lower() == "other":
-            rdl_button = QPushButton("Redownload Libraries")
-            rdl_button.clicked.connect(self.toggle_redownload)
-            button_layout.addWidget(rdl_button)
-        else:
-            donate_button = QPushButton("Donate")
-            donate_button.clicked.connect(self.open_donation_url)
-            button_layout.addWidget(donate_button)
-
-        layout.addWidget(button_frame)
-
-    def toggle_redownload(self):
-        
-        save_success, error_occured = self.save_settings()
-        
-        if save_success:
-            self.logger.write_log("Settings were saved")
-        else:
-            self.logger.write_log(f"Error Occured saving settings: {error_occured}")
-
-        if not self.settings.get("redownload_libs_on_run", False):
-            self.settings["redownload_libs_on_run"] = True
-            QMessageBox.information(self, "SolsScope", "Required Libraries and paths will be redownloaded the next time the macro is run.")
-            self.logger.write_log("Required Libraries and paths will be redownloaded the next time the macro is run.")
-        else:
-            self.settings["redownload_libs_on_run"] = False
-            self.logger.write_log("Required Libraries and paths will not be redownloaded the next time the macro is run.")
-
-        with open(get_settings_path(), "w") as f:
-            json.dump(self.settings, f, indent=4)
-            self.logger.write_log("Updated config to decide redownload.")
-
-    def create_logs_tab(self):
-        logs_tab = QWidget()
-        layout = QVBoxLayout(logs_tab)
-
-        self.log_widget = QTextEdit()
-        self.log_widget.setReadOnly(True)
-        self.log_widget.setStyleSheet("background-color: #f0f0f0;") 
-        layout.addWidget(self.log_widget)
-
-        self.logger.connect_log_widget(self.append_log_message)
-
-        self.tab_widget.addTab(logs_tab, "Logs")
-
-    @pyqtSlot(str) 
-    def append_log_message(self, message):
-        """Appends a message to the log widget (thread-safe)."""
-        self.log_widget.moveCursor(QTextCursor.MoveOperation.End)
-        self.log_widget.insertPlainText(message + '\n')
-        self.log_widget.moveCursor(QTextCursor.MoveOperation.End) 
-
-    def create_credits_tab(self):
-        """Populates the Credits tab with information."""
-        credits_tab = QWidget()
-        layout = QVBoxLayout(credits_tab)
-        layout.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignHCenter) 
-
-        title_label = QLabel("Created by Baz and Cresqnt")
-        font = title_label.font()
-        font.setPointSize(12)
-        font.setBold(True)
-        title_label.setFont(font)
-        title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        layout.addWidget(title_label)
-        layout.addSpacing(10)
-
-        image_label = QLabel()
-        image_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        image_label2 = QLabel()
-        image_label2.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        if PIL_AVAILABLE:
-            try:
-                image_path = os.path.join(MACROPATH, "baz.png")
-                img_url = "https://raw.githubusercontent.com/bazthedev/SolsScope/main/img/baz.png"
-
-                if not os.path.exists(image_path):
-                    self.logger.write_log(f"Downloading credits image from {img_url}...")
-                    try:
-
-                        with urllib.request.urlopen(img_url, timeout=10) as response, open(image_path, 'wb') as out_file:
-                            if response.status == 200:
-                                shutil.copyfileobj(response, out_file)
-                                self.logger.write_log("Credits image downloaded.")
-                            else:
-                                self.logger.write_log(f"Failed to download image: Status {response.status}")
-                                raise Exception(f"HTTP Error {response.status}")
-                    except Exception as dl_error:
-                         self.logger.write_log(f"Error downloading credits image: {dl_error}")
-
-                         raise dl_error 
-
-                pixmap = QPixmap(image_path)
-                if not pixmap.isNull():
-
-                    scaled_pixmap = pixmap.scaled(100, 100, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
-                    image_label.setPixmap(scaled_pixmap)
-                else:
-                    self.logger.write_log(f"Failed to load credits image from path: {image_path}")
-                    image_label.setText("(Failed to load image)")
-                    try:
-                        os.remove(image_path)
-                    except Exception as e:
-                        self.logger.write_log(f"Failed to remove file for redownload: {e}")
-
-            except Exception as e:
-                self.logger.write_log(f"Error processing credits image: {e}")
-                image_label.setText("(Image unavailable)")
-            try:
-                image_path2 = os.path.join(MACROPATH, "cresqnt.png")
-                img_url = "https://raw.githubusercontent.com/bazthedev/SolsScope/main/img/cresqnt.png"
-
-                if not os.path.exists(image_path2):
-                    self.logger.write_log(f"Downloading credits image from {img_url}...")
-                    try:
-
-                        with urllib.request.urlopen(img_url, timeout=10) as response, open(image_path2, 'wb') as out_file:
-                            if response.status == 200:
-                                shutil.copyfileobj(response, out_file)
-                                self.logger.write_log("Credits image downloaded.")
-                            else:
-                                self.logger.write_log(f"Failed to download image: Status {response.status}")
-                                raise Exception(f"HTTP Error {response.status}")
-                    except Exception as dl_error:
-                         self.logger.write_log(f"Error downloading credits image: {dl_error}")
-
-                         raise dl_error 
-
-                pixmap = QPixmap(image_path2)
-                if not pixmap.isNull():
-
-                    scaled_pixmap = pixmap.scaled(100, 100, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
-                    image_label2.setPixmap(scaled_pixmap)
-                else:
-                    self.logger.write_log(f"Failed to load credits image from path: {image_path2}")
-                    image_label2.setText("(Failed to load image)")
-                    try:
-                        os.remove(image_path2)
-                    except Exception as e:
-                        self.logger.write_log(f"Failed to remove file for redownload: {e}")
-
-            except Exception as e:
-                self.logger.write_log(f"Error processing credits image: {e}")
-                image_label2.setText("(Image unavailable)")
-        else:
-            image_label.setText("(Install Pillow library to see images)")
-            image_label2.setText("(Install Pillow library to see images)")
-        
-        donation_url = "https://raw.githubusercontent.com/bazthedev/SolsScope/main/donations.json"
-        self.logger.write_log(f"Downloading donation data from {donation_url}...")
-        try:
-
-            with urllib.request.urlopen(donation_url, timeout=3) as response, open(f"{MACROPATH}/donations.json", 'wb') as out_file:
-                if response.status == 200:
-                    shutil.copyfileobj(response, out_file)
-                    self.logger.write_log("Donation data downloaded.")
-                else:
-                    self.logger.write_log(f"Failed to download data: Status {response.status}")
-                    raise Exception(f"HTTP Error {response.status}")
-        except Exception as dl_error:
-                self.logger.write_log(f"Error downloading data: {dl_error}")
-                raise dl_error
-
-        image_layout = QHBoxLayout()
-        image_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-        image_layout.addWidget(image_label)
-        image_layout.addSpacing(20)
-        image_layout.addWidget(image_label2)
-
-        layout.addLayout(image_layout)
-        layout.addSpacing(15)
-
-        separator = QFrame()
-        separator.setFrameShape(QFrame.Shape.HLine) 
-        separator.setFrameShadow(QFrame.Shadow.Sunken)
-        layout.addWidget(separator)
-        layout.addSpacing(15)
-
-        ack_title = QLabel("Acknowledgements:")
-        font = ack_title.font()
-        font.setPointSize(10)
-        font.setBold(True)
-        ack_title.setFont(font)
-        ack_title.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        layout.addWidget(ack_title)
-        layout.addSpacing(5)
-
-        ack_texts = [
-            "Root1527 for the original YAY Joins Sniper logic",
-            "Mountain Shrine Path inspiration by AllanQute (_justalin)",
-            "dolphSol for inspiration",
-            "vex (vexthecoder) for ideas",
-            "Doors_Daisukiman for helping with testing"
-        ]
-        for text in ack_texts:
-            ack_label = QLabel(text)
-            ack_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            layout.addWidget(ack_label)
-
-        layout.addSpacing(15)
-
-        separator2 = QFrame()
-        separator2.setFrameShape(QFrame.Shape.HLine) 
-        separator2.setFrameShadow(QFrame.Shadow.Sunken)
-        layout.addWidget(separator2)
-        layout.addSpacing(15)
-
-        try:
-            with open(f"{MACROPATH}/donations.json", "r") as f:
-                donors = json.load(f)
-                don_title = QLabel("Donators:")
-                font = don_title.font()
-                font.setPointSize(10)
-                font.setBold(True)
-                don_title.setFont(font)
-                don_title.setAlignment(Qt.AlignmentFlag.AlignCenter)
-                layout.addWidget(don_title)
-                layout.addSpacing(5)
-
-                if len(donors) < 1:
-                    don_label = QLabel("No donations yet :(")
-                    don_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-                    layout.addWidget(don_label)
-                else:
-                    for text in donors:
-                        don_label = QLabel(text)
-                        don_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-                        layout.addWidget(don_label)
-                    don_label = QLabel("Want your name here? All you have to do is donate any amount!")
-                    don_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-                    layout.addWidget(don_label)
         except Exception as e:
-            self.logger.write_log(f"Failed to load donation data: {e}")
+            logger.write_log(f"Error in Aura Detection loop: {e}")
 
-        layout.addStretch(1)
+            time.sleep(5)
 
-        self.tab_widget.addTab(credits_tab, "Credits")
+        if not stop_event.is_set():
+             time.sleep(settings.get("global_wait_time", 0.2) + 0.3) 
 
-    def open_donation_url(self):
-        webbrowser.open("https://www.roblox.com/games/4998237654/GeoffDoes90ss-Place#!/store")
+    logger.write_log("Aura Detection thread stopped.")
 
-    def get_updated_values(self, original_settings_subset, entries_subset):
-        """Compares current widget values to original values for a subset."""
-        updated_subset = {}
-        for key, widget_or_dict in entries_subset.items():
-            original_value = original_settings_subset.get(key)
+def biome_detection(settings: dict, webhook, stop_event: threading.Event, sniped_event: threading.Event):
+    logger = get_logger()
+    logger.write_log("Biome Detection thread started.")
 
-            if isinstance(original_value, dict) and isinstance(widget_or_dict, dict):
+    try:
+        with open(get_biomes_path(), "r", encoding="utf-8") as f:
+            biomes = json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError, OSError) as e:
+        logger.write_log(f"Error loading biomes data: {e}. Biome detection stopped.")
+        return
 
-                sub_updates = self.get_updated_values(original_value, widget_or_dict)
-                if sub_updates:
-                    updated_subset[key] = sub_updates
-            elif isinstance(original_value, list) and isinstance(widget_or_dict, dict) and "list_widget" in widget_or_dict:
+    previous_biome = None
+    try:
+        previous_biome = get_latest_hovertext()
+        logger.write_log(f"Initial biome state: {previous_biome}")
+    except Exception as e:
+        logger.write_log(f"Error getting initial biome state: {e}")
 
-                 list_widget = widget_or_dict["list_widget"]
-                 new_value = [list_widget.item(i).text() for i in range(list_widget.count())]
+    ps_link_valid = validate_pslink(settings.get("private_server_link", ""))
 
-                 if sorted(new_value) != sorted(map(str, original_value)):
+    while not stop_event.is_set() and not sniped_event.is_set():
+        try:
+            current_biome = get_latest_hovertext()
+            if current_biome is None:
+                time.sleep(2)
+                continue
 
-                     converted_new_value = []
-                     if original_value:
-                         orig_type = type(original_value[0])
-                         try:
-                             converted_new_value = [orig_type(item) for item in new_value]
-                         except (ValueError, TypeError):
-                             converted_new_value = new_value 
-                     else:
-                         converted_new_value = new_value
-                     updated_subset[key] = converted_new_value
-            elif not isinstance(widget_or_dict, dict): 
+            current_biome_key = current_biome.lower()
+            previous_biome_key = previous_biome.lower() if previous_biome else None
+
+            if previous_biome_key is None or current_biome_key == previous_biome_key:
+                previous_biome = current_biome
+                continue
+
+            logger.write_log(f"Biome change detected: {previous_biome} -> {current_biome}")
+            rnow = datetime.now()
+
+            if previous_biome_key and previous_biome_key != "normal" and previous_biome_key in biomes and settings.get("biomes", {}).get(previous_biome_key, False):
+                prev_biome_data = biomes[previous_biome_key]
+                emb_color_hex = prev_biome_data.get("colour", "#808080")
+                emb_rgb = hex2rgb(emb_color_hex)
+                emb = discord.Embed(
+                    title=f"Biome Ended: {previous_biome}",
+                    description=f"Biome **{previous_biome}** has ended.\n**Time:** <t:{str(int(time.time()))}>",
+                    colour=discord.Colour.from_rgb(*emb_rgb)
+                )
+                emb.set_thumbnail(url=biomes.get(previous_biome.lower()).get("img_url"))
                 try:
-                    if isinstance(widget_or_dict, QCheckBox):
-                        new_value = widget_or_dict.isChecked()
-                    elif isinstance(widget_or_dict, QLineEdit):
-                        new_value_str = widget_or_dict.text()
+                    webhook.send(embed=emb)
+                    forward_webhook_msg(
+                        primary_webhook_url=webhook.url,
+                        secondary_urls=settings.get("SECONDARY_WEBHOOK_URLS", []),
+                        embed=emb
+                    )
+                except Exception as wh_e:
+                    logger.write_log(f"Error sending biome ended webhook: {wh_e}")
 
-                        if isinstance(original_value, bool): 
-                            new_value = bool(new_value_str.lower() in ['true', '1', 'yes', 'y'])
-                        elif isinstance(original_value, int):
-                            try: new_value = int(new_value_str)
-                            except (ValueError, TypeError): new_value = new_value_str 
-                        elif isinstance(original_value, float):
-                            try: new_value = float(new_value_str)
-                            except (ValueError, TypeError): new_value = new_value_str
-                        else: 
-                            new_value = new_value_str
+            previous_biome = current_biome
+
+            if current_biome_key != "normal" and current_biome_key in biomes:
+                if settings.get("biomes", {}).get(current_biome_key, False):
+
+                    new_biome_data = biomes[current_biome_key]
+                    emb_color_hex = new_biome_data.get("colour", "#808080")
+                    emb_rgb = hex2rgb(emb_color_hex)
+
+                    description = f"Biome {current_biome} has started!\nTime: <t:{str(int(time.time()))}>"
+
+                    emb = discord.Embed(
+                        title=f"Biome Started: {current_biome}",
+                        description=description,
+                        colour=discord.Colour.from_rgb(*emb_rgb)
+                    )
+                    if ps_link_valid:
+                        emb.add_field(name="Server Invite:", value=f"{settings.get('private_server_link')}")
+
+                    if new_biome_data.get("rare", False):
+                        ping_content = "@everyone"
+                        emb.set_footer(text=f"SolsScope v{LOCALVERSION}")
                     else:
-                        self.logger.write_log(f"Warning: Unexpected widget type for '{key}' ({type(widget_or_dict)}).")
-                        continue
+                        ping_content = ""
 
-                    if type(new_value) != type(original_value) and original_value is not None:
+                    emb.set_thumbnail(url=biomes.get(current_biome.lower()).get("img_url"))
+                    try:
+                        webhook.send(content=ping_content, embed=emb)
+                        forward_webhook_msg(
+                            primary_webhook_url=webhook.url,
+                            secondary_urls=settings.get("SECONDARY_WEBHOOK_URLS", []),
+                            content=ping_content,
+                            embed=emb
+                        )
+                        logger.write_log(f"Sent notification for biome start: {current_biome}")
+                    except Exception as wh_e:
+                        logger.write_log(f"Error sending biome started webhook: {wh_e}")
+                else:
+                    logger.write_log(f"Biome {current_biome} started, but notifications are disabled for it in settings.")
 
-                         if str(new_value) != str(original_value):
-                             updated_subset[key] = new_value
-                    elif new_value != original_value:
-                         updated_subset[key] = new_value
+        except Exception as e:
+            logger.write_log(f"Error in Biome Detection loop: {e}")
+            time.sleep(5)
 
-                except Exception as e:
-                    self.logger.write_log(f"Error getting/comparing value for key '{key}': {e}")
-                    continue 
+        if not stop_event.is_set() and not sniped_event.is_set():
+            time.sleep(settings.get("global_wait_time", 0.2) + 1.0)
 
-        return updated_subset
+    logger.write_log("Biome Detection thread stopped.")
+
+def keep_alive(settings: dict, stop_event: threading.Event, sniped_event: threading.Event, keyboard_lock: threading.Lock, mkey):
+    logger = get_logger()
+    if stop_event.wait(timeout=5):
+        return
+    logger.write_log("Keep Alive (Anti-AFK) thread started.")
+    required_coords = ["close_pos"]
+    if not all(coord in COORDS for coord in required_coords):
+        logger.write_log("Cannot start Keep Alive: close_pos coordinate missing.")
+        return
+
+    while not stop_event.is_set() and not sniped_event.is_set():
+        wait_interval = random.randint(550, 650)
+        logger.write_log(f"Keep Alive: Waiting for {wait_interval} seconds before next action.")
+
+        if stop_event.wait(timeout=wait_interval):
+            break
+
+        if sniped_event.is_set():
+            break
+
+        with keyboard_lock:
+            try:
+                logger.write_log("Keep Alive: Performing anti-AFK action (clicking close pos).")
+                mkey.left_click_xy_natural(round(float(COORDS_PERCENT["close_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["close_pos"][1] * COORDS["scr_hei"])))
+                time.sleep(0.2)
+                mkey.left_click_xy_natural(round(float(COORDS_PERCENT["close_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["close_pos"][1] * COORDS["scr_hei"])))
+            except Exception as e:
+                logger.write_log(f"Error during Keep Alive action: {e}")
+
+    logger.write_log("Keep Alive (Anti-AFK) thread stopped.")
+
+def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sniped_event: threading.Event, keyboard_lock: threading.Lock, mkey, kb, ignore_lock, ignore_next_detection):
+    logger = get_logger()
+    if not MERCHANT_DETECTION_POSSIBLE:
+        logger.write_log("Merchant Detection cannot start: Missing dependencies (cv2/pytesseract).")
+        return
+
+    _check_config_items = False
+    for item in settings.get("auto_purchase_items_mari").keys():
+        if settings.get("auto_purchase_items_mari", {}).get(item, {}).get("Purchase", False):
+            _check_config_items = True
+    for item in settings.get("auto_purchase_items_jester").keys():
+        if settings.get("auto_purchase_items_jester", {}).get(item, {}).get("Purchase", False):
+            _check_config_items = True
+
+    _check_sell_items = False
+    for item in settings.get("items_to_sell").keys():
+        if settings.get("items_to_sell").get(item, False):
+            _check_sell_items = True
+
     
-    def press_save_button(self):
-        save_successful, changes_were_present = self.save_settings()
-        if save_successful:
-            QMessageBox.information(self, "Settings Saved", "Settings were saved successfully!")
-
-    def save_settings(self):
-        """Gathers updated values from all tabs (including plugins) and saves them.
-        Returns a tuple: (save_successful: bool, changes_detected: bool)
-        """
-        self.logger.write_log("Gathering settings from UI (PyQt)...")
-        full_updated_values = {}
-        changes_detected = False 
-
-        tab_info = {
-            "General": GENERAL_KEYS, "Auras": AURAS_KEYS, "Biomes": BIOMES_KEYS,
-            "Merchant": MERCHANT_KEYS, "Path": PATH_KEYS, "Auto Craft": AUTOCRAFT_KEYS, #"Quest" : QUEST_KEYS, "Path": PATH_KEYS, "Auto Craft": AUTOCRAFT_KEYS,
-            "Sniper": SNIPER_KEYS, "Other": OTHER_KEYS
-        }
-
-        for i in range(self.tab_widget.count()):
-            tab_name = self.tab_widget.tabText(i)
-            if tab_name in self.tab_entries:
-                tab_entries_dict = self.tab_entries[tab_name]
-                original_subset = {}
-
-                if tab_name in tab_info:
-                    # Standard tab
-                    tab_keys = tab_info[tab_name]
-                    original_subset = {
-                        k: self.original_settings.get(k, DEFAULTSETTINGS.get(k))
-                        for k in tab_keys if k != "__version__"
-                    }
-                    updated_subset = self.get_updated_values(original_subset, tab_entries_dict)
-                    if updated_subset:
-                        full_updated_values.update(updated_subset)
-                        changes_detected = True
-                else:
-                    # Plugin tab
-                    plugin = next((p for p in self.plugins if getattr(p, 'name', None) == tab_name), None)
-                    if plugin and hasattr(plugin, 'config'):
-                        updated_subset = self.get_updated_values(plugin.config, tab_entries_dict)
-                        if updated_subset:
-                            plugin.config.update(updated_subset)
-                            changes_detected = True
-                    continue  # Skip merging plugin config into full_updated_values
-
-            elif tab_name not in ["Logs", "Credits"]:
-                self.logger.write_log(f"Warning: Tab '{tab_name}' found in UI but not in tab_entries.")
-
-        if not changes_detected:
-            self.logger.write_log("No setting changes detected.")
-            return True, False 
-
-        self.logger.write_log(f"Detected changes: {list(full_updated_values.keys())}")
-
-        current_file_settings = load_settings()
-
-        def merge_dicts(target, updates):
-            for key, value in updates.items():
-                if isinstance(value, dict) and isinstance(target.get(key), dict):
-                    merge_dicts(target[key], value)
-                else:
-                    target[key] = value
-
-        merge_dicts(current_file_settings, full_updated_values)
-        validated_settings, validation_errors = validate_settings(current_file_settings)
-
-        if validation_errors:
-            self.logger.write_log(f"Settings validation issues found: {validation_errors}")
-            QMessageBox.warning(
-                self, "Validation Warning",
-                f"Settings validation found issues (check logs). Saving anyway.\nIssues: {validation_errors}"
-            )
-
-        if update_settings(validated_settings):
-            for plugin in self.plugins:
-                if hasattr(plugin, 'save_config'):
-                    try:
-                        plugin.save_config()
-                        self.logger.write_log(f"Plugin config for '{plugin.name}' saved.")
-                    except Exception as e:
-                        self.logger.write_log(f"Error saving config for plugin '{plugin.name}': {e}", level="ERROR")
-
-            self.logger.write_log("Settings saved successfully.")
-
-            self.settings = validated_settings
-            self.original_settings = self.settings.copy()
-
-            for plugin in self.plugins:
-                if hasattr(plugin, 'update_config'):
-                    try:
-                        plugin.update_config(validated_settings)
-                        self.logger.write_log(f"Updated config for plugin '{plugin.name}'.")
-                    except Exception as e:
-                        self.logger.write_log(f"Error updating config for plugin '{plugin.name}': {e}")
-
-            return True, True 
-        else:
-            self.logger.write_log("Failed to save settings to file.")
-            QMessageBox.critical(self, "Save Settings Error", "Failed to save settings. Check logs.")
-            return False, True
-
-
-    def start_macro(self):
-        if self.running:
-            QMessageBox.warning(self, "Macro Running", "Macro is already running!")
-            return
-
-        save_successful, changes_were_present = self.save_settings()
-
-        if not save_successful and changes_were_present:
-             if QMessageBox.question(self, "Save Failed", "Failed to save settings. Continue starting the macro with potentially unsaved changes?") == QMessageBox.StandardButton.No:
-                self.logger.write_log("Macro start cancelled due to failed save.")
-                return
-             self.logger.write_log("Continuing start despite failed save. Reloading settings from file.")
-             self.settings = load_settings()
-
-        if not self.settings.get("WEBHOOK_URL"):
-            QMessageBox.critical(self, "Missing Webhook", "Please provide a primary Webhook URL in the General tab.")
-            self.logger.write_log("Macro start failed: Missing Webhook URL.")
-            return
-        try:
-
-            self.logger.write_log("Initializing webhook using discord.SyncWebhook.from_url...")
-            self.webhook = discord.SyncWebhook.from_url(self.settings["WEBHOOK_URL"])
-            self.logger.write_log("Successfully initialized webhook with discord.SyncWebhook.")
-
-        except AttributeError as e:
-
-            self.logger.write_log(f"AttributeError finding/using discord.SyncWebhook: {e}. Incompatible discord.py version or structure?", level="ERROR")
-            import traceback
-            self.logger.write_log(traceback.format_exc()) 
-            QMessageBox.critical(
-                self,
-                "Webhook Creation Error",
-                f"Failed to find or use discord.SyncWebhook.\nError: {e}\n"
-                "Please ensure you have a compatible version of discord.py installed (e.g., v2.0+).\n"
-                "Check logs for detailed traceback."
-            )
-            return 
-        except Exception as e:
-
-            QMessageBox.critical(self, "Invalid Webhook", f"The primary Webhook URL is invalid or initialization failed:\n{e}")
-            self.logger.write_log(f"Macro start failed: Invalid Webhook URL or adapter issue ({e}).", level="ERROR")
-            return 
-
-        if self.settings.get("sniper_enabled") and len(self.settings.get("scan_channels", [])) > 5:
-             if QMessageBox.question(self, "Sniper Channel Warning", "Sniping many channels (>5) can increase ratelimits. Continue anyway?") == QMessageBox.StandardButton.No:
-                self.logger.write_log("Macro start cancelled: Too many sniper channels.")
-                return
-
-        use_player = self.settings.get("use_roblox_player", True)
-        set_active_log_directory(force_player=use_player)
-        if not exists_procs_by_name("Windows10Universal.exe") and not exists_procs_by_name("RobloxPlayerBeta.exe"):
-            if QMessageBox.question(self, "Roblox Not Detected", "Roblox process not found. Start macro anyway?") == QMessageBox.StandardButton.No:
-                self.logger.write_log("Macro start cancelled: Roblox not running.")
-                return
-
-        self.running = True
-        self.stop_event.clear()
-        self.sniped_event.clear()
-        self.ignore_next_detection.clear()
-        self.threads = []
-        self.logger.write_log("Starting Macro Threads in 5 seconds...")
-
-        is_autocraft_mode = self.settings.get("auto_craft_mode", False)
-        is_idle_mode = self.settings.get("idle_mode", False)
-        try:
-            thread_targets = self._get_thread_targets(is_autocraft_mode, is_idle_mode)
-        except ValueError as e: 
-             self.running = False 
-             return
-
-        for name, target_info in thread_targets.items():
-            if target_info:
-                func, args = target_info
-                try:
-                    adjusted_args = list(args)
-
-                    if self.keyboard_controller in adjusted_args:
-                        adjusted_args[adjusted_args.index(self.keyboard_controller)] = self.keyboard_controller
-                    if self.mouse_controller in adjusted_args:
-                         adjusted_args[adjusted_args.index(self.mouse_controller)] = self.mouse_controller
-
-                    thread = threading.Thread(target=func, args=adjusted_args, daemon=True, name=name)
-                    thread.start()
-                    self.threads.append(thread)
-                    self.logger.write_log(f" > Started thread: {name}")
-                except Exception as e:
-                    self.logger.write_log(f" > Error starting thread {name}: {e}")
-
-        if self.settings.get("sniper_enabled"):
-            self.logger.write_log("Starting Sniper...")
-            self._start_sniper_thread() 
-
-        self.logger.write_log("Starting Plugin Threads...")
-        for plugin in self.plugins:
-            try:
-                can_run = True
-                plugin_name = getattr(plugin, "name", "UnknownPlugin")
-                if is_autocraft_mode and not getattr(plugin, "autocraft_compatible", False):
-                    can_run = False
-                    self.logger.write_log(f"Skipping plugin {plugin_name}: Not compatible with Auto Craft mode.")
-
-                if can_run and hasattr(plugin, "run"):
-
-                    plugin_args = (self.stop_event, self.sniped_event)
-                    thread = threading.Thread(target=plugin.run, args=plugin_args, daemon=True, name=f"Plugin_{plugin_name}")
-                    thread.start()
-                    self.threads.append(thread)
-                    self.logger.write_log(f" > Started plugin thread: {plugin_name}")
-                elif can_run:
-                     self.logger.write_log(f"Plugin {plugin_name} has no run method.")
-            except Exception as e:
-                self.logger.write_log(f"Error starting plugin thread '{plugin_name}': {e}", level="ERROR")
-
-        self._send_start_notification(is_autocraft_mode, is_idle_mode)
-        self.logger.write_log("Macro started successfully.")
-
-    def _get_thread_targets(self, is_autocraft_mode, is_idle_mode):
-        """Helper to determine which threads to start based on mode."""
-
-        MERCHANT_DETECTION_POSSIBLE = TESSERACT_AVAILABLE 
-
-        if is_idle_mode:
-            self.logger.write_log("Starting in IDLE Mode.")
-            targets = {
-                "Aura Detection": (aura_detection, [self.settings, self.webhook, self.stop_event, self.keyboard_lock, self.mkey, self.keyboard_controller]) if not self.settings.get("disable_aura_detection") else None,
-                "Biome Detection": (biome_detection, [self.settings, self.webhook, self.stop_event, self.sniped_event]) if not self.settings.get("disable_biome_detection") else None,
-            }
-        elif is_autocraft_mode:
-            self.logger.write_log("Starting in Auto Craft Mode.")
-            enabled_crafts = [item for item, enabled in self.settings.get("auto_craft_item", {}).items() if enabled]
-            if not enabled_crafts:
-                QMessageBox.critical(self, "Auto Craft Error", "Auto Craft mode is enabled, but no potions are selected to craft.")
-                self.logger.write_log("Auto Craft start failed: No items selected.")
-
-                raise ValueError("No items selected for auto-craft")
-            if not self.settings.get("skip_auto_mode_warning"):
-                self.logger.write_log("Auto Craft mode is ON. Some features will be disabled. Ensure you are near the cauldron.")
-
-            targets = {
-                "Auto Craft Logic": (auto_craft, [self.settings, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.mouse_controller, self.ignore_lock, self.ignore_next_detection]),
-                "Aura Detection": (aura_detection, [self.settings, self.webhook, self.stop_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.ignore_lock, self.ignore_next_detection]) if not self.settings.get("disable_aura_detection") else None,
-                "Biome Detection": (biome_detection, [self.settings, self.webhook, self.stop_event, self.sniped_event]) if not self.settings.get("disable_biome_detection") else None,
-                "Keep Alive": (keep_alive, [self.settings, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey]) if not self.settings.get("disable_autokick_prevention") else None,
-                "Disconnect Prevention": (disconnect_prevention, [self.settings, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller]) if self.settings.get("disconnect_prevention") else None,
-                #"Merchant Detection": (merchant_detection, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.ignore_lock, self.ignore_next_detection]) if (self.settings.get("merchant_detection") or self.settings.get("auto_sell_to_jester")) and MERCHANT_DETECTION_POSSIBLE else None,
-                "Auto Biome Randomizer": (auto_br, [self.settings, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller]) if self.settings.get("auto_biome_randomizer") else None,
-                "Auto Strange Controller": (auto_sc, [self.settings, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller]) if self.settings.get("auto_strange_controller") else None,
-                "Inventory Screenshots": (inventory_screenshot, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey]) if self.settings.get("periodic_screenshots", {}).get("inventory") else None,
-                "Storage Screenshots": (storage_screenshot, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey]) if self.settings.get("periodic_screenshots", {}).get("storage") else None,
-                "Obby": (do_obby, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.ignore_lock, self.ignore_next_detection]) if self.settings.get("do_obby") and not self.settings.get("do_no_walk_to_stella", False) else None,
-                #"Auto Quest Board": (auto_questboard, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.mouse_controller]) if self.settings.get("enable_auto_quest_board") else None,
-            }
-        else: 
-            self.logger.write_log("Starting in Normal Mode.")
-            targets = {
-                "Aura Detection": (aura_detection, [self.settings, self.webhook, self.stop_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.ignore_lock, self.ignore_next_detection]) if not self.settings.get("disable_aura_detection") else None,
-                "Biome Detection": (biome_detection, [self.settings, self.webhook, self.stop_event, self.sniped_event]) if not self.settings.get("disable_biome_detection") else None,
-                "Keep Alive": (keep_alive, [self.settings, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey]) if not self.settings.get("disable_autokick_prevention") else None,
-                "Disconnect Prevention": (disconnect_prevention, [self.settings, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller]) if self.settings.get("disconnect_prevention") else None,
-                "Merchant Detection": (merchant_detection, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.ignore_lock, self.ignore_next_detection]) if (self.settings.get("merchant_detection") or self.settings.get("auto_sell_to_jester")) and MERCHANT_DETECTION_POSSIBLE else None,
-                "Auto Biome Randomizer": (auto_br, [self.settings, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller]) if self.settings.get("auto_biome_randomizer") else None,
-                "Auto Strange Controller": (auto_sc, [self.settings, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller]) if self.settings.get("auto_strange_controller") else None,
-                "Inventory Screenshots": (inventory_screenshot, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey]) if self.settings.get("periodic_screenshots", {}).get("inventory") else None,
-                "Storage Screenshots": (storage_screenshot, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey]) if self.settings.get("periodic_screenshots", {}).get("storage") else None,
-                "Obby": (do_obby, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.ignore_lock, self.ignore_next_detection]) if self.settings.get("do_obby") else None,
-                #"Auto Quest Board": (auto_questboard, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.mouse_controller]) if self.settings.get("enable_auto_quest_board") else None,
-            }
-        return targets
-
-    def _start_sniper_thread(self):
-        """Starts the sniper asyncio loop in a separate thread."""
-        def run_sniper_loop():
-
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            try:
-
-                loop.run_until_complete(start_snipers(self.settings, self.webhook, self.sniped_event, self.stop_event))
-            except Exception as e:
-
-                self.logger.write_log(f"Error in sniper asyncio loop: {e}")
-            finally:
-                loop.close()
-            self.logger.write_log("Sniper asyncio loop finished.")
-
-        sniper_thread = threading.Thread(target=run_sniper_loop, daemon=True, name="SniperThread")
-        sniper_thread.start()
-        self.threads.append(sniper_thread)
-
-    def _send_start_notification(self, is_autocraft_mode, is_idle_mode):
-        """Sends the start notification webhook."""
-        if is_idle_mode:
-            mode_str = "IDLE"
-        elif is_autocraft_mode:
-            if self.settings.get("merchant_detection", False):
-                mode_str = "Auto Craft, with Merchant Detection"
-            else:
-                mode_str = "Auto Craft"
-        else:
-            mode_str = "Normal"
-        start_desc = "" 
-
-        emb = discord.Embed(
-            title="Macro Started",
-            description=start_desc, 
-            colour=discord.Colour.green(),
-            timestamp=datetime.now() 
-        )
-        emb.set_footer(text=f"SolsScope v{LOCALVERSION}")
-        emb.add_field(name="Mode", value=mode_str, inline=True)
-
-        if is_autocraft_mode:
-            enabled_crafts = [item for item, enabled in self.settings.get("auto_craft_item", {}).items() if enabled]
-            craft_list = ', '.join(enabled_crafts) if enabled_crafts else "None Selected"
-            emb.add_field(name="Crafting", value=craft_list, inline=False)
-        else:
-            try:
-                aura = get_latest_equipped_aura()
-                emb.add_field(name="Current Aura", value=aura if aura else "Unknown", inline=True)
-            except Exception as e:
-                self.logger.write_log(f"Error sending start aura notification: {e}")
-                emb.add_field(name="Current Aura", value="Unknown", inline=True) 
-            try:
-                biome = get_latest_hovertext()
-                emb.add_field(name="Current Biome", value=biome if biome else "Unknown", inline=True)
-            except Exception:
-                self.logger.write_log(f"Error sending start biome notification: {e}")
-                emb.add_field(name="Current Biome", value="Unknown", inline=True)
-        emb.add_field(name="Active Webhooks:", value=f"{len(self.settings.get('SECONDARY_WEBHOOK_URLS', [])) + 1}")
-
-        try:
-            if self.webhook:
-                self.webhook.send(embed=emb)
-                forward_webhook_msg(self.webhook.url, self.settings.get("SECONDARY_WEBHOOK_URLS", []), embed=emb)
-        except Exception as e:
-            self.logger.write_log(f"Error sending start notification: {e}")
-
-    def stop_macro(self):
-        if not self.running:
-            QMessageBox.warning(self, "Macro Not Running", "Macro is not currently running.")
-            return
-
-        self.logger.write_log("Stopping Macro... Signaling threads.")
-        self.stop_event.set() 
-
-        stop_sniper_thread = None
-        if any(t.name == "SniperThread" for t in self.threads if t.is_alive()): 
-            self.logger.write_log(" > Attempting to stop sniper tasks explicitly...")
-            def run_stop_sniper():
-                try:
-                    loop = asyncio.new_event_loop()
-                    asyncio.set_event_loop(loop)
-
-                    loop.run_until_complete(stop_snipers())
-                    loop.close()
-                    self.logger.write_log(" > stop_snipers() executed.")
-                except RuntimeError as e:
-
-                    self.logger.write_log(f" > Info during stop_snipers execution: {e}")
-                except Exception as e:
-                    self.logger.write_log(f" > Error stopping sniper tasks: {e}", level="ERROR")
-                    import traceback
-                    self.logger.write_log(traceback.format_exc())
-
-            stop_sniper_thread = threading.Thread(target=run_stop_sniper, daemon=True, name="StopSniperThread")
-            stop_sniper_thread.start()
-
-        timeout_per_thread = 2 
-        start_time = time.time()
-
-        threads_to_join = [t for t in self.threads if t != threading.current_thread() and t.is_alive()]
-
-        if stop_sniper_thread:
-            threads_to_join = [t for t in threads_to_join if t != stop_sniper_thread]
-
-        self.logger.write_log(f"Waiting for {len(threads_to_join)} core/plugin threads to stop...")
-        total_timeout = start_time + timeout_per_thread * len(threads_to_join)
-        for thread in threads_to_join:
-            if thread.is_alive():
-                try:
-
-                    time_left = max(0.1, total_timeout - time.time())
-                    thread.join(timeout=time_left)
-                    if thread.is_alive():
-                        self.logger.write_log(f"Warning: Thread {thread.name} did not stop gracefully within timeout.")
-                except Exception as e:
-                    self.logger.write_log(f"Error joining thread {thread.name}: {e}")
-
-        if stop_sniper_thread and stop_sniper_thread.is_alive():
-            self.logger.write_log("Waiting for StopSniperThread to finish...")
-            stop_sniper_thread.join(timeout=5) 
-            if stop_sniper_thread.is_alive():
-                 self.logger.write_log("Warning: StopSniperThread did not finish within its timeout.")
-
-        self.logger.write_log("All threads signaled/joined.")
-        self.running = False
-        self.threads.clear()
-        self.ignore_next_detection.clear()
-        self.stop_event.clear() 
-
-        emb = discord.Embed(
-            title="Macro Stopped",
-            colour=discord.Colour.red(),
-            timestamp=datetime.now() 
-        )
-        emb.set_footer(text=f"SolsScope v{LOCALVERSION}")
-        if self.webhook:
-            try:
-                self.webhook.send(embed=emb)
-                forward_webhook_msg(self.webhook.url, self.settings.get("SECONDARY_WEBHOOK_URLS", []), embed=emb)
-            except Exception as e:
-                self.logger.write_log(f"Error sending stop notification: {e}")
-        QMessageBox.information(self, "Macro Stopped", "Macro has been stopped.")
-
-    def on_press(self, key):
-        try:
-            if key == keyboard.Key.f1:
-
-                self.start_macro_signal.emit()
-            elif key == keyboard.Key.f2:
-
-                self.stop_macro_signal.emit()
-        except Exception as e:
-            self.logger.write_log(f"Hotkey listener error: {e}")
-
-    def start_key_listener(self):
-
-        try:
-            listener = keyboard.Listener(on_press=self.on_press)
-            listener_thread = threading.Thread(target=listener.run, daemon=True, name="HotkeyListener")
-            listener_thread.start()
-            self.logger.write_log("Hotkey listener started (F1/F2 - PyQt).")
-
-        except Exception as e:
-            self.logger.write_log(f"Failed to start hotkey listener: {e}")
-            QMessageBox.critical(self, "Hotkey Error", f"Could not start hotkey listener: {e}")
-
-    def load_plugins(self):
-        plugin_dir = os.path.join(self.MACROPATH, "plugins") 
-        config_dir = os.path.join(plugin_dir, "config")
-        os.makedirs(plugin_dir, exist_ok=True)
-        os.makedirs(config_dir, exist_ok=True)
-
-        plugin_files = glob.glob(os.path.join(plugin_dir, "*.py"))
-        self.logger.write_log(f"Scanning for plugins in: {plugin_dir}")
-
-        current_plugin_instances = {p.name: p for p in self.plugins if hasattr(p, "name")}
-
-        loaded_plugin_files = set(os.path.abspath(p) for p in self.plugin_file_paths.values())
-        found_plugin_files_this_scan = set() 
-
-        for plugin_file in plugin_files:
-            plugin_name_from_file = os.path.splitext(os.path.basename(plugin_file))[0]
-            if plugin_name_from_file.startswith("__"): continue
-            abs_plugin_file = os.path.abspath(plugin_file)
-            found_plugin_files_this_scan.add(abs_plugin_file) 
+    
+    if not _check_config_items or not _check_sell_items:
+        logger.write_log("No items were selected to be auto purchased/sold, not starting.")
+        return
+
+    if stop_event.wait(timeout=5):
+        return
+    
+
+    logger.write_log("Merchant Detection thread started.")
+
+    try:
+        with open(get_merchant_path(), "r", encoding="utf-8") as f:
+            merchants = json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError, OSError) as e:
+        logger.write_log(f"Error loading merchant data: {e}. Merchant detection stopped.")
+        return
+
+    required_coords = [
+        "close_pos", "open_merch_pos", "merchant_box", "manual_boxes",
+        "merch_item_pos_1_purchase", "merch_item_pos_2_purchase",
+        "merch_item_pos_3_purchase", "merch_item_pos_4_purchase",
+        "merch_item_pos_5_purchase", "quantity_btn_pos", "purchase_btn_pos"
+    ]
+    if not all(coord in COORDS for coord in required_coords):
+        logger.write_log("Cannot start Merchant Detection: Required coordinates missing.")
+        return
+
+    ps_link_valid = validate_pslink(settings.get("private_server_link", ""))
+
+    if settings.get("auto_sell_to_jester", False):
+        cooldown_interval = 120
+        before_check_interval = 60
+    else:
+        cooldown_interval = 90
+        before_check_interval = 90    
+
+    auto_sell = settings.get("auto_sell_to_jester", False)
+    if auto_sell:
+        logger.write_log("Auto sell for Jester is enabled.")
+
+    is_autocraft = settings.get("auto_craft_mode", False)
+    has_abyssal = settings.get("has_abyssal_hunter", False)
+
+    while not stop_event.is_set() and not sniped_event.is_set():
+
+        wait_interval = before_check_interval
+        logger.write_log(f"Merchant Detection: Waiting for {wait_interval} seconds...")
+        if stop_event.wait(timeout=wait_interval):
+            break
+        if sniped_event.is_set(): break
+
+        logger.write_log("Merchant Detection: Merchant Check Scheduled")
+        screenshot_path = os.path.join(MACROPATH, "scr", "screenshot_merchant.png")
+        ex_screenshot_path = os.path.join(MACROPATH, "scr", "screenshot_exchange.png")
+        detected_merchant_name = None
+        detected_items = {}
+        
+        with keyboard_lock:
 
             try:
+                logger.write_log("Merchant Detection: Using Merchant Teleport item...")
+                use_item("Merchant Teleport", 1, False, mkey, kb, settings) 
+                time.sleep(settings.get("global_wait_time", 0.2) + 0.5) 
 
-                self.logger.write_log(f"Attempting to load plugin module: {plugin_name_from_file}")
-                spec = importlib.util.spec_from_file_location(plugin_name_from_file, abs_plugin_file)
-                if spec is None or spec.loader is None:
-                     self.logger.write_log(f" > Could not create spec for plugin '{plugin_name_from_file}'. Skipping.")
-                     continue
-                module = importlib.util.module_from_spec(spec)
-                spec.loader.exec_module(module)
+                mkey.left_click_xy_natural(round(float(COORDS_PERCENT["close_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["close_pos"][1] * COORDS["scr_hei"])))
+                time.sleep(1)
 
-                if not hasattr(module, "Plugin"):
-                    self.logger.write_log(f" > No 'Plugin' class found in {plugin_name_from_file}. Skipping.")
-                    continue
-                plugin_class = getattr(module, "Plugin")
+                logger.write_log("Merchant Detection: Attempting interaction (E key)...")
+                kb.press('e')
+                time.sleep(0.2)
+                kb.release('e')
+                time.sleep(7) 
 
-                try:
-                    temp_instance = plugin_class(self)
-                    plugin_display_name = getattr(temp_instance, "name", plugin_name_from_file)
-                    plugin_version = getattr(temp_instance, "version", "0.0.0")
-                    plugin_author = getattr(temp_instance, "author", "Unknown")
-                    required_macro_version = getattr(temp_instance, "requires", "0.0.0")
+                logger.write_log("Merchant Detection: Clicking open merchant position...")
+                mkey.left_click_xy_natural(round(float(COORDS_PERCENT["open_merch_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["open_merch_pos"][1] * COORDS["scr_hei"])))
+                time.sleep(3) 
 
-                    plugin_autocraft_compatible = getattr(temp_instance, "autocraft_compatible", False)
-                    del temp_instance 
-                except Exception as meta_e:
-                    self.logger.write_log(f" > Error getting metadata from temporary instance of {plugin_name_from_file}: {meta_e}", level="ERROR")
-                    continue 
+                logger.write_log("Merchant Detection: Taking screenshot...")
+                pag.screenshot(screenshot_path)
+                time.sleep(0.2)
 
-                if parse_version(required_macro_version) > parse_version(LOCALVERSION):
-                    self.logger.write_log(f" > Skipped Plugin: '{plugin_display_name}' requires macro v{required_macro_version}, but current is v{LOCALVERSION}.")
+                logger.write_log("Merchant Detection: Processing screenshot with OCR...")
+                image = cv2.imread(screenshot_path)
+                if image is None:
+                    logger.write_log("Merchant Detection Error: Failed to read screenshot file.")
                     continue
 
-                existing_plugin = current_plugin_instances.get(plugin_display_name)
-                if existing_plugin:
-                    existing_version = getattr(existing_plugin, "version", "0.0.0")
-                    if parse_version(plugin_version) <= parse_version(existing_version):
+                x1p, y1p, x2p, y2p = COORDS_PERCENT["merchant_box"]
+                x1 = round(x1p * COORDS["scr_wid"])
+                y1 = round(y1p * COORDS["scr_hei"])
+                x2 = round(x2p * COORDS["scr_wid"])
+                y2 = round(y2p * COORDS["scr_hei"])
+                merchant_crop = image[y1:y2, x1:x2]
+                ocr_merchant_raw = pytesseract.image_to_string(merchant_crop).strip()
+
+                ocr_merchant_clean = re.sub(r"[^a-zA-Z']", "", ocr_merchant_raw).lower()
+                detected_merchant_name = fuzzy_match_merchant(ocr_merchant_clean, POSSIBLE_MERCHANTS)
+
+                if not detected_merchant_name:
+                    logger.write_log(f"Merchant Detection: Could not identify merchant from OCR ('{ocr_merchant_raw}'). Skipping.")
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["close_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["close_pos"][1] * COORDS["scr_hei"])))
+                    continue
+
+                merchant_short_name = detected_merchant_name.split("'")[0] 
+                logger.write_log(f"Merchant Detected: {merchant_short_name} (Raw OCR: '{ocr_merchant_raw}')")
+                rnow = datetime.now()
+
+                file_to_send = create_discord_file_from_path(screenshot_path, filename="merchant.png")
+                ping_content = ""
+                if merchant_short_name == "Mari":
+                    emb_color = discord.Colour.from_rgb(255, 255, 255)
+                    thumbnail_url = "https://static.wikia.nocookie.net/sol-rng/images/3/37/MARI_HIGH_QUALITYY.png/revision/latest"
+                    if settings.get("ping_mari", False) and settings.get("mari_ping_id", 0) != 0:
+                        ping_content += f"<@&{settings['mari_ping_id']}>"
+                elif merchant_short_name == "Jester":
+                    emb_color = discord.Colour.from_rgb(176, 49, 255)
+                    thumbnail_url = "https://static.wikia.nocookie.net/sol-rng/images/d/db/Headshot_of_Jester.png/revision/latest"
+                    if settings.get("ping_jester", False) and settings.get("jester_ping_id", 0) != 0:
+                        ping_content += f"<@&{settings['jester_ping_id']}>"
+                else:
+                    emb_color = discord.Colour.default()
+                    thumbnail_url = None
+
+                emb = discord.Embed(
+                    title=f"{merchant_short_name} Spawned!",
+                    description=f"A **{merchant_short_name}** has been detected.\n**Time:** <t:{str(int(time.time()))}>",
+                    colour=emb_color
+                )
+                if thumbnail_url: emb.set_thumbnail(url=thumbnail_url)
+                if file_to_send: emb.set_image(url="attachment://merchant.png")
+                if ps_link_valid: emb.add_field(name="Server Invite", value=settings['private_server_link'], inline=False)
+
+                emb.set_footer(text=f"SolsScope v{LOCALVERSION}")
+
+                logger.write_log("Merchant Detection: Detecting items...")
+                item_list = MARI_ITEMS if merchant_short_name == "Mari" else JESTER_ITEMS
+                manual_boxes = COORDS.get("manual_boxes", {})
+                item_ocr_results = []
+                for box_name, (x1, y1, x2, y2) in manual_boxes.items():
+                    if x1 >= image.shape[1] or y1 >= image.shape[0] or x2 <= x1 or y2 <= y1:
+                        logger.write_log(f"Warning: Invalid coordinates for {box_name}. Skipping OCR.")
                         continue
-                    else:
-                        self.logger.write_log(f"Found newer version {plugin_version} for plugin '{plugin_display_name}'. Reloading...")
-                        self._unload_plugin(plugin_display_name)
+                    cropped = image[y1:y2, x1:x2]
+                    ocr_raw = pytesseract.image_to_string(cropped).strip().replace('\n', ' ')
+                    matched = fuzzy_match(ocr_raw, item_list, threshold=0.5)
+                    logger.write_log(f" > {box_name}: OCR='{ocr_raw}', Match='{matched}'")
+                    detected_items[box_name] = matched
+                    item_ocr_results.append(f"**{box_name}:** `{matched}` (Raw: `{ocr_raw}`)")
+                emb.add_field(name="Detected Items", value="\n".join(item_ocr_results) if item_ocr_results else "None", inline=False)
 
-                self.logger.write_log(f"Initializing final plugin instance: {plugin_display_name}")
+                if not (settings.get("mention", False) and settings.get("mention_id", 0) != 0) and settings.get(f"{merchant_short_name.lower()}_ping_id", 0) != 0:
+                    ping_content = f"<@{settings['mention_id']}>{ping_content}"
+
                 try:
-                    plugin_instance = plugin_class(self)
+                    webhook.send(content=ping_content.strip(), embed=emb, file=file_to_send)
+                    forward_webhook_msg(
+                        primary_webhook_url=webhook.url,
+                        secondary_urls=settings.get("SECONDARY_WEBHOOK_URLS", []),
+                        content=ping_content.strip(), embed=emb, file=file_to_send
+                    )
+                except Exception as wh_e:
+                    logger.write_log(f"Error sending merchant detection webhook: {wh_e}")
 
-                    plugin_instance.name = plugin_display_name
-                    plugin_instance.version = plugin_version
-                    plugin_instance.author = plugin_author
+                purchase_settings = settings.get("auto_purchase_items_mari" if merchant_short_name == "Mari" else "auto_purchase_items_jester", {})
+                items_to_buy = {box_name: item_name for box_name, item_name in detected_items.items() if purchase_settings.get(item_name, {"Purchase" : False}).get("Purchase", False)}
 
-                    plugin_instance.autocraft_compatible = plugin_autocraft_compatible
-                    plugin_instance.file_path = abs_plugin_file
-                    plugin_instance.entries = {}
-                    self.plugin_settings[plugin_instance.name] = plugin_instance.config
-                except Exception as init_e:
-                    self.logger.write_log(f" > Error initializing plugin '{plugin_display_name}': {init_e}", level="ERROR")
-                    continue
+                if items_to_buy:
+                    logger.write_log(f"Merchant Detection: Attempting to auto-purchase items: {list(items_to_buy.values())}")
+                    for box_name, item_name in items_to_buy.items():
+                        try:
 
-                self.logger.write_log(f"Loading config for plugin: {plugin_display_name}")
-                try:
-                    if hasattr(plugin_instance, "load_or_create_config"):
-                        plugin_instance.config = plugin_instance.load_or_create_config()
-                    else:
-                        plugin_instance.config = {}
-                except Exception as config_e:
-                    self.logger.write_log(f" > Error loading  config for plugin '{plugin_display_name}': {config_e}", level="WARN")
-                    plugin_instance.config = {} 
+                            coord_key = f"merch_item_pos_{box_name[-1]}_purchase"
+                            if coord_key in COORDS:
+                                wait_time = settings.get("global_wait_time", 0.2)
+                                mkey.left_click_xy_natural(round(float(COORDS_PERCENT[coord_key][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT[coord_key][1] * COORDS["scr_hei"])))
+                                time.sleep(wait_time)
+                                mkey.left_click_xy_natural(round(float(COORDS_PERCENT["quantity_btn_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["quantity_btn_pos"][1] * COORDS["scr_hei"])))
+                                time.sleep(wait_time)
+                                kb.type(str(purchase_settings.get(item_name).get("amount", 1)))
+                                time.sleep(wait_time)
+                                mkey.left_click_xy_natural(round(float(COORDS_PERCENT["purchase_btn_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["purchase_btn_pos"][1] * COORDS["scr_hei"])))
+                                time.sleep(wait_time + 0.5) 
+                                logger.write_log(f"Auto-purchased: {item_name}")
 
-                self.logger.write_log(f"Creating UI tab for plugin: {plugin_display_name}")
-                plugin_tab = QWidget()
-                plugin_tab_layout = QVBoxLayout(plugin_tab)
+                                try:
+                                    purch_emb = discord.Embed(
+                                        title=f"Auto-Purchased from {merchant_short_name}",
+                                        description=f"Item: **{item_name}**\nAmount: **{str(purchase_settings.get(item_name).get('amount', 1))}**",
+                                        colour=emb_color
+                                    )
+                                    purch_emb.set_footer(text=f"SolsScope v{LOCALVERSION}")
+                                    if merchants.get(merchant_short_name.lower()).get("items").get(item_name.lower()).get("item_image_url"): purch_emb.set_thumbnail(url=merchants.get(merchant_short_name.lower()).get("items").get(item_name.lower()).get("item_image_url"))
+                                    webhook.send(embed=purch_emb)
+                                    forward_webhook_msg(
+                                        primary_webhook_url=webhook.url,
+                                        secondary_urls=settings.get("SECONDARY_WEBHOOK_URLS", []),
+                                        embed=purch_emb
+                                    )
+                                except Exception as purch_wh_e:
+                                    logger.write_log(f"Error sending purchase confirmation webhook: {purch_wh_e}")
+                            else:
+                                logger.write_log(f"Error purchasing {item_name}: Coordinate key {coord_key} not found.")
+                        except Exception as buy_e:
+                            logger.write_log(f"Error auto-purchasing {item_name}: {buy_e}")
+                        time.sleep(1)
 
-                self.tab_widget.addTab(plugin_tab, plugin_display_name)
+                if auto_sell and merchant_short_name == "Jester":
+                    time.sleep(0.2)
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["close_merchant_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["close_merchant_pos"][1] * COORDS["scr_hei"])))
+                    time.sleep(0.2)
+                    kb.press('e')
+                    time.sleep(0.2)
+                    kb.release('e')
+                    time.sleep(7)
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["exchange_menu_btn_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["exchange_menu_btn_pos"][1] * COORDS["scr_hei"])))
+                    time.sleep(9)
+                    while not stop_event.is_set() and not sniped_event.is_set():
+                        pag.screenshot(ex_screenshot_path)
+                        time.sleep(0.2)
+                        logger.write_log("Merchant Detection: Processing screenshot with OCR...")
+                        image = cv2.imread(ex_screenshot_path)
+                        if image is None:
+                            logger.write_log("Merchant Detection Error: Failed to read screenshot file.")
+                            continue
+                        x1p, y1p, x2p, y2p = COORDS_PERCENT["first_sell_item_box_pos"]
+                        x1 = round(x1p * COORDS["scr_wid"])
+                        y1 = round(y1p * COORDS["scr_hei"])
+                        x2 = round(x2p * COORDS["scr_wid"]) 
+                        y2 = round(y2p * COORDS["scr_hei"])
+                        exchange_crop = image[y1:y2, x1:x2]
+                        ocr_ex_item_raw = pytesseract.image_to_string(exchange_crop).strip().replace('\n', ' ')
+                        ocr_ex_item_clean = re.sub(r"[^a-zA-Z']", "", ocr_ex_item_raw).lower()
+                        detected_item_name = fuzzy_match_auto_sell(ocr_ex_item_clean, JESTER_SELL_ITEMS)
+                        logger.write_log(f"Item: {detected_item_name} || OCR: {ocr_ex_item_raw}")
+                        if detected_item_name == "Void Coin":
+                            logger.write_log("Void Coin detected in first slot, skipping to second slot.")
+                            _break_second = False
+                            while detected_item_name in JESTER_ITEMS and not stop_event.is_set() and not sniped_event.is_set():
+                                logger.write_log("Auto-Sell: Taking screenshot")
+                                pag.screenshot(ex_screenshot_path)
+                                time.sleep(0.2)
+                                logger.write_log("Auto-Sell: Processing screenshot with OCR...")
+                                image = cv2.imread(ex_screenshot_path)
+                                if image is None:
+                                    logger.write_log("Auto-Sell Error: Failed to read screenshot file.")
+                                    continue
+                                x1p, y1p, x2p, y2p = COORDS_PERCENT["second_sell_item_box_pos"]
+                                x1 = round(x1p * COORDS["scr_wid"])
+                                y1 = round(y1p * COORDS["scr_hei"])
+                                x2 = round(x2p * COORDS["scr_wid"])
+                                y2 = round(y2p * COORDS["scr_hei"])
+                                exchange_crop = image[y1:y2, x1:x2]
+                                ocr_ex_item_raw = pytesseract.image_to_string(exchange_crop).strip().replace('\n', ' ')
+                                ocr_ex_item_clean = re.sub(r"[^a-zA-Z']", "", ocr_ex_item_raw).lower()
+                                detected_item_name = fuzzy_match_auto_sell(ocr_ex_item_clean, JESTER_SELL_ITEMS)
+                                if detected_item_name == "Void Coin":
+                                    _break_second = True
+                                    logger.write_log("Auto-Sell: Void coin detected in second slot, stopping job.")
+                                    break
+                                elif detected_item_name in JESTER_SELL_ITEMS and settings.get("items_to_sell", {}).get(detected_item_name, False):
+                                    logger.write_log(f"Auto-Sell: {detected_item_name} was detected")
+                                    time.sleep(0.2)
+                                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["second_sell_item_click_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["second_sell_item_click_pos"][1] * COORDS["scr_hei"])))
+                                    time.sleep(0.2)
+                                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["quantity_btn_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["quantity_btn_pos"][1] * COORDS["scr_hei"])))
+                                    time.sleep(0.2)
+                                    kb.type(str(settings.get("amount_of_item_to_sell", 1)))
+                                    time.sleep(0.2)
+                                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["purchase_btn_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["purchase_btn_pos"][1] * COORDS["scr_hei"])))
+                                    time.sleep(0.2)
+                                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["exchange_btn_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["exchange_btn_pos"][1] * COORDS["scr_hei"])))
+                                    time.sleep(4.5)
+                                    sell_emb = discord.Embed(
+                                        title=f"Auto-Sold to {merchant_short_name}",
+                                        description=f"Item: **{detected_item_name}**\nAmount: **{str(settings.get('amount_of_item_to_sell', 1))}**\nMaximum Profit: **{str(settings.get('amount_of_item_to_sell', 1) * merchants.get(merchant_short_name.lower()).get('exchange').get(detected_item_name.lower()).get('price'))}P",
+                                        colour=emb_color
+                                    )
+                                    sell_emb.set_footer(text=f"SolsScope v{LOCALVERSION}")
+                                    if merchants.get(merchant_short_name.lower()).get("exchange").get(detected_item_name.lower()).get("item_image_url"): sell_emb.set_thumbnail(url=merchants.get(merchant_short_name.lower()).get("exchange").get(detected_item_name.lower()).get("item_image_url"))
+                                    webhook.send(embed=sell_emb)
+                                    forward_webhook_msg(
+                                        primary_webhook_url=webhook.url,
+                                        secondary_urls=settings.get("SECONDARY_WEBHOOK_URLS", []),
+                                        embed=sell_emb
+                                    )
+                                else:
+                                    logger.write_log("Auto-Sell: No items were found in the second box or unsure if Void Coin was not detected, ending auto sell job.")
+                                    _break_second = True
+                                    break
+                                time.sleep(1)
+                            if _break_second:
+                                break
+                        elif detected_item_name in JESTER_SELL_ITEMS and settings.get("items_to_get", {}).get(detected_item_name, False):
+                            logger.write_log(f"Auto-Sell: {detected_item_name} was detected")
+                            time.sleep(0.2)
+                            mkey.left_click_xy_natural(round(float(COORDS_PERCENT["first_sell_item_click_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["first_sell_item_click_pos"][1] * COORDS["scr_hei"])))
+                            time.sleep(0.2)
+                            mkey.left_click_xy_natural(round(float(COORDS_PERCENT["quantity_btn_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["quantity_btn_pos"][1] * COORDS["scr_hei"])))
+                            time.sleep(0.2)
+                            kb.type(str(settings.get("amount_of_item_to_sell", 0)))
+                            time.sleep(0.2)
+                            mkey.left_click_xy_natural(round(float(COORDS_PERCENT["purchase_btn_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["purchase_btn_pos"][1] * COORDS["scr_hei"])))
+                            time.sleep(0.2)
+                            mkey.left_click_xy_natural(round(float(COORDS_PERCENT["exchange_btn_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["exchange_btn_pos"][1] * COORDS["scr_hei"])))
+                            time.sleep(4.5)
+                            sell_emb = discord.Embed(
+                                title=f"Auto-Sold to {merchant_short_name}",
+                                description=f"Item: **{detected_item_name}**\nAmount: **{str(settings.get('amount_of_item_to_sell', 1))}**\nMaximum Profit: **{str(settings.get('amount_of_item_to_sell', 1) * merchants.get(merchant_short_name.lower()).get('exchange').get(detected_item_name.lower()).get('price'))}P**",
+                                colour=emb_color
+                            )
+                            sell_emb.set_footer(text=f"SolsScope v{LOCALVERSION}")
+                            if merchants.get(merchant_short_name.lower()).get("exchange").get(detected_item_name.lower()).get("item_image_url"): sell_emb.set_thumbnail(url=merchants.get(merchant_short_name.lower()).get("exchange").get(detected_item_name.lower()).get("item_image_url"))
+                            webhook.send(embed=sell_emb)
+                            forward_webhook_msg(
+                                primary_webhook_url=webhook.url,
+                                secondary_urls=settings.get("SECONDARY_WEBHOOK_URLS", []),
+                                embed=sell_emb
+                            )
+                        else:
+                            logger.write_log("Auto-Sell: No item was found or unsure if Void Coin was not detected, ending auto sell job.")
+                            break
+                        time.sleep(1)
 
-                self.tab_entries[plugin_display_name] = plugin_instance.entries
-
-                if hasattr(plugin_instance, "init_tab"):
-                    gui_tools = {
-                        "QtWidgets": __import__('PyQt6.QtWidgets'),
-                        "QtCore": __import__('PyQt6.QtCore'),
-                        "QtGui": __import__('PyQt6.QtGui'),
-                        "QLabel": QLabel, "QLineEdit": QLineEdit, "QCheckBox": QCheckBox,
-                        "QPushButton": QPushButton, "QTextEdit": QTextEdit, "QFrame": QFrame,
-                        "QListWidget": QListWidget, "QScrollArea": QScrollArea, "QGroupBox": QGroupBox,
-                        "QVBoxLayout": QVBoxLayout, "QHBoxLayout": QHBoxLayout, "QFormLayout": QFormLayout,
-                        "QSpacerItem": QSpacerItem, "QSizePolicy": QSizePolicy,
-                        "AlignmentFlag": Qt.AlignmentFlag,
-                        "logger": self.logger,
-                        "format_key": format_key,
-                        "config": plugin_instance.config,
-                        "entries": plugin_instance.entries,
-                        "parent_layout": plugin_tab_layout,
-                        "create_widgets": self.create_widgets,
-                        "create_list_widget": self.create_list_widget,
-                        "main_window": self
-                    }
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["close_merchant_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["close_merchant_pos"][1] * COORDS["scr_hei"])))
+                    time.sleep(1)
+            
+                if is_autocraft:
+                    logger.write_log("Walking back to Stella's")
                     try:
-                        plugin_instance.init_tab(gui_tools)
-                    except Exception as tab_e:
-                         self.logger.write_log(f" > Error running init_tab for plugin '{plugin_display_name}': {tab_e}", level="ERROR")
-                         error_label = QLabel(f"Error loading plugin UI for {plugin_display_name}.\nCheck logs for details.")
-                         error_label.setStyleSheet("color: red;")
-                         plugin_tab_layout.addWidget(error_label)
+                        reset_character()
+                        time.sleep(1)
+                        reset_character()
+                        time.sleep(1)
+                        mkey.left_click_xy_natural(round(float(COORDS_PERCENT["collection_open_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["collection_open_pos"][1] * COORDS["scr_hei"])))
+                        time.sleep(0.5)
+                        mkey.left_click_xy_natural(round(float(COORDS_PERCENT["exit_collection_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["exit_collection_pos"][1] * COORDS["scr_hei"])))
+                        time.sleep(1)
+                    except Exception as e:
+                        logger.write_log(f"Error during camera alignment: {e}")
+                        continue
 
-                else:
-                    default_label = QLabel("Plugin has no UI defined.")
-                    plugin_tab_layout.addWidget(default_label)
+                    logger.write_log("Begin position alignment.")
 
-                self.create_bottom_buttons(plugin_tab_layout, plugin_display_name)
+                    if not has_abyssal:
+                        try:
+                            mkey.move_to_natural(round(float(COORDS_PERCENT["close_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["close_pos"][1] * COORDS["scr_hei"])))
+                            time.sleep(0.4)
+                            right_click_drag(1000, 0)
+                            time.sleep(0.4)
+                            kb.press("d")
+                            time.sleep(3)
+                            kb.release("d")
+                            time.sleep(0.4)
+                            kb.press("w")
+                            time.sleep(8)
+                            kb.release("w")
+                            time.sleep(0.4)
+                            kb.press("a")
+                            time.sleep(3)
+                            kb.release("a")
+                            time.sleep(0.4)
+                            kb.press("w")
+                            time.sleep(1)
+                            kb.release("w")
+                            time.sleep(0.4)
+                            kb.press("d")
+                            time.sleep(0.75)
+                            kb.release("d")
+                            time.sleep(0.4)
+                            kb.press("w")
+                            time.sleep(1)
+                            kb.release("w")
+                        except Exception as e:
+                            logger.write_log(f"Error during position alignment: {e}")
+                            continue
 
-                self.plugins.append(plugin_instance)
-                self.plugin_file_paths[plugin_display_name] = plugin_instance.file_path
-                self.logger.write_log(f" > Successfully loaded plugin: {plugin_display_name} v{plugin_version} from {os.path.basename(plugin_file)}")
+                    else:
+                        saved_aura = None
+                        while saved_aura is None:
+                            try:
+                                saved_aura = get_latest_equipped_aura().lower()
+                            except Exception as e:
+                                logger.write_log(f"Error checking current equipped aura: {e}.")
+                        logger.write_log("Walking to Stella with Abyssal Hunter")
+                        time.sleep(2)
+                        equip_aura("Abyssal", False, mkey, kb, settings, ignore_next_detection, ignore_lock)
+                        time.sleep(2)
+                        try:
+                            mkey.move_to_natural(round(float(COORDS_PERCENT["close_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["close_pos"][1] * COORDS["scr_hei"])))
+                            time.sleep(0.4)
+                            right_click_drag(1000, 0)
+                            time.sleep(0.4)
+                            kb.press("d")
+                            time.sleep(1.8)
+                            kb.release("d")
+                            time.sleep(0.4)
+                            kb.press("w")
+                            time.sleep(6)
+                            kb.release("w")
+                            time.sleep(0.4)
+                            kb.press("a")
+                            time.sleep(1.3)
+                            kb.release("a")
+                            time.sleep(0.4)
+                            kb.press("w")
+                            time.sleep(0.5)
+                            kb.release("w")
+                            time.sleep(0.4)
+                            kb.press("d")
+                            time.sleep(0.4)
+                            kb.release("d")
+                            time.sleep(0.4)
+                            kb.press("w")
+                            time.sleep(0.5)
+                            kb.release("w")
+                        except Exception as e:
+                            logger.write_log(f"Error during position alignment: {e}")
+                            continue
+
+                    logger.write_log("Finished position alignment, walking to Stella.")
+
+                    time.sleep(1)
+
+                    if not has_abyssal:
+                        try:
+                            right_click_drag(0, 600)
+                            time.sleep(1)
+                            run_macro(f"{PATH_DIR}/stella.mms")
+                            time.sleep(1)
+                        except Exception as e:
+                            logger.write_log(f"Error during walk to Stella's: {e}")
+                            continue
+                    else:
+                        try:
+                            right_click_drag(0, 600)
+                            time.sleep(1)
+                            run_macro(f"{PATH_DIR}/stella_abyssal.mms")
+                            time.sleep(1)
+                        except Exception as e:
+                            logger.write_log(f"Error during walk to Stella's: {e}")
+                            continue
+                        if saved_aura:
+                            equip_aura(saved_aura, False, mkey, kb, settings, ignore_next_detection, ignore_lock)
+                        else:
+                            equip_aura("Abyssal", True, mkey, kb, settings, ignore_next_detection, ignore_lock)
+                        
+
+                if stop_event.wait(timeout=cooldown_interval):
+                    break
 
             except Exception as e:
-                self.logger.write_log(f"Error processing plugin file '{plugin_file}': {e}", level="ERROR")
+                logger.write_log(f"Error in Merchant Detection loop: {e}")
                 import traceback
-                self.logger.write_log(traceback.format_exc()) 
+                logger.write_log(traceback.format_exc()) 
 
-        removed_plugin_files = loaded_plugin_files - found_plugin_files_this_scan
-        if removed_plugin_files:
-             self.logger.write_log(f"Detected removed plugin files: {removed_plugin_files}")
-        for removed_file_path in removed_plugin_files:
+                try:
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["close_merchant_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["close_merchant_pos"][1] * COORDS["scr_hei"])))
+                except Exception:
+                    pass
 
-            plugin_name_to_remove = None
-            for name, path in self.plugin_file_paths.items():
+    logger.write_log("Merchant Detection thread stopped.")
 
-                if os.path.abspath(path) == os.path.abspath(removed_file_path):
-                    plugin_name_to_remove = name
-                    break
-            if plugin_name_to_remove:
-                 self.logger.write_log(f"Unloading plugin '{plugin_name_to_remove}' as its file ({os.path.basename(removed_file_path)}) seems to be removed.")
-                 self._unload_plugin(plugin_name_to_remove) 
-            else:
-                 self.logger.write_log(f"Could not find loaded plugin associated with removed file: {removed_file_path}", level="WARN")
+def auto_craft(settings: dict, stop_event: threading.Event, sniped_event: threading.Event, keyboard_lock: threading.Lock, mkey, kb, ms, ignore_lock, ignore_next_detection):
+    logger = get_logger()
+    logger.write_log("Starting Auto Craft in 10 seconds")
+    if stop_event.wait(timeout=10):
+        return
+    logger.write_log("Auto Craft thread started.")
 
-    def _unload_plugin(self, plugin_name):
-        """Handles the removal of a plugin instance and its UI by name."""
-        plugin_instance = next((p for p in self.plugins if hasattr(p, 'name') and p.name == plugin_name), None)
+    items_to_craft = [item for item, enabled in settings.get("auto_craft_item", {}).items() if enabled]
+    if not items_to_craft:
+        logger.write_log("Auto Craft stopped: No items selected for crafting.")
+        return
 
-        if not plugin_instance:
-            self.logger.write_log(f"Cannot unload plugin '{plugin_name}': Instance not found.", level="WARN")
-            return
+    logger.write_log(f"Auto Crafting enabled for: {', '.join(items_to_craft)}")
 
-        self.logger.write_log(f"Attempting to unload plugin: {plugin_name}")
-        try:
+    auto_craft_index = 0 
+    auto_mode_swap = 0 
 
-            if hasattr(plugin_instance, "unload"):
-                 self.logger.write_log(f" > Calling unload() method for {plugin_name}...")
-                 plugin_instance.unload()
+    required_coords = [
+        "potion_search_pos", "first_potion_pos", "craft_btn_pos", "hp1_pos_potions",
+        "hp2_pos_potions", "hp1_pos_celestial", 
 
-            tab_removed = False
-            for i in range(self.tab_widget.count()):
-                 if self.tab_widget.tabText(i) == plugin_name:
-                     self.logger.write_log(f" > Removing tab '{plugin_name}' at index {i}...")
-                     widget_to_remove = self.tab_widget.widget(i)
-                     self.tab_widget.removeTab(i)
-                     if widget_to_remove:
-                          widget_to_remove.deleteLater() 
-                          self.logger.write_log(f" > Scheduled deletion for tab widget of {plugin_name}.")
-                     tab_removed = True
-                     break 
-            if not tab_removed:
-                self.logger.write_log(f" > Tab for '{plugin_name}' not found in UI.", level="WARN")
+    ]
+    if not all(coord in COORDS for coord in required_coords):
+         logger.write_log("Cannot start Auto Craft: Required coordinates missing.")
+         return
+    
 
-            if plugin_name in self.tab_entries:
-                del self.tab_entries[plugin_name]
-                self.logger.write_log(f" > Removed '{plugin_name}' from tab_entries.")
-            if plugin_name in self.plugin_file_paths:
-                del self.plugin_file_paths[plugin_name]
-                self.logger.write_log(f" > Removed '{plugin_name}' from plugin_file_paths.")
-            if plugin_instance in self.plugins:
-                self.plugins.remove(plugin_instance)
-                self.logger.write_log(f" > Removed '{plugin_name}' instance from plugins list.")
+    has_abyssal = settings.get("has_abyssal_hunter", False)
 
-            del plugin_instance
-            self.logger.write_log(f"Successfully unloaded and deleted instance for plugin: {plugin_name}")
+    def search_for_potion_in_cauldron(potion_name):
+        kb.press('f') 
+        time.sleep(0.2)
+        kb.release('f')
+        time.sleep(0.5) 
+        mkey.left_click_xy_natural(round(float(COORDS_PERCENT["potion_search_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["potion_search_pos"][1] * COORDS["scr_hei"])))
+        time.sleep(0.2)
+        mkey.left_click_xy_natural(round(float(COORDS_PERCENT["potion_search_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["potion_search_pos"][1] * COORDS["scr_hei"])))
+        time.sleep(0.2)
 
-        except Exception as e:
-             self.logger.write_log(f"Error during unload process for plugin '{plugin_name}': {e}", level="ERROR")
-             import traceback
-             self.logger.write_log(traceback.format_exc())
+        kb.press(keyboard.Key.ctrl); kb.press('a'); time.sleep(0.05); kb.release('a'); kb.release(keyboard.Key.ctrl); time.sleep(0.2)
+        kb.press(keyboard.Key.backspace); time.sleep(0.05); kb.release(keyboard.Key.backspace)
+        time.sleep(0.2)
+        kb.type(potion_name)
+        time.sleep(0.3)
+        mkey.left_click_xy_natural(round(float(COORDS_PERCENT["first_potion_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["first_potion_pos"][1] * COORDS["scr_hei"])))
+        time.sleep(0.2)
 
-    def install_plugin(self):
-        """Handles copying a plugin file and reloading plugins."""
-        plugin_path, _ = QFileDialog.getOpenFileName(
-            self,
-            "Select Plugin File (.py)",
-            ",".join(MACROPATH), 
-            "Python Files (*.py)"
-        )
+        mkey.left_click_xy_natural(round(float(COORDS_PERCENT["potion_search_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["potion_search_pos"][1] * COORDS["scr_hei"])))
+        time.sleep(0.2)
 
-        if not plugin_path:
-            return 
+    if stop_event.wait(timeout=10):
+        return
+    
+    if not settings.get("do_no_walk_to_stella", False):
+        logger.write_log("Auto Craft: Walking To Stella's")
+        with keyboard_lock:
+            logger.write_log("Walking back to Stella's")
+            try:
+                reset_character()
+                time.sleep(1)
+                reset_character()
+                time.sleep(1)
+                mkey.left_click_xy_natural(round(float(COORDS_PERCENT["collection_open_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["collection_open_pos"][1] * COORDS["scr_hei"])))
+                time.sleep(0.5)
+                mkey.left_click_xy_natural(round(float(COORDS_PERCENT["exit_collection_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["exit_collection_pos"][1] * COORDS["scr_hei"])))
+                time.sleep(1)
+            except Exception as e:
+                logger.write_log(f"Error during camera alignment: {e}")
 
-        try:
-            dest_dir = os.path.join(MACROPATH, "plugins")
-            filename = os.path.basename(plugin_path)
-            dest_path = os.path.join(dest_dir, filename)
+            logger.write_log("Begin position alignment.")
 
-            os.makedirs(dest_dir, exist_ok=True)
-
-            if os.path.exists(dest_path):
-                reply = QMessageBox.question(self, "Plugin Exists",
-                                             f"Plugin '{filename}' already exists. Overwrite?",
-                                             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-                                             QMessageBox.StandardButton.No)
-                if reply == QMessageBox.StandardButton.No:
-                    return
-
-            shutil.copy(plugin_path, dest_path)
-            self.logger.write_log(f"Plugin '{filename}' copied to plugins directory.")
-
-            self.load_plugins()
-
-            QMessageBox.information(self, "Plugin Installed", f"Plugin '{filename}' installed successfully.")
-
-        except Exception as e:
-            QMessageBox.critical(self, "Plugin Install Failed", f"Failed to install plugin:\n{e}")
-            self.logger.write_log(f"Failed to install plugin '{plugin_path}': {e}")
-
-    def closeEvent(self, event):
-        """Handles the window close event."""
-        confirm_exit = True
-        if self.running:
-            reply = QMessageBox.question(self, "Exit Confirmation",
-                                         "Macro is running. Are you sure you want to stop and exit?",
-                                         QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-                                         QMessageBox.StandardButton.No)
-            if reply == QMessageBox.StandardButton.Yes:
-                self.stop_macro() 
+            if not has_abyssal:
+                try:
+                    mkey.move_to_natural(round(float(COORDS_PERCENT["close_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["close_pos"][1] * COORDS["scr_hei"])))
+                    time.sleep(0.4)
+                    right_click_drag(1000, 0)
+                    time.sleep(0.4)
+                    kb.press("d")
+                    time.sleep(3)
+                    kb.release("d")
+                    time.sleep(0.4)
+                    kb.press("w")
+                    time.sleep(8)
+                    kb.release("w")
+                    time.sleep(0.4)
+                    kb.press("a")
+                    time.sleep(3)
+                    kb.release("a")
+                    time.sleep(0.4)
+                    kb.press("w")
+                    time.sleep(1)
+                    kb.release("w")
+                    time.sleep(0.4)
+                    kb.press("d")
+                    time.sleep(0.75)
+                    kb.release("d")
+                    time.sleep(0.4)
+                    kb.press("w")
+                    time.sleep(1)
+                    kb.release("w")
+                except Exception as e:
+                    logger.write_log(f"Error during position alignment: {e}")
 
             else:
-                confirm_exit = False
-        else:
-             reply = QMessageBox.question(self, "Exit Confirmation",
-                                         "Are you sure you want to exit?",
-                                         QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-                                         QMessageBox.StandardButton.Yes)
-             if reply == QMessageBox.StandardButton.No:
-                 confirm_exit = False
+                saved_aura = None
+                while saved_aura is None:
+                    try:
+                        saved_aura = get_latest_equipped_aura().lower()
+                    except Exception as e:
+                        logger.write_log(f"Error checking current equipped aura: {e}.")
+                logger.write_log("Walking to Stella with Abyssal Hunter")
+                time.sleep(2)
+                equip_aura("Abyssal", False, mkey, kb, settings, ignore_next_detection, ignore_lock)
+                time.sleep(2)
+                try:
+                    mkey.move_to_natural(round(float(COORDS_PERCENT["close_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["close_pos"][1] * COORDS["scr_hei"])))
+                    time.sleep(0.4)
+                    right_click_drag(1000, 0)
+                    time.sleep(0.4)
+                    kb.press("d")
+                    time.sleep(1.8)
+                    kb.release("d")
+                    time.sleep(0.4)
+                    kb.press("w")
+                    time.sleep(6)
+                    kb.release("w")
+                    time.sleep(0.4)
+                    kb.press("a")
+                    time.sleep(1.3)
+                    kb.release("a")
+                    time.sleep(0.4)
+                    kb.press("w")
+                    time.sleep(0.5)
+                    kb.release("w")
+                    time.sleep(0.4)
+                    kb.press("d")
+                    time.sleep(0.4)
+                    kb.release("d")
+                    time.sleep(0.4)
+                    kb.press("w")
+                    time.sleep(0.5)
+                    kb.release("w")
+                except Exception as e:
+                    logger.write_log(f"Error during position alignment: {e}")
 
-        if confirm_exit:
-            self.logger.write_log("Exiting application.")
+            logger.write_log("Finished position alignment, walking to Stella.")
 
-            event.accept() 
+            time.sleep(1)
+
+            if not has_abyssal:
+                try:
+                    right_click_drag(0, 600)
+                    time.sleep(1)
+                    run_macro(f"{PATH_DIR}/stella.mms")
+                    time.sleep(1)
+                except Exception as e:
+                    logger.write_log(f"Error during walk to Stella's: {e}")
+            else:
+                try:
+                    right_click_drag(0, 600)
+                    time.sleep(1)
+                    run_macro(f"{PATH_DIR}/stella_abyssal.mms")
+                    time.sleep(1)
+                except Exception as e:
+                    logger.write_log(f"Error during walk to Stella's: {e}")
+                if saved_aura:
+                    equip_aura(saved_aura, False, mkey, kb, settings, ignore_next_detection, ignore_lock)
+                else:
+                    equip_aura("Abyssal", True, mkey, kb, settings, ignore_next_detection, ignore_lock)
+
+    else:
+        logger.write_log("Ensure you are standing near the cauldron with the 'F' prompt visible.")
+
+    while not stop_event.is_set() and not sniped_event.is_set():
+
+        with keyboard_lock:
+            try:
+                wait_time = settings.get("global_wait_time", 0.2)
+
+                if settings["auto_craft_item"].get("Jewelry Potion", False):
+                    search_for_potion_in_cauldron("Jewelry")
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["craft_btn_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["craft_btn_pos"][1] * COORDS["scr_hei"])))
+                    time.sleep(wait_time)
+
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["hp1_pos_potions"][0] * COORDS["scr_wid"])) - round(float(110 / 2560 * COORDS["scr_wid"])), round(float(COORDS_PERCENT["hp1_pos_potions"][1] * COORDS["scr_hei"])))
+                    time.sleep(wait_time)
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["hp1_pos_potions"][0] * COORDS["scr_wid"])) - round(float(110 / 2560 * COORDS["scr_wid"])), round(float(COORDS_PERCENT["hp1_pos_potions"][1] * COORDS["scr_hei"])))
+                    time.sleep(wait_time)
+                    kb.type("20"); time.sleep(wait_time)
+
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["hp1_pos_potions"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["hp1_pos_potions"][1] * COORDS["scr_hei"])))
+                    time.sleep(wait_time)
+
+                    if auto_craft_index == 1 and len(items_to_craft) > 1 and auto_mode_swap == 5:
+                        mkey.left_click_xy_natural(round(float(COORDS_PERCENT["auto_btn_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["auto_btn_pos"][1] * COORDS["scr_hei"])))
+                        time.sleep(0.2)
+                    time.sleep(1)
+
+                if settings["auto_craft_item"].get("Zombie Potion", False):
+                    search_for_potion_in_cauldron("Zombie")
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["craft_btn_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["craft_btn_pos"][1] * COORDS["scr_hei"])))
+                    time.sleep(wait_time)
+
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["hp1_pos_potions"][0] * COORDS["scr_wid"])) - round(float(110 / 2560 * COORDS["scr_wid"])), round(float(COORDS_PERCENT["hp1_pos_potions"][1] * COORDS["scr_hei"])))
+                    time.sleep(wait_time)
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["hp1_pos_potions"][0] * COORDS["scr_wid"])) - round(float(110 / 2560 * COORDS["scr_wid"])), round(float(COORDS_PERCENT["hp1_pos_potions"][1] * COORDS["scr_hei"])))
+                    time.sleep(wait_time)
+                    kb.type("10"); time.sleep(wait_time)
+
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["hp1_pos_potions"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["hp1_pos_potions"][1] * COORDS["scr_hei"])))
+                    time.sleep(wait_time)
+
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["hp2_pos_potions"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["hp2_pos_potions"][1] * COORDS["scr_hei"])))
+                    time.sleep(wait_time)
+
+                    if auto_craft_index == 2 and len(items_to_craft) > 1 and auto_mode_swap == 5:
+                        mkey.left_click_xy_natural(round(float(COORDS_PERCENT["auto_btn_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["auto_btn_pos"][1] * COORDS["scr_hei"])))
+                        time.sleep(0.2)
+                    time.sleep(1)
+
+                if settings["auto_craft_item"].get("Rage Potion", False):
+                    search_for_potion_in_cauldron("Rage")
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["craft_btn_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["craft_btn_pos"][1] * COORDS["scr_hei"])))
+                    time.sleep(wait_time)
+
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["hp1_pos_potions"][0] * COORDS["scr_wid"])) - round(float(110 / 2560 * COORDS["scr_wid"])), round(float(COORDS_PERCENT["hp1_pos_potions"][1] * COORDS["scr_hei"])))
+                    time.sleep(wait_time)
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["hp1_pos_potions"][0] * COORDS["scr_wid"])) - round(float(110 / 2560 * COORDS["scr_wid"])), round(float(COORDS_PERCENT["hp1_pos_potions"][1] * COORDS["scr_hei"])))
+                    time.sleep(wait_time)
+                    kb.type("10"); time.sleep(wait_time)
+
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["hp1_pos_potions"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["hp1_pos_potions"][1] * COORDS["scr_hei"])))
+                    time.sleep(wait_time)
+
+                    if auto_craft_index == 3 and len(items_to_craft) > 1 and auto_mode_swap == 5:
+                        mkey.left_click_xy_natural(round(float(COORDS_PERCENT["auto_btn_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["auto_btn_pos"][1] * COORDS["scr_hei"])))
+                        time.sleep(0.2)
+                    time.sleep(1)
+
+                if settings["auto_craft_item"].get("Diver Potion", False):
+                    search_for_potion_in_cauldron("Diver")
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["craft_btn_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["craft_btn_pos"][1] * COORDS["scr_hei"])))
+                    time.sleep(wait_time)
+
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["hp1_pos_potions"][0] * COORDS["scr_wid"])) - round(float(110 / 2560 * COORDS["scr_wid"])), round(float(COORDS_PERCENT["hp1_pos_potions"][1] * COORDS["scr_hei"])))
+                    time.sleep(wait_time)
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["hp1_pos_potions"][0] * COORDS["scr_wid"])) - round(float(110 / 2560 * COORDS["scr_wid"])), round(float(COORDS_PERCENT["hp1_pos_potions"][1] * COORDS["scr_hei"])))
+                    time.sleep(wait_time)
+                    kb.type("20"); time.sleep(wait_time)
+
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["hp1_pos_potions"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["hp1_pos_potions"][1] * COORDS["scr_hei"])))
+                    time.sleep(wait_time)
+
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["hp2_pos_potions"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["hp2_pos_potions"][1] * COORDS["scr_hei"])))
+                    time.sleep(wait_time)
+
+                    if auto_craft_index == 4 and len(items_to_craft) > 1 and auto_mode_swap == 5:
+                        mkey.left_click_xy_natural(round(float(COORDS_PERCENT["auto_btn_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["auto_btn_pos"][1] * COORDS["scr_hei"])))
+                        time.sleep(0.2)
+                    time.sleep(1)
+
+                if settings["auto_craft_item"].get("Potion of Bound", False):
+                    search_for_potion_in_cauldron("Bound")
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["craft_btn_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["craft_btn_pos"][1] * COORDS["scr_hei"])))
+                    time.sleep(wait_time)
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["hp1_pos_potions"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["hp1_pos_potions"][1] * COORDS["scr_hei"])))
+                    time.sleep(wait_time)
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["hp2_pos_potions"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["hp2_pos_potions"][1] * COORDS["scr_hei"])))
+                    time.sleep(wait_time)
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["hp2_pos_potions"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["hp2_pos_potions"][1] * COORDS["scr_hei"])))
+                    time.sleep(wait_time)
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["hp2_pos_potions"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["hp2_pos_potions"][1] * COORDS["scr_hei"])))
+                    time.sleep(wait_time)
+                    mkey.left_click_xy_natural(round(float((954 / 2560) * COORDS["scr_wid"])), round(float((1048 / 1440) * COORDS["scr_hei"])))
+                    time.sleep(0.2)
+                    mkey.left_click_xy_natural(round(float((954 / 2560) * COORDS["scr_wid"])), round(float((1048 / 1440) * COORDS["scr_hei"])))
+                    time.sleep(0.2)
+                    kb.type("100")
+                    time.sleep(0.2)
+                    mkey.left_click_xy_natural(round(float((1064 / 2560) * COORDS["scr_wid"])), round(float((1048 / 1440) * COORDS["scr_hei"])))
+                    time.sleep(0.2)
+                    if auto_craft_index == 5 and len(items_to_craft) > 1 and auto_mode_swap == 5:
+                        mkey.left_click_xy_natural(round(float(COORDS_PERCENT["auto_btn_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["auto_btn_pos"][1] * COORDS["scr_hei"])))
+                        time.sleep(0.2)
+                    time.sleep(1)
+
+                if settings["auto_craft_item"].get("Heavenly Potion", False):
+                    search_for_potion_in_cauldron("Heavenly")
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["craft_btn_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["craft_btn_pos"][1] * COORDS["scr_hei"])))
+                    time.sleep(wait_time)
+
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["hp1_pos_potions"][0] * COORDS["scr_wid"])) - round(float(110 / 2560 * COORDS["scr_wid"])), round(float(COORDS_PERCENT["hp1_pos_potions"][1] * COORDS["scr_hei"])))
+                    time.sleep(wait_time)
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["hp1_pos_potions"][0] * COORDS["scr_wid"])) - round(float(110 / 2560 * COORDS["scr_wid"])), round(float(COORDS_PERCENT["hp1_pos_potions"][1] * COORDS["scr_hei"])))
+                    time.sleep(wait_time)
+                    kb.type("250")
+                    time.sleep(wait_time)
+
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["hp1_pos_potions"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["hp1_pos_potions"][1] * COORDS["scr_hei"])))
+                    time.sleep(wait_time)
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["hp2_pos_potions"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["hp2_pos_potions"][1] * COORDS["scr_hei"])))
+                    time.sleep(wait_time)
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["hp2_pos_potions"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["hp2_pos_potions"][1] * COORDS["scr_hei"])))
+                    time.sleep(wait_time)
+                    mkey.left_click_xy_natural(round(float((1064 / 2560) * COORDS["scr_wid"])), round(float((988 / 1440) * COORDS["scr_hei"])))
+                    time.sleep(0.2)
+                    if auto_craft_index == 6 and len(items_to_craft) > 1 and auto_mode_swap == 5:
+                        mkey.left_click_xy_natural(round(float(COORDS_PERCENT["auto_btn_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["auto_btn_pos"][1] * COORDS["scr_hei"])))
+                        time.sleep(0.2)
+                    time.sleep(1)
+
+                if settings["auto_craft_item"].get("Godly Potion (Zeus)", False):
+                    search_for_potion_in_cauldron("Zeus")
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["craft_btn_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["craft_btn_pos"][1] * COORDS["scr_hei"])))
+                    time.sleep(wait_time)
+
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["hp1_pos_potions"][0] * COORDS["scr_wid"])) - round(float(110 / 2560 * COORDS["scr_wid"])), round(float(COORDS_PERCENT["hp1_pos_potions"][1] * COORDS["scr_hei"])))
+                    time.sleep(wait_time)
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["hp1_pos_potions"][0] * COORDS["scr_wid"])) - round(float(110 / 2560 * COORDS["scr_wid"])), round(float(COORDS_PERCENT["hp1_pos_potions"][1] * COORDS["scr_hei"])))
+                    time.sleep(wait_time)
+                    kb.type("25"); time.sleep(wait_time)
+
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["hp2_pos_potions"][0] * COORDS["scr_wid"])) - round(float(110 / 2560 * COORDS["scr_wid"])), round(float(COORDS_PERCENT["hp2_pos_potions"][1] * COORDS["scr_hei"])) )
+                    time.sleep(wait_time); mkey.left_click_xy_natural(round(float(COORDS_PERCENT["hp2_pos_potions"][0] * COORDS["scr_wid"])) - round(float(110 / 2560 * COORDS["scr_wid"])), round(float(COORDS_PERCENT["hp2_pos_potions"][1] * COORDS["scr_hei"])))
+                    kb.type("25"); time.sleep(wait_time)
+
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["hp1_pos_potions"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["hp1_pos_potions"][1] * COORDS["scr_hei"]))); time.sleep(wait_time)
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["hp2_pos_potions"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["hp2_pos_potions"][1] * COORDS["scr_hei"]))); time.sleep(wait_time)
+                    mkey.left_click_xy_natural(round(float((1064 / 2560) * COORDS["scr_wid"])), round(float((988 / 1440) * COORDS["scr_hei"])))
+                    time.sleep(0.2)
+                    mkey.left_click_xy_natural(round(float((1064 / 2560) * COORDS["scr_wid"])), round(float((1048 / 1440) * COORDS["scr_hei"])))
+                    time.sleep(0.2)
+                    if auto_craft_index == 7 and len(items_to_craft) > 1 and auto_mode_swap == 5:
+                        mkey.left_click_xy_natural(round(float(COORDS_PERCENT["auto_btn_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["auto_btn_pos"][1] * COORDS["scr_hei"])))
+                        time.sleep(0.2)
+                    time.sleep(1)
+
+                if settings["auto_craft_item"].get("Godly Potion (Poseidon)", False):
+                    search_for_potion_in_cauldron("Poseidon")
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["craft_btn_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["craft_btn_pos"][1] * COORDS["scr_hei"])))
+                    time.sleep(wait_time)
+
+                    mkey.left_click_xy_natural(COORDS["hp1_pos_potions"][0] - (110 * COORDS['scale_w']), COORDS["hp1_pos_potions"][1])
+                    time.sleep(wait_time); mkey.left_click_xy_natural(COORDS["hp1_pos_potions"][0] - (110 * COORDS['scale_w']), COORDS["hp1_pos_potions"][1]); time.sleep(wait_time)
+                    kb.type("50"); time.sleep(wait_time)
+
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["hp1_pos_potions"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["hp1_pos_potions"][1] * COORDS["scr_hei"]))); time.sleep(wait_time)
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["hp2_pos_potions"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["hp2_pos_potions"][1] * COORDS["scr_hei"]))); time.sleep(wait_time)
+                    mkey.left_click_xy_natural(round(float((1064 / 2560) * COORDS["scr_wid"])), round(float((988 / 1440) * COORDS["scr_hei"])))
+                    time.sleep(0.2)
+                    mkey.left_click_xy_natural(round(float((1064 / 2560) * COORDS["scr_wid"])), round(float((1048 / 1440) * COORDS["scr_hei"])))
+                    time.sleep(0.2)
+                    if auto_craft_index == 8 and len(items_to_craft) > 1 and auto_mode_swap == 5:
+                        mkey.left_click_xy_natural(round(float(COORDS_PERCENT["auto_btn_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["auto_btn_pos"][1] * COORDS["scr_hei"])))
+                        time.sleep(0.2)
+                    time.sleep(1)
+
+                if settings["auto_craft_item"].get("Godly Potion (Hades)", False):
+                    search_for_potion_in_cauldron("Hades")
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["craft_btn_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["craft_btn_pos"][1] * COORDS["scr_hei"])))
+                    time.sleep(wait_time)
+
+                    mkey.left_click_xy_natural(COORDS["hp1_pos_potions"][0] - (110 * COORDS['scale_w']), COORDS["hp1_pos_potions"][1])
+                    time.sleep(wait_time); mkey.left_click_xy_natural(COORDS["hp1_pos_potions"][0] - (110 * COORDS['scale_w']), COORDS["hp1_pos_potions"][1]); time.sleep(wait_time)
+                    kb.type("50"); time.sleep(wait_time)
+
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["hp1_pos_potions"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["hp1_pos_potions"][1] * COORDS["scr_hei"])));time.sleep(wait_time)
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["hp2_pos_potions"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["hp2_pos_potions"][1] * COORDS["scr_hei"]))); time.sleep(wait_time)
+                    if auto_craft_index == 9 and len(items_to_craft) > 1 and auto_mode_swap == 5:
+                        mkey.left_click_xy_natural(round(float(COORDS_PERCENT["auto_btn_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["auto_btn_pos"][1] * COORDS["scr_hei"])))
+                        time.sleep(0.2)
+                    time.sleep(1)
+
+                if settings["auto_craft_item"].get("Warp Potion", False):
+                    search_for_potion_in_cauldron("Warp")
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["craft_btn_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["craft_btn_pos"][1] * COORDS["scr_hei"])))
+                    time.sleep(wait_time)
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["hp1_pos_potions"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["hp1_pos_potions"][1] * COORDS["scr_hei"]))); time.sleep(wait_time)
+
+                    ms.scroll(0, -30); time.sleep(0.2)
+                    ms.scroll(0, -30); time.sleep(0.2)
+
+                    mkey.left_click_xy_natural((round(float(COORDS_PERCENT["hp1_pos_celestial"][0] * COORDS["scr_wid"])) - round(float(110 / 2560 * COORDS["scr_wid"]))) , round(float(COORDS_PERCENT["hp1_pos_celestial"][1] * COORDS["scr_hei"])) );time.sleep(wait_time)
+                    mkey.left_click_xy_natural((round(float(COORDS_PERCENT["hp1_pos_celestial"][0] * COORDS["scr_wid"])) - round(float(110 / 2560 * COORDS["scr_wid"]))), round(float(COORDS_PERCENT["hp1_pos_celestial"][1] * COORDS["scr_hei"])) );time.sleep(wait_time)
+                    kb.type("1000"); time.sleep(wait_time)
+
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["hp1_pos_potions"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["hp1_pos_potions"][1] * COORDS["scr_hei"]))); time.sleep(wait_time)
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["hp1_pos_celestial"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["hp1_pos_celestial"][1] * COORDS["scr_hei"]))); time.sleep(wait_time)
+
+                    ms.scroll(0, 30); time.sleep(0.2)
+                    ms.scroll(0, 30); time.sleep(0.2)
+                    if auto_craft_index == 10 and len(items_to_craft) > 1 and auto_mode_swap == 5:
+                        mkey.left_click_xy_natural(round(float(COORDS_PERCENT["auto_btn_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["auto_btn_pos"][1] * COORDS["scr_hei"])))
+                        time.sleep(0.2)
+                    time.sleep(1)
+
+                if settings["auto_craft_item"].get("Godlike Potion", False):
+                    search_for_potion_in_cauldron("Godlike")
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["craft_btn_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["craft_btn_pos"][1] * COORDS["scr_hei"])))
+                    time.sleep(wait_time)
+
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["hp1_pos_potions"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["hp1_pos_potions"][1] * COORDS["scr_hei"]))); time.sleep(wait_time)
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["hp2_pos_potions"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["hp2_pos_potions"][1] * COORDS["scr_hei"]))); time.sleep(wait_time)
+                    mkey.left_click_xy_natural(round(float((1064 / 2560) * COORDS["scr_wid"])), round(float((988 / 1440) * COORDS["scr_hei"])))
+                    time.sleep(0.2)
+                    mkey.left_click_xy_natural(round(float((954 / 2560) * COORDS["scr_wid"])), round(float((1048 / 1440) * COORDS["scr_hei"])))
+                    time.sleep(0.2)
+                    mkey.left_click_xy_natural(round(float((954 / 2560) * COORDS["scr_wid"])), round(float((1048 / 1440) * COORDS["scr_hei"])))
+                    time.sleep(0.2)
+                    kb.type("600")
+                    time.sleep(0.2)
+                    mkey.left_click_xy_natural(round(float((1064 / 2560) * COORDS["scr_wid"])), round(float((1048 / 1440) * COORDS["scr_hei"])))
+                    time.sleep(0.2)
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["potion_search_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["potion_search_pos"][1] * COORDS["scr_hei"])))
+                    time.sleep(0.2)
+                    time.sleep(1)
+
+                time.sleep(1)
+
+            except Exception as craft_e:
+                logger.write_log(f"Error during auto craft: {craft_e}")
+
+        if auto_craft_index >= len(items_to_craft):
+            auto_craft_index = 1
         else:
-            event.ignore()
+            auto_craft_index += 1
+        if auto_mode_swap == 5:
+            auto_mode_swap = 0
+        else:
+            auto_mode_swap += 1
+
+        wait_interval = 60
+        logger.write_log(f"Auto Craft: Waiting {wait_interval} seconds...")
+        if stop_event.wait(timeout=wait_interval):
+            break
+        if sniped_event.is_set(): break
+
+    logger.write_log("Auto Craft thread stopped.")
+
+def auto_br(settings: dict, stop_event: threading.Event, sniped_event: threading.Event, keyboard_lock: threading.Lock, mkey, kb):
+    logger = get_logger()
+    if stop_event.wait(timeout=5):
+        return
+    logger.write_log("Auto Biome Randomizer thread started.")
+    while not stop_event.is_set() and not sniped_event.is_set():
+        logger.write_log("Auto BR: Using Biome Randomizer...")
+        with keyboard_lock:
+            use_item("Biome Random", 1, True, mkey, kb, settings)
+
+        wait_interval = 2160 
+        logger.write_log(f"Auto BR: Waiting {wait_interval} seconds...")
+        if stop_event.wait(timeout=wait_interval):
+            break
+        if sniped_event.is_set(): break
+    logger.write_log("Auto Biome Randomizer thread stopped.")
+
+def auto_sc(settings: dict, stop_event: threading.Event, sniped_event: threading.Event, keyboard_lock: threading.Lock, mkey, kb):
+    logger = get_logger()
+    if stop_event.wait(timeout=5):
+        return
+    logger.write_log("Auto Strange Controller thread started.")
+    while not stop_event.is_set() and not sniped_event.is_set():
+        logger.write_log("Auto SC: Using Strange Controller...")
+        with keyboard_lock:
+            use_item("Strange Control", 1, True, mkey, kb, settings)
+
+        wait_interval = 1260 
+        logger.write_log(f"Auto SC: Waiting {wait_interval} seconds...")
+        if stop_event.wait(timeout=wait_interval):
+            break
+        if sniped_event.is_set(): break
+    logger.write_log("Auto Strange Controller thread stopped.")
+
+def inventory_screenshot(settings: dict, webhook, stop_event: threading.Event, sniped_event: threading.Event, keyboard_lock: threading.Lock, mkey):
+    logger = get_logger()
+    if stop_event.wait(timeout=5):
+        return
+    logger.write_log("Periodic Inventory Screenshot thread started.")
+    required_coords = ["inv_button_pos", "items_pos", "search_pos", "close_pos"]
+    if not all(coord in COORDS for coord in required_coords):
+         logger.write_log("Cannot start Inventory Screenshots: Required coordinates missing.")
+         return
+
+    while not stop_event.is_set() and not sniped_event.is_set():
+        logger.write_log("Taking inventory screenshot...")
+        screenshot_path = os.path.join(MACROPATH, "scr", "screenshot_inventory.png")
+        file_to_send = None
+        with keyboard_lock:
+            try:
+                wait_time = settings.get("global_wait_time", 0.2)
+                mkey.left_click_xy_natural(round(float(COORDS_PERCENT["inv_button_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["inv_button_pos"][1] * COORDS["scr_hei"])))
+                time.sleep(wait_time)
+                mkey.left_click_xy_natural(round(float(COORDS_PERCENT["items_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["items_pos"][1] * COORDS["scr_hei"])))
+                time.sleep(wait_time)
+                mkey.left_click_xy_natural(round(float(COORDS_PERCENT["search_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["search_pos"][1] * COORDS["scr_hei"])))
+                time.sleep(0.5) 
+                pag.screenshot(screenshot_path)
+                time.sleep(0.2)
+                mkey.left_click_xy_natural(round(float(COORDS_PERCENT["close_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["close_pos"][1] * COORDS["scr_hei"])))
+                time.sleep(wait_time)
+                mkey.left_click_xy_natural(round(float(COORDS_PERCENT["close_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["close_pos"][1] * COORDS["scr_hei"])))
+                file_to_send = create_discord_file_from_path(screenshot_path, filename="inventory.png")
+            except Exception as e:
+                logger.write_log(f"Error taking inventory screenshot: {e}")
+
+                try: mkey.left_click_xy_natural(round(float(COORDS_PERCENT["close_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["close_pos"][1] * COORDS["scr_hei"]))); time.sleep(0.2); mkey.left_click_xy_natural(round(float(COORDS_PERCENT["close_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["close_pos"][1] * COORDS["scr_hei"])))
+                except: pass
+
+        if file_to_send:
+            try:
+                emb = discord.Embed(title="Inventory Screenshot")
+                emb.set_image(url="attachment://inventory.png")
+                emb.timestamp = datetime.now()
+                webhook.send(embed=emb, file=file_to_send)
+                forward_webhook_msg(
+                     primary_webhook_url=webhook.url,
+                     secondary_urls=settings.get("SECONDARY_WEBHOOK_URLS", []),
+                     embed=emb, file=file_to_send
+                 )
+            except Exception as wh_e:
+                logger.write_log(f"Error sending inventory screenshot webhook: {wh_e}")
+        wait_interval = 1140 
+        logger.write_log(f"Inventory Screenshot: Waiting {wait_interval} seconds...")
+        if stop_event.wait(timeout=wait_interval):
+            break
+        if sniped_event.is_set(): break
+
+    logger.write_log("Periodic Inventory Screenshot thread stopped.")
+
+def storage_screenshot(settings: dict, webhook, stop_event: threading.Event, sniped_event: threading.Event, keyboard_lock: threading.Lock, mkey):
+    logger = get_logger()
+    if stop_event.wait(timeout=5):
+        return
+    logger.write_log("Periodic Aura Storage Screenshot thread started.")
+    required_coords = ["aura_button_pos", "search_pos", "close_pos"]
+    if not all(coord in COORDS for coord in required_coords):
+         logger.write_log("Cannot start Storage Screenshots: Required coordinates missing.")
+         return
+
+    while not stop_event.is_set() and not sniped_event.is_set():
+        logger.write_log("Taking aura storage screenshot...")
+        screenshot_path = os.path.join(MACROPATH, "scr", "screenshot_storage.png")
+        file_to_send = None
+        with keyboard_lock:
+            try:
+                wait_time = settings.get("global_wait_time", 0.2)
+                mkey.left_click_xy_natural(round(float(COORDS_PERCENT["aura_button_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["aura_button_pos"][1] * COORDS["scr_hei"])))
+                time.sleep(wait_time)
+                mkey.left_click_xy_natural(round(float(COORDS_PERCENT["search_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["search_pos"][1] * COORDS["scr_hei"])))
+                time.sleep(0.5)
+                pag.screenshot(screenshot_path)
+                time.sleep(0.2)
+                mkey.left_click_xy_natural(round(float(COORDS_PERCENT["close_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["close_pos"][1] * COORDS["scr_hei"])))
+                time.sleep(wait_time)
+                mkey.left_click_xy_natural(round(float(COORDS_PERCENT["close_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["close_pos"][1] * COORDS["scr_hei"])))
+                file_to_send = create_discord_file_from_path(screenshot_path, filename="storage.png")
+            except Exception as e:
+                logger.write_log(f"Error taking storage screenshot: {e}")
+                try: mkey.left_click_xy_natural(round(float(COORDS_PERCENT["close_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["close_pos"][1] * COORDS["scr_hei"]))); time.sleep(0.2); mkey.left_click_xy_natural(round(float(COORDS_PERCENT["close_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["close_pos"][1] * COORDS["scr_hei"])))
+                except: pass
+
+        if file_to_send:
+            try:
+                emb = discord.Embed(title="Aura Storage Screenshot")
+                emb.set_image(url="attachment://storage.png")
+                emb.timestamp = datetime.now()
+                webhook.send(embed=emb, file=file_to_send)
+                forward_webhook_msg(
+                     primary_webhook_url=webhook.url,
+                     secondary_urls=settings.get("SECONDARY_WEBHOOK_URLS", []),
+                     embed=emb, file=file_to_send
+                 )
+            except Exception as wh_e:
+                logger.write_log(f"Error sending storage screenshot webhook: {wh_e}")
+        wait_interval = 1260 
+        logger.write_log(f"Storage Screenshot: Waiting {wait_interval} seconds...")
+        if stop_event.wait(timeout=wait_interval):
+            break
+        if sniped_event.is_set(): break
+
+    logger.write_log("Periodic Aura Storage Screenshot thread stopped.")
+
+def disconnect_prevention(settings: dict, stop_event: threading.Event, sniped_event: threading.Event, keyboard_lock: threading.Lock, mkey, kb):
+    logger = get_logger()
+    logger.write_log("Disconnect Prevention thread started.")
+    ps_link = settings.get("private_server_link", "")
+    ps_link_valid = validate_pslink(ps_link)
+
+    if not ps_link_valid:
+        logger.write_log("Disconnect Prevention disabled: Invalid or missing private server link in settings.")
+        return
+
+    link_code = None
+    try:
+        if "privateServerLinkCode=" in ps_link:
+            link_code = ps_link.split("privateServerLinkCode=")[-1]
+
+    except Exception as e:
+        logger.write_log(f"Error extracting link code for disconnect prevention: {e}")
+
+    if not link_code:
+        logger.write_log("Disconnect Prevention disabled: Could not extract link code from private server link.")
+        return
+
+    logger.write_log("Disconnect Prevention active.")
+
+    while not stop_event.is_set() and not sniped_event.is_set():
+        disconnected = False
+        try:
+
+            if detect_client_disconnect():
+                logger.write_log("Disconnection detected via logs.")
+                disconnected = True
+
+            elif not exists_procs_by_name("Windows10Universal.exe") and not exists_procs_by_name("RobloxPlayerBeta.exe"):
+                logger.write_log("Disconnection detected via missing Roblox process.")
+                disconnected = True
+
+            if disconnected:
+                logger.write_log("Attempting to rejoin private server...")
+                rejoin_attempts = 0
+                max_rejoin_attempts = 5 
+                reconnected = False
+
+                try: os.system("taskkill /f /im RobloxPlayerBeta.exe /t > nul 2>&1")
+                except: pass
+                try: os.system("taskkill /f /im Windows10Universal.exe /t > nul 2>&1")
+                except: pass
+                time.sleep(5)
+
+                while rejoin_attempts < max_rejoin_attempts and not stop_event.is_set() and not reconnected:
+                    rejoin_attempts += 1
+                    logger.write_log(f"Rejoin attempt #{rejoin_attempts}...")
+                    join_private_server_link(link_code)
+                    time.sleep(15) 
+
+                    if exists_procs_by_name("Windows10Universal.exe"):
+                        if activate_ms_store_roblox():
+                            time.sleep(2)
+                            click_ms_store_spawn_button()
+                            time.sleep(2)
+                            toggle_fullscreen_ms_store()
+                            time.sleep(10) 
+                        else:
+                             logger.write_log("Failed to activate MS Store Roblox window during rejoin.")
+
+                    reconnect_check_start = time.time()
+                    while time.time() - reconnect_check_start < 45:
+                         if detect_client_reconnect():
+                             logger.write_log("Reconnection successful based on logs!")
+                             reconnected = True
+
+                             leave_main_menu()
+                             break
+                         if stop_event.is_set(): break
+                         time.sleep(2)
+                    if reconnected: break
+                    logger.write_log(f"Rejoin attempt #{rejoin_attempts} failed. Waiting before retry...")
+                    if not stop_event.is_set(): time.sleep(30)
+
+                if not reconnected:
+                    logger.write_log("Failed to reconnect after multiple attempts. Stopping disconnect prevention.")
+
+                    break 
+
+        except Exception as e:
+            logger.write_log(f"Error in Disconnect Prevention loop: {e}")
+
+            time.sleep(15)
+
+        wait_interval = 30 
+        if not stop_event.is_set() and not sniped_event.is_set():
+             stop_event.wait(timeout=wait_interval)
+
+    logger.write_log("Disconnect Prevention thread stopped.")
+
+def storage_full_detection(settings: dict, webhook, stop_event: threading.Event, sniped_event: threading.Event, keyboard_lock: threading.Lock, mkey):
+
+    logger = get_logger()
+    logger.write_log("Started Storage Full Detection")
+
+    if stop_event.wait(timeout=5):
+        return
+
+    while not stop_event.is_set() and not sniped_event.is_set():
+
+        with keyboard_lock:
+            time.sleep(0.1)
+
+
+def do_obby(settings: dict, webhook, stop_event: threading.Event, sniped_event: threading.Event, keyboard_lock: threading.Lock, mkey, kb, ignore_lock, ignore_next_detection):
+    logger = get_logger()
+    if stop_event.wait(timeout=5):
+        return
+    logger.write_log("Obby/Blessing thread started.")
+
+    is_autocraft = settings.get("auto_craft_mode", False)
+    has_abyssal = settings.get("has_abyssal_hunter", False)
+
+    while not stop_event.is_set() and not sniped_event.is_set():
+        with keyboard_lock:
+
+            try:
+                reset_character()
+                time.sleep(1)
+                reset_character()
+                time.sleep(1)
+                mkey.left_click_xy_natural(round(float(COORDS_PERCENT["collection_open_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["collection_open_pos"][1] * COORDS["scr_hei"])))
+                time.sleep(0.5)
+                mkey.left_click_xy_natural(round(float(COORDS_PERCENT["exit_collection_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["exit_collection_pos"][1] * COORDS["scr_hei"])))
+                time.sleep(1)
+            except Exception as e:
+                logger.write_log(f"Error during obby alignment: {e}")
+                continue
+
+            if not has_abyssal:
+                logger.write_log("Begin Phase 1 of Obby")
+                try:
+                    mkey.move_to_natural(round(float(COORDS_PERCENT["close_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["close_pos"][1] * COORDS["scr_hei"])))
+                    time.sleep(0.4)
+                    right_click_drag(500, 0)
+                    time.sleep(0.4)
+                    kb.press("w")
+                    time.sleep(10)
+                    kb.release("w")
+                    time.sleep(0.4)
+                    right_click_drag(-500, 0)
+                    time.sleep(0.4)
+                    kb.press("w")
+                    time.sleep(2)
+                    kb.release("w")
+                    time.sleep(0.4)
+                    right_click_drag(500, 0)
+                    time.sleep(0.4)
+                    kb.press("w")
+                    time.sleep(3)
+                    kb.release("w")
+                    time.sleep(0.4)
+                    kb.press("d")
+                    time.sleep(4)
+                    kb.release("d")
+                    time.sleep(0.4)
+                    kb.press("w")
+                    time.sleep(0.4)
+                    kb.release("w")
+                    time.sleep(0.4)
+                    kb.press("a")
+                    time.sleep(0.6)
+                    kb.release("a")
+                    time.sleep(0.4)
+                    kb.press("w")
+                    time.sleep(1)
+                    kb.release("w")
+                    time.sleep(1)
+                except Exception as e:
+                    logger.write_log(f"Error during obby phase 1: {e}")
+                    continue
+
+                logger.write_log("Phase 1 complete, begin phase 2.")
+
+                try:
+                    run_macro(f"{PATH_DIR}/obby1.mms")
+                    time.sleep(1)
+                except Exception as e:
+                    logger.write_log(f"Error during obby phase 2: {e}")
+                    continue
+
+                logger.write_log("Phase 2 complete, begin phase 3.")
+
+                try:
+                    right_click_drag(0, 600)
+                    time.sleep(1)
+                except Exception as e:
+                    logger.write_log(f"Error during obby phase 3: {e}")
+                    continue
+
+                logger.write_log("Phase 3 complete, begin phase 4.")
+
+                try:
+                    run_macro(f"{PATH_DIR}/obby2.mms")
+                    time.sleep(1)
+                except Exception as e:
+                    logger.write_log(f"Error during obby phase 4: {e}")
+                    continue
+            else:
+                saved_aura = None
+                while saved_aura is None:
+                    try:
+                        saved_aura = get_latest_equipped_aura().lower()
+                    except Exception as e:
+                        logger.write_log(f"Error checking current equipped aura: {e}.")
+                logger.write_log("Completing Obby with Abyssal Hunter")
+                equip_aura("Abyssal", False, mkey, kb, settings, ignore_next_detection, ignore_lock)
+                time.sleep(2)
+                logger.write_log("Begin Phase 1 of Obby")
+                try:
+                    time.sleep(1)
+                    mkey.move_to_natural(round(float(COORDS_PERCENT["close_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["close_pos"][1] * COORDS["scr_hei"])))
+                    time.sleep(0.4)
+                    right_click_drag(500, 0)
+                    time.sleep(0.4)
+                    kb.press("w")
+                    time.sleep(5)
+                    kb.release("w")
+                    time.sleep(0.4)
+                    right_click_drag(-500, 0)
+                    time.sleep(0.4)
+                    kb.press("w")
+                    time.sleep(1.2)
+                    kb.release("w")
+                    time.sleep(0.4)
+                    right_click_drag(500, 0)
+                    time.sleep(0.4)
+                    kb.press("w")
+                    time.sleep(1)
+                    kb.release("w")
+                    time.sleep(0.4)
+                    kb.press("d")
+                    time.sleep(1)
+                    kb.release("d")
+                    time.sleep(0.4)
+                    kb.press("w")
+                    time.sleep(0.2)
+                    kb.release("w")
+                    time.sleep(0.4)
+                    kb.press("a")
+                    time.sleep(0.4)
+                    kb.release("a")
+                    time.sleep(0.4)
+                    kb.press("w")
+                    time.sleep(0.5)
+                    kb.release("w")
+                    time.sleep(1)
+                except Exception as e:
+                    logger.write_log(f"Error during obby phase 1: {e}")
+                    continue
+
+                logger.write_log("Phase 1 complete, begin phase 2.")
+
+                try:
+                    right_click_drag(0, 600)
+                    time.sleep(1)
+                except Exception as e:
+                    logger.write_log(f"Error during obby phase 2: {e}")
+                    continue
+
+                logger.write_log("Phase 2 complete, begin phase 3.")
+
+                try:
+                    run_macro(f"{PATH_DIR}/obby1_abyssal.mms")
+                    time.sleep(1)
+                except Exception as e:
+                    logger.write_log(f"Error during obby phase 3: {e}")
+                    continue
+
+                logger.write_log("Phase 3 complete, begin phase 4.")
+
+                try:
+                    run_macro(f"{PATH_DIR}/obby2_abyssal.mms")
+                    time.sleep(1)
+                except Exception as e:
+                    logger.write_log(f"Error during obby phase 4: {e}")
+                    continue
+
+                logger.write_log("Phase 4 complete")
+
+                if saved_aura:
+                    equip_aura(saved_aura, False, mkey, kb, settings, ignore_next_detection, ignore_lock)
+                else:
+                    equip_aura("Abyssal", True, mkey, kb, settings, ignore_next_detection, ignore_lock)
+
+            logger.write_log("Completed obby, realigning incase of failure.")
+            try:
+                reset_character()
+                time.sleep(1)
+                reset_character()
+                time.sleep(1)
+                mkey.left_click_xy_natural(round(float(COORDS_PERCENT["collection_open_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["collection_open_pos"][1] * COORDS["scr_hei"])))
+                time.sleep(0.5)
+                mkey.left_click_xy_natural(round(float(COORDS_PERCENT["exit_collection_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["exit_collection_pos"][1] * COORDS["scr_hei"])))
+                time.sleep(1)
+            except Exception as e:
+                logger.write_log(f"Error during obby alignment: {e}")
+                continue
+
+            if settings.get("notify_obby_completion", False):
+                emb = discord.Embed(
+                    title="Completed Obby Blessing",
+                    description="Enjoy a 30% luck boost!",
+                    colour=discord.Colour.from_rgb(158, 255, 172)
+                )
+                emb.set_footer(text=f"SolsScope v{LOCALVERSION}")
+                emb.set_thumbnail(url="https://static.wikia.nocookie.net/sol-rng/images/a/a5/Basicblessingactualsize.png/revision/latest")
+                webhook.send(
+                    embed=emb
+                )
+                forward_webhook_msg(
+                    primary_webhook_url=webhook.url,
+                    secondary_urls=settings.get("SECONDARY_WEBHOOK_URLS", []),
+                    embed=emb
+                )
+            
+            if is_autocraft:
+                logger.write_log("Walking back to Stella's")
+                try:
+                    reset_character()
+                    time.sleep(1)
+                    reset_character()
+                    time.sleep(1)
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["collection_open_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["collection_open_pos"][1] * COORDS["scr_hei"])))
+                    time.sleep(0.5)
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["exit_collection_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["exit_collection_pos"][1] * COORDS["scr_hei"])))
+                    time.sleep(1)
+                except Exception as e:
+                    logger.write_log(f"Error during camera alignment: {e}")
+                    continue
+
+                logger.write_log("Begin position alignment.")
+
+                if not has_abyssal:
+                    try:
+                        mkey.move_to_natural(round(float(COORDS_PERCENT["close_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["close_pos"][1] * COORDS["scr_hei"])))
+                        time.sleep(0.4)
+                        right_click_drag(1000, 0)
+                        time.sleep(0.4)
+                        kb.press("d")
+                        time.sleep(3)
+                        kb.release("d")
+                        time.sleep(0.4)
+                        kb.press("w")
+                        time.sleep(8)
+                        kb.release("w")
+                        time.sleep(0.4)
+                        kb.press("a")
+                        time.sleep(3)
+                        kb.release("a")
+                        time.sleep(0.4)
+                        kb.press("w")
+                        time.sleep(1)
+                        kb.release("w")
+                        time.sleep(0.4)
+                        kb.press("d")
+                        time.sleep(0.75)
+                        kb.release("d")
+                        time.sleep(0.4)
+                        kb.press("w")
+                        time.sleep(1)
+                        kb.release("w")
+                    except Exception as e:
+                        logger.write_log(f"Error during position alignment: {e}")
+                        continue
+
+                else:
+                    saved_aura = None
+                    while saved_aura is None:
+                        try:
+                            saved_aura = get_latest_equipped_aura().lower()
+                        except Exception as e:
+                            logger.write_log(f"Error checking current equipped aura: {e}.")
+                    logger.write_log("Walking to Stella with Abyssal Hunter")
+                    time.sleep(2)
+                    equip_aura("Abyssal", False, mkey, kb, settings, ignore_next_detection, ignore_lock)
+                    time.sleep(2)
+                    try:
+                        mkey.move_to_natural(round(float(COORDS_PERCENT["close_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["close_pos"][1] * COORDS["scr_hei"])))
+                        time.sleep(0.4)
+                        right_click_drag(1000, 0)
+                        time.sleep(0.4)
+                        kb.press("d")
+                        time.sleep(1.8)
+                        kb.release("d")
+                        time.sleep(0.4)
+                        kb.press("w")
+                        time.sleep(6)
+                        kb.release("w")
+                        time.sleep(0.4)
+                        kb.press("a")
+                        time.sleep(1.3)
+                        kb.release("a")
+                        time.sleep(0.4)
+                        kb.press("w")
+                        time.sleep(0.5)
+                        kb.release("w")
+                        time.sleep(0.4)
+                        kb.press("d")
+                        time.sleep(0.4)
+                        kb.release("d")
+                        time.sleep(0.4)
+                        kb.press("w")
+                        time.sleep(0.5)
+                        kb.release("w")
+                    except Exception as e:
+                        logger.write_log(f"Error during position alignment: {e}")
+                        continue
+
+                logger.write_log("Finished position alignment, walking to Stella.")
+
+                time.sleep(1)
+
+                if not has_abyssal:
+                    try:
+                        right_click_drag(0, 600)
+                        time.sleep(1)
+                        run_macro(f"{PATH_DIR}/stella.mms")
+                        time.sleep(1)
+                    except Exception as e:
+                        logger.write_log(f"Error during walk to Stella's: {e}")
+                        continue
+                else:
+                    try:
+                        right_click_drag(0, 600)
+                        time.sleep(1)
+                        run_macro(f"{PATH_DIR}/stella_abyssal.mms")
+                        time.sleep(1)
+                    except Exception as e:
+                        logger.write_log(f"Error during walk to Stella's: {e}")
+                        continue
+                    if saved_aura:
+                        equip_aura(saved_aura, False, mkey, kb, settings, ignore_next_detection, ignore_lock)
+                    else:
+                        equip_aura("Abyssal", True, mkey, kb, settings, ignore_next_detection, ignore_lock)
+
+        wait_interval = 600 
+        logger.write_log(f"Obby: Waiting {wait_interval} seconds...")
+        if stop_event.wait(timeout=wait_interval):
+            break
+        if sniped_event.is_set(): break
+
+    logger.write_log("Obby/Blessing thread stopped.")
+
+def auto_questboard(settings: dict, webhook, stop_event: threading.Event, sniped_event: threading.Event, keyboard_lock: threading.Lock, mkey, kb, ms):
+    logger = get_logger()
+    if stop_event.wait(timeout=5):
+        return
+    logger.write_log("Auto Quest Board thread started.")
+
+    screenshot_path = os.path.join(MACROPATH, "scr", "screenshot_questboard.png")
+    try:
+        with open(get_questboard_path(), "r", encoding="utf-8") as f:
+            questboard_data = json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError, OSError) as e:
+        logger.write_log(f"Error loading questboard data: {e}. Auto Quest Board stopped.")
+        return
+    
+    TRACKED_QUESTS_PATH = os.path.join(MACROPATH, "quest_tracker.json")
+    
+    if not os.path.exists(TRACKED_QUESTS_PATH):
+        x = open(TRACKED_QUESTS_PATH, "w")
+        x.write("{\"quest_board\" : []}")
+        x.close()
+
+    try:
+        with open(TRACKED_QUESTS_PATH, "r", encoding="utf-8") as f:
+            tracked_quests = json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError, OSError) as e:
+        logger.write_log(f"Error loading tracked quests: {e}. Auto Quest Board stopped.")
+        return
+    
+    while not stop_event.is_set() and not sniped_event.is_set():
+        wait_interval = 3600
+        time.sleep(2)
+        with keyboard_lock:
+            reset_character()
+            time.sleep(1)
+            reset_character()
+            time.sleep(1)
+            mkey.left_click_xy_natural(round(float(COORDS_PERCENT["collection_open_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["collection_open_pos"][1] * COORDS["scr_hei"])))
+            time.sleep(0.5)
+            mkey.left_click_xy_natural(round(float(COORDS_PERCENT["exit_collection_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["exit_collection_pos"][1] * COORDS["scr_hei"])))
+            time.sleep(1)
+            run_macro(f"{PATH_DIR}/questboard.mms")
+            time.sleep(1)
+            kb.press("e")
+            time.sleep(0.2)
+            kb.release("e")
+            time.sleep(3)
+
+            previous_quest = None
+
+            detected_quests = []
+
+            mkey.left_click_xy_natural(round(float(COORDS_PERCENT["right_arrow_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["right_arrow_pos"][1] * COORDS["scr_hei"])))
+            time.sleep(1)
+
+            for i in range(5):
+                pag.screenshot(screenshot_path)            
+
+                image = cv2.imread(screenshot_path)
+                if image is None:
+                    logger.write_log("Auto Quest Board Error: Failed to read screenshot file.")
+                    continue
+                
+                x1p, y1p, x2p, y2p = COORDS_PERCENT["questboard_title_range"]
+                x1 = round(x1p * COORDS["scr_wid"])
+                y1 = round(y1p * COORDS["scr_hei"])
+                x2 = round(x2p * COORDS["scr_wid"])
+                y2 = round(y2p * COORDS["scr_hei"])
+
+                quest_title_crop = image[y1:y2, x1:x2]
+                ocr_quest_raw = pytesseract.image_to_string(quest_title_crop).strip()
+
+                ocr_quest_clean = re.sub(r"[^a-zA-Z']", "", ocr_quest_raw).lower()
+                detected_quest = fuzzy_match_qb(ocr_quest_clean, ALL_QB)
+
+                if not detected_quest:
+                    logger.write_log(f"Auto Quest Board: Could not identify quest from OCR ('{ocr_quest_raw}'). Dismissing.")
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["dismiss_quest_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["dismiss_quest_pos"][1] * COORDS["scr_hei"])))
+                else:
+                    logger.write_log(f"Auto Quest Board: Detected Quest ('{detected_quest})")
+
+                    if detected_quest in ACCEPTED_QUESTBOARD:
+
+                        quest_data = questboard_data.get(detected_quest, None)
+
+                        if not quest_data:
+                            logger.write_log(f"Auto Quest Board: Could not find data for quest ('{detected_quest}'). Skipping")
+                            mkey.left_click_xy_natural(round(float(COORDS_PERCENT["exit_questboard_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["exit_questboard_pos"][1] * COORDS["scr_hei"])))
+                        else:
+                            if settings.get("quests_to_accept", {}).get(detected_quest, False) and detected_quest not in tracked_quests.get("quest_board", []) and len(tracked_quests.get("quest_board", [])) <= 3:
+                                logger.write_log(f"Auto Quest Board: Accepted Quest ('{detected_quest}')")
+                                mkey.left_click_xy_natural(round(float(COORDS_PERCENT["accept_quest_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["accept_quest_pos"][1] * COORDS["scr_hei"])))
+                                time.sleep(0.2)
+                                tracked_quests["quest_board"].append(detected_quest)
+                                previous_quest = detected_quest
+                                with open(TRACKED_QUESTS_PATH, "w") as f:
+                                    json.dump(tracked_quests, f, indent=4)
+                                description = f"**Objective**: {quest_data.get('objective', "Failed to fetch objective.")}\n**Difficulty**: "
+                                for i in range(quest_data.get("difficulty", 1)):
+                                    description += ":star:"
+                                description += "\n**Rewards**:\n"
+                                for rew in quest_data.get("reward", []):
+                                    rew_name = rew.get("name", "Error fetching name of reward")
+                                    rew_amt = rew.get("amount", "Error fetching amount of reward to receive")
+                                    rew_type = rew.get("type", "Error fetching reward type")
+                                    rew_chance = rew.get("chance", "Error fetching reward chance")
+                                    description += f"   Name: {rew_name}\n   Amount: {rew_amt}\n   Type: {rew_type.capitalize()}\n"
+                                    if rew_chance != 1:
+                                        description += f"   Chance: {str(int(rew_chance * 100))}%\n"
+                                    description += "\n"
+                                colour = hex2rgb(QUESTBOARD_RARITY_COLOURS[quest_data.get("difficulty", 1) - 1])
+                                emb = discord.Embed(
+                                    title=f"Accepted Quest: {detected_quest}",
+                                    description=description,
+                                    colour=discord.Colour.from_rgb(*colour)
+                                )
+                                emb.set_thumbnail(url=quest_data.get("img_url", ""))
+                                emb.set_footer(text=f"SolsScope v{LOCALVERSION}")
+                                webhook.send(
+                                    embed=emb
+                                )
+                                forward_webhook_msg(
+                                    primary_webhook_url=webhook.url,
+                                    secondary_urls=settings.get("SECONDARY_WEBHOOK_URLS", []),
+                                    embed=emb
+                                )
+                                mkey.left_click_xy_natural(round(float(COORDS_PERCENT["right_arrow_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["right_arrow_pos"][1] * COORDS["scr_hei"])))
+                            elif detected_quest in tracked_quests.get("quest_board", []):
+                                if previous_quest == detected_quest:
+                                    logger.write_log("Quest already accepted and same as previous quest, therefore no more quests.")
+                                    break
+                                logger.write_log("Quest already accepted, attempting to claim.")
+                                mkey.left_click_xy_natural(round(float(COORDS_PERCENT["accept_quest_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["accept_quest_pos"][1] * COORDS["scr_hei"])))
+                                previous_quest = detected_quest
+
+                                time.sleep(2)
+
+                                pag.screenshot(screenshot_path)            
+
+                                image = cv2.imread(screenshot_path)
+                                if image is None:
+                                    logger.write_log("Auto Quest Board Error: Failed to read screenshot file.")
+                                    continue
+                                
+                                x1p, y1p, x2p, y2p = COORDS_PERCENT["questboard_title_range"]
+                                x1 = round(x1p * COORDS["scr_wid"])
+                                y1 = round(y1p * COORDS["scr_hei"])
+                                x2 = round(x2p * COORDS["scr_wid"])
+                                y2 = round(y2p * COORDS["scr_hei"])
+
+                                quest_title_crop = image[y1:y2, x1:x2]
+                                ocr_quest_raw = pytesseract.image_to_string(quest_title_crop).strip()
+
+                                ocr_quest_clean = re.sub(r"[^a-zA-Z']", "", ocr_quest_raw).lower()
+                                detected_quest = fuzzy_match_qb(ocr_quest_clean, ALL_QB)
+                                
+                                if previous_quest == detected_quest:
+                                    logger.write_log("Quest is not yet completed, moving to next quest.")
+                                    time.sleep(3)
+                                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["right_arrow_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["right_arrow_pos"][1] * COORDS["scr_hei"])))
+                                else:
+                                    logger.write_log("Quest was completed, removing from tracked quests.")
+                                    tracked_quests["quest_board"].remove(previous_quest)
+                                    with open(TRACKED_QUESTS_PATH, "w") as f:
+                                        json.dump(tracked_quests, f, indent=4)
+                                    description = f"**Objective**: {quest_data.get('objective', "Failed to fetch objective.")}\n**Difficulty**: "
+                                    for i in range(quest_data.get("difficulty", 1)):
+                                        description += ":star:"
+                                    description += "\n**Rewards**:\n"
+                                    for rew in quest_data.get("reward", []):
+                                        rew_name = rew.get("name", "Error fetching name of reward")
+                                        rew_amt = rew.get("amount", "Error fetching amount of reward to receive")
+                                        rew_type = rew.get("type", "Error fetching reward type")
+                                        rew_chance = rew.get("chance", "Error fetching reward chance")
+                                        description += f"   Name: {rew_name}\n   Amount: {rew_amt}\n   Type: {rew_type.capitalize()}\n"
+                                        if rew_chance != 1:
+                                            description += f"   Chance: {str(int(rew_chance * 100))}%\n"
+                                        description += "\n"
+                                    colour = hex2rgb(QUESTBOARD_RARITY_COLOURS[quest_data.get("difficulty", 1) - 1])
+                                    emb = discord.Embed(
+                                        title=f"Completed Quest: {previous_quest}",
+                                        description=description,
+                                        colour=discord.Colour.from_rgb(*colour)
+                                    )
+                                    emb.set_thumbnail(url=quest_data.get("img_url", ""))
+                                    emb.set_footer(text=f"SolsScope v{LOCALVERSION}")
+                                    webhook.send(
+                                        embed=emb
+                                    )
+                                    forward_webhook_msg(
+                                        primary_webhook_url=webhook.url,
+                                        secondary_urls=settings.get("SECONDARY_WEBHOOK_URLS", []),
+                                        embed=emb
+                                    )
+                            else:
+                                logger.write_log(f"Auto Quest Board: Quest ('{detected_quest}') is set to be dismissed.")
+                                mkey.left_click_xy_natural(round(float(COORDS_PERCENT["dismiss_quest_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["dismiss_quest_pos"][1] * COORDS["scr_hei"])))
+                                previous_quest = detected_quest
+                    else:
+                        logger.write_log(f"Auto Quest Board: Quest ('{detected_quest}') is not supported yet, dismissing.")
+                        mkey.left_click_xy_natural(round(float(COORDS_PERCENT["dismiss_quest_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["dismiss_quest_pos"][1] * COORDS["scr_hei"])))
+                        previous_quest = detected_quest
+                    time.sleep(3)
+
+                    print(detected_quest, "\n", previous_quest)
+
+            mkey.left_click_xy_natural(round(float(COORDS_PERCENT["exit_questboard_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["exit_questboard_pos"][1] * COORDS["scr_hei"])))
+            time.sleep(3)
+            reset_character()
+            time.sleep(1)
+            reset_character()
+            time.sleep(3)
+        logger.write_log(f"Auto Quest Board: Waiting {wait_interval} seconds...")
+        if stop_event.wait(timeout=wait_interval):
+            break
+        if sniped_event.is_set(): break
+    logger.write_log("Auto Quest Board thread stopped.")
+
+
+
+def auto_pop(biome: str, settings: dict, stop_event: threading.Event, keyboard_lock: threading.Lock, mkey, kb):
+    logger = get_logger()
+    logger.write_log(f"Auto Pop sequence initiated for biome: {biome}")
+    biome_lower = biome.lower()
+
+    if biome_lower == "glitched" and settings.get("pop_in_glitch", False):
+        pop_settings = settings.get("auto_use_items_in_glitch", {})
+    elif biome_lower == "dreamspace" and settings.get("pop_in_dreamspace", False):
+        pop_settings = settings.get("auto_use_items_in_dreamspace", {})
+    else:
+        logger.write_log(f"Auto Pop not configured or enabled for biome '{biome}'. Stopping sequence.")
+        return
+
+    if settings.get("change_cutscene_on_pop", True):
+         logger.write_log("Auto Pop: Changing cutscene settings...")
+         required_coords = ["menu_btn_pos", "settings_btn_pos", "rolling_conf_pos", "cutscene_conf_pos"]
+         if not all(c in COORDS for c in required_coords):
+             logger.write_log("Cannot change cutscene: Coordinates missing.")
+         else:
+             with keyboard_lock:
+                try:
+                    wait_time = settings.get("global_wait_time", 0.2)
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["menu_btn_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["menu_btn_pos"][1] * COORDS["scr_hei"])))
+                    time.sleep(wait_time)
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["settings_btn_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["settings_btn_pos"][1] * COORDS["scr_hei"])))
+                    time.sleep(wait_time + 0.2) 
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["rolling_conf_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["rolling_conf_pos"][1] * COORDS["scr_hei"])))
+                    time.sleep(wait_time)
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["cutscene_conf_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["cutscene_conf_pos"][1] * COORDS["scr_hei"])))
+                    time.sleep(wait_time)
+
+                    kb.press(keyboard.Key.ctrl); kb.press('a'); time.sleep(0.05); kb.release('a'); kb.release(keyboard.Key.ctrl); time.sleep(wait_time)
+                    kb.type("9999999999")
+                    time.sleep(wait_time)
+                    kb.press(keyboard.Key.enter); time.sleep(0.05); kb.release(keyboard.Key.enter)
+                    time.sleep(wait_time)
+
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["menu_btn_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["menu_btn_pos"][1] * COORDS["scr_hei"])))
+                    time.sleep(wait_time)
+                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["menu_btn_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["menu_btn_pos"][1] * COORDS["scr_hei"])))
+                    time.sleep(wait_time)
+                except Exception as cs_e:
+                    logger.write_log(f"Error changing cutscene settings: {cs_e}")
+
+                    try: mkey.left_click_xy_natural(round(float(COORDS_PERCENT["menu_btn_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["menu_btn_pos"][1] * COORDS["scr_hei"]))); time.sleep(0.2); mkey.left_click_xy_natural(round(float(COORDS_PERCENT["menu_btn_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["menu_btn_pos"][1] * COORDS["scr_hei"])))
+                    except: pass
+
+    item_keys = list(pop_settings.keys()) 
+    logger.write_log(f"Auto Pop: Items configured: {item_keys}")
+
+    for item in reversed(item_keys):
+        if stop_event.is_set():
+            logger.write_log("Auto Pop stopped by user.")
+            break
+
+        item_data = pop_settings.get(item, {})
+        if not item_data.get("use", False):
+
+            continue
+
+        amount_to_use = item_data.get("amount", 1)
+        logger.write_log(f"Auto Pop: Preparing to use {amount_to_use} of '{item}'")
+
+        stackable_items = ["Heavenly Potion", "Potion of Bound", "Oblivion Potion"]
+        if item in stackable_items:
+            remaining_amount = amount_to_use
+            while remaining_amount > 0 and not stop_event.is_set():
+                use_amount = min(remaining_amount, 10) 
+                logger.write_log(f" > Using {use_amount} of {item} (Remaining: {remaining_amount - use_amount})")
+                with keyboard_lock:
+                    use_item(item, use_amount, True, mkey, kb, settings)
+                remaining_amount -= use_amount
+                time.sleep(1.5) 
+
+                current_biome_check = get_latest_hovertext()
+                if current_biome_check is None or current_biome_check.lower() != biome_lower:
+                     logger.write_log("Auto Pop: Biome ended during item use. Stopping sequence.")
+                     return
+        else:
+             with keyboard_lock:
+                use_item(item, amount_to_use, True, mkey, kb, settings)
+             time.sleep(1.0) 
+
+             current_biome_check = get_latest_hovertext()
+             if current_biome_check is None or current_biome_check.lower() != biome_lower:
+                  logger.write_log("Auto Pop: Biome ended after item use. Stopping sequence.")
+                  return
+
+    logger.write_log("Auto Pop sequence finished.")
+

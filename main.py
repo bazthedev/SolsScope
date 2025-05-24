@@ -1,7 +1,7 @@
 """
 SolsScope/Baz's Macro
 Created by Baz and Cresqnt
-v1.2.6
+v1.2.7
 Support server: https://discord.gg/8khGXqG7nA
 """
 
@@ -13,11 +13,13 @@ import json
 import tkinter as tk
 from tkinter import messagebox
 
-REQUIRED_LIBS = ["constants.py", "discord_utils.py", "gui.py", "macro_logic.py", "roblox_utils.py", "settings_manager.py", "utils.py"]
-MAIN_VER = "1.2.6"
+REQUIRED_LIBS = ["constants.py", "discord_utils.py", "gui.py", "macro_logic.py", "roblox_utils.py", "settings_manager.py", "utils.py", "mmint.py"]
+REQUIRED_PATHS = ["questboard.mms", "stella.mms", "obby1.mms", "obby2.mms", "obby1_abyssal.mms", "obby2_abyssal.mms", "stella_abyssal.mms"]
+MAIN_VER = "1.2.7"
 PRERELEASE = False
 
 WORK_DIR = os.path.expandvars(r"%localappdata%\SolsScope")
+PATH_DIR = os.path.expandvars(r"%localappdata%\SolsScope\path")
 LIB_DIR = os.path.expandvars(r"%localappdata%\SolsScope\lib")
 LEGACY_DIR = os.path.expandvars(r"%localappdata%\Baz's Macro")
 
@@ -27,11 +29,16 @@ if not os.path.exists(WORK_DIR):
 if not os.path.exists(LIB_DIR):
     os.mkdir(LIB_DIR)
 
+if not os.path.exists(PATH_DIR):
+    os.mkdir(PATH_DIR)
+
 if not PRERELEASE:
     LIB_DOWNLOAD_URL = "https://raw.githubusercontent.com/bazthedev/SolsScope/main/lib/"
 else:
     LIB_DOWNLOAD_URL = "https://raw.githubusercontent.com/bazthedev/SolsScope/Preview/lib/"
     print("Pre-Release Version! Thank you for being a tester!")
+
+PATH_DOWNLOAD_URL = "https://raw.githubusercontent.com/bazthedev/SolsScope/refs/heads/main/path/"
 
 for file in REQUIRED_LIBS:
     if file not in os.listdir(LIB_DIR) or PRERELEASE:
@@ -43,6 +50,17 @@ for file in REQUIRED_LIBS:
             f.close()
         print(f"{file} was downloaded and installed.")
 print("All required libraries were downloaded or already installed, proceeding...")
+
+for file in REQUIRED_PATHS:
+    if file not in os.listdir(PATH_DIR) or PRERELEASE:
+        print(f"{file} was not found, but is required!\nDownloading and installing it now...")
+        _download = requests.get(PATH_DOWNLOAD_URL + file, timeout=5)
+        _download.raise_for_status()
+        with open(f"{PATH_DIR}\\{file}", "wb") as f:
+            f.write(_download.content)
+            f.close()
+        print(f"{file} was downloaded and installed.")
+print("All required paths were downloaded, proceeding...")
 
 if not os.path.isfile(f"{WORK_DIR}\\settings.json") and os.path.isfile(f"{LEGACY_DIR}\\settings.json"):
     os.system(f"xcopy {LEGACY_DIR}\\settings.json {WORK_DIR}")
@@ -66,7 +84,40 @@ try:
                     f.close()
                 print(f"{file} was downloaded and installed.")
             print("All required libraries were updated, proceeding...")
+            for file in REQUIRED_PATHS:
+                print(f"{file} is being downloaded...")
+                _download = requests.get(PATH_DOWNLOAD_URL + file, timeout=5)
+                _download.raise_for_status()
+                with open(f"{PATH_DIR}\\{file}", "wb") as f:
+                    f.write(_download.content)
+                    f.close()
+                print(f"{file} was downloaded.")
+            print("All required paths were downloaded, proceeding...")
             _tempsettings["__version__"] = MAIN_VER
+            with open(f"{WORK_DIR}\\settings.json", "w") as f:
+                json.dump(_tempsettings, f, indent=4)
+            messagebox.showinfo("SolsScope", "If you paid for this software, then you have been scammed and should demand a refund. The only official download page for this software is https://github.com/bazthedev/SolsScope")
+        elif _tempsettings.get("redownload_libs_on_run", False) or PRERELEASE:
+            print("Manual redownload/prerelease initiated download.")
+            for file in REQUIRED_LIBS:
+                print(f"{file} is being downloaded...")
+                _download = requests.get(LIB_DOWNLOAD_URL + file, timeout=5)
+                _download.raise_for_status()
+                print("Received response.")
+                with open(f"{LIB_DIR}\\{file}", "wb") as f:
+                    f.write(_download.content)
+                    f.close()
+                print(f"{file} was downloaded and installed.")
+            for file in REQUIRED_PATHS:
+                print(f"{file} is being downloaded...")
+                _download = requests.get(PATH_DOWNLOAD_URL + file, timeout=5)
+                _download.raise_for_status()
+                with open(f"{PATH_DIR}\\{file}", "wb") as f:
+                    f.write(_download.content)
+                    f.close()
+                print(f"{file} was downloaded.")
+            print("All required paths were downloaded, proceeding...")
+            _tempsettings["redownload_libs_on_run"] = False
             with open(f"{WORK_DIR}\\settings.json", "w") as f:
                 json.dump(_tempsettings, f, indent=4)
         else:
@@ -119,7 +170,7 @@ try:
     from settings_manager import (
         migrate_settings_from_legacy_location, load_settings, update_settings,
         get_auras, get_biomes, get_settings_path, get_auras_path, get_biomes_path,
-        get_merchant, get_merchant_path,
+        get_merchant, get_merchant_path, get_questboard_path, get_questboard,
         validate_settings 
     )
     from roblox_utils import set_active_log_directory 
@@ -201,6 +252,8 @@ def run_initial_setup(logger):
         except Exception as e:
             logger.write_log(f"Unexpected error downloading/saving icon: {e}") 
 
+    print("Downloading data files")
+
     if not settings.get("skip_aura_download", False):
         if not get_auras():
             logger.write_log("Failed to download auras data.")
@@ -236,12 +289,28 @@ def run_initial_setup(logger):
     else:
         logger.write_log("Skipping merchant download based on settings.")
 
+    if not settings.get("skip_questboard_download", False):
+        if not get_questboard():
+            logger.write_log("Failed to download quest board data.")
+
+    elif not os.path.exists(get_questboard_path()):
+        logger.write_log("Quest board file missing.")
+        if not get_questboard():
+            logger.write_log("Failed to download quest board data.")
+
+    else:
+        logger.write_log("Skipping quest board download based on settings.")
+
+    print("Done")
+
     if not os.path.exists(get_auras_path()):
         messagebox.showwarning("Data Missing", f"Auras data file missing and could not be downloaded:\n{get_auras_path()}\n\nAura-related features may not work correctly.")
     if not os.path.exists(get_biomes_path()):
         messagebox.showwarning("Data Missing", f"Biomes data file missing and could not be downloaded:\n{get_biomes_path()}\n\nBiome-related features may not work correctly.")
     if not os.path.exists(get_merchant_path()):
         messagebox.showwarning("Data Missing", f"Merchant data file missing and could not be downloaded:\n{get_merchant_path()}\n\nMerchant-related features may not work correctly.")
+    if not os.path.exists(get_questboard_path()):
+        messagebox.showwarning("Data Missing", f"Quest board data file missing and could not be downloaded:\n{get_questboard_path()}\n\nQuest board related features may not work correctly.")
 
     if settings.get("check_update", True):
         logger.write_log("Checking for updates...")
@@ -254,7 +323,7 @@ def run_initial_setup(logger):
             if not latest_version_str:
                 logger.write_log("Could not determine latest version from GitHub API response.")
             else:
-                if latest_version_str.startswith('v'): 
+                if latest_version_str.startswith('v'):
                     latest_version_str = latest_version_str[1:]
 
                 if parse_version(latest_version_str) > parse_version(LOCALVERSION):
@@ -341,9 +410,11 @@ def run_initial_setup(logger):
 
                 COORDS.update(calculated_coords)
 
-                base_w, base_h = 2560, 1440 
+                base_w, base_h = 2560, 1440
                 COORDS['scale_w'] = primary_monitor.width / base_w
                 COORDS['scale_h'] = primary_monitor.height / base_h
+                COORDS['scr_wid'] = primary_monitor.width
+                COORDS['scr_hei'] = primary_monitor.height
                 logger.write_log(f"Screen coordinates calculated for {primary_monitor.width}x{primary_monitor.height} (Scale W:{COORDS['scale_w']:.2f}, H:{COORDS['scale_h']:.2f})")
             else:
                 logger.write_log("Coordinate calculation failed. Using default coordinates.")
@@ -352,6 +423,8 @@ def run_initial_setup(logger):
 
                 if 'scale_w' not in COORDS: COORDS['scale_w'] = 1.0
                 if 'scale_h' not in COORDS: COORDS['scale_h'] = 1.0
+                if 'scr_wid' not in COORDS: COORDS['scr_wid'] = 1920
+                if 'scr_hei' not in COORDS: COORDS['scr_hei'] = 1080
         else:
             logger.write_log("No monitors detected. Cannot calculate coordinates. Exiting.")
             messagebox.showerror("Monitor Error", "Could not detect any monitors. Cannot calculate coordinates.")

@@ -184,7 +184,6 @@ class MainWindow(QMainWindow):
             "Auras": AURAS_KEYS,
             "Biomes": BIOMES_KEYS,
             "Merchant": MERCHANT_KEYS,
-            "Quest" : QUEST_KEYS,
             "Path": PATH_KEYS,
             "Auto Craft": AUTOCRAFT_KEYS,
             "Sniper": SNIPER_KEYS,
@@ -740,7 +739,7 @@ class MainWindow(QMainWindow):
 
         tab_info = {
             "General": GENERAL_KEYS, "Auras": AURAS_KEYS, "Biomes": BIOMES_KEYS,
-            "Merchant": MERCHANT_KEYS, "Quest" : QUEST_KEYS, "Path": PATH_KEYS, "Auto Craft": AUTOCRAFT_KEYS,
+            "Merchant": MERCHANT_KEYS, "Path": PATH_KEYS, "Auto Craft": AUTOCRAFT_KEYS,
             "Sniper": SNIPER_KEYS, "Other": OTHER_KEYS
         }
 
@@ -973,11 +972,11 @@ class MainWindow(QMainWindow):
                 "Keep Alive": (keep_alive, [self.settings, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey]) if not self.settings.get("disable_autokick_prevention") else None,
                 "Disconnect Prevention": (disconnect_prevention, [self.settings, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller]) if self.settings.get("disconnect_prevention") else None,
                 #"Merchant Detection": (merchant_detection, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.ignore_lock, self.ignore_next_detection]) if (self.settings.get("merchant_detection") or self.settings.get("auto_sell_to_jester")) and MERCHANT_DETECTION_POSSIBLE else None,
-                "Auto Biome Randomizer": (auto_br, [self.settings, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller]) if self.settings.get("auto_biome_randomizer") else None,
                 "Auto Strange Controller": (auto_sc, [self.settings, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller]) if self.settings.get("auto_strange_controller") else None,
+                "Auto Biome Randomizer": (auto_br, [self.settings, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller]) if self.settings.get("auto_biome_randomizer") else None,
                 "Inventory Screenshots": (inventory_screenshot, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey]) if self.settings.get("periodic_screenshots", {}).get("inventory") else None,
                 "Storage Screenshots": (storage_screenshot, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey]) if self.settings.get("periodic_screenshots", {}).get("storage") else None,
-                "Obby": (do_obby, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.ignore_lock, self.ignore_next_detection]) if self.settings.get("do_obby") and not self.settings.get("do_no_walk_to_stella", False) else None,
+                "Obby": (do_obby, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.ignore_lock, self.ignore_next_detection]) if self.settings.get("do_obby") and not self.settings.get("do_not_walk_to_stella", False) else None,
                 #"Auto Quest Board": (auto_questboard, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.mouse_controller]) if self.settings.get("enable_auto_quest_board") else None,
             }
         else: 
@@ -988,8 +987,8 @@ class MainWindow(QMainWindow):
                 "Keep Alive": (keep_alive, [self.settings, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey]) if not self.settings.get("disable_autokick_prevention") else None,
                 "Disconnect Prevention": (disconnect_prevention, [self.settings, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller]) if self.settings.get("disconnect_prevention") else None,
                 "Merchant Detection": (merchant_detection, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.ignore_lock, self.ignore_next_detection]) if (self.settings.get("merchant_detection") or self.settings.get("auto_sell_to_jester")) and MERCHANT_DETECTION_POSSIBLE else None,
-                "Auto Biome Randomizer": (auto_br, [self.settings, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller]) if self.settings.get("auto_biome_randomizer") else None,
                 "Auto Strange Controller": (auto_sc, [self.settings, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller]) if self.settings.get("auto_strange_controller") else None,
+                "Auto Biome Randomizer": (auto_br, [self.settings, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller]) if self.settings.get("auto_biome_randomizer") else None,
                 "Inventory Screenshots": (inventory_screenshot, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey]) if self.settings.get("periodic_screenshots", {}).get("inventory") else None,
                 "Storage Screenshots": (storage_screenshot, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey]) if self.settings.get("periodic_screenshots", {}).get("storage") else None,
                 "Obby": (do_obby, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.ignore_lock, self.ignore_next_detection]) if self.settings.get("do_obby") else None,

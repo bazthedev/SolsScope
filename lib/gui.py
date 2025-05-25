@@ -184,7 +184,6 @@ class MainWindow(QMainWindow):
             "Auras": AURAS_KEYS,
             "Biomes": BIOMES_KEYS,
             "Merchant": MERCHANT_KEYS,
-            "Quest" : QUEST_KEYS,
             "Path": PATH_KEYS,
             "Auto Craft": AUTOCRAFT_KEYS,
             "Sniper": SNIPER_KEYS,
@@ -740,7 +739,7 @@ class MainWindow(QMainWindow):
 
         tab_info = {
             "General": GENERAL_KEYS, "Auras": AURAS_KEYS, "Biomes": BIOMES_KEYS,
-            "Merchant": MERCHANT_KEYS, "Quest" : QUEST_KEYS, "Path": PATH_KEYS, "Auto Craft": AUTOCRAFT_KEYS,
+            "Merchant": MERCHANT_KEYS, "Path": PATH_KEYS, "Auto Craft": AUTOCRAFT_KEYS,
             "Sniper": SNIPER_KEYS, "Other": OTHER_KEYS
         }
 

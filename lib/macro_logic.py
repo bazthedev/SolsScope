@@ -813,127 +813,6 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
 
                     mkey.left_click_xy_natural(round(float(COORDS_PERCENT["close_merchant_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["close_merchant_pos"][1] * COORDS["scr_hei"])))
                     time.sleep(1)
-            
-                if is_autocraft:
-                    logger.write_log("Walking back to Stella's")
-                    try:
-                        reset_character()
-                        time.sleep(1)
-                        reset_character()
-                        time.sleep(1)
-                        mkey.left_click_xy_natural(round(float(COORDS_PERCENT["collection_open_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["collection_open_pos"][1] * COORDS["scr_hei"])))
-                        time.sleep(0.5)
-                        mkey.left_click_xy_natural(round(float(COORDS_PERCENT["exit_collection_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["exit_collection_pos"][1] * COORDS["scr_hei"])))
-                        time.sleep(1)
-                    except Exception as e:
-                        logger.write_log(f"Error during camera alignment: {e}")
-                        continue
-
-                    logger.write_log("Begin position alignment.")
-
-                    if not has_abyssal:
-                        try:
-                            mkey.move_to_natural(round(float(COORDS_PERCENT["close_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["close_pos"][1] * COORDS["scr_hei"])))
-                            time.sleep(0.4)
-                            right_click_drag(1000, 0)
-                            time.sleep(0.4)
-                            kb.press("d")
-                            time.sleep(3)
-                            kb.release("d")
-                            time.sleep(0.4)
-                            kb.press("w")
-                            time.sleep(8)
-                            kb.release("w")
-                            time.sleep(0.4)
-                            kb.press("a")
-                            time.sleep(3)
-                            kb.release("a")
-                            time.sleep(0.4)
-                            kb.press("w")
-                            time.sleep(1)
-                            kb.release("w")
-                            time.sleep(0.4)
-                            kb.press("d")
-                            time.sleep(0.75)
-                            kb.release("d")
-                            time.sleep(0.4)
-                            kb.press("w")
-                            time.sleep(1)
-                            kb.release("w")
-                        except Exception as e:
-                            logger.write_log(f"Error during position alignment: {e}")
-                            continue
-
-                    else:
-                        saved_aura = None
-                        while saved_aura is None:
-                            try:
-                                saved_aura = get_latest_equipped_aura().lower()
-                            except Exception as e:
-                                logger.write_log(f"Error checking current equipped aura: {e}.")
-                        logger.write_log("Walking to Stella with Abyssal Hunter")
-                        time.sleep(2)
-                        equip_aura("Abyssal", False, mkey, kb, settings, ignore_next_detection, ignore_lock)
-                        time.sleep(2)
-                        try:
-                            mkey.move_to_natural(round(float(COORDS_PERCENT["close_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["close_pos"][1] * COORDS["scr_hei"])))
-                            time.sleep(0.4)
-                            right_click_drag(1000, 0)
-                            time.sleep(0.4)
-                            kb.press("d")
-                            time.sleep(1.8)
-                            kb.release("d")
-                            time.sleep(0.4)
-                            kb.press("w")
-                            time.sleep(6)
-                            kb.release("w")
-                            time.sleep(0.4)
-                            kb.press("a")
-                            time.sleep(1.3)
-                            kb.release("a")
-                            time.sleep(0.4)
-                            kb.press("w")
-                            time.sleep(0.5)
-                            kb.release("w")
-                            time.sleep(0.4)
-                            kb.press("d")
-                            time.sleep(0.4)
-                            kb.release("d")
-                            time.sleep(0.4)
-                            kb.press("w")
-                            time.sleep(0.5)
-                            kb.release("w")
-                        except Exception as e:
-                            logger.write_log(f"Error during position alignment: {e}")
-                            continue
-
-                    logger.write_log("Finished position alignment, walking to Stella.")
-
-                    time.sleep(1)
-
-                    if not has_abyssal:
-                        try:
-                            right_click_drag(0, 600)
-                            time.sleep(1)
-                            run_macro(f"{PATH_DIR}/stella.mms")
-                            time.sleep(1)
-                        except Exception as e:
-                            logger.write_log(f"Error during walk to Stella's: {e}")
-                            continue
-                    else:
-                        try:
-                            right_click_drag(0, 600)
-                            time.sleep(1)
-                            run_macro(f"{PATH_DIR}/stella_abyssal.mms")
-                            time.sleep(1)
-                        except Exception as e:
-                            logger.write_log(f"Error during walk to Stella's: {e}")
-                            continue
-                        if saved_aura:
-                            equip_aura(saved_aura, False, mkey, kb, settings, ignore_next_detection, ignore_lock)
-                        else:
-                            equip_aura("Abyssal", True, mkey, kb, settings, ignore_next_detection, ignore_lock)
-                        
 
                 if stop_event.wait(timeout=cooldown_interval):
                     break
@@ -1003,7 +882,7 @@ def auto_craft(settings: dict, stop_event: threading.Event, sniped_event: thread
     if stop_event.wait(timeout=10):
         return
     
-    if not settings.get("do_no_walk_to_stella", False):
+    if not settings.get("do_not_walk_to_stella", False):
         logger.write_log("Auto Craft: Walking To Stella's")
         with keyboard_lock:
             logger.write_log("Walking back to Stella's")

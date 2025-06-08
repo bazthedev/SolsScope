@@ -27,6 +27,9 @@ _keyboard_controller = keyboard.Controller()
 _mouse_controller = mouse.Controller()
 _mkey_controller = mk.MouseKey()
 
+# Global variable to track last permission error time to reduce spam
+_last_permission_error_time = {}
+
 def set_active_log_directory(use_ms_store_if_detected=False, force_player=False):
     """Determines and sets the active Roblox log directory based on running processes or settings."""
     global _active_log_dir
@@ -90,7 +93,11 @@ def _get_latest_log_content(purpose="generic"):
         return content
 
     except PermissionError:
-        logger.write_log(f"Permission error accessing log file for {purpose}. Check if Roblox is running with admin rights?")
+        # Throttle permission error logging to reduce spam
+        current_time = time.time()
+        if purpose not in _last_permission_error_time or current_time - _last_permission_error_time[purpose] > 30:
+            logger.write_log(f"Permission error accessing log file for {purpose}. Check if Roblox is running with admin rights?")
+            _last_permission_error_time[purpose] = current_time
     except FileNotFoundError:
          logger.write_log(f"Latest log file disappeared before copying for {purpose}.")
     except OSError as e:

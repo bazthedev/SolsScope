@@ -133,8 +133,7 @@ import importlib
 import screeninfo as si 
 import mousekey as mk
 from PyQt6.QtWidgets import QApplication, QMessageBox
-from gui import MainWindow
-from gui import PyQtLogger
+from modern_gui import ModernMainWindow, PyQtLogger
 
 CORE_MODULES = [
     'discord', 'requests', 'pynput', 'mousekey', 'screeninfo',
@@ -470,12 +469,18 @@ if __name__ == '__main__':
 
     try:
         app = QApplication(sys.argv)
-        main_window = MainWindow() 
 
-        failsafe = None 
+        # Set application properties
+        app.setApplicationName("SolsScope")
+        app.setApplicationVersion(LOCALVERSION)
+        app.setOrganizationName("SolsScope")
+
+        main_window = ModernMainWindow()
+
+        failsafe = None
 
         main_window.show()
-        logger.write_log("Starting PyQt event loop...")
+        logger.write_log("Starting modern PyQt event loop...")
         exit_code = app.exec()
 
         logger.write_log("--- SolsScope Exiting --- ")

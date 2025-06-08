@@ -286,16 +286,23 @@ def _validate_auto_pop_structure(pop_settings):
 
 def _validate_auto_craft_structure(craft_settings):
     logger = get_logger()
+
+    # Handle case where craft_settings is not a dictionary
+    if not isinstance(craft_settings, dict):
+        logger.write_log(f"Auto Craft Validation: craft_settings is not a dictionary (type: {type(craft_settings)}). Resetting to default structure.")
+        validated_craft = DEFAULTSETTINGS["auto_craft_item"].copy()
+        return validated_craft, True
+
     validated_craft = craft_settings.copy()
     needs_update = False
     for potion in ACCEPTEDPOTIONS:
         if potion not in validated_craft:
-            validated_craft[potion] = DEFAULTSETTINGS["auto_craft_item"].get(potion, False) 
+            validated_craft[potion] = DEFAULTSETTINGS["auto_craft_item"].get(potion, False)
             logger.write_log(f"Auto Craft Validation: Added missing potion '{potion}'.")
             needs_update = True
         elif not isinstance(validated_craft[potion], bool):
              logger.write_log(f"Auto Craft Validation: Correcting type for potion '{potion}'.")
-             validated_craft[potion] = DEFAULTSETTINGS["auto_craft_item"].get(potion, False) 
+             validated_craft[potion] = DEFAULTSETTINGS["auto_craft_item"].get(potion, False)
              needs_update = True
 
     keys_to_remove = [key for key in validated_craft if key not in ACCEPTEDPOTIONS]

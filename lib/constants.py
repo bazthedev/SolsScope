@@ -202,7 +202,7 @@ STARTUP_MSGS = [
 ]
 
 ACCEPTEDPOTIONS = [
-    "Jewelry Potion", "Zombie Potion", "Rage Potion", "Diver Potion", "Potion of Bound", "Heavenly Potion", "Godly Potion (Zeus)",
+    "Potion of Bound", "Heavenly Potion", "Godly Potion (Zeus)",
     "Godly Potion (Poseidon)", "Godly Potion (Hades)", "Warp Potion", "Godlike Potion"
 ]
 

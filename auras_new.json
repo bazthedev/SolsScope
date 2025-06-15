@@ -53,6 +53,12 @@
         "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/9/9a/Powered.gif/revision/latest",
         "native_biome" : ""
     },
+    "watt" : {
+        "emb_colour" : "#3a5098",
+        "rarity" : "32768",
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/c/ca/WattCollection.gif/revision/latest",
+        "native_biome" : ""
+    },
     "aquatic" : {
         "emb_colour" : "#1881f5",
         "rarity" : "40000",
@@ -189,6 +195,12 @@
         "emb_colour": "#9b81be",
         "rarity": "7000000",
         "img_url": "https://static.wikia.nocookie.net/sol-rng/images/c/c4/CelestialDivineCollection.gif/revision/latest",
+        "native_biome": ""
+    },
+    "warlock": {
+        "emb_colour": "#d73a81",
+        "rarity": "666000",
+        "img_url": "https://static.wikia.nocookie.net/sol-rng/images/9/9c/WarlockCollection.gif/revision/latest",
         "native_biome": ""
     },
     "kyawthuite": {
@@ -429,6 +441,12 @@
         "emb_colour": "#9dbfff",
         "rarity": "45000000",
         "img_url": "https://static.wikia.nocookie.net/sol-rng/images/0/0b/Overseer-collection.gif/revision/latest",
+        "native_biome": ""
+    },
+    "runic": {
+        "emb_colour": "#169825",
+        "rarity": "50000000",
+        "img_url": "https://static.wikia.nocookie.net/sol-rng/images/4/47/Placeholder.png/revision/latest",
         "native_biome": ""
     },
     "matrix": {

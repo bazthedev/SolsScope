@@ -101,7 +101,7 @@ DEFAULTSETTINGS = {
     "biomes": { 
         "snowy": False, "windy": False, "rainy": False, "sand storm": False,
         "hell": False, "starfall": False, "corruption": False, "null": False,
-        "glitched": True, "dreamspace": True
+        "glitched": True, "dreamspace": True, "blazing sun" : False
     },
     "auto_purchase_items_mari": {
         "Lucky Potion": {"Purchase" : False, "amount" : 25},

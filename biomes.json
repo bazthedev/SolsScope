@@ -59,4 +59,11 @@
         "rare" : true,
         "img_url" : "https://raw.githubusercontent.com/bazthedev/SolsScope/refs/heads/main/img/biome/GLITCHED.png"
     }
+    "blazing sun" : {
+        "colour" : "#000000",
+        "multiplier" : 2,
+        "rare" : false,
+        "event" : true,
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/4/47/Placeholder.png/revision/latest"
+    }
 }

@@ -58,7 +58,7 @@
         "multiplier" : 1,
         "rare" : true,
         "img_url" : "https://raw.githubusercontent.com/bazthedev/SolsScope/refs/heads/main/img/biome/GLITCHED.png"
-    }
+    },
     "blazing sun" : {
         "colour" : "#fc9003",
         "multiplier" : 2,

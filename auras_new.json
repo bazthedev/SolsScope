@@ -429,7 +429,7 @@
         "emb_colour": "#d69044",
         "rarity": "24000000",
         "img_url": "https://static.wikia.nocookie.net/sol-rng/images/4/43/Aviator_Collection.gif/revision/latest",
-        "native_biome": ""
+        "native_biome": "Windy"
     },
     "ethereal": {
         "emb_colour": "#cfbeff",
@@ -446,7 +446,7 @@
     "runic": {
         "emb_colour": "#169825",
         "rarity": "50000000",
-        "img_url": "https://static.wikia.nocookie.net/sol-rng/images/4/47/Placeholder.png/revision/latest",
+        "img_url": "https://static.wikia.nocookie.net/sol-rng/images/e/ed/RunicColl.gif/revision/latest",
         "native_biome": ""
     },
     "matrix": {
@@ -465,6 +465,18 @@
         "emb_colour": "#444444",
         "rarity": "601020102",
         "img_url": "https://static.wikia.nocookie.net/sol-rng/images/a/a0/Matrix_but_real.gif/revision/latest",
+        "native_biome": ""
+    },
+    "sentinel": {
+        "emb_colour": "#768ff2",
+        "rarity": "60000000",
+        "img_url": "https://static.wikia.nocookie.net/sol-rng/images/9/96/SentinelCollection.gif/revision/latest",
+        "native_biome": ""
+    },
+    "carriage": {
+        "emb_colour": "#d2b482",
+        "rarity": "80000000",
+        "img_url": "https://static.wikia.nocookie.net/sol-rng/images/7/7d/Collection_Carriage.gif/revision/latest",
         "native_biome": ""
     },
     "overture": {
@@ -676,5 +688,59 @@
         "rarity" : "8500000",
         "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/9/94/Harnessed_collec.gif/revision/latest/",
         "native_biome" : ""
+    },
+    "raven" : {
+        "emb_colour" : "#424244",
+        "rarity" : "500000",
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/5/5a/RavenCollection.gif/revision/latest",
+        "native_biome" : ""
+    },
+    "anima" : {
+        "emb_colour" : "#fffdfe",
+        "rarity" : "5730000",
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/f/f4/AnimaCollection.gif/revision/latest",
+        "native_biome" : ""
+    },
+    "juxtaposition" : {
+        "emb_colour" : "#515654",
+        "rarity" : "40440400",
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/1/1e/JuxtapColl.gif/revision/latest",
+        "native_biome" : ""
+    },
+    "unknown" : {
+        "emb_colour" : "#1a1f29",
+        "rarity" : "444444444",
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/b/b6/Unknownincollection.gif/revision/latest",
+        "native_biome" : ""
+    },
+    "elude" : {
+        "emb_colour" : "#585a5c",
+        "rarity" : "555555555",
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/1/11/EludeCollection.gif/revision/latest",
+        "native_biome" : ""
+    },
+    "prologue" : {
+        "emb_colour" : "#0f1112",
+        "rarity" : "666616111",
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/d/d6/PrologueCollection.gif/revision/latest",
+        "native_biome" : ""
+    },
+    "dreamscape" : {
+        "emb_colour" : "#dadcde",
+        "rarity" : "850000000",
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/1/1a/DreamscapeInCollection.gif/revision/latest",
+        "native_biome" : ""
+    },
+    "manta" : {
+        "emb_colour" : "#0e2f8d",
+        "rarity" : "300000000",
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/3/31/Manta_In-Collection.gif/revision/latest",
+        "native_biome" : "Blazing sun"
+    },
+    "aegis: watergun" : {
+        "emb_colour" : "#39c7fc",
+        "rarity" : "825000000",
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/a/ac/Aegis_Watergun_in_collection.gif/revision/latest",
+        "native_biome" : "Blazing sun"
     }
 }

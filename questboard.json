@@ -155,31 +155,19 @@
         ],
         "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/4/47/Placeholder.png/revision/latest"
     },
-    "Delivery III" : {
-        "quest_title" : "Delivery III",
-        "difficulty" : 3,
-        "objective" : "Give Strange Potion I to Mari",
+    "Breakthrough" : {
+        "quest_title" : "Breakthrough",
+        "difficulty" : 2,
+        "objective" : "Roll a biome aura from a different biome with its breakthrough rarity above a certain threshold",
         "objective_amount" : 1,
         "reward" : [
             {
-                "name" : "Fortune Spoid I",
-                "type" : "item",
-                "amount" : 1,
-                "chance" : 1
-            },
-            {
-                "name" : "Fortune Spoid II",
-                "type" : "item",
-                "amount" : 1,
-                "chance" : 1
-            },
-            {
-                "name" : "Fortune Spoid III",
+                "name" : "Random Rune Chest",
                 "type" : "item",
                 "amount" : 1,
                 "chance" : 1
             }
         ],
-        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/3/37/MARI_HIGH_QUALITYY.png/revision/latest"
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/4/47/Placeholder.png/revision/latest"
     }
 }

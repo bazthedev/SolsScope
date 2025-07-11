@@ -138,7 +138,7 @@
                 "chance" : 1
             }
         ],
-        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/4/47/Placeholder.png/revision/latest"
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/e/e8/Overture_Collection.gif/revision/latest"
     },
     "Meditation II" : {
         "quest_title" : "Meditation II",
@@ -153,12 +153,12 @@
                 "chance" : 1
             }
         ],
-        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/4/47/Placeholder.png/revision/latest"
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/6/61/Overture_History_Eon1_Collection.gif/revision/latest"
     },
-    "Breakthrough" : {
-        "quest_title" : "Breakthrough",
-        "difficulty" : 2,
-        "objective" : "Roll a biome aura from a different biome with its breakthrough rarity above a certain threshold",
+    "Windy Breakthrough" : {
+        "quest_title" : "Windy Breakthrough",
+        "difficulty" : 3,
+        "objective" : "Roll a biome aura from a different biomes with its breakthrough rarity rarer than 1 in 1,000 in Windy",
         "objective_amount" : 1,
         "reward" : [
             {
@@ -168,6 +168,111 @@
                 "chance" : 1
             }
         ],
-        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/4/47/Placeholder.png/revision/latest"
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/1/19/Windy_img%28fixed%29.png/revision/latest"
+    },
+    "Snowy Breakthrough" : {
+        "quest_title" : "Snowy Breakthrough",
+        "difficulty" : 3,
+        "objective" : "Roll a biome aura from a different biomes with its breakthrough rarity rarer than 1 in 1,000 in Snowy",
+        "objective_amount" : 1,
+        "reward" : [
+            {
+                "name" : "Random Rune Chest",
+                "type" : "item",
+                "amount" : 1,
+                "chance" : 1
+            }
+        ],
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/d/d7/Snowy_img.png/revision/latest"
+    },
+    "Rainy Breakthrough" : {
+        "quest_title" : "Rainy Breakthrough",
+        "difficulty" : 3,
+        "objective" : "Roll a biome aura from a different biomes with its breakthrough rarity rarer than 1 in 1,000 in Rainy",
+        "objective_amount" : 1,
+        "reward" : [
+            {
+                "name" : "Random Rune Chest",
+                "type" : "item",
+                "amount" : 1,
+                "chance" : 1
+            }
+        ],
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/e/ec/Rainy.png/revision/latest"
+    },
+    "SandStorm Breakthrough" : {
+        "quest_title" : "SandStorm Breakthrough",
+        "difficulty" : 4,
+        "objective" : "Roll a biome aura from a different biomes with its breakthrough rarity rarer than 1 in 100,000 in SandStorm",
+        "objective_amount" : 1,
+        "reward" : [
+            {
+                "name" : "Random Rune Chest",
+                "type" : "item",
+                "amount" : 5,
+                "chance" : 1
+            }
+        ],
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/7/7c/Sand_Storm.png/revision/latest"
+    },
+    "Starfall Breakthrough" : {
+        "quest_title" : "Starfall Breakthrough",
+        "difficulty" : 4,
+        "objective" : "Roll a biome aura from a different biomes with its breakthrough rarity rarer than 1 in 100,000 in Starfall",
+        "objective_amount" : 1,
+        "reward" : [
+            {
+                "name" : "Random Rune Chest",
+                "type" : "item",
+                "amount" : 5,
+                "chance" : 1
+            }
+        ],
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/f/f5/Starfall_phone_ss.jpg/revision/latest"
+    },
+    "Hell Breakthrough" : {
+        "quest_title" : "Hell Breakthrough",
+        "difficulty" : 4,
+        "objective" : "Roll a biome aura from a different biomes with its breakthrough rarity rarer than 1 in 100,000 in Hell",
+        "objective_amount" : 1,
+        "reward" : [
+            {
+                "name" : "Random Rune Chest",
+                "type" : "item",
+                "amount" : 5,
+                "chance" : 1
+            }
+        ],
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/b/b3/New_Hell_Biome.png/revision/latest"
+    },
+    "Corruption Breakthrough" : {
+        "quest_title" : "Corruption Breakthrough",
+        "difficulty" : 5,
+        "objective" : "Roll a biome aura from a different biomes with its breakthrough rarity rarer than 1 in 1,000,000 in Corruption",
+        "objective_amount" : 1,
+        "reward" : [
+            {
+                "name" : "Random Rune Chest",
+                "type" : "item",
+                "amount" : 10,
+                "chance" : 1
+            }
+        ],
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/4/48/CorruptionBiome.png.png/revision/latest"
+    },
+    "Null Breakthrough" : {
+        "quest_title" : "Null Breakthrough",
+        "difficulty" : 5,
+        "objective" : "Roll a biome aura from a different biomes with its breakthrough rarity rarer than 1 in 1,000,000 in Null",
+        "objective_amount" : 1,
+        "reward" : [
+            {
+                "name" : "Random Rune Chest",
+                "type" : "item",
+                "amount" : 10,
+                "chance" : 1
+            }
+        ],
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/3/38/Null_daytime.png/revision/latest"
     }
 }

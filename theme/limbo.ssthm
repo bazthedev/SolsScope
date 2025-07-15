@@ -1,5 +1,5 @@
 /* ============================
-   LIMBO THEME
+   BLACK THEME (Valid Selectors)
    ============================ */
 
 #mainContainer {
@@ -306,4 +306,12 @@ QComboBox QAbstractItemView::item:selected {
     border-radius: 8px;
     font-weight: bold;
     padding: 10px 20px;
+}
+
+QWidget#popoutConfigBox {
+    background: #000;
+}
+
+QDialog#popoutWindow {
+    background: #000;
 }

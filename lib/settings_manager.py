@@ -1,7 +1,7 @@
 """
 SolsScope/Baz's Macro
 Created by Baz and Cresqnt
-v1.2.7
+v1.2.8
 Support server: https://discord.gg/8khGXqG7nA
 """
 

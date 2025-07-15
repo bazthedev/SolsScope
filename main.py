@@ -1,7 +1,7 @@
 """
 SolsScope/Baz's Macro
 Created by Baz and Cresqnt
-v1.2.7
+v1.2.8
 Support server: https://discord.gg/8khGXqG7nA
 """
 
@@ -13,9 +13,9 @@ import json
 import tkinter as tk
 from tkinter import messagebox
 
-REQUIRED_LIBS = ["constants.py", "discord_utils.py", "gui.py", "macro_logic.py", "roblox_utils.py", "settings_manager.py", "utils.py", "mmint.py"]
+REQUIRED_LIBS = ["constants.py", "discord_utils.py", "macro_logic.py", "roblox_utils.py", "settings_manager.py", "utils.py", "mmint.py"]
 REQUIRED_PATHS = ["questboard.mms", "stella.mms", "obby1.mms", "obby2.mms", "obby1_abyssal.mms", "obby2_abyssal.mms", "stella_abyssal.mms"]
-MAIN_VER = "1.2.7"
+MAIN_VER = "1.2.8"
 PRERELEASE = False
 
 WORK_DIR = os.path.expandvars(r"%localappdata%\SolsScope")

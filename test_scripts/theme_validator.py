@@ -1,3 +1,5 @@
+import os
+
 def validate_theme(theme_text: str) -> bool:
     theme_text = theme_text.lower()
     found_selectors = []
@@ -26,7 +28,8 @@ def validate_theme(theme_text: str) -> bool:
         "qcombobox qabstractitemview::item:selected", "qframe", "qmessagebox",
         "qmessagebox qpushbutton", "#creditscontainer", "#developercard",
         "#developercard:hover", "#sectioncard", "#versionlabel",
-        "#donatecardbutton", "#donatecardbutton:hover", "#donatecardbutton:pressed"
+        "#donatecardbutton", "#donatecardbutton:hover", "#donatecardbutton:pressed",
+        "qdialog#popoutwindow", "qwidget#popoutconfigbox"
     }
 
     for sel in required_selectors:
@@ -45,19 +48,19 @@ def validate_theme(theme_text: str) -> bool:
 
     return True
 
-import os
 
-_path = input("Insert the FULL PATH (c:\\users\\path\\to\\theme.ssthm): ")
+if __name__ == "__main__":
+    _path = input("Insert the FULL PATH (c:\\users\\path\\to\\theme.ssthm): ")
 
-if not os.path.exists(_path):
-    print("Path does not exist:")
-else:
-    with open(_path, "r") as f:
-        theme_content = f.read()
+    if not os.path.exists(_path):
+        print("Path does not exist:")
+    else:
+        with open(_path, "r") as f:
+            theme_content = f.read()
 
-        validation = validate_theme(theme_content)
+            validation = validate_theme(theme_content)
 
-        if validation:
-            print("Theme is valid!")
-        else:
-            print("Theme was not valid (did not contain all required items)")
+            if validation:
+                print("Theme is valid!")
+            else:
+                print("Theme was not valid (did not contain all required items)")

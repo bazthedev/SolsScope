@@ -465,3 +465,11 @@ QMessageBox QPushButton {
     background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
                                 stop: 0 #e67e22, stop: 1 #d68910);
 }
+
+QWidget#popoutConfigBox {
+    background: #252525;
+}
+
+QDialog#popoutWindow {
+    background: #252525;
+}

@@ -1,7 +1,7 @@
 """
 SolsScope/Baz's Macro
 Created by Baz and Cresqnt
-v1.2.8
+v1.2.7
 Support server: https://discord.gg/8khGXqG7nA
 """
 
@@ -277,14 +277,6 @@ def calculate_coords(primary_monitor):
 
 def format_key(key: str) -> str:
     """Converts a snake_case key into a Title Case string with spaces."""
-    # Custom labels for specific keys
-    custom_labels = {
-        "merchant_detection": "Auto Detect And Buy From Merchants"
-    }
-    
-    if key in custom_labels:
-        return custom_labels[key]
-    
     return key.replace("_", " ").title()
 
 def resolve_full_aura_name(partial_name: str, aura_dict : dict) -> str:

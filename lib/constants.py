@@ -1,7 +1,7 @@
 """
 SolsScope/Baz's Macro
 Created by Baz and Cresqnt
-v1.2.8
+v1.2.7
 Support server: https://discord.gg/8khGXqG7nA
 """
 
@@ -10,7 +10,7 @@ import os
 sys.path.insert(1, os.path.expandvars(r"%localappdata%/SolsScope/lib"))
 
 MACROPATH = os.path.expandvars(r"%localappdata%\\SolsScope") 
-LOCALVERSION = "1.2.8"
+LOCALVERSION = "1.2.7"
 
 PLACE_ID = 15532962292
 BASE_ROBLOX_URL = f"https://www.roblox.com/games/{PLACE_ID}/"
@@ -182,28 +182,14 @@ NOTRECOMMENDED = []
 
 GENERAL_KEYS = ["WEBHOOK_URL", "private_server_link", "SECONDARY_WEBHOOK_URLS", "failsafe_key", "idle_mode", "use_roblox_player", "global_wait_time", "mention", "mention_id", "skip_aura_download", "skip_biome_download", "skip_merchant_download", "skip_questboard_download"]
 AURAS_KEYS = ["minimum_roll", "minimum_ping", "reset_aura", "take_screenshot_on_detection"]
-BIOMES_KEYS = ["auto_biome_randomizer", "auto_strange_controller", "pop_in_glitch", "pop_in_dreamspace"]
+BIOMES_KEYS = ["biomes", "auto_biome_randomizer", "auto_strange_controller", "pop_in_glitch", "auto_use_items_in_glitch", "pop_in_dreamspace", "auto_use_items_in_dreamspace"]
 SNIPER_KEYS = ["sniper_enabled", "sniper_toggles", "DISCORD_TOKEN", "ROBLOSECURITY_KEY", "sniper_logs", "scan_channels"]
-
-# New Actions tab - only main enable/disable settings
-ACTIONS_KEYS = ["merchant_detection", "auto_craft_mode", "auto_sell_to_jester", "do_obby", "notify_obby_completion", "has_abyssal_hunter"]
-
-# Settings for popup windows - not displayed in main tabs
-MARI_MERCHANT_KEYS = ["ping_mari", "mari_ping_id", "auto_purchase_items_mari"]
-JESTER_MERCHANT_KEYS = ["ping_jester", "jester_ping_id", "auto_purchase_items_jester", "amount_of_item_to_sell", "items_to_sell"]
-AUTOCRAFT_ITEM_KEYS = ["auto_craft_item", "skip_auto_mode_warning", "do_no_walk_to_stella"]
-
-# Biome settings for popup windows
-BIOME_CONFIG_KEYS = ["biomes"]
-GLITCHED_ITEMS_KEYS = ["auto_use_items_in_glitch"]
-DREAMSPACE_ITEMS_KEYS = ["auto_use_items_in_dreamspace"]
-
-# Legacy keys for backward compatibility
 MERCHANT_KEYS = ["merchant_detection", "ping_mari", "mari_ping_id", "auto_purchase_items_mari", "ping_jester", "jester_ping_id", "auto_purchase_items_jester", "auto_sell_to_jester", "amount_of_item_to_sell", "items_to_sell"]
 AUTOCRAFT_KEYS = ["auto_craft_mode", "auto_craft_item", "skip_auto_mode_warning", "do_no_walk_to_stella"]
 PATH_KEYS = ["do_obby", "notify_obby_completion", "has_abyssal_hunter"]
 QUEST_KEYS = ["enable_auto_quest_board", "quests_to_accept"]
-OTHER_KEYS = ["clear_logs", "periodic_screenshots", "disable_aura_detection", "disable_biome_detection", "take_screenshot_on_detection", "disconnect_prevention", "disable_autokick_prevention", "dont_notify_about_redownload", "redownload_libs_on_run", "always_on_top", "check_update", "auto_install_update"]
+
+OTHER_KEYS = ["disconnect_prevention", "disable_autokick_prevention", "disable_aura_detection", "disable_biome_detection", "always_on_top", "periodic_screenshots", "check_update", "auto_install_update"]
 
 STARTUP_MSGS = [
     "Let's go gambling!", "Nah, I'd Roll", "I give my life...", "Take a break",

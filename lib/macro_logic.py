@@ -1,3 +1,4 @@
+"""
 SolsScope/Baz's Macro
 Created by Baz and Cresqnt
 v1.2.7

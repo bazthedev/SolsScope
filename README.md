@@ -45,7 +45,7 @@
 
 - **Operating System**: Windows 10/11
 - **Display**: 1080p minimum (1440p recommended)
-- **Python**: Version 3.12 or newer
+- **Python**: Version 3.12 or newer (versions 3.13 and above require slightly steps to setup)
 - **Roblox**: Roblox Player is recommended (UWP version supported with limitations)
 
 ---

@@ -742,5 +742,11 @@
         "rarity" : "825000000",
         "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/a/ac/Aegis_Watergun_in_collection.gif/revision/latest",
         "native_biome" : "Blazing sun"
+    },
+    "equinox" : {
+        "emb_colour" : "#fafafa",
+        "rarity" : "2500000000",
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/c/c2/EquinoxInCollectionView.png/revision/latest",
+        "native_biome" : ""
     }
 }

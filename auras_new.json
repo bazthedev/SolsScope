@@ -748,5 +748,47 @@
         "rarity" : "2500000000",
         "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/c/c2/EquinoxInCollectionView.png/revision/latest",
         "native_biome" : ""
+    },
+    "copper" : {
+        "emb_colour" : "#ff7c00",
+        "rarity" : "29000",
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/2/2d/CopperColl.gif/revision/latest",
+        "native_biome" : ""
+    },
+    "divinus: angel" : {
+        "emb_colour" : "#f2e2a7",
+        "rarity" : "120000",
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/d/d8/DivAngelColl.gif/revision/latest",
+        "native_biome" : ""
+    },
+    "parasite" : {
+        "emb_colour" : "#180d37",
+        "rarity" : "3000000",
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/8/85/ParasiteColl.gif/revision/latest",
+        "native_biome" : "Corruption"
+    },
+    "cosmos: alice" : {
+        "emb_colour" : "#6397de",
+        "rarity" : "3500000",
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/2/2e/Cosmosalice.gif/revision/latest",
+        "native_biome" : ""
+    },
+    "lullaby" : {
+        "emb_colour" : "#496ecf",
+        "rarity" : "17000000",
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/1/1b/LullabyInGame.gif/revision/latest",
+        "native_biome" : ""
+    },
+    "lotusfall" : {
+        "emb_colour" : "#5771e5",
+        "rarity" : "320000000",
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/9/92/LotusfallCollections6mb.gif/revision/latest",
+        "native_biome" : ""
+    },
+    "dreammetric" : {
+        "emb_colour" : "#fb71f7",
+        "rarity" : "520000000",
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/2/2b/Dreammetric_Whitelist.gif/revision/latest",
+        "native_biome" : "Dreamspace"
     }
 }

@@ -1,7 +1,7 @@
 """
 SolsScope/Baz's Macro
 Created by Baz and Cresqnt
-v1.2.5
+v1.2.8
 Support server: https://discord.gg/6cuCu6ymkX
 """
 
@@ -26,7 +26,7 @@ class Plugin:
         self.name = "Template"
         self.version = "1.0.0"
         self.author = "your_user_name"
-        self.requires = "1.2.5"
+        self.requires = "1.2.8"
         self.autocraft_compatible = False
         self.macro = macro
         
@@ -160,13 +160,14 @@ class Plugin:
             else:
                 original[key] = value
 
-    def run(self, stop_event, sniped_event):
+    def run(self, stop_event, sniped_event, pause_event):
         """
         Main plugin logic that runs in a separate thread.
         
         Args:
             stop_event (threading.Event): Set when macro is stopping
             sniped_event (threading.Event): Set when a snipe occurs
+            pause_event (threading.Event): Set when something wants to pause the macro
             
         Note:
             - This method should regularly check stop_event.is_set()

@@ -21,11 +21,17 @@ class Plugin:
     }
     
     DISPLAYSETTINGS = ["enabled", "config1", "config2"]
+
+    TOOLTIPS = {
+        "enabled": "Enable this plugin.",
+        "config1": "Set the value of config1.",
+        "config2": "Set the value of config2."
+    }
     
     def __init__(self, macro):
         self.name = "Template"
         self.version = "1.0.0"
-        self.author = "your_user_name"
+        self.authors = ["your_user_name"]
         self.requires = "1.2.8"
         self.autocraft_compatible = False
         self.macro = macro
@@ -82,11 +88,18 @@ class Plugin:
         }
         
         # Create widgets using plugin's isolated config
-        create_widgets(settings_to_display, parent_layout, self.entries)
+        create_widgets(settings_to_display, parent_layout, self.entries, self.TOOLTIPS)
         
+        label_text = f"{self.name} v{self.version} by"
+        for author in self.authors:
+            if self.authors.index(author) == len(self.authors) - 1:
+                label_text += f" {author}."
+            else:
+                label_text += f" {author},"
+
         info_label = QLabel(
-            f"<i>{self.name} v{self.version} by {self.author}</i>"
-        )
+            f"<i>{label_text}</i>"
+        )   
         info_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         parent_layout.addWidget(info_label)
 

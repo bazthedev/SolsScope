@@ -145,7 +145,7 @@
     },
     "undead: devil": {
         "emb_colour": "#55991a",
-        "rarity": "120000",
+        "rarity": "666666",
         "img_url": "https://static.wikia.nocookie.net/sol-rng/images/7/73/UndeadDevilCollectionEon1.gif/revision/latest",
         "native_biome": "Hell"
     },
@@ -790,5 +790,23 @@
         "rarity" : "520000000",
         "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/2/2b/Dreammetric_Whitelist.gif/revision/latest",
         "native_biome" : "Dreamspace"
+    },
+    "maelstrom" : {
+        "emb_colour" : "#2c8779",
+        "rarity" : "309999999",
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/9/97/Screenshot_2025-08-09_153047.png/revision/latest",
+        "native_biome" : "Windy"
+    },
+    "megaphone" : {
+        "emb_colour" : "#6bd2bb",
+        "rarity" : "5000",
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/c/c7/MegaphoneCollection.gif/revision/latest",
+        "native_biome" : ""
+    },
+    "flow" : {
+        "emb_colour" : "#8dbfce",
+        "rarity" : "87000",
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/5/59/FlowCollection.gif/revision/latest",
+        "native_biome" : "Windy"
     }
 }

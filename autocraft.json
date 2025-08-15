@@ -1,0 +1,106 @@
+{
+    "Jewelry Potion" : {
+        "colour" : "#4df9e4",
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/7/7b/Jewelry.png/revision/latest",
+        "effects" : [
+            "+120% Luck"
+        ]
+    },
+    "Zombie Potion" : {
+        "colour" : "#17fe13",
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/e/e7/Zombiepot.png/revision/latest",
+        "effects" : [
+            "+150% Luck"
+        ]
+    },
+    "Rage Potion" : {
+        "colour" : "#fc472a",
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/a/a7/Ragepotiongif.gif/revision/latest",
+        "effects" : [
+            "+35% Roll Speed"
+        ]
+    },
+    "Diver Potion" : {
+        "colour" : "#0bb4ff",
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/e/e0/DiverPotTransparent.webp/revision/latest",
+        "effects" : [
+            "+40% Roll Speed"
+        ]
+    },
+    "Potion of Bound" : {
+        "colour" : "#1a66fe",
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/a/a4/Potionofbound.png/revision/latest",
+        "effects" : [
+            "+50000 Luck for next 1 Roll"
+        ]
+    },
+    "Heavenly Potion" : {
+        "colour" : "#ff98dc",
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/e/ea/Heavenly2Potion.png/revision/latest",
+        "effects" : [
+            "+150000 Luck for next 1 Roll"
+        ]
+    },
+    "Godly Potion (Zeus)" : {
+        "colour" : "#ffff18",
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/6/60/GodZeusPOT.png/revision/latest",
+        "effects" : [
+            "+200% Luck",
+            "+30% Roll Speed"
+        ]
+    },
+    "Godly Potion (Poseidon)" : {
+        "colour" : "#0afcfa",
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/b/b3/GodPoseidonPotion.png/revision/latest",
+        "effects" : [
+            "-50% Luck",
+            "+75% Roll Speed"
+        ]
+    },
+    "Godly Potion (Hades)" : {
+        "colour" : "#fc0a0c",
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/e/ed/GodHadesPotion.png/revision/latest",
+        "effects" : [
+            "+300% Luck",
+            "-10% Roll Speed"
+        ]
+    },
+    "Godlike Potion" : {
+        "colour" : "#7481c7",
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/e/ea/Godlike_pot.webp/revision/latest",
+        "effects" : [
+            "+400000 Luck for next 1 Roll"
+        ]
+    },
+    "Warp Potion" : {
+        "colour" : "#9bffff",
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/8/8b/Warp_Potion.png/revision/latest",
+        "effects" : [
+            "+1000% Roll Speed"
+        ]
+    },
+    "Forbidden Potion I" : {
+        "colour" : "#282828",
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/2/24/ForbiddenPotionOne.gif/revision/latest",
+        "effects" : [
+            "+70% Luck",
+            "+10% Roll Speed"
+        ]
+    },
+    "Forbidden Potion II" : {
+        "colour" : "#282828",
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/b/b7/ForbiddenPotionTwo.gif/revision/latest",
+        "effects" : [
+            "+325% Luck",
+            "+25% Roll Speed"
+        ]
+    },
+    "Forbidden Potion III" : {
+        "colour" : "#282828",
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/0/05/ForbiddenPotionThree.gif/revision/latest",
+        "effects" : [
+            "+1350% Luck",
+            "+75% Roll Speed"
+        ]
+    }
+}

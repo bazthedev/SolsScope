@@ -182,7 +182,6 @@ DEFAULTSETTINGS = {
     "mode" : "Normal",
     "use_reset_aura" : False,
     "use_alternate_uinav" : True,
-    "use_gpu_for_ocr" : False,
     "themes" : {
         "Default" : os.path.join(MACROPATH, "theme", "default.ssthm")
     },
@@ -242,7 +241,6 @@ TOOLTIPS = {
     "mode" : "The mode that the Macro is currently in.",
     "use_reset_aura" : "Equip the reset aura when a new aura is rolled.",
     "use_alternate_uinav" : "Use the alternate paths for UI navigation. Enable this if pressing the left arrow with UI nav on takes you to the storage button.",
-    "use_gpu_for_ocr" : "Use the GPU to read text (faster). Leave this disabled if you don't know what you are doing.",
     "themes" : "List of themes that are available to be applied.",
     "vok_taran" : "Types \"vok taran\" in the chat every 30 minutes to spawn a Sand Storm biome.",
     "enable_ui_nav_key" : "The key needed to be pressed to enable UI Navigation.",
@@ -275,7 +273,7 @@ PATH_KEYS = ["do_obby", "notify_obby_completion", "has_abyssal_hunter"]
 QUEST_KEYS = ["enable_auto_quest_board", "quests_to_accept"]
 SKIP_DLS_KEYS = ["skip_aura_download", "skip_biome_download", "skip_merchant_download", "skip_questboard_download", "skip_autocraft_download"]
 MACRO_OVERRIDES = ["disable_aura_detection", "disable_biome_detection", "disable_autokick_prevention"]
-OTHER_KEYS = ["use_gpu_for_ocr", "clear_logs", "periodic_screenshots", "take_screenshot_on_detection", "disconnect_prevention", "always_on_top", "check_update", "auto_install_update"]
+OTHER_KEYS = ["periodic_screenshots", "take_screenshot_on_detection", "disconnect_prevention", "always_on_top", "check_update", "auto_install_update"]
 
 
 

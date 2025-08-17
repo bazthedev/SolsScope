@@ -25,9 +25,9 @@ try:
     import cv2
     from easyocr import Reader
     MERCHANT_DETECTION_POSSIBLE = True
-except ImportError:
+except ImportError as e:
     MERCHANT_DETECTION_POSSIBLE = False
-    print("Optional modules for Merchant Detection (cv2, easyocr) not found. Feature disabled.")
+    print(f"Optional modules for Merchant Detection (cv2, easyocr) not found. Feature disabled.\n{e}")
 
 try:
     #import eden_vip, fish_market, fish_market_abyssal, fishing_spot, obby, questboard, shrine_part1, shrine_part2, shrine_part3

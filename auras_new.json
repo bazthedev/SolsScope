@@ -808,5 +808,11 @@
         "rarity" : "87000",
         "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/5/59/FlowCollection.gif/revision/latest",
         "native_biome" : "Windy"
+    },
+    "nautilus: lost" : {
+        "emb_colour" : "#5367f9",
+        "rarity" : "7700000",
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/b/bc/Nautilost.gif/revision/latest",
+        "native_biome" : ""
     }
 }

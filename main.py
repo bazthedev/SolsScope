@@ -1,7 +1,7 @@
 """
 SolsScope/Baz's Macro
 Created by Baz and Cresqnt
-v1.2.7
+v1.2.8
 Support server: https://discord.gg/8khGXqG7nA
 """
 
@@ -13,18 +13,24 @@ import json
 import tkinter as tk
 from tkinter import messagebox
 
-REQUIRED_LIBS = ["constants.py", "discord_utils.py", "gui.py", "macro_logic.py", "roblox_utils.py", "settings_manager.py", "utils.py", "mmint.py"]
-REQUIRED_PATHS = ["questboard.mms", "stella.mms", "obby1.mms", "obby2.mms"]
-MAIN_VER = "1.2.7"
+REQUIRED_LIBS = ["constants.py", "discord_utils.py", "gui.py", "macro_logic.py", "roblox_utils.py", "settings_manager.py", "utils.py", "mmint.py", "uinav.py", "stats.py"]
+REQUIRED_PATHS = ["questboard.mms", "stella.mms", "obby1.mms", "obby2.mms", "obby1_abyssal.mms", "obby2_abyssal.mms", "stella_abyssal.mms"]
+MAIN_VER = "1.2.8"
 PRERELEASE = True
 
 WORK_DIR = os.path.expandvars(r"%localappdata%\SolsScope")
+THEME_DIR = os.path.expandvars(r"%localappdata%\SolsScope\theme")
 PATH_DIR = os.path.expandvars(r"%localappdata%\SolsScope\path")
 LIB_DIR = os.path.expandvars(r"%localappdata%\SolsScope\lib")
 LEGACY_DIR = os.path.expandvars(r"%localappdata%\Baz's Macro")
 
+THEME_URL = "https://api.github.com/repos/bazthedev/SolsScope/contents/theme"
+
 if not os.path.exists(WORK_DIR):
-    os.mkdir(WORK_DIR)
+    os.mkdir(WORK_DIR) 
+
+if not os.path.exists(THEME_DIR):
+    os.mkdir(THEME_DIR)
 
 if not os.path.exists(LIB_DIR):
     os.mkdir(LIB_DIR)
@@ -39,6 +45,7 @@ else:
     print("Pre-Release Version! Thank you for being a tester!")
 
 PATH_DOWNLOAD_URL = "https://raw.githubusercontent.com/bazthedev/SolsScope/refs/heads/main/path/"
+THEME_DOWNLOAD_URL = "https://raw.githubusercontent.com/bazthedev/SolsScope/refs/heads/main/theme/"
 
 for file in REQUIRED_LIBS:
     if file not in os.listdir(LIB_DIR) or PRERELEASE:
@@ -60,7 +67,30 @@ for file in REQUIRED_PATHS:
             f.write(_download.content)
             f.close()
         print(f"{file} was downloaded and installed.")
-print("All required paths were downloaded or already installed, proceeding...")
+print("All required paths were downloaded, proceeding...")
+
+"""check_themes_resp = requests.get(THEME_URL)
+theme_files = check_themes_resp.json()
+
+try:
+    for _file in theme_files:
+        print(_file)
+
+        _type = _file["type"].lower()
+        _file_name = _file["name"]
+
+        if not os.path.exists(f"{THEME_DIR}\\{_file_name}") and _type == "file":
+            _download = requests.get(THEME_DOWNLOAD_URL + _file_name, timeout=5)
+            _download.raise_for_status()
+            with open(f"{THEME_DIR}\\{_file_name}", "wb") as f:
+                f.write(_download.content)
+                f.close()
+            print(f"{_file_name} was downloaded.")
+
+except Exception as e:
+
+    print(f"Error whilst downloading themes: {e}")"""
+
 
 if not os.path.isfile(f"{WORK_DIR}\\settings.json") and os.path.isfile(f"{LEGACY_DIR}\\settings.json"):
     os.system(f"xcopy {LEGACY_DIR}\\settings.json {WORK_DIR}")
@@ -84,11 +114,22 @@ try:
                     f.close()
                 print(f"{file} was downloaded and installed.")
             print("All required libraries were updated, proceeding...")
+            for file in REQUIRED_PATHS:
+                print(f"{file} is being downloaded...")
+                _download = requests.get(PATH_DOWNLOAD_URL + file, timeout=5)
+                _download.raise_for_status()
+                with open(f"{PATH_DIR}\\{file}", "wb") as f:
+                    f.write(_download.content)
+                    f.close()
+                print(f"{file} was downloaded.")
+            print("All required paths were downloaded, proceeding...")
             _tempsettings["__version__"] = MAIN_VER
             with open(f"{WORK_DIR}\\settings.json", "w") as f:
                 json.dump(_tempsettings, f, indent=4)
             messagebox.showinfo("SolsScope", "If you paid for this software, then you have been scammed and should demand a refund. The only official download page for this software is https://github.com/bazthedev/SolsScope")
+            messagebox.showinfo("SolsScope",  "SolsScope is a FULLSCREEN macro. To ensure compatibility with certain features, please use Roblox in full screen.")
         elif _tempsettings.get("redownload_libs_on_run", False) or PRERELEASE:
+            print("Manual redownload/prerelease initiated download.")
             for file in REQUIRED_LIBS:
                 print(f"{file} is being downloaded...")
                 _download = requests.get(LIB_DOWNLOAD_URL + file, timeout=5)
@@ -98,6 +139,15 @@ try:
                     f.write(_download.content)
                     f.close()
                 print(f"{file} was downloaded and installed.")
+            for file in REQUIRED_PATHS:
+                print(f"{file} is being downloaded...")
+                _download = requests.get(PATH_DOWNLOAD_URL + file, timeout=5)
+                _download.raise_for_status()
+                with open(f"{PATH_DIR}\\{file}", "wb") as f:
+                    f.write(_download.content)
+                    f.close()
+                print(f"{file} was downloaded.")
+            print("All required paths were downloaded, proceeding...")
             _tempsettings["redownload_libs_on_run"] = False
             with open(f"{WORK_DIR}\\settings.json", "w") as f:
                 json.dump(_tempsettings, f, indent=4)
@@ -152,9 +202,11 @@ try:
         migrate_settings_from_legacy_location, load_settings, update_settings,
         get_auras, get_biomes, get_settings_path, get_auras_path, get_biomes_path,
         get_merchant, get_merchant_path, get_questboard_path, get_questboard,
-        validate_settings 
+        validate_settings, get_fish_path, get_fishdata, get_autocraftdata_path,
+        get_autocraft_data
     )
-    from roblox_utils import set_active_log_directory 
+    from roblox_utils import set_active_log_directory
+    from stats import create_stats, init_stats
 except ImportError as e:
     error_message = (
         f"Failed to load a required project module.\n"
@@ -192,6 +244,7 @@ def run_initial_setup(logger):
     try:
         os.makedirs(MACROPATH, exist_ok=True)
         os.makedirs(os.path.join(MACROPATH, "scr"), exist_ok=True)
+        os.makedirs(os.path.join(MACROPATH, "theme"), exist_ok=True)
         os.makedirs(os.path.join(MACROPATH, "plugins"), exist_ok=True)
         os.makedirs(os.path.join(MACROPATH, "plugins", "config"), exist_ok=True)
         logger.write_log(f"Core directories ensured in: {MACROPATH}")
@@ -233,7 +286,7 @@ def run_initial_setup(logger):
         except Exception as e:
             logger.write_log(f"Unexpected error downloading/saving icon: {e}") 
 
-    print("Downloading data files")
+    print("Downloading data files...")
 
     if not settings.get("skip_aura_download", False):
         if not get_auras():
@@ -282,7 +335,31 @@ def run_initial_setup(logger):
     else:
         logger.write_log("Skipping quest board download based on settings.")
 
-    print("Done")
+    if not settings.get("skip_fishdata_download", False):
+        if not get_fishdata():
+            logger.write_log("Failed to download fish data.")
+
+    elif not os.path.exists(get_fishdata()):
+        logger.write_log("Fish Data file missing.")
+        if not get_fishdata():
+            logger.write_log("Failed to download fish data.")
+
+    else:
+        logger.write_log("Skipping fish data download based on settings.")
+
+    if not settings.get("skip_autocraft_download", False):
+        if not get_autocraft_data():
+            logger.write_log("Failed to download auto craft data.")
+
+    elif not os.path.exists(get_autocraftdata_path()):
+        logger.write_log("Auto craft file missing.")
+        if not get_autocraft_data():
+            logger.write_log("Failed to download auto craft data.")
+
+    else:
+        logger.write_log("Skipping auto craft download based on settings.")
+
+    print("Done!")
 
     if not os.path.exists(get_auras_path()):
         messagebox.showwarning("Data Missing", f"Auras data file missing and could not be downloaded:\n{get_auras_path()}\n\nAura-related features may not work correctly.")
@@ -292,7 +369,17 @@ def run_initial_setup(logger):
         messagebox.showwarning("Data Missing", f"Merchant data file missing and could not be downloaded:\n{get_merchant_path()}\n\nMerchant-related features may not work correctly.")
     if not os.path.exists(get_questboard_path()):
         messagebox.showwarning("Data Missing", f"Quest board data file missing and could not be downloaded:\n{get_questboard_path()}\n\nQuest board related features may not work correctly.")
+    if not os.path.exists(get_fish_path()):
+        messagebox.showwarning("Data Missing", f"Fish data file missing and could not be downloaded:\n{get_fish_path()}\n\nFishing related features may not work correctly.")
+    if not os.path.exists(get_autocraftdata_path()):
+        messagebox.showwarning("Data Missing", f"Auto Craft data file missing and could not be downloaded:\n{get_autocraftdata_path()}\n\nAuto craft related features may not work correctly.")
 
+    try:
+        create_stats()
+        init_stats()
+    except Exception as e:
+        print(f"Unknown exception whilst creating stats: {e}")
+    
     if settings.get("check_update", True):
         logger.write_log("Checking for updates...")
         try:
@@ -373,6 +460,8 @@ def run_initial_setup(logger):
         except Exception as e:
             logger.write_log(f"An unexpected error occurred during update check: {e}")
 
+    print(f"Setting up SolsScope v{LOCALVERSION}")
+
     logger.write_log("Detecting screen resolution and calculating coordinates...")
     primary_monitor = None
     try:
@@ -404,8 +493,8 @@ def run_initial_setup(logger):
 
                 if 'scale_w' not in COORDS: COORDS['scale_w'] = 1.0
                 if 'scale_h' not in COORDS: COORDS['scale_h'] = 1.0
-                if 'scr_wid' not in COORDS: COORDS['scr_wid'] = 1920
-                if 'scr_hei' not in COORDS: COORDS['scr_hei'] = 1080
+                if 'scr_wid' not in COORDS: COORDS['scr_wid'] = 2560
+                if 'scr_hei' not in COORDS: COORDS['scr_hei'] = 1440
         else:
             logger.write_log("No monitors detected. Cannot calculate coordinates. Exiting.")
             messagebox.showerror("Monitor Error", "Could not detect any monitors. Cannot calculate coordinates.")
@@ -474,7 +563,7 @@ if __name__ == '__main__':
             msgBox = QMessageBox()
             msgBox.setIcon(QMessageBox.Icon.Critical)
             msgBox.setWindowTitle("Fatal GUI Error")
-            msgBox.setText(f"An unhandled error occurred:\n{e}\n\nPlease check the log file for details:\n{os.path.join(MACROPATH, 'solscope.log')}")
+            msgBox.setText(f"An unhandled error occurred:\n{e}\n\nPlease check the log file for details:\n{os.path.join(MACROPATH, 'solsscope.log')}")
             msgBox.exec()
         except Exception:
             print(f"FATAL ERROR: {e}\n{traceback.format_exc()}") 

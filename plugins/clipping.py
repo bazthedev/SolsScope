@@ -30,11 +30,19 @@ class Plugin:
     }
 
     DISPLAYSETTINGS = ["enabled", "clipping_keycombo", "clipping_rarity", "output_folder", "wait_after_end"]
+
+    TOOLTIPS = {
+        "enabled" : "Enable the plugin.",
+        "clipping_keycombo" : "The key combo to activate your clipping software's clip feature.",
+        "clipping_rarity" : "The minimum rarity of the aura rolled for it to be clipped.",
+        "output_folder" : "The folder that a GLITCHED/DREAMSPACE recording goes to.",
+        "wait_after_end" : "How many seconds to wait after biome ends to stop recording."
+    }
     
     def __init__(self, macro):
         self.name = "Clipping"
         self.version = "1.0.2"
-        self.author = "bazthedev"
+        self.authors = ["bazthedev"]
         self.requires = "1.2.8"
         self.autocraft_compatible = True
         self.macro = macro
@@ -99,11 +107,18 @@ class Plugin:
         }
         
         # Create widgets using plugin's isolated config
-        create_widgets(settings_to_display, parent_layout, self.entries)
+        create_widgets(settings_to_display, parent_layout, self.entries, self.TOOLTIPS)
         
+        label_text = f"{self.name} v{self.version} by"
+        for author in self.authors:
+            if self.authors.index(author) == len(self.authors) - 1:
+                label_text += f" {author}."
+            else:
+                label_text += f" {author},"
+
         info_label = QLabel(
-            f"<i>{self.name} v{self.version} by {self.author}</i>"
-        )
+            f"<i>{label_text}</i>"
+        )   
         info_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         parent_layout.addWidget(info_label)
 
@@ -197,13 +212,14 @@ class Plugin:
                 return (win.left, win.top, win.width, win.height)
         return None
 
-    def run(self, stop_event, sniped_event):
+    def run(self, stop_event, sniped_event, pause_event):
         """
         Main plugin logic that runs in a separate thread.
         
         Args:
             stop_event (threading.Event): Set when macro is stopping
             sniped_event (threading.Event): Set when a snipe occurs
+            pause_event (threading.Event): Set when something wants to pause the macro
             
         Note:
             - This method should regularly check stop_event.is_set()

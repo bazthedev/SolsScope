@@ -34,16 +34,22 @@ class Plugin:
             "storage_screenshot" : True,
             "inventory_screenshot" : True,
             "purchase_item" : True,
-            "get_log" : True,
+            "get_log" : True
         }
     }
     
     DISPLAYSETTINGS = ["enabled", "TOKEN", "enabled_commands"]
+
+    TOOLTIPS = {
+        "enabled" : "Enable this plugin.",
+        "TOKEN" : "The token for your Discord Bot.",
+        "enabled_commands" : "The commands to be enabled when the bot is running."
+    }
     
     def __init__(self, macro):
         self.name = "Remote Bot"
         self.version = "1.0.4"
-        self.author = "bazthedev"
+        self.authors = ["bazthedev"]
         self.requires = "1.2.8"
         self.autocraft_compatible = True
         self.macro = macro
@@ -109,11 +115,18 @@ class Plugin:
         }
         
         # Create widgets using plugin's isolated config
-        create_widgets(settings_to_display, parent_layout, self.entries)
+        create_widgets(settings_to_display, parent_layout, self.entries, self.TOOLTIPS)
         
+        label_text = f"{self.name} v{self.version} by"
+        for author in self.authors:
+            if self.authors.index(author) == len(self.authors) - 1:
+                label_text += f" {author}."
+            else:
+                label_text += f" {author},"
+
         info_label = QLabel(
-            f"<i>{self.name} v{self.version} by {self.author}</i>"
-        )
+            f"<i>{label_text}</i>"
+        )   
         info_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         parent_layout.addWidget(info_label)
 
@@ -187,7 +200,7 @@ class Plugin:
             else:
                 original[key] = value
 
-    def run(self, stop_event, sniped_event):
+    def run(self, stop_event, sniped_event, pause_event):
         """
         Main plugin logic that runs in a separate thread.
         
@@ -299,7 +312,7 @@ class Plugin:
                     log_file_path = f"{self.MACROPATH}/solsscope.log"
 
                     try:
-                        with open(log_file_path, "r") as f:
+                        with open(log_file_path, "r", errors="ignore", encoding="utf-8") as f:
                             lines = f.readlines()
 
                         last_50_lines = lines[-50:] if len(lines) >= 50 else lines
@@ -332,6 +345,7 @@ class Plugin:
                         await asyncio.sleep(0.1)
                         close_menu(self._keyboard, True)
                         await ctx.send(file=discord.File(f"{self.MACROPATH}/scr/screenshot_inventory.png"))
+
             
             @client.event
             async def on_ready():

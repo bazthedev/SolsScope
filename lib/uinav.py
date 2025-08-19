@@ -1982,7 +1982,7 @@ def equip_selected_aura(kb, disable_ui_nav_after : bool, enable_before : bool):
         kb.release(ui_nav_key)
         time.sleep(1)
 
-        close_menu(kb, True, True)
+        close_menu(kb, True, True, True)
         
     else:
         kb.press(Key.left)

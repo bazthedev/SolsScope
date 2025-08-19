@@ -195,9 +195,9 @@ def equip_aura(aura_name, unequip, mkey, kb, settings: dict, ignore_next_detecti
     try:
         open_storage(kb, True)
         time.sleep(0.2)
-        search_for_aura(kb, True, True, aura_name)
+        search_for_aura(kb, False, True, aura_name)
         time.sleep(0.2)
-        equip_selected_aura(kb, True, True)
+        equip_selected_aura(kb, True, False)
     except Exception as e:
         logger.write_log(f"Unable to equip aura: {e}")
 

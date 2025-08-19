@@ -1,7 +1,7 @@
 """
 SolsScope/Baz's Macro
 Created by Baz and Cresqnt
-v1.2.8
+v2.0.0
 Support server: https://discord.gg/8khGXqG7nA
 """
 
@@ -2532,7 +2532,10 @@ class MainWindow(QMainWindow):
         use_player = self.settings.get("use_roblox_player", True)
         global TGIFRIDAY
         TGIFRIDAY = self.settings.get("use_alternate_uinav", True)
-        self.reader = Reader(['en'], gpu=False)
+        if OCR_AVAILABLE:
+            self.reader = Reader(['en'], gpu=False)
+        else:
+            self.reader = None
         set_active_log_directory(force_player=use_player)
         if not exists_procs_by_name("Windows10Universal.exe") and not exists_procs_by_name("RobloxPlayerBeta.exe"):
             if QMessageBox.question(self, "Roblox Not Detected", "Roblox process not found. Start macro anyway?") == QMessageBox.StandardButton.No:

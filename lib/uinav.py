@@ -1,7 +1,7 @@
 """
 SolsScope/Baz's Macro
 Created by Baz and Cresqnt
-v1.2.8
+v2.0.0
 Support server: https://discord.gg/8khGXqG7nA
 """
 
@@ -1848,14 +1848,14 @@ def search_for_aura(kb, disable_ui_nav_after : bool, enable_before : bool, aura 
         kb.release(Key.down)
         time.sleep(0.05)
 
-        kb.press(Key.down)
-        time.sleep(0.05)
-        kb.release(Key.down)
-        time.sleep(0.05)
-
         kb.press(Key.left)
         time.sleep(0.05)
         kb.release(Key.left)
+        time.sleep(0.05)
+
+        kb.press(Key.down)
+        time.sleep(0.05)
+        kb.release(Key.down)
         time.sleep(0.05)
 
     else:    
@@ -1892,7 +1892,7 @@ def search_for_aura(kb, disable_ui_nav_after : bool, enable_before : bool, aura 
     kb.press(Key.enter)
     time.sleep(0.05)
     kb.release(Key.enter)
-    time.sleep(0.05)
+    time.sleep(1)
 
     if disable_ui_nav_after:
         kb.press(ui_nav_key)
@@ -1960,6 +1960,11 @@ def equip_selected_aura(kb, disable_ui_nav_after : bool, enable_before : bool):
         kb.press(Key.down)
         time.sleep(0.05)
         kb.release(Key.down)
+        time.sleep(0.05)
+
+        kb.press(Key.right)
+        time.sleep(0.05)
+        kb.release(Key.right)
         time.sleep(0.05)
 
         kb.press(Key.left)
@@ -2038,7 +2043,7 @@ def equip_selected_aura(kb, disable_ui_nav_after : bool, enable_before : bool):
         kb.press(Key.enter)
         time.sleep(0.05)
         kb.release(Key.enter)
-        time.sleep(0.05)
+        time.sleep(1)
 
     if disable_ui_nav_after:
         kb.press(ui_nav_key)
@@ -2111,7 +2116,7 @@ def add_amount_to_potion(kb, disable_ui_nav_after : bool, enable_before : bool, 
             kb.press(Key.enter)
             time.sleep(0.05)
             kb.release(Key.enter)
-            time.sleep(0.05)
+            time.sleep(0.1)
 
             kb.press(Key.ctrl)
             kb.press("a")
@@ -2124,7 +2129,7 @@ def add_amount_to_potion(kb, disable_ui_nav_after : bool, enable_before : bool, 
             kb.press(Key.enter)
             time.sleep(0.05)
             kb.release(Key.enter)
-            time.sleep(0.05)
+            time.sleep(0.1)
 
             kb.press(Key.right)
             time.sleep(0.05)
@@ -2134,7 +2139,7 @@ def add_amount_to_potion(kb, disable_ui_nav_after : bool, enable_before : bool, 
             kb.press(Key.enter)
             time.sleep(0.05)
             kb.release(Key.enter)
-            time.sleep(0.05)
+            time.sleep(0.1)
 
         else:
 
@@ -2180,7 +2185,7 @@ def add_amount_to_potion(kb, disable_ui_nav_after : bool, enable_before : bool, 
             kb.press(Key.enter)
             time.sleep(0.05)
             kb.release(Key.enter)
-            time.sleep(0.05)
+            time.sleep(0.1)
 
             kb.press(Key.ctrl)
             kb.press("a")
@@ -2193,7 +2198,7 @@ def add_amount_to_potion(kb, disable_ui_nav_after : bool, enable_before : bool, 
             kb.press(Key.enter)
             time.sleep(0.05)
             kb.release(Key.enter)
-            time.sleep(0.05)
+            time.sleep(0.1)
 
             kb.press(Key.right)
             time.sleep(0.05)
@@ -2203,7 +2208,7 @@ def add_amount_to_potion(kb, disable_ui_nav_after : bool, enable_before : bool, 
             kb.press(Key.enter)
             time.sleep(0.05)
             kb.release(Key.enter)
-            time.sleep(0.05)
+            time.sleep(0.1)
         
         else:
             kb.press(Key.down)
@@ -2255,7 +2260,7 @@ def add_amount_to_potion(kb, disable_ui_nav_after : bool, enable_before : bool, 
             kb.press(Key.enter)
             time.sleep(0.05)
             kb.release(Key.enter)
-            time.sleep(0.05)
+            time.sleep(0.1)
 
             kb.press(Key.ctrl)
             kb.press("a")
@@ -2268,7 +2273,7 @@ def add_amount_to_potion(kb, disable_ui_nav_after : bool, enable_before : bool, 
             kb.press(Key.enter)
             time.sleep(0.05)
             kb.release(Key.enter)
-            time.sleep(0.05)
+            time.sleep(0.1)
 
             kb.press(Key.right)
             time.sleep(0.05)
@@ -2278,7 +2283,7 @@ def add_amount_to_potion(kb, disable_ui_nav_after : bool, enable_before : bool, 
             kb.press(Key.enter)
             time.sleep(0.05)
             kb.release(Key.enter)
-            time.sleep(0.05)
+            time.sleep(0.1)
 
     if disable_ui_nav_after:
         kb.press(ui_nav_key)
@@ -2331,7 +2336,7 @@ def accept_contract(kb, disable_ui_nav_after : bool, enable_before : bool):
     kb.press(Key.enter)
     time.sleep(0.05)
     kb.release(Key.enter)
-    time.sleep(0.05)
+    time.sleep(0.1)
 
 
     if disable_ui_nav_after:
@@ -2366,7 +2371,7 @@ def close_cauldron(kb, disable_ui_nav_after : bool, enable_before : bool):
     kb.press(Key.enter)
     time.sleep(0.05)
     kb.release(Key.enter)
-    time.sleep(0.05)
+    time.sleep(0.1)
 
 
     if disable_ui_nav_after:
@@ -2374,3 +2379,62 @@ def close_cauldron(kb, disable_ui_nav_after : bool, enable_before : bool):
         time.sleep(0.05)
         kb.release(ui_nav_key)
         time.sleep(0.05)
+
+
+def run_uinav_path(kb, text : str, path : str):
+
+    ui_nav_key = load_keybind()
+
+    for char in path:
+
+        match char:
+
+            case "#":
+                kb.press(ui_nav_key)
+                time.sleep(0.05)
+                kb.release(ui_nav_key)
+                time.sleep(0.05)
+
+            case "u":
+                kb.press(Key.up)
+                time.sleep(0.05)
+                kb.release(Key.up)
+                time.sleep(0.05)
+
+            case "d":
+                kb.press(Key.down)
+                time.sleep(0.05)
+                kb.release(Key.down)
+                time.sleep(0.05)
+
+            case "l":
+                kb.press(Key.left)
+                time.sleep(0.05)
+                kb.release(Key.left)
+                time.sleep(0.05)
+
+            case "r":
+                kb.press(Key.right)
+                time.sleep(0.05)
+                kb.release(Key.right)
+                time.sleep(0.05)
+
+            case "e":
+                kb.press(Key.enter)
+                time.sleep(0.05)
+                kb.release(Key.enter)
+                time.sleep(0.05)
+
+            case "t":
+                kb.press(Key.ctrl)
+                kb.press("a")
+                time.sleep(0.05)
+                kb.release("a")
+                kb.release(Key.ctrl)
+                time.sleep(0.05)
+                pag.write(str(text))
+                time.sleep(0.05)
+                kb.press(Key.enter)
+                time.sleep(0.05)
+                kb.release(Key.enter)
+                time.sleep(0.1)

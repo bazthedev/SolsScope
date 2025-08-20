@@ -28,12 +28,12 @@ def create_stats():
             f.close()
 
 def load_stats():
-    with open(f"{MACROPATH}/stats.json", "r") as f:
+    with open(f"{MACROPATH}/stats.json", "r", encoding="utf-8") as f:
         return json.load(f)
 
 def load_all_biomes():
 
-    with open(get_biomes_path(), "r") as f:
+    with open(get_biomes_path(), "r", encoding="utf-8") as f:
         return json.load(f)
 
 def init_stats():
@@ -70,5 +70,5 @@ def increment_stat(stat):
         save_stats(stats)
     
 def save_stats(stats):
-    with open(f"{MACROPATH}/stats.json", "w") as f:
+    with open(f"{MACROPATH}/stats.json", "w", encoding="utf-8") as f:
         json.dump(stats, f, indent=4)

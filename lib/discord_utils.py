@@ -617,7 +617,7 @@ def validate_glitch_hunts(guild_ids : list):
 def get_potion_data(potion_name : str):
 
     try:
-        with open(get_autocraftdata_path(), "r") as f:
+        with open(get_autocraftdata_path(), "r", encoding="utf-8") as f:
             _ = json.load(f)
             return _[potion_name]
     except Exception as e:

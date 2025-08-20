@@ -38,7 +38,7 @@ from constants import (
     ACTIONS_KEYS, MARI_MERCHANT_KEYS, JESTER_MERCHANT_KEYS, AUTOCRAFT_ITEM_KEYS,
     BIOME_CONFIG_KEYS, GLITCHED_ITEMS_KEYS, DREAMSPACE_ITEMS_KEYS,
     DONOTDISPLAY, LIMBO_KEYS, DONOTACCEPTRESET, TOOLTIPS, SKIP_DLS_KEYS,
-    MACRO_OVERRIDES
+    MACRO_OVERRIDES, UINAV_CONTROLS_KEYS
 )
 from utils import (
     get_logger, set_global_logger, Logger, format_key, 
@@ -311,7 +311,7 @@ class MainWindow(QMainWindow):
             self.logger.write_log(f"Failed to install theme '{theme_name}': {e}")
         
         try:
-            with open(get_settings_path(), "w") as f:
+            with open(get_settings_path(), "w", encoding="utf-8") as f:
                 json.dump(self.settings, f, indent=4)
         except Exception as e:
             self.logger.write_log(f"Error whilst saving configuration: {e}")
@@ -862,7 +862,7 @@ class MainWindow(QMainWindow):
                 print("Theme does not exist or is not a .ssthm file.")
                 return DEFAULT_THEME
 
-            with open(theme_path, "r") as f:
+            with open(theme_path, "r", encoding="utf-8") as f:
                 theme_content = f.read()
 
             if validate_theme(theme_content):
@@ -964,6 +964,15 @@ class MainWindow(QMainWindow):
             content_layout.setAlignment(Qt.AlignmentFlag.AlignTop) 
 
             self.tab_entries[tab_name] = {}
+
+            if tab_name == "Actions":
+                uinav_button = QPushButton("UI Navigation Controls")
+                uinav_button.setToolTip("Toggle UI Navigation options.")
+                uinav_button.clicked.connect(self.open_uinav_controls_settings)
+                uinav_button.setStyleSheet("text-align: left; padding: 8px; font-size: 11px;")
+                uinav_button.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+                content_layout.addWidget(uinav_button)
+
             self.populate_tab(content_layout, keys, self.tab_entries[tab_name])
 
             if tab_name == "General":
@@ -999,7 +1008,7 @@ class MainWindow(QMainWindow):
         self.settings["current_theme"] = selected_theme
 
         try:
-            with open(get_settings_path(), "w") as f:
+            with open(get_settings_path(), "w", encoding="utf-8") as f:
                 json.dump(self.settings, f, indent=4)
         except Exception as e:
             self.logger.write_log(f"Error whilst saving configuration: {e}")
@@ -1061,7 +1070,7 @@ class MainWindow(QMainWindow):
                 for tdl in todel:
                     del self.settings["themes"][tdl]
                 try:
-                    with open(get_settings_path(), "w") as f:
+                    with open(get_settings_path(), "w", encoding="utf-8") as f:
                         json.dump(self.settings, f, indent=4)
                 except Exception as e:
                     print(f"Error whilst saving configuration: {e}")
@@ -1079,7 +1088,7 @@ class MainWindow(QMainWindow):
                 continue
 
             if key == "reset_aura":
-                with open(get_auras_path(), "r") as f:
+                with open(get_auras_path(), "r", encoding="utf-8") as f:
                     auras_data = json.load(f)
                     _auras = []
                     for aura in auras_data:
@@ -1636,7 +1645,21 @@ class MainWindow(QMainWindow):
                 current_settings[key] = value
             # Save settings
             update_settings(current_settings)
-            self.show_status_message("Data Download settings saved successfully!", 3000)
+            self.show_status_message("Macro Overrides saved successfully!", 3000)
+
+    def open_uinav_controls_settings(self):
+        """Open UI Navigation Controls dialog."""
+        current_settings = load_settings()
+        dialog = UINavControls(current_settings, self)
+        
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            updated_settings = dialog.get_updated_settings()
+            # Update the current settings
+            for key, value in updated_settings.items():
+                current_settings[key] = value
+            # Save settings
+            update_settings(current_settings)
+            self.show_status_message("UI Navigation Controls saved successfully!", 3000)
 
     def show_status_message(self, message, timeout=2000):
         """Show a temporary status message."""
@@ -1708,7 +1731,7 @@ class MainWindow(QMainWindow):
             self.settings["redownload_libs_on_run"] = False
             self.logger.write_log("Required Libraries and paths will not be redownloaded the next time the macro is run.")
 
-        with open(get_settings_path(), "w") as f:
+        with open(get_settings_path(), "w", encoding="utf-8") as f:
             json.dump(self.settings, f, indent=4)
             self.logger.write_log("Updated config to decide redownload.")
 
@@ -1994,7 +2017,7 @@ class MainWindow(QMainWindow):
         right_acks = [
             "vex (vexthecoder) - Feature ideas", 
             "Doors_Daisukiman - Testing help",
-            "baz - for being sigma (this is just a placeholder)"
+            "C (criticize) - For helping Scope to get to where it is today"
         ]
 
         for ack_list in [left_acks, right_acks]:
@@ -2247,7 +2270,7 @@ class MainWindow(QMainWindow):
                 return
 
             # Load and display donors
-            with open(f"{MACROPATH}/donations.json", "r") as f:
+            with open(f"{MACROPATH}/donations.json", "r", encoding="utf-8") as f:
                 donors = json.load(f)
                 
                 if donors and len(donors) > 0:
@@ -3112,6 +3135,9 @@ class SettingsDialog(QDialog):
         button_box.accepted.connect(self.accept)
         button_box.rejected.connect(self.reject)
         layout.addWidget(button_box)
+
+        self.adjustSize()
+        self.setMaximumSize(self.size())
     
     def populate_settings(self, layout):
         """Populate the settings in the dialog."""
@@ -3349,3 +3375,9 @@ class MacroOverrides(SettingsDialog):
     
     def __init__(self, settings, parent=None):
         super().__init__("Macro Overrides", MACRO_OVERRIDES, settings, parent)
+
+class UINavControls(SettingsDialog):
+    """Dialog for Macro Overrides."""
+    
+    def __init__(self, settings, parent=None):
+        super().__init__("UI Navigation Controls", UINAV_CONTROLS_KEYS, settings, parent)

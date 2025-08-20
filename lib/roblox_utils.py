@@ -19,6 +19,7 @@ import mousekey as mk
 
 from constants import MS_RBLX_LOG_DIR, RBLX_PLAYER_LOG_DIR, PLACE_ID, COORDS
 from utils import get_logger, exists_procs_by_name, get_process_by_name, match_rblx_hwnd_to_pid
+from uinav import load_delay, load_keybind
 from pynput import keyboard 
 from pynput import mouse
 from PIL import ImageGrab
@@ -269,46 +270,52 @@ def detect_client_reconnect(lines_to_check=25):
 
 def join_private_server_link(server_code):
     """Attempts to join a Roblox private server using the server code via protocol handler."""
-    logger = get_logger()
     if not server_code:
-        logger.write_log("Attempted to join private server with empty code.")
         return False
     try:
 
         final_link = f"roblox://placeID={PLACE_ID}^&linkCode={server_code}"
-        logger.write_log(f"Attempting to join server with link code: {server_code[:5]}... (using {final_link[:30]}...)")
 
-        subprocess.Popen(["start", "", final_link], shell=True) 
-        logger.write_log(f"Issued command to join server.")
+        subprocess.Popen(["start", "", final_link], shell=True)
         return True
     except Exception as e:
-        logger.write_log(f"Error executing command to join private server: {e}")
         return False
+    
+def join_private_share_link(server_code):
+    """Attempts to join a Roblox private server using the share code via protocol handler."""
+    if not server_code:
+        return False
+    try:
 
+        final_link = f"roblox://navigation/share_links?code={server_code}^&type=Server"
+        subprocess.Popen(["start", "", final_link], shell=True) 
+        return True
+    except Exception as e:
+        return False
+    
 def leave_main_menu():
     """Clicks the start button if the latest log state is 'In Main Menu'."""
     logger = get_logger()
     try:
-        if get_latest_equipped_aura() == "In Main Menu":
-            logger.write_log("Detected 'In Main Menu'. Clicking start button...")
-            if "start_btn_pos" in COORDS:
-                 _keyboard_controller.press("#")
-                 time.sleep(0.1)
-                 _keyboard_controller.release("#")
-                 time.sleep(0.1)
-                 _keyboard_controller.press(keyboard.Key.enter)
-                 time.sleep(0.1)
-                 _keyboard_controller.release(keyboard.Key.enter)
-                 time.sleep(0.1)
-                 _keyboard_controller.press("#")
-                 time.sleep(0.1)
-                 _keyboard_controller.release("#")
-                 time.sleep(0.1)
-                 time.sleep(4)
+        keybind = load_keybind()
+        delay = load_delay()
+        
+        logger.write_log("Detected 'In Main Menu'. Clicking start button...")
+        _keyboard_controller.press(keybind)
+        time.sleep(delay)
+        _keyboard_controller.release(keybind)
+        time.sleep(delay)
+        _keyboard_controller.press(keyboard.Key.enter)
+        time.sleep(delay)
+        _keyboard_controller.release(keyboard.Key.enter)
+        time.sleep(delay)
+        _keyboard_controller.press(keybind)
+        time.sleep(delay)
+        _keyboard_controller.release(keybind)
+        time.sleep(delay)
+        time.sleep(4)
 
-                 return True 
-            else:
-                 logger.write_log("Error leaving main menu: start_btn_pos not found in COORDS.")
+        return True
     except Exception as e:
          logger.write_log(f"Error attempting to leave main menu: {e}")
     return False 
@@ -318,16 +325,17 @@ def reset_character():
     logger = get_logger()
     logger.write_log("Resetting character...")
     try:
+        delay = load_delay()
         _keyboard_controller.press(keyboard.Key.esc)
-        time.sleep(0.1)
+        time.sleep(delay)
         _keyboard_controller.release(keyboard.Key.esc)
         time.sleep(0.2)
         _keyboard_controller.press('r')
-        time.sleep(0.1)
+        time.sleep(delay)
         _keyboard_controller.release('r')
         time.sleep(0.2)
         _keyboard_controller.press(keyboard.Key.enter)
-        time.sleep(0.1)
+        time.sleep(delay)
         _keyboard_controller.release(keyboard.Key.enter)
         time.sleep(0.2)
         logger.write_log("Character reset initiated.")
@@ -339,16 +347,17 @@ def align_camera(zoom_out_scrolls=80, zoom_in_scrolls=3):
     logger = get_logger()
     logger.write_log("Aligning camera...")
     try:
+        delay = load_delay()
 
         reset_character()
         time.sleep(3) 
 
         _keyboard_controller.press(keyboard.Key.shift)
-        time.sleep(0.1)
+        time.sleep(delay)
         _keyboard_controller.release(keyboard.Key.shift)
         time.sleep(0.2)
         _keyboard_controller.press(keyboard.Key.shift)
-        time.sleep(0.1)
+        time.sleep(delay)
         _keyboard_controller.release(keyboard.Key.shift)
         time.sleep(0.2)
 
@@ -394,15 +403,8 @@ def click_ms_store_spawn_button():
     logger = get_logger()
     logger.write_log("Clicking MS Store spawn button...")
     try:
-        if "ms_rblx_spawn_pos" in COORDS:
-            x, y = COORDS["ms_rblx_spawn_pos"]
-            _mkey_controller.left_click_xy_natural(x, y)
-            time.sleep(0.1)
-            _mkey_controller.left_click_xy_natural(x, y) 
-            time.sleep(0.2)
-            return True
-        else:
-             logger.write_log("Error clicking spawn: ms_rblx_spawn_pos not found in COORDS.")
+        leave_main_menu()
+        return True
     except Exception as e:
         logger.write_log(f"Error clicking MS Store spawn button: {e}")
     return False
@@ -411,8 +413,9 @@ def toggle_fullscreen_ms_store():
     logger = get_logger()
     logger.write_log("Toggling fullscreen (F11)...")
     try:
+        delay = load_delay()
         _keyboard_controller.press(keyboard.Key.f11)
-        time.sleep(0.1)
+        time.sleep(delay)
         _keyboard_controller.release(keyboard.Key.f11)
         time.sleep(0.2)
         return True
@@ -434,3 +437,27 @@ def get_roblox_window_bbox():
         if win.width > 100 and win.height > 100:
             return (win.left, win.top, win.width, win.height)
     return None
+
+def extract_server_code(url: str):
+    """Extracts the server link/share code from a URL."""
+
+    link_pattern = re.compile(
+        f"https://www.roblox.com/games/{PLACE_ID}/*\\?privateServerLinkCode="
+    )
+    link_pattern_2 = re.compile(r"https://.*&type=Server")
+
+    if link_match := link_pattern.search(url):
+        try:
+            code = link_match.group(0).split("LinkCode=")[-1]
+            return code, 1
+        except IndexError:
+            return None, None
+
+    if link_match_2 := link_pattern_2.search(url):
+        try:
+            share_code = link_match_2.group(0).split("code=")[-1].split("&")[0]
+            return share_code, 2
+        except IndexError:
+            return None, None
+
+    return None, None

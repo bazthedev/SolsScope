@@ -32,6 +32,7 @@ except ImportError as e:
 try:
     #import eden_vip, fish_market, fish_market_abyssal, fishing_spot, obby, questboard, shrine_part1, shrine_part2, shrine_part3
     IMPORTED_ALL_PATHS = True
+    IMPORTED_ALL_PATHS = False
 except ImportError:
     IMPORTED_ALL_PATHS = False
     print("Could not import all required Path Scripts.")
@@ -56,7 +57,8 @@ from roblox_utils import (
     get_latest_equipped_aura, get_latest_hovertext, detect_client_disconnect,
     detect_client_reconnect, join_private_server_link, leave_main_menu,
     activate_ms_store_roblox, click_ms_store_spawn_button, toggle_fullscreen_ms_store,
-    reset_character, detect_ui_nav, get_roblox_window_bbox, check_for_eden_spawn
+    reset_character, detect_ui_nav, get_roblox_window_bbox, check_for_eden_spawn,
+    join_private_share_link, extract_server_code
 )
 from discord_utils import forward_webhook_msg, create_autocraft_embed
 from settings_manager import get_auras_path, get_biomes_path, get_merchant_path, get_questboard_path, get_fish_path
@@ -950,9 +952,6 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
                 except Exception:
                     pass
 
-            
-
-
     logger.write_log("Merchant Detection thread stopped.")
 
 def auto_craft(webhook, settings: dict, stop_event: threading.Event, sniped_event: threading.Event, keyboard_lock: threading.Lock, mkey, kb, ms, ignore_lock, ignore_next_detection, reader, pause_event, potions_crafted):
@@ -984,7 +983,7 @@ def auto_craft(webhook, settings: dict, stop_event: threading.Event, sniped_even
     if stop_event.wait(timeout=10):
         return
     
-    if not settings.get("do_not_walk_to_stella", True):
+    if not settings.get("do_not_walk_to_stella", True) and not IMPORTED_ALL_PATHS:
         logger.write_log("Auto Craft: Walking To Stella's")
         with keyboard_lock:
             logger.write_log("Walking back to Stella's")
@@ -2505,14 +2504,13 @@ def disconnect_prevention(settings: dict, stop_event: threading.Event, sniped_ev
         return
 
     link_code = None
+    link_code_type = None
     try:
-        if "privateServerLinkCode=" in ps_link:
-            link_code = ps_link.split("privateServerLinkCode=")[-1]
-
+        link_code, link_code_type = extract_server_code(ps_link)
     except Exception as e:
         logger.write_log(f"Error extracting link code for disconnect prevention: {e}")
 
-    if not link_code:
+    if not link_code or not link_code_type:
         logger.write_log("Disconnect Prevention disabled: Could not extract link code from private server link.")
         return
 
@@ -2550,7 +2548,13 @@ def disconnect_prevention(settings: dict, stop_event: threading.Event, sniped_ev
                 while rejoin_attempts < max_rejoin_attempts and not stop_event.is_set() and not reconnected:
                     rejoin_attempts += 1
                     logger.write_log(f"Rejoin attempt #{rejoin_attempts}...")
-                    join_private_server_link(link_code)
+                    if link_code_type == 1:
+                        join_private_server_link(link_code)
+                    elif link_code_type == 2:
+                        join_private_share_link(link_code)
+                    else:
+                        logger.write_log("Unknown Link code type (stopping).")
+                        return
                     time.sleep(15) 
 
                     if exists_procs_by_name("Windows10Universal.exe"):
@@ -2566,11 +2570,10 @@ def disconnect_prevention(settings: dict, stop_event: threading.Event, sniped_ev
                     reconnect_check_start = time.time()
                     while time.time() - reconnect_check_start < 45:
                          if detect_client_reconnect():
-                             logger.write_log("Reconnection successful based on logs!")
-                             reconnected = True
-
-                             leave_main_menu()
-                             break
+                            logger.write_log("Reconnection successful based on logs!")
+                            reconnected = True
+                            leave_main_menu()
+                            break
                          if stop_event.is_set(): break
                          time.sleep(2)
                     if reconnected: break
@@ -2830,7 +2833,7 @@ def do_obby(settings: dict, webhook, stop_event: threading.Event, sniped_event: 
                     embed=emb
                 )
             
-            if is_autocraft:
+            if is_autocraft and IMPORTED_ALL_PATHS:
                 logger.write_log("Walking back to Stella's")
                 try:
                     reset_character()
@@ -3074,7 +3077,7 @@ def auto_questboard(settings: dict, webhook, stop_event: threading.Event, sniped
                                 time.sleep(0.2)
                                 tracked_quests["quest_board"].append(detected_quest)
                                 previous_quest = detected_quest
-                                with open(TRACKED_QUESTS_PATH, "w") as f:
+                                with open(TRACKED_QUESTS_PATH, "w", encoding="utf-8") as f:
                                     json.dump(tracked_quests, f, indent=4)
                                 description = f"**Objective**: {quest_data.get('objective', "Failed to fetch objective.")}\n**Difficulty**: "
                                 for i in range(quest_data.get("difficulty", 1)):
@@ -3143,7 +3146,7 @@ def auto_questboard(settings: dict, webhook, stop_event: threading.Event, sniped
                                 else:
                                     logger.write_log("Quest was completed, removing from tracked quests.")
                                     tracked_quests["quest_board"].remove(previous_quest)
-                                    with open(TRACKED_QUESTS_PATH, "w") as f:
+                                    with open(TRACKED_QUESTS_PATH, "w", encoding="utf-8") as f:
                                         json.dump(tracked_quests, f, indent=4)
                                     description = f"**Objective**: {quest_data.get('objective', "Failed to fetch objective.")}\n**Difficulty**: "
                                     for i in range(quest_data.get("difficulty", 1)):

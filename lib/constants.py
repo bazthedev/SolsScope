@@ -188,7 +188,8 @@ DEFAULTSETTINGS = {
     "vok_taran" : False,
     "enable_ui_nav_key" : "#",
     "skip_autocraft_download" : False,
-    "send_item_crafted_notification" : True
+    "send_item_crafted_notification" : True,
+    "delay" : 0.05
 }
 
 VALIDSETTINGSKEYS = list(DEFAULTSETTINGS.keys())
@@ -245,7 +246,8 @@ TOOLTIPS = {
     "vok_taran" : "Types \"vok taran\" in the chat every 30 minutes to spawn a Sand Storm biome.",
     "enable_ui_nav_key" : "The key needed to be pressed to enable UI Navigation.",
     "skip_autocraft_download" : "Skip downloading the Auto Craft Data.",
-    "send_item_crafted_notification" : "Send a notification whenever an item is crafted during Auto Craft. This may cause the program to take longer per potion."
+    "send_item_crafted_notification" : "Send a notification whenever an item is crafted during Auto Craft. This may cause the program to take longer per potion.",
+    "delay" : "How long to wait between actions. A larger number is recommended for potato PCs."
 }
 
 DONOTDISPLAY = ["__version__", "current_theme"]
@@ -256,11 +258,13 @@ AURAS_KEYS = ["minimum_roll", "minimum_ping", "use_reset_aura", "reset_aura", "t
 BIOMES_KEYS = ["auto_biome_randomizer", "auto_strange_controller", "vok_taran", "pop_in_glitch", "pop_in_dreamspace"]
 SNIPER_KEYS = ["sniper_enabled", "sniper_toggles", "DISCORD_TOKEN", "sniper_logs", "scan_channels"]
 
-ACTIONS_KEYS = ["enable_ui_nav_key", "merchant_detection", "auto_sell_to_jester", "do_obby", "use_alternate_uinav", "notify_obby_completion", "has_abyssal_hunter"]
+ACTIONS_KEYS = ["merchant_detection", "auto_sell_to_jester", "do_obby", "use_alternate_uinav", "notify_obby_completion", "has_abyssal_hunter"]
 
 MARI_MERCHANT_KEYS = ["ping_mari", "mari_ping_id", "auto_purchase_items_mari"]
 JESTER_MERCHANT_KEYS = ["ping_jester", "jester_ping_id", "auto_purchase_items_jester", "amount_of_item_to_sell", "items_to_sell"]
 AUTOCRAFT_ITEM_KEYS = ["auto_craft_item", "skip_auto_mode_warning", "do_not_walk_to_stella"]
+
+UINAV_CONTROLS_KEYS = ["enable_ui_nav_key", "delay"]
 
 BIOME_CONFIG_KEYS = ["biomes"]
 GLITCHED_ITEMS_KEYS = ["auto_use_items_in_glitch"]

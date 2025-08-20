@@ -61,7 +61,7 @@ def parse_key(k):
     return special_keys.get(k, k.strip("'\""))
 
 def run_macro(path):
-    with open(path, "r") as f:
+    with open(path, "r", encoding="utf-8") as f:
         lines = f.readlines()
 
     instructions = []

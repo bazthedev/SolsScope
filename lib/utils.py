@@ -21,6 +21,8 @@ import pyautogui as pag
 import cv2
 import re
 from gc import collect
+import psutil
+import platform
 
 from constants import MACROPATH, COORDS_PERCENT1610, COORDS_PERCENT169, COORDS_PERCENT43
 
@@ -336,7 +338,7 @@ def apply_roblox_fastflags(update_status_callback=None):
             if os.path.exists(json_file_path):
                 file_existed = True
                 try:
-                    with open(json_file_path, 'r') as f:
+                    with open(json_file_path, 'r', encoding="utf-8") as f:
                         content = f.read()
                         if content.strip(): 
                             current_settings = json.loads(content)
@@ -361,7 +363,7 @@ def apply_roblox_fastflags(update_status_callback=None):
                     needs_update = True
 
             if needs_update:
-                with open(json_file_path, 'w') as f:
+                with open(json_file_path, 'w', encoding="utf-8") as f:
                     json.dump(current_settings, f, indent=2)
                 if file_existed:
                     updated_count += 1
@@ -1132,3 +1134,21 @@ def get_autocraft_path(nonscrolled: tuple, scrolled: tuple = (), position: int =
     }
 
     return lookup.get(position, {}).get((nonscrolled, scrolled), -1)
+
+
+def get_hardware_profile():
+    info = {
+        "cpu_name": platform.processor(),
+        "cpu_cores": psutil.cpu_count(logical=False),
+        "cpu_threads": psutil.cpu_count(logical=True),
+        "ram_gb": round(psutil.virtual_memory().total / (1024**3), 1),
+        "os": platform.system() + " " + platform.release()
+    }
+    return info
+
+def get_device_score():
+    cores = psutil.cpu_count(logical=True)
+    ram_gb = psutil.virtual_memory().total / (1024**3)
+
+    score = (cores * 1.5) + (ram_gb * 0.5)
+    return score

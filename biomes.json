@@ -4,76 +4,87 @@
         "multiplier" : 3,
         "rare" : false,
         "event" : false,
-        "img_url" : "https://raw.githubusercontent.com/bazthedev/SolsScope/refs/heads/main/img/biome/WINDY.png"
+        "img_url" : "https://raw.githubusercontent.com/bazthedev/SolsScope/refs/heads/main/img/biome/WINDY.png",
+        "enabled" : true
     },
     "snowy" : {
         "colour" : "#c4f5f6",
         "multiplier" : 3,
         "rare" : false,
         "event" : false,
-        "img_url" : "https://raw.githubusercontent.com/bazthedev/SolsScope/refs/heads/main/img/biome/SNOWY.png"
+        "img_url" : "https://raw.githubusercontent.com/bazthedev/SolsScope/refs/heads/main/img/biome/SNOWY.png",
+        "enabled" : true
     },
     "rainy" : {
         "colour" : "#4385ff",
         "multiplier" : 4,
         "rare" : false,
         "event" : false,
-        "img_url" : "https://raw.githubusercontent.com/bazthedev/SolsScope/refs/heads/main/img/biome/RAINY.png"
+        "img_url" : "https://raw.githubusercontent.com/bazthedev/SolsScope/refs/heads/main/img/biome/RAINY.png",
+        "enabled" : true
     },
     "hell" : {
         "colour" : "#4a1722",
         "multiplier" : 6,
         "rare" : false,
         "event" : false,
-        "img_url" : "https://raw.githubusercontent.com/bazthedev/SolsScope/refs/heads/main/img/biome/HELL.png"
+        "img_url" : "https://raw.githubusercontent.com/bazthedev/SolsScope/refs/heads/main/img/biome/HELL.png",
+        "enabled" : true
     },
     "sand storm" : {
         "colour" : "#f4c27c",
         "multiplier" : 4,
         "rare" : false,
         "event" : false,
-        "img_url" : "https://raw.githubusercontent.com/bazthedev/SolsScope/refs/heads/main/img/biome/SANDSTORM.png"
+        "img_url" : "https://raw.githubusercontent.com/bazthedev/SolsScope/refs/heads/main/img/biome/SANDSTORM.png",
+        "enabled" : true
     },
     "starfall" : {
         "colour" : "#6784e0",
         "multiplier" : 5,
         "rare" : false,
         "event" : false,
-        "img_url" : "https://raw.githubusercontent.com/bazthedev/SolsScope/refs/heads/main/img/biome/STARFALL.png"
+        "img_url" : "https://raw.githubusercontent.com/bazthedev/SolsScope/refs/heads/main/img/biome/STARFALL.png",
+        "enabled" : true
     },
     "corruption" : {
         "colour" : "#9042ff",
         "multiplier" : 5,
         "rare" : false,
         "event" : false,
-        "img_url" : "https://raw.githubusercontent.com/bazthedev/SolsScope/refs/heads/main/img/biome/CORRUPTION.png"
+        "img_url" : "https://raw.githubusercontent.com/bazthedev/SolsScope/refs/heads/main/img/biome/CORRUPTION.png",
+        "enabled" : true
     },
     "null" : {
         "colour" : "#070910",
         "multiplier" : 1000,
         "rare" : false,
         "event" : false,
-        "img_url" : "https://raw.githubusercontent.com/bazthedev/SolsScope/refs/heads/main/img/biome/NULL.png"
+        "img_url" : "https://raw.githubusercontent.com/bazthedev/SolsScope/refs/heads/main/img/biome/NULL.png",
+        "enabled" : true
     },
     "dreamspace" : {
         "colour" : "#ea6cbc",
         "multiplier" : 1,
         "rare" : true,
         "event" : false,
-        "img_url" : "https://raw.githubusercontent.com/bazthedev/SolsScope/refs/heads/main/img/biome/DREAMSPACE.png"
+        "img_url" : "https://raw.githubusercontent.com/bazthedev/SolsScope/refs/heads/main/img/biome/DREAMSPACE.png",
+        "enabled" : true
     },
     "glitched" : {
         "colour" : "#64fc64",
         "multiplier" : 1,
         "rare" : true,
         "event" : false,
-        "img_url" : "https://raw.githubusercontent.com/bazthedev/SolsScope/refs/heads/main/img/biome/GLITCHED.png"
+        "img_url" : "https://raw.githubusercontent.com/bazthedev/SolsScope/refs/heads/main/img/biome/GLITCHED.png",
+        "enabled" : true
     },
     "blazing sun" : {
         "colour" : "#fc9003",
         "multiplier" : 2,
         "rare" : false,
         "event" : true,
-        "img_url" : "https://cdn.drawception.com/drawings/953223/dDnRqtqgrN.png"
+        "img_url" : "https://cdn.drawception.com/drawings/953223/dDnRqtqgrN.png",
+        "enabled" : false
     }
 }

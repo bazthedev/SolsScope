@@ -92,7 +92,7 @@ DEFAULTSETTINGS = {
     "biomes": { 
         "snowy": True, "windy": True, "rainy": True, "sand storm": True,
         "hell": True, "starfall": True, "corruption": True, "null": True,
-        "glitched": True, "dreamspace": True, "blazing sun" : True
+        "glitched": True, "dreamspace": True,
     },
     "auto_purchase_items_mari": {
         "Lucky Potion": {"Purchase" : False, "amount" : 25},
@@ -189,7 +189,8 @@ DEFAULTSETTINGS = {
     "enable_ui_nav_key" : "#",
     "skip_autocraft_download" : False,
     "send_item_crafted_notification" : True,
-    "delay" : 0.05
+    "delay" : 0.05,
+    "vip_status" : "No VIP"
 }
 
 VALIDSETTINGSKEYS = list(DEFAULTSETTINGS.keys())
@@ -258,13 +259,13 @@ AURAS_KEYS = ["minimum_roll", "minimum_ping", "use_reset_aura", "reset_aura", "t
 BIOMES_KEYS = ["auto_biome_randomizer", "auto_strange_controller", "vok_taran", "pop_in_glitch", "pop_in_dreamspace"]
 SNIPER_KEYS = ["sniper_enabled", "sniper_toggles", "DISCORD_TOKEN", "sniper_logs", "scan_channels"]
 
-ACTIONS_KEYS = ["merchant_detection", "auto_sell_to_jester", "do_obby", "use_alternate_uinav", "notify_obby_completion", "has_abyssal_hunter"]
+ACTIONS_KEYS = ["merchant_detection", "auto_sell_to_jester", "do_obby", "vip_status", "notify_obby_completion", "has_abyssal_hunter"]
 
 MARI_MERCHANT_KEYS = ["ping_mari", "mari_ping_id", "auto_purchase_items_mari"]
 JESTER_MERCHANT_KEYS = ["ping_jester", "jester_ping_id", "auto_purchase_items_jester", "amount_of_item_to_sell", "items_to_sell"]
 AUTOCRAFT_ITEM_KEYS = ["auto_craft_item", "skip_auto_mode_warning", "do_not_walk_to_stella"]
 
-UINAV_CONTROLS_KEYS = ["enable_ui_nav_key", "delay"]
+UINAV_CONTROLS_KEYS = ["enable_ui_nav_key", "delay", "use_alternate_uinav"]
 
 BIOME_CONFIG_KEYS = ["biomes"]
 GLITCHED_ITEMS_KEYS = ["auto_use_items_in_glitch"]

@@ -362,19 +362,20 @@ def _validate_biome_toggles(biome_settings, biomes_data):
     logger = get_logger()
     validated_biomes = biome_settings.copy()
     needs_update = False
-    valid_biome_names = list(biomes_data.keys()) 
+    valid_biome_names = list(biomes_data.keys())
 
     for biome_name in valid_biome_names:
         if biome_name not in validated_biomes:
-            validated_biomes[biome_name] = DEFAULTSETTINGS["biomes"].get(biome_name, False)
-            logger.write_log(f"Biome Validation: Added missing biome '{biome_name}'.")
-            needs_update = True
+            if biomes_data[biome_name]["enabled"]:
+                validated_biomes[biome_name] = DEFAULTSETTINGS["biomes"].get(biome_name, False)
+                logger.write_log(f"Biome Validation: Added missing biome '{biome_name}'.")
+                needs_update = True
         elif not isinstance(validated_biomes[biome_name], bool):
              logger.write_log(f"Biome Validation: Correcting type for biome '{biome_name}'.")
              validated_biomes[biome_name] = DEFAULTSETTINGS["biomes"].get(biome_name, False)
              needs_update = True
 
-    keys_to_remove = [key for key in validated_biomes if key not in valid_biome_names]
+    keys_to_remove = [key for key in validated_biomes if key not in valid_biome_names or not biomes_data[key]["enabled"]]
     if keys_to_remove:
         for key in keys_to_remove:
             del validated_biomes[key]

@@ -31,8 +31,8 @@ except ImportError as e:
 
 try:
     #import eden_vip, fish_market, fish_market_abyssal, fishing_spot, obby, questboard, shrine_part1, shrine_part2, shrine_part3
+    import qb_vip, questboard
     IMPORTED_ALL_PATHS = True
-    IMPORTED_ALL_PATHS = False
 except ImportError:
     IMPORTED_ALL_PATHS = False
     print("Could not import all required Path Scripts.")
@@ -2999,6 +2999,8 @@ def auto_questboard(settings: dict, webhook, stop_event: threading.Event, sniped
         return
     
     COORDS_PERCENT = get_coords_percent(COORDS)
+
+    VIP_STATUS = settings.get("vip_status", "No VIP")
     
     while not stop_event.is_set():
 
@@ -3016,7 +3018,12 @@ def auto_questboard(settings: dict, webhook, stop_event: threading.Event, sniped
             time.sleep(1)
             collection_align(kb, True)
             time.sleep(1)
-            run_macro(f"{PATH_DIR}/questboard.mms")
+            if VIP_STATUS in ["VIP", "VIP+"]:
+                qb_vip.run_macro(qb_vip.macro_actions)
+            elif VIP_STATUS == "No VIP":
+                questboard.run_macro(questboard.macro_actions)
+            else:
+                logger.write_log(f"VIP Status ({VIP_STATUS}) is unrecognised.")
             time.sleep(1)
             kb.press("e")
             time.sleep(0.2)
@@ -3061,7 +3068,7 @@ def auto_questboard(settings: dict, webhook, stop_event: threading.Event, sniped
                     logger.write_log(f"Auto Quest Board: Could not identify quest from OCR ('{ocr_quest_raw}'). Dismissing.")
                     dismiss_quest(kb, True, True)
                 else:
-                    logger.write_log(f"Auto Quest Board: Detected Quest ('{detected_quest})")
+                    logger.write_log(f"Auto Quest Board: Detected Quest ('{detected_quest}')")
 
                     if detected_quest in ACCEPTED_QUESTBOARD:
 
@@ -3186,8 +3193,6 @@ def auto_questboard(settings: dict, webhook, stop_event: threading.Event, sniped
                         dismiss_quest(kb, True, True)
                         previous_quest = detected_quest
                     time.sleep(3)
-
-                    print(detected_quest, "\n", previous_quest)
 
             exit_quest(kb, True, True)
             time.sleep(3)

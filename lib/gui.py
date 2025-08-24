@@ -1103,6 +1103,16 @@ class MainWindow(QMainWindow):
                 entry_dict[key] = widget
                 continue
 
+            if key == "vip_status":
+                widget = QComboBox()
+                options = ["No VIP", "VIP", "VIP+"]
+                widget.addItems(options)
+                if value in options:
+                    widget.setCurrentText(value)
+                form_layout.addRow(label, widget)
+                entry_dict[key] = widget
+                continue
+
             if isinstance(value, dict):
                 group_box = QGroupBox(formatted_key) 
                 group_box.setCheckable(False) 
@@ -2655,7 +2665,7 @@ class MainWindow(QMainWindow):
                 "Inventory Screenshots": (inventory_screenshot, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.pause_event, self.reader]) if self.settings.get("periodic_screenshots", {}).get("inventory") else None,
                 "Storage Screenshots": (storage_screenshot, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.pause_event, self.reader]) if self.settings.get("periodic_screenshots", {}).get("storage") else None,
                 #"Obby": (do_obby, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.ignore_lock, self.ignore_next_detection, self.pause_event, self.reader]) if self.settings.get("do_obby") and not self.settings.get("do_not_walk_to_stella", False) else None,
-                #"Auto Quest Board": (auto_questboard, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.mouse_controller, self.reader, self.pause_event]) if self.settings.get("enable_auto_quest_board") else None,
+                "Auto Quest Board": (auto_questboard, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.mouse_controller, self.reader, self.pause_event]) if self.settings.get("enable_auto_quest_board") else None,
                 "vok taran": (vok_taran, [self.settings, self.webhook, self.stop_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.pause_event]) if self.settings.get("vok_taran") else None,
             }
         elif is_limbo_mode:
@@ -2673,7 +2683,7 @@ class MainWindow(QMainWindow):
                 "Storage Screenshots": (storage_screenshot, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.pause_event, self.reader]) if self.settings.get("periodic_screenshots", {}).get("storage") else None,
                 #"Obby": (do_obby, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.ignore_lock, self.ignore_next_detection, self.pause_event, self.reader]) if self.settings.get("do_obby") else None,
                 "Portable Crack": (portable_crack, [self.settings, self.stop_event, self.sniped_event, self.mkey, self.keyboard_controller, self.keyboard_lock, self.pause_event, self.reader]) if is_limbo_mode and not is_idle_mode else None,
-                #"Auto Quest Board": (auto_questboard, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.mouse_controller, self.reader, self.pause_event]) if self.settings.get("enable_auto_quest_board") else None,
+                "Auto Quest Board": (auto_questboard, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.mouse_controller, self.reader, self.pause_event]) if self.settings.get("enable_auto_quest_board") else None,
             }
         elif is_fishing_mode:
             self.logger.write_log("Starting in Limbo Mode.")
@@ -2700,7 +2710,7 @@ class MainWindow(QMainWindow):
                 "Inventory Screenshots": (inventory_screenshot, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.pause_event, self.reader]) if self.settings.get("periodic_screenshots", {}).get("inventory") else None,
                 "Storage Screenshots": (storage_screenshot, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.pause_event, self.reader]) if self.settings.get("periodic_screenshots", {}).get("storage") else None,
                 #"Obby": (do_obby, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.ignore_lock, self.ignore_next_detection, self.pause_event, self.reader]) if self.settings.get("do_obby") else None,
-                #"Auto Quest Board": (auto_questboard, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.mouse_controller, self.reader, self.pause_event]) if self.settings.get("enable_auto_quest_board") else None,
+                "Auto Quest Board": (auto_questboard, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.mouse_controller, self.reader, self.pause_event]) if self.settings.get("enable_auto_quest_board") else None,
                 "vok taran": (vok_taran, [self.settings, self.webhook, self.stop_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.pause_event]) if self.settings.get("vok_taran") else None,
             }
         return targets
@@ -3186,7 +3196,6 @@ class SettingsDialog(QDialog):
                     tooltip_text = TOOLTIPS.get(key)
                     if not isinstance(tooltip_text, str):
                         tooltip_text = None
-
                     
                     if isinstance(sub_value, bool):
                         sub_checkbox = QCheckBox(sub_key)

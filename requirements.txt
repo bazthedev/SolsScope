@@ -1,4 +1,4 @@
-discord.py==1.7.3
+discord.py
 pyautogui
 pynput
 requests
@@ -9,7 +9,6 @@ aiohttp
 websockets
 psutil
 opencv-python
-pytesseract
+easyocr
 pyqt6
-legacy-cgi
-audioop-lts
+keyboard

@@ -11,4 +11,3 @@ psutil
 easyocr
 pyqt6
 keyboard
-opencv-python-headless

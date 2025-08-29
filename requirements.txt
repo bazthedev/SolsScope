@@ -12,4 +12,4 @@ opencv-python
 easyocr
 pyqt6
 keyboard
-numpy==2.2.6
+numpy==1.2.6

@@ -12,4 +12,3 @@ opencv-python
 easyocr
 pyqt6
 keyboard
-numpy

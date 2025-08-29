@@ -8,6 +8,7 @@ mousekey
 aiohttp
 websockets
 psutil
+numpy
 easyocr
 pyqt6
 keyboard

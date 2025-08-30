@@ -9,3 +9,4 @@ psutil
 easyocr==1.7.2
 pyqt6
 keyboard
+pyscreenrec

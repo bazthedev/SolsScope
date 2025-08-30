@@ -5,10 +5,7 @@ requests
 pillow
 screeninfo
 mousekey
-aiohttp
-websockets
 psutil
-opencv-python==4.11.0.86
 easyocr==1.7.2
 pyqt6
 keyboard

@@ -1,7 +1,7 @@
 """
 SolsScope/Baz's Macro
 Created by Baz and Cresqnt
-v1.2.8
+v2.0.0
 Support server: https://discord.gg/6cuCu6ymkX
 """
 
@@ -15,8 +15,6 @@ from packaging.version import parse as parse_version
 import re
 import pyautogui
 import time
-import pyscreenrec
-import pygetwindow as gw
 import datetime
 from roblox_utils import get_latest_hovertext, get_active_log_directory
 
@@ -43,7 +41,8 @@ class Plugin:
         self.name = "Clipping"
         self.version = "1.0.2"
         self.authors = ["bazthedev"]
-        self.requires = "1.2.8"
+        self.requires = "2.0.0"
+        self.requirements = ["pygetwindow"]
         self.autocraft_compatible = True
         self.macro = macro
         
@@ -56,13 +55,15 @@ class Plugin:
         self.config = self.load_or_create_config()
         self.entries = {}
 
+
+
         self.LOG_FILE_PATH = self.MACROPATH + "\\solsscope.log"
         self.AURA_REGEX = re.compile(r"\[\s*(?P<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\s*-\s*INFO\s*\]\s*New aura detected:\s*(?P<name>.+)")
         self.BIOME_REGEX = re.compile(
             r"\[\s*(?P<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\s*-\s*INFO\s*\]\s*Biome change detected:\s*(?P<old_biome>[\w\s]+?)\s*->\s*(?P<new_biome>[\w\s]+)"
         )
 
-        self.recorder = pyscreenrec.ScreenRecorder()
+        self.recorder = None
         
         macro.logger.write_log(f"[{self.name}] Plugin initialized (v{self.version})")
 
@@ -206,6 +207,7 @@ class Plugin:
                 time.sleep(0.1)
 
     def get_roblox_window_pos(self):
+        import pygetwindow as gw
         windows = gw.getWindowsWithTitle("Roblox")
         for win in windows:
             if win.width > 100 and win.height > 100:
@@ -228,6 +230,8 @@ class Plugin:
             - Use self.macro.keyboard_lock for thread-safe input
         """
         try:
+            import pyscreenrec
+            self.recorder = pyscreenrec.ScreenRecorder()
             os.makedirs(os.path.join(self.MACROPATH, "plugins", "rec"), exist_ok=True)
             self.macro.logger.write_log(f"[{self.name}] Plugin thread started.")
             

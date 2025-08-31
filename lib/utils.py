@@ -8,9 +8,9 @@ Support server: https://discord.gg/8khGXqG7nA
 import sys
 import os
 sys.path.insert(1, os.path.expandvars(r"%localappdata%/SolsScope/lib"))
+
 import psutil
 import time
-import tkinter as tk
 from difflib import SequenceMatcher
 import mousekey as mk 
 import io 
@@ -18,11 +18,11 @@ import discord
 import datetime
 import json
 import pyautogui as pag
-import cv2
 import re
 from gc import collect
 import psutil
 import platform
+import cv2
 
 from constants import MACROPATH, COORDS_PERCENT1610, COORDS_PERCENT169, COORDS_PERCENT43
 
@@ -288,7 +288,7 @@ def format_key(key: str) -> str:
     
     custom_labels = {
         "merchant_detection": "Auto Detect And Buy From Merchants",
-        "vok_taran" : "Spawn Sand Storm using \"vok taran\"",
+        #"vok_taran" : "Spawn Sand Storm using \"vok taran\"",
         "use_gpu_for_ocr" : "Use GPU for OCR processing",
         "enable_ui_nav_key" : "Turn on UI Navigation key bind"
     }

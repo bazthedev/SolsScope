@@ -65,16 +65,17 @@ from uinav import TGIFRIDAY
 
 from stats import load_stats
 
+from packager import PackageInstallerGUI
+
 try:
     from PIL import Image
-
     PIL_AVAILABLE = True
 except ImportError:
     PIL_AVAILABLE = False
 
 try:
     from easyocr import Reader
-
+    import cv2
     OCR_AVAILABLE = True
 except ImportError:
     OCR_AVAILABLE = False
@@ -190,7 +191,10 @@ class MainWindow(QMainWindow):
 
         self.MACROPATH = os.path.expandvars(r"%localappdata%\SolsScope")
 
-        self.setWindowTitle(f"SolsScope v{LOCALVERSION} (PyQt)")
+        if self.easter_eggs["InvertedScope"]:
+            self.setWindowTitle(f"InvertedScope v{LOCALVERSION} (PyQt)")
+        else:
+            self.setWindowTitle(f"SolsScope v{LOCALVERSION} (PyQt)")
         self.setGeometry(100, 100, 900, 650)  # Made slightly larger for better appearance
 
         # Remove window frame and add custom styling
@@ -1113,6 +1117,16 @@ class MainWindow(QMainWindow):
                 entry_dict[key] = widget
                 continue
 
+            if key == "merchant_detection_type":
+                widget = QComboBox()
+                options = ["Legacy", "Logs"]
+                widget.addItems(options)
+                if value in options:
+                    widget.setCurrentText(value)
+                form_layout.addRow(label, widget)
+                entry_dict[key] = widget
+                continue
+
             if isinstance(value, dict):
                 group_box = QGroupBox(formatted_key) 
                 group_box.setCheckable(False) 
@@ -1932,7 +1946,11 @@ class MainWindow(QMainWindow):
         header_layout.setContentsMargins(15, 15, 15, 15)
         header_layout.setSpacing(10)
 
-        title_label = QLabel("SolsScope")
+        if self.easter_eggs["InvertedScope"]:
+            title_label = QLabel("InvertedScope")
+        else:
+            title_label = QLabel("SolsScope")
+            
         title_label.setStyleSheet("""
             font-size: 24px;
             font-weight: bold;
@@ -2569,6 +2587,8 @@ class MainWindow(QMainWindow):
             self.reader = Reader(['en'], gpu=False)
         else:
             self.reader = None
+            QMessageBox.warning(self, "SolsScope", "OCR Modules are not installed.")
+            return
         set_active_log_directory(force_player=use_player)
         if not exists_procs_by_name("Windows10Universal.exe") and not exists_procs_by_name("RobloxPlayerBeta.exe"):
             if QMessageBox.question(self, "Roblox Not Detected", "Roblox process not found. Start macro anyway?") == QMessageBox.StandardButton.No:
@@ -2641,6 +2661,7 @@ class MainWindow(QMainWindow):
             targets = {
                 "Aura Detection": (aura_detection, [self.settings, self.webhook, self.stop_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.ignore_lock, self.ignore_next_detection, self.pause_event, self.reader]) if not self.settings.get("disable_aura_detection") else None,
                 "Biome Detection": (biome_detection, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.mkey, self.keyboard_controller, self.keyboard_lock, self.pause_event, self]) if not self.settings.get("disable_biome_detection") else None,
+                "Merchant Detection": (merchant_detection, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.ignore_lock, self.ignore_next_detection, self.reader, self.pause_event]) if self.settings.get("merchant_detection") and MERCHANT_DETECTION_POSSIBLE else None,
             }
         elif is_autocraft_mode:
             self.logger.write_log("Starting in Auto Craft Mode.")
@@ -2659,14 +2680,14 @@ class MainWindow(QMainWindow):
                 "Biome Detection": (biome_detection, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.mkey, self.keyboard_controller, self.keyboard_lock, self.pause_event, self]) if not self.settings.get("disable_biome_detection") else None,
                 "Keep Alive": (keep_alive, [self.settings, self.stop_event, self.sniped_event, self.keyboard_lock,  self.keyboard_controller, self.pause_event]) if not self.settings.get("disable_autokick_prevention") else None,
                 "Disconnect Prevention": (disconnect_prevention, [self.settings, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.pause_event]) if self.settings.get("disconnect_prevention") else None,
-                #"Merchant Detection": (merchant_detection, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.ignore_lock, self.ignore_next_detection, self.reader]) if (self.settings.get("merchant_detection") or self.settings.get("auto_sell_to_jester")) and MERCHANT_DETECTION_POSSIBLE else None,
+                "Merchant Detection": (merchant_detection, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.ignore_lock, self.ignore_next_detection, self.reader, self.pause_event]) if (self.settings.get("merchant_detection") or self.settings.get("auto_sell_to_jester")) and MERCHANT_DETECTION_POSSIBLE else None,
                 "Auto Strange Controller": (auto_sc, [self.settings, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.pause_event, self.reader]) if self.settings.get("auto_strange_controller") else None,
                 "Auto Biome Randomizer": (auto_br, [self.settings, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.pause_event, self.reader]) if self.settings.get("auto_biome_randomizer") else None,
                 "Inventory Screenshots": (inventory_screenshot, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.pause_event, self.reader]) if self.settings.get("periodic_screenshots", {}).get("inventory") else None,
                 "Storage Screenshots": (storage_screenshot, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.pause_event, self.reader]) if self.settings.get("periodic_screenshots", {}).get("storage") else None,
                 #"Obby": (do_obby, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.ignore_lock, self.ignore_next_detection, self.pause_event, self.reader]) if self.settings.get("do_obby") and not self.settings.get("do_not_walk_to_stella", False) else None,
                 "Auto Quest Board": (auto_questboard, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.mouse_controller, self.reader, self.pause_event]) if self.settings.get("enable_auto_quest_board") else None,
-                "vok taran": (vok_taran, [self.settings, self.webhook, self.stop_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.pause_event]) if self.settings.get("vok_taran") else None,
+                #"vok taran": (vok_taran, [self.settings, self.webhook, self.stop_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.pause_event]) if self.settings.get("vok_taran") else None,
             }
         elif is_limbo_mode:
             self.logger.write_log("Starting in Limbo Mode.")
@@ -2695,7 +2716,8 @@ class MainWindow(QMainWindow):
                 "Auto Biome Randomizer": (auto_br, [self.settings, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.pause_event, self.reader]) if self.settings.get("auto_biome_randomizer") else None,
                 "Inventory Screenshots": (inventory_screenshot, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.pause_event, self.reader]) if self.settings.get("periodic_screenshots", {}).get("inventory") else None,
                 "Storage Screenshots": (storage_screenshot, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.pause_event, self.reader]) if self.settings.get("periodic_screenshots", {}).get("storage") else None,
-                "vok taran": (vok_taran, [self.settings, self.webhook, self.stop_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.pause_event]) if self.settings.get("vok_taran") else None,
+                #"vok taran": (vok_taran, [self.settings, self.webhook, self.stop_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.pause_event]) if self.settings.get("vok_taran") else None,
+                "Merchant Detection": (merchant_detection, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.ignore_lock, self.ignore_next_detection, self.reader, self.pause_event]) if (self.settings.get("merchant_detection") or self.settings.get("auto_sell_to_jester")) and MERCHANT_DETECTION_POSSIBLE else None,
             }
         else:
             self.logger.write_log("Starting in Normal Mode.")
@@ -2711,7 +2733,7 @@ class MainWindow(QMainWindow):
                 "Storage Screenshots": (storage_screenshot, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.pause_event, self.reader]) if self.settings.get("periodic_screenshots", {}).get("storage") else None,
                 #"Obby": (do_obby, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.ignore_lock, self.ignore_next_detection, self.pause_event, self.reader]) if self.settings.get("do_obby") else None,
                 "Auto Quest Board": (auto_questboard, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.mouse_controller, self.reader, self.pause_event]) if self.settings.get("enable_auto_quest_board") else None,
-                "vok taran": (vok_taran, [self.settings, self.webhook, self.stop_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.pause_event]) if self.settings.get("vok_taran") else None,
+                #"vok taran": (vok_taran, [self.settings, self.webhook, self.stop_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.pause_event]) if self.settings.get("vok_taran") else None,
             }
         return targets
 
@@ -2726,7 +2748,10 @@ class MainWindow(QMainWindow):
             colour=discord.Colour.green(),
             timestamp=datetime.now() 
         )
-        emb.set_footer(text=f"SolsScope v{LOCALVERSION}")
+        if self.easter_eggs["InvertedScope"]:
+            emb.set_footer(text=f"InvertedScope v{LOCALVERSION}")
+        else:
+            emb.set_footer(text=f"SolsScope v{LOCALVERSION}")
         emb.add_field(name="Mode", value=mode_str, inline=True)
         emb.set_thumbnail(url="https://raw.githubusercontent.com/bazthedev/SolsScope/main/img/solsscope.png")
 
@@ -2808,7 +2833,10 @@ class MainWindow(QMainWindow):
             colour=discord.Colour.red(),
             timestamp=datetime.now() 
         )
-        emb.set_footer(text=f"SolsScope v{LOCALVERSION}")
+        if self.easter_eggs["InvertedScope"]:
+            emb.set_footer(text=f"InvertedScope v{LOCALVERSION}")
+        else:
+            emb.set_footer(text=f"SolsScope v{LOCALVERSION}")
         emb.set_thumbnail(url="https://raw.githubusercontent.com/bazthedev/SolsScope/main/img/solsscope.png")
         if self.webhook:
             try:
@@ -2881,6 +2909,7 @@ class MainWindow(QMainWindow):
                     plugin_display_name = getattr(temp_instance, "name", plugin_name_from_file)
                     plugin_version = getattr(temp_instance, "version", "0.0.0")
                     plugin_authors = getattr(temp_instance, "authors", ["Unknown"])
+                    plugin_requirements = getattr(temp_instance, "requirements", [])
                     required_macro_version = getattr(temp_instance, "requires", "0.0.0")
 
                     plugin_autocraft_compatible = getattr(temp_instance, "autocraft_compatible", False)
@@ -2888,6 +2917,10 @@ class MainWindow(QMainWindow):
                 except Exception as meta_e:
                     self.logger.write_log(f" > Error getting metadata from temporary instance of {plugin_name_from_file}: {meta_e}", level="ERROR")
                     continue 
+                
+                installer = PackageInstallerGUI(plugin_requirements, parent=self)
+                QTimer.singleShot(0, installer.start_install)
+                installer.exec()
 
                 if parse_version(required_macro_version) > parse_version(LOCALVERSION):
                     self.logger.write_log(f" > Skipped Plugin: '{plugin_display_name}' requires macro v{required_macro_version}, but current is v{LOCALVERSION}.")

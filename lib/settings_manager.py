@@ -8,6 +8,7 @@ Support server: https://discord.gg/8khGXqG7nA
 import sys
 import os
 sys.path.insert(1, os.path.expandvars(r"%localappdata%/SolsScope/lib"))
+
 import json
 import requests
 from tkinter import messagebox

@@ -9,6 +9,8 @@ import sys
 import os
 sys.path.insert(1, os.path.expandvars(r"%localappdata%/SolsScope/lib"))
 sys.path.insert(1, os.path.expandvars(r"%localappdata%/SolsScope/path"))
+
+
 import time
 import random
 import pyautogui as pag
@@ -58,7 +60,8 @@ from roblox_utils import (
     detect_client_reconnect, join_private_server_link, leave_main_menu,
     activate_ms_store_roblox, click_ms_store_spawn_button, toggle_fullscreen_ms_store,
     reset_character, detect_ui_nav, get_roblox_window_bbox, check_for_eden_spawn,
-    join_private_share_link, extract_server_code
+    join_private_share_link, extract_server_code, PlayerLogger, get_active_log_directory,
+    get_latest_merchant_info
 )
 from discord_utils import forward_webhook_msg, create_autocraft_embed
 from settings_manager import get_auras_path, get_biomes_path, get_merchant_path, get_questboard_path, get_fish_path
@@ -386,7 +389,19 @@ def aura_detection(settings: dict, webhook, stop_event: threading.Event, keyboar
 def biome_detection(settings: dict, webhook, stop_event: threading.Event, sniped_event: threading.Event, mkey, kb, keyboard_lock, pause_event : threading.Event, gui):
     logger = get_logger()
     logger.write_log("Biome Detection thread started.")
+    
+    pllogger = PlayerLogger(get_active_log_directory(), webhook, settings, logger)
 
+    def run_logger(biome, end_event : threading.Event):
+        end_event.clear()
+        try:
+            pllogger.start_logging(biome, end_event)
+        except Exception as e:
+            print(f"Player logger encountered an error: {e}")
+
+    end_event = threading.Event()
+    end_event.clear()
+    
     try:
         with open(get_biomes_path(), "r", encoding="utf-8") as f:
             biomes = json.load(f)
@@ -402,6 +417,8 @@ def biome_detection(settings: dict, webhook, stop_event: threading.Event, sniped
         logger.write_log(f"Error getting initial biome state: {e}")
 
     ps_link_valid = validate_pslink(settings.get("private_server_link", ""))
+
+    rare_biomes = [biome for biome, data in biomes.items() if data.get("rare")]
 
     while not stop_event.is_set():
 
@@ -426,6 +443,9 @@ def biome_detection(settings: dict, webhook, stop_event: threading.Event, sniped
             rnow = datetime.now()
 
             if previous_biome_key and previous_biome_key != "normal" and previous_biome_key in biomes and settings.get("biomes", {}).get(previous_biome_key, False):
+
+                end_event.set()
+                
                 prev_biome_data = biomes[previous_biome_key]
                 emb_color_hex = prev_biome_data.get("colour", "#808080")
                 emb_rgb = hex2rgb(emb_color_hex)
@@ -467,6 +487,8 @@ def biome_detection(settings: dict, webhook, stop_event: threading.Event, sniped
                         emb.add_field(name="Server Invite:", value=f"{settings.get('private_server_link')}")
 
                     if new_biome_data.get("rare", False):
+                        pl_thread = threading.Thread(target=run_logger, args=(current_biome.upper(), end_event), daemon=True)
+                        pl_thread.start()
                         ping_content = "@everyone"
                         emb.set_footer(text=f"SolsScope v{LOCALVERSION}")
                     else:
@@ -626,6 +648,12 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
     afk_in_limbo = settings.get("mode", "Normal") == "Limbo"
     is_idle_mode = settings.get("mode", "Normal") == "IDLE"
 
+    md_type = settings.get("merchant_detection_type", "Legacy")
+
+    if (is_autocraft or is_idle_mode) and md_type == "Legacy":
+        logger.write_log("Merchant Detection cannot be started in this mode whilst it is using Legacy Detection.")
+        return
+
     COORDS_PERCENT = get_coords_percent(COORDS)
 
     if not COORDS_PERCENT:
@@ -636,321 +664,679 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
     screenshot_path = os.path.join(MACROPATH, "scr", "screenshot_merchant.png")
     ex_screenshot_path = os.path.join(MACROPATH, "scr", "screenshot_exchange.png")
     
-    while not stop_event.is_set():
+    if md_type == "Legacy":
 
-        if pause_event.is_set():
-            time.sleep(2)
-            continue
+        while not stop_event.is_set():
 
-        wait_interval = before_check_interval
-        logger.write_log(f"Merchant Detection: Waiting for {wait_interval} seconds...")
-        if stop_event.wait(timeout=wait_interval):
-            break
-
-        logger.write_log("Merchant Detection: Merchant Check Scheduled")
-        detected_merchant_name = None
-        detected_items = {}
-        
-        with keyboard_lock:
-
-            if TGIFRIDAY and not check_tab_menu_open(reader, COORDS_PERCENT, COORDS):
-                kb.press(keyboard.Key.tab)
-                time.sleep(0.05)
-                kb.release(keyboard.Key.tab)
-                time.sleep(0.05)
-
-            try:
-                logger.write_log("Merchant Detection: Using Merchant Teleport item...")
-                use_item("Merchant Teleport", 1, True, mkey, kb, settings, reader) 
-                time.sleep(settings.get("global_wait_time", 0.2) + 0.5) 
-
-                logger.write_log("Merchant Detection: Attempting interaction (E key)...")
-                kb.press('e')
-                time.sleep(0.2)
-                kb.release('e')
-                time.sleep(0.2)
-                merchant_skip_dialogue(kb, True, True)
+            if pause_event.is_set():
                 time.sleep(2)
-                merchant_skip_dialogue(kb, True, True)
-                time.sleep(2)
+                continue
 
-                logger.write_log("Merchant Detection: Taking screenshot...")
-                pag.screenshot(screenshot_path)
-                time.sleep(0.2)
+            wait_interval = before_check_interval
+            logger.write_log(f"Merchant Detection: Waiting for {wait_interval} seconds...")
+            if stop_event.wait(timeout=wait_interval):
+                break
 
-                logger.write_log("Merchant Detection: Processing screenshot with OCR...")
-                image = cv2.imread(screenshot_path)
-                if image is None:
-                    logger.write_log("Merchant Detection Error: Failed to read screenshot file.")
-                    continue
+            logger.write_log("Merchant Detection: Merchant Check Scheduled")
+            detected_merchant_name = None
+            detected_items = {}
+            
+            with keyboard_lock: 
 
-                x1p, y1p, x2p, y2p = COORDS_PERCENT["merchant_box"]
-                x1 = round(x1p * COORDS["scr_wid"])
-                y1 = round(y1p * COORDS["scr_hei"])
-                x2 = round(x2p * COORDS["scr_wid"])
-                y2 = round(y2p * COORDS["scr_hei"])
-                merchant_crop = image[y1:y2, x1:x2]
-                
-                ocr_results = reader.readtext(merchant_crop, detail=0)
-                ocr_merchant_raw = " ".join(ocr_results).strip()
-
-                ocr_merchant_clean = re.sub(r"[^a-zA-Z']", "", ocr_merchant_raw).lower()
-                detected_merchant_name = fuzzy_match_merchant(ocr_merchant_clean, POSSIBLE_MERCHANTS)
-
-                if not detected_merchant_name:
-                    logger.write_log(f"Merchant Detection: Could not identify merchant from OCR ('{ocr_merchant_raw}'). Skipping.")
-                    continue
-
-                merchant_short_name = detected_merchant_name.split("'")[0] 
-                logger.write_log(f"Merchant Detected: {merchant_short_name} (Raw OCR: '{ocr_merchant_raw}')")
-                rnow = datetime.now()
-
-                logger.write_log("Merchant Detection: Opening Shop...")
-                if merchant_short_name == "Mari":
-                    open_mari(kb, True, True)
-                elif merchant_short_name == "Jester":
-                    if TGIFRIDAY:
-                        open_mari(kb, True, True)
-                    else:
-                        open_jester_shop(kb, True, True)
-                    open_mari(kb, True, True)
-                time.sleep(3)
-
-                del image
-
-                pag.screenshot(screenshot_path)
-
-                image = cv2.imread(screenshot_path)
-                if image is None:
-                    logger.write_log("Merchant Detection Error: Failed to read screenshot file.")
-                    continue
-
-                file_to_send = create_discord_file_from_path(screenshot_path, filename="merchant.png")
-                ping_content = ""
-                if merchant_short_name == "Mari":
-                    emb_color = discord.Colour.from_rgb(255, 255, 255)
-                    thumbnail_url = "https://static.wikia.nocookie.net/sol-rng/images/3/37/MARI_HIGH_QUALITYY.png/revision/latest"
-                    if settings.get("ping_mari", False) and settings.get("mari_ping_id", 0) != 0:
-                        ping_content += f"<@&{settings['mari_ping_id']}>"
-                elif merchant_short_name == "Jester":
-                    emb_color = discord.Colour.from_rgb(176, 49, 255)
-                    thumbnail_url = "https://static.wikia.nocookie.net/sol-rng/images/d/db/Headshot_of_Jester.png/revision/latest"
-                    if settings.get("ping_jester", False) and settings.get("jester_ping_id", 0) != 0:
-                        ping_content += f"<@&{settings['jester_ping_id']}>"
-                else:
-                    emb_color = discord.Colour.default()
-                    thumbnail_url = None
-
-                emb = discord.Embed(
-                    title=f"{merchant_short_name} Spawned!",
-                    description=f"A **{merchant_short_name}** has been detected.\n**Time:** <t:{str(int(time.time()))}>",
-                    colour=emb_color
-                )
-                if thumbnail_url: emb.set_thumbnail(url=thumbnail_url)
-                if file_to_send: emb.set_image(url="attachment://merchant.png")
-                if ps_link_valid: emb.add_field(name="Server Invite", value=settings['private_server_link'], inline=False)
-
-                emb.set_footer(text=f"SolsScope v{LOCALVERSION}")
-
-                logger.write_log("Merchant Detection: Detecting items...")
-                item_list = MARI_ITEMS if merchant_short_name == "Mari" else JESTER_ITEMS
-                item_ocr_results = []
-                for box_name, (x1, y1, x2, y2) in manual_boxes.items():
-                    if x1 >= image.shape[1] or y1 >= image.shape[0] or x2 <= x1 or y2 <= y1:
-                        logger.write_log(f"Warning: Invalid coordinates for {box_name}. Skipping OCR.")
-                        continue
-
-                    cropped = image[y1:y2, x1:x2]
-
-                    ocr_results = reader.readtext(cropped, detail=0)
-                    ocr_raw = " ".join(ocr_results).strip().replace('\n', ' ')
-
-                    matched = fuzzy_match(ocr_raw, item_list, threshold=0.5)
-                    logger.write_log(f" > {box_name}: OCR='{ocr_raw}', Match='{matched}'")
-
-                    detected_items[box_name] = matched
-                    item_ocr_results.append(f"**{box_name}:** `{matched}` (Raw: `{ocr_raw}`)")
-                emb.add_field(name="Detected Items", value="\n".join(item_ocr_results) if item_ocr_results else "None", inline=False)
-
-                if not (settings.get("mention", False) and settings.get("mention_id", 0) != 0) and settings.get(f"{merchant_short_name.lower()}_ping_id", 0) != 0:
-                    ping_content = f"<@{settings['mention_id']}>{ping_content}"
+                if TGIFRIDAY and not check_tab_menu_open(reader, COORDS_PERCENT, COORDS):
+                    kb.press(keyboard.Key.tab)
+                    time.sleep(0.05)
+                    kb.release(keyboard.Key.tab)
+                    time.sleep(0.05)
 
                 try:
-                    webhook.send(content=ping_content.strip(), embed=emb, file=file_to_send)
-                    forward_webhook_msg(
-                        primary_webhook_url=webhook.url,
-                        secondary_urls=settings.get("SECONDARY_WEBHOOK_URLS", []),
-                        content=ping_content.strip(), embed=emb, file=file_to_send
-                    )
-                except Exception as wh_e:
-                    logger.write_log(f"Error sending merchant detection webhook: {wh_e}")
+                    logger.write_log("Merchant Detection: Using Merchant Teleport item...")
+                    use_item("Merchant Teleport", 1, True, mkey, kb, settings, reader) 
+                    time.sleep(settings.get("global_wait_time", 0.2) + 0.5) 
 
-                purchase_settings = settings.get("auto_purchase_items_mari" if merchant_short_name == "Mari" else "auto_purchase_items_jester", {})
-                items_to_buy = {box_name: item_name for box_name, item_name in detected_items.items() if purchase_settings.get(item_name, {"Purchase" : False}).get("Purchase", False)}
-
-                if items_to_buy:
-                    logger.write_log(f"Merchant Detection: Attempting to auto-purchase items: {list(items_to_buy.values())}")
-                    if TGIFRIDAY and not check_tab_menu_open(reader, COORDS_PERCENT, COORDS):
-                        kb.press(keyboard.Key.tab)
-                        time.sleep(0.05)
-                        kb.release(keyboard.Key.tab)
-                        time.sleep(0.05)
-                    for box_name, item_name in items_to_buy.items():
-                        try:
-                            buy_item(kb, True, True, str(purchase_settings.get(item_name).get("amount", 1)), box_name[-1])
-                            logger.write_log(f"Auto-purchased: {item_name}")
-                            time.sleep(3)
-
-                            try:
-                                purch_emb = discord.Embed(
-                                    title=f"Auto-Purchased from {merchant_short_name}",
-                                    description=f"Item: **{item_name}**\nAmount: **{str(purchase_settings.get(item_name).get('amount', 1))}**",
-                                    colour=emb_color
-                                )
-                                purch_emb.set_footer(text=f"SolsScope v{LOCALVERSION}")
-                                if merchants.get(merchant_short_name.lower()).get("items").get(item_name.lower()).get("item_image_url"): purch_emb.set_thumbnail(url=merchants.get(merchant_short_name.lower()).get("items").get(item_name.lower()).get("item_image_url"))
-                                webhook.send(embed=purch_emb)
-                                forward_webhook_msg(
-                                    primary_webhook_url=webhook.url,
-                                    secondary_urls=settings.get("SECONDARY_WEBHOOK_URLS", []),
-                                    embed=purch_emb
-                                )
-                            except Exception as purch_wh_e:
-                                logger.write_log(f"Error sending purchase confirmation webhook: {purch_wh_e}")
-                        except Exception as buy_e:
-                            logger.write_log(f"Error auto-purchasing {item_name}: {buy_e}")
-
-                if auto_sell and merchant_short_name == "Jester":
-                    time.sleep(0.2)
+                    logger.write_log("Merchant Detection: Attempting interaction (E key)...")
                     kb.press('e')
                     time.sleep(0.2)
                     kb.release('e')
+                    time.sleep(0.2)
                     merchant_skip_dialogue(kb, True, True)
-                    time.sleep(3)
+                    time.sleep(2)
                     merchant_skip_dialogue(kb, True, True)
+                    time.sleep(2)
+
+                    logger.write_log("Merchant Detection: Taking screenshot...")
+                    pag.screenshot(screenshot_path)
+                    time.sleep(0.2)
+
+                    logger.write_log("Merchant Detection: Processing screenshot with OCR...")
+                    image = cv2.imread(screenshot_path)
+                    if image is None:
+                        logger.write_log("Merchant Detection Error: Failed to read screenshot file.")
+                        continue
+
+                    x1p, y1p, x2p, y2p = COORDS_PERCENT["merchant_box"]
+                    x1 = round(x1p * COORDS["scr_wid"])
+                    y1 = round(y1p * COORDS["scr_hei"])
+                    x2 = round(x2p * COORDS["scr_wid"])
+                    y2 = round(y2p * COORDS["scr_hei"])
+                    merchant_crop = image[y1:y2, x1:x2]
+                    
+                    ocr_results = reader.readtext(merchant_crop, detail=0)
+                    ocr_merchant_raw = " ".join(ocr_results).strip()
+
+                    ocr_merchant_clean = re.sub(r"[^a-zA-Z']", "", ocr_merchant_raw).lower()
+                    detected_merchant_name = fuzzy_match_merchant(ocr_merchant_clean, POSSIBLE_MERCHANTS)
+
+                    if not detected_merchant_name:
+                        logger.write_log(f"Merchant Detection: Could not identify merchant from OCR ('{ocr_merchant_raw}'). Skipping.")
+                        continue
+
+                    merchant_short_name = detected_merchant_name.split("'")[0] 
+                    logger.write_log(f"Merchant Detected: {merchant_short_name} (Raw OCR: '{ocr_merchant_raw}')")
+                    rnow = datetime.now()
+
+                    logger.write_log("Merchant Detection: Opening Shop...")
+                    if merchant_short_name == "Mari":
+                        open_mari(kb, True, True)
+                    elif merchant_short_name == "Jester":
+                        if TGIFRIDAY:
+                            open_mari(kb, True, True)
+                        else:
+                            open_jester_shop(kb, True, True)
+                        open_mari(kb, True, True)
                     time.sleep(3)
-                    if TGIFRIDAY:
-                        open_jester_shop(kb, True, True)
+
+                    del image
+
+                    pag.screenshot(screenshot_path)
+
+                    image = cv2.imread(screenshot_path)
+                    if image is None:
+                        logger.write_log("Merchant Detection Error: Failed to read screenshot file.")
+                        continue
+
+                    file_to_send = create_discord_file_from_path(screenshot_path, filename="merchant.png")
+                    ping_content = ""
+                    if merchant_short_name == "Mari":
+                        emb_color = discord.Colour.from_rgb(255, 255, 255)
+                        thumbnail_url = "https://static.wikia.nocookie.net/sol-rng/images/3/37/MARI_HIGH_QUALITYY.png/revision/latest"
+                        if settings.get("ping_mari", False) and settings.get("mari_ping_id", 0) != 0:
+                            ping_content += f"<@&{settings['mari_ping_id']}>"
+                    elif merchant_short_name == "Jester":
+                        emb_color = discord.Colour.from_rgb(176, 49, 255)
+                        thumbnail_url = "https://static.wikia.nocookie.net/sol-rng/images/d/db/Headshot_of_Jester.png/revision/latest"
+                        if settings.get("ping_jester", False) and settings.get("jester_ping_id", 0) != 0:
+                            ping_content += f"<@&{settings['jester_ping_id']}>"
                     else:
-                        open_jester_ex(kb, True, True)
-                    time.sleep(3)
-                    while not stop_event.is_set():
-                        pag.screenshot(ex_screenshot_path)
-                        time.sleep(0.2)
-                        logger.write_log("Merchant Detection: Processing screenshot with OCR...")
-                        image = cv2.imread(ex_screenshot_path)
-                        if image is None:
-                            logger.write_log("Merchant Detection Error: Failed to read screenshot file.")
+                        emb_color = discord.Colour.default()
+                        thumbnail_url = None
+
+                    emb = discord.Embed(
+                        title=f"{merchant_short_name} Spawned!",
+                        description=f"A **{merchant_short_name}** has been detected.\n**Time:** <t:{str(int(time.time()))}>\nDetection Method: **{md_type}**",
+                        colour=emb_color
+                    )
+                    if thumbnail_url: emb.set_thumbnail(url=thumbnail_url)
+                    if file_to_send: emb.set_image(url="attachment://merchant.png")
+                    if ps_link_valid: emb.add_field(name="Server Invite", value=settings['private_server_link'], inline=False)
+
+                    emb.set_footer(text=f"SolsScope v{LOCALVERSION}")
+
+                    logger.write_log("Merchant Detection: Detecting items...")
+                    item_list = MARI_ITEMS if merchant_short_name == "Mari" else JESTER_ITEMS
+                    item_ocr_results = []
+                    for box_name, (x1, y1, x2, y2) in manual_boxes.items():
+                        if x1 >= image.shape[1] or y1 >= image.shape[0] or x2 <= x1 or y2 <= y1:
+                            logger.write_log(f"Warning: Invalid coordinates for {box_name}. Skipping OCR.")
                             continue
-                        x1p, y1p, x2p, y2p = COORDS_PERCENT["first_sell_item_box_pos"]
-                        x1 = round(x1p * COORDS["scr_wid"])
-                        y1 = round(y1p * COORDS["scr_hei"])
-                        x2 = round(x2p * COORDS["scr_wid"]) 
-                        y2 = round(y2p * COORDS["scr_hei"])
-                        exchange_crop = image[y1:y2, x1:x2]
-                        ocr_results = reader.readtext(exchange_crop, detail=0)
-                        ocr_ex_item_raw = " ".join(ocr_results).strip().replace('\n', ' ')
-                        ocr_ex_item_clean = re.sub(r"[^a-zA-Z']", "", ocr_ex_item_raw).lower()
 
-                        detected_item_name = fuzzy_match_auto_sell(ocr_ex_item_clean, JESTER_SELL_ITEMS)
-                        logger.write_log(f"Item: {detected_item_name} || OCR: {ocr_ex_item_raw}")
-                        if detected_item_name == "Void Coin":
-                            logger.write_log("Void Coin detected in first slot, skipping to second slot.")
-                            _break_second = False
-                            while detected_item_name in JESTER_ITEMS and not stop_event.is_set():
-                                logger.write_log("Auto-Sell: Taking screenshot")
-                                pag.screenshot(ex_screenshot_path)
-                                time.sleep(0.2)
-                                logger.write_log("Auto-Sell: Processing screenshot with OCR...")
-                                image = cv2.imread(ex_screenshot_path)
-                                if image is None:
-                                    logger.write_log("Auto-Sell Error: Failed to read screenshot file.")
-                                    continue
-                                x1p, y1p, x2p, y2p = COORDS_PERCENT["second_sell_item_box_pos"]
-                                x1 = round(x1p * COORDS["scr_wid"])
-                                y1 = round(y1p * COORDS["scr_hei"])
-                                x2 = round(x2p * COORDS["scr_wid"])
-                                y2 = round(y2p * COORDS["scr_hei"])
-                                exchange_crop = image[y1:y2, x1:x2]
-                                ocr_results = reader.readtext(exchange_crop, detail=0)
-                                ocr_ex_item_raw = " ".join(ocr_results).strip().replace('\n', ' ')
-                                ocr_ex_item_clean = re.sub(r"[^a-zA-Z']", "", ocr_ex_item_raw).lower()
+                        cropped = image[y1:y2, x1:x2]
 
-                                detected_item_name = fuzzy_match_auto_sell(ocr_ex_item_clean, JESTER_SELL_ITEMS)
-                                if detected_item_name == "Void Coin":
-                                    _break_second = True
-                                    logger.write_log("Auto-Sell: Void coin detected in second slot, stopping job.")
-                                    break
-                                elif detected_item_name in JESTER_SELL_ITEMS and settings.get("items_to_sell", {}).get(detected_item_name, False):
-                                    logger.write_log(f"Auto-Sell: {detected_item_name} was detected")
-                                    time.sleep(0.2)
-                                    jester_exchange_first(kb, True, True, settings.get("amount_of_item_to_sell", 1))
-                                    time.sleep(4.5)
-                                    sell_emb = discord.Embed(
-                                        title=f"Auto-Sold to {merchant_short_name}",
-                                        description=f"Item: **{detected_item_name}**\nAmount: **{str(settings.get('amount_of_item_to_sell', 1))}**\nMaximum Profit: **{str(settings.get('amount_of_item_to_sell', 1) * merchants.get(merchant_short_name.lower()).get('exchange').get(detected_item_name.lower()).get('price'))}P",
+                        ocr_results = reader.readtext(cropped, detail=0)
+                        ocr_raw = " ".join(ocr_results).strip().replace('\n', ' ')
+
+                        matched = fuzzy_match(ocr_raw, item_list, threshold=0.5)
+                        logger.write_log(f" > {box_name}: OCR='{ocr_raw}', Match='{matched}'")
+
+                        detected_items[box_name] = matched
+                        item_ocr_results.append(f"**{box_name}:** `{matched}` (Raw: `{ocr_raw}`)")
+                    emb.add_field(name="Detected Items", value="\n".join(item_ocr_results) if item_ocr_results else "None", inline=False)
+
+                    if not (settings.get("mention", False) and settings.get("mention_id", 0) != 0) and settings.get(f"{merchant_short_name.lower()}_ping_id", 0) != 0:
+                        ping_content = f"<@{settings['mention_id']}>{ping_content}"
+
+                    try:
+                        webhook.send(content=ping_content.strip(), embed=emb, file=file_to_send)
+                        forward_webhook_msg(
+                            primary_webhook_url=webhook.url,
+                            secondary_urls=settings.get("SECONDARY_WEBHOOK_URLS", []),
+                            content=ping_content.strip(), embed=emb, file=file_to_send
+                        )
+                    except Exception as wh_e:
+                        logger.write_log(f"Error sending merchant detection webhook: {wh_e}")
+
+                    purchase_settings = settings.get("auto_purchase_items_mari" if merchant_short_name == "Mari" else "auto_purchase_items_jester", {})
+                    items_to_buy = {box_name: item_name for box_name, item_name in detected_items.items() if purchase_settings.get(item_name, {"Purchase" : False}).get("Purchase", False)}
+
+                    if items_to_buy:
+                        logger.write_log(f"Merchant Detection: Attempting to auto-purchase items: {list(items_to_buy.values())}")
+                        if TGIFRIDAY and not check_tab_menu_open(reader, COORDS_PERCENT, COORDS):
+                            kb.press(keyboard.Key.tab)
+                            time.sleep(0.05)
+                            kb.release(keyboard.Key.tab)
+                            time.sleep(0.05)
+                        for box_name, item_name in items_to_buy.items():
+                            try:
+                                buy_item(kb, True, True, str(purchase_settings.get(item_name).get("amount", 1)), box_name[-1])
+                                logger.write_log(f"Auto-purchased: {item_name}")
+                                time.sleep(3)
+
+                                try:
+                                    purch_emb = discord.Embed(
+                                        title=f"Auto-Purchased from {merchant_short_name}",
+                                        description=f"Item: **{item_name}**\nAmount: **{str(purchase_settings.get(item_name).get('amount', 1))}**",
                                         colour=emb_color
                                     )
-                                    sell_emb.set_footer(text=f"SolsScope v{LOCALVERSION}")
-                                    if merchants.get(merchant_short_name.lower()).get("exchange").get(detected_item_name.lower()).get("item_image_url"): sell_emb.set_thumbnail(url=merchants.get(merchant_short_name.lower()).get("exchange").get(detected_item_name.lower()).get("item_image_url"))
-                                    webhook.send(embed=sell_emb)
+                                    purch_emb.set_footer(text=f"SolsScope v{LOCALVERSION}")
+                                    if merchants.get(merchant_short_name.lower()).get("items").get(item_name.lower()).get("item_image_url"): purch_emb.set_thumbnail(url=merchants.get(merchant_short_name.lower()).get("items").get(item_name.lower()).get("item_image_url"))
+                                    webhook.send(embed=purch_emb)
                                     forward_webhook_msg(
                                         primary_webhook_url=webhook.url,
                                         secondary_urls=settings.get("SECONDARY_WEBHOOK_URLS", []),
-                                        embed=sell_emb
+                                        embed=purch_emb
                                     )
-                                else:
-                                    logger.write_log("Auto-Sell: No items were found in the second box or unsure if Void Coin was not detected, ending auto sell job.")
-                                    _break_second = True
-                                    break
-                                time.sleep(1)
-                            if _break_second:
-                                break
-                        elif detected_item_name in JESTER_SELL_ITEMS and settings.get("items_to_get", {}).get(detected_item_name, False):
-                            logger.write_log(f"Auto-Sell: {detected_item_name} was detected")
+                                except Exception as purch_wh_e:
+                                    logger.write_log(f"Error sending purchase confirmation webhook: {purch_wh_e}")
+                            except Exception as buy_e:
+                                logger.write_log(f"Error auto-purchasing {item_name}: {buy_e}")
+
+                    if auto_sell and merchant_short_name == "Jester":
+                        time.sleep(0.2)
+                        kb.press('e')
+                        time.sleep(0.2)
+                        kb.release('e')
+                        merchant_skip_dialogue(kb, True, True)
+                        time.sleep(3)
+                        merchant_skip_dialogue(kb, True, True)
+                        time.sleep(3)
+                        if TGIFRIDAY:
+                            open_jester_shop(kb, True, True)
+                        else:
+                            open_jester_ex(kb, True, True)
+                        time.sleep(3)
+                        while not stop_event.is_set():
+                            pag.screenshot(ex_screenshot_path)
                             time.sleep(0.2)
-                            jester_exchange_second(kb, True, True, settings.get("amount_of_item_to_sell", 1))
-                            time.sleep(4.5)
-                            sell_emb = discord.Embed(
-                                title=f"Auto-Sold to {merchant_short_name}",
-                                description=f"Item: **{detected_item_name}**\nAmount: **{str(settings.get('amount_of_item_to_sell', 1))}**\nMaximum Profit: **{str(settings.get('amount_of_item_to_sell', 1) * merchants.get(merchant_short_name.lower()).get('exchange').get(detected_item_name.lower()).get('price'))}P**",
+                            logger.write_log("Merchant Detection: Processing screenshot with OCR...")
+                            image = cv2.imread(ex_screenshot_path)
+                            if image is None:
+                                logger.write_log("Merchant Detection Error: Failed to read screenshot file.")
+                                continue
+                            x1p, y1p, x2p, y2p = COORDS_PERCENT["first_sell_item_box_pos"]
+                            x1 = round(x1p * COORDS["scr_wid"])
+                            y1 = round(y1p * COORDS["scr_hei"])
+                            x2 = round(x2p * COORDS["scr_wid"]) 
+                            y2 = round(y2p * COORDS["scr_hei"])
+                            exchange_crop = image[y1:y2, x1:x2]
+                            ocr_results = reader.readtext(exchange_crop, detail=0)
+                            ocr_ex_item_raw = " ".join(ocr_results).strip().replace('\n', ' ')
+                            ocr_ex_item_clean = re.sub(r"[^a-zA-Z']", "", ocr_ex_item_raw).lower()
+
+                            detected_item_name = fuzzy_match_auto_sell(ocr_ex_item_clean, JESTER_SELL_ITEMS)
+                            logger.write_log(f"Item: {detected_item_name} || OCR: {ocr_ex_item_raw}")
+                            if detected_item_name == "Void Coin":
+                                logger.write_log("Void Coin detected in first slot, skipping to second slot.")
+                                _break_second = False
+                                while detected_item_name in JESTER_ITEMS and not stop_event.is_set():
+                                    logger.write_log("Auto-Sell: Taking screenshot")
+                                    pag.screenshot(ex_screenshot_path)
+                                    time.sleep(0.2)
+                                    logger.write_log("Auto-Sell: Processing screenshot with OCR...")
+                                    image = cv2.imread(ex_screenshot_path)
+                                    if image is None:
+                                        logger.write_log("Auto-Sell Error: Failed to read screenshot file.")
+                                        continue
+                                    x1p, y1p, x2p, y2p = COORDS_PERCENT["second_sell_item_box_pos"]
+                                    x1 = round(x1p * COORDS["scr_wid"])
+                                    y1 = round(y1p * COORDS["scr_hei"])
+                                    x2 = round(x2p * COORDS["scr_wid"])
+                                    y2 = round(y2p * COORDS["scr_hei"])
+                                    exchange_crop = image[y1:y2, x1:x2]
+                                    ocr_results = reader.readtext(exchange_crop, detail=0)
+                                    ocr_ex_item_raw = " ".join(ocr_results).strip().replace('\n', ' ')
+                                    ocr_ex_item_clean = re.sub(r"[^a-zA-Z']", "", ocr_ex_item_raw).lower()
+
+                                    detected_item_name = fuzzy_match_auto_sell(ocr_ex_item_clean, JESTER_SELL_ITEMS)
+                                    if detected_item_name == "Void Coin":
+                                        _break_second = True
+                                        logger.write_log("Auto-Sell: Void coin detected in second slot, stopping job.")
+                                        break
+                                    elif detected_item_name in JESTER_SELL_ITEMS and settings.get("items_to_sell", {}).get(detected_item_name, False):
+                                        logger.write_log(f"Auto-Sell: {detected_item_name} was detected")
+                                        time.sleep(0.2)
+                                        jester_exchange_first(kb, True, True, settings.get("amount_of_item_to_sell", 1))
+                                        time.sleep(4.5)
+                                        sell_emb = discord.Embed(
+                                            title=f"Auto-Sold to {merchant_short_name}",
+                                            description=f"Item: **{detected_item_name}**\nAmount: **{str(settings.get('amount_of_item_to_sell', 1))}**\nMaximum Profit: **{str(settings.get('amount_of_item_to_sell', 1) * merchants.get(merchant_short_name.lower()).get('exchange').get(detected_item_name.lower()).get('price'))}P",
+                                            colour=emb_color
+                                        )
+                                        sell_emb.set_footer(text=f"SolsScope v{LOCALVERSION}")
+                                        if merchants.get(merchant_short_name.lower()).get("exchange").get(detected_item_name.lower()).get("item_image_url"): sell_emb.set_thumbnail(url=merchants.get(merchant_short_name.lower()).get("exchange").get(detected_item_name.lower()).get("item_image_url"))
+                                        webhook.send(embed=sell_emb)
+                                        forward_webhook_msg(
+                                            primary_webhook_url=webhook.url,
+                                            secondary_urls=settings.get("SECONDARY_WEBHOOK_URLS", []),
+                                            embed=sell_emb
+                                        )
+                                    else:
+                                        logger.write_log("Auto-Sell: No items were found in the second box or unsure if Void Coin was not detected, ending auto sell job.")
+                                        _break_second = True
+                                        break
+                                    time.sleep(1)
+                                if _break_second:
+                                    break
+                            elif detected_item_name in JESTER_SELL_ITEMS and settings.get("items_to_get", {}).get(detected_item_name, False):
+                                logger.write_log(f"Auto-Sell: {detected_item_name} was detected")
+                                time.sleep(0.2)
+                                jester_exchange_second(kb, True, True, settings.get("amount_of_item_to_sell", 1))
+                                time.sleep(4.5)
+                                sell_emb = discord.Embed(
+                                    title=f"Auto-Sold to {merchant_short_name}",
+                                    description=f"Item: **{detected_item_name}**\nAmount: **{str(settings.get('amount_of_item_to_sell', 1))}**\nMaximum Profit: **{str(settings.get('amount_of_item_to_sell', 1) * merchants.get(merchant_short_name.lower()).get('exchange').get(detected_item_name.lower()).get('price'))}P**",
+                                    colour=emb_color
+                                )
+                                sell_emb.set_footer(text=f"SolsScope v{LOCALVERSION}")
+                                if merchants.get(merchant_short_name.lower()).get("exchange").get(detected_item_name.lower()).get("item_image_url"): sell_emb.set_thumbnail(url=merchants.get(merchant_short_name.lower()).get("exchange").get(detected_item_name.lower()).get("item_image_url"))
+                                webhook.send(embed=sell_emb)
+                                forward_webhook_msg(
+                                    primary_webhook_url=webhook.url,
+                                    secondary_urls=settings.get("SECONDARY_WEBHOOK_URLS", []),
+                                    embed=sell_emb
+                                )
+                            else:
+                                logger.write_log("Auto-Sell: No item was found or unsure if Void Coin was not detected, ending auto sell job.")
+                                break
+                            time.sleep(1)
+
+                        close_menu(kb, True, is_merchant=True)
+                        time.sleep(0.5)
+                        reset_character()
+                        time.sleep(3)
+
+                    if afk_in_limbo and not is_idle_mode:
+                        logger.write_log("Teleporting back to limbo...")
+                        use_item("Portable Crack", 1, True, mkey, kb, settings, reader)
+                        time.sleep(0.5)
+
+                    if stop_event.wait(timeout=cooldown_interval):
+                        break
+
+                except Exception as e:
+                    logger.write_log(f"Error in Merchant Detection loop: {e}")
+                    import traceback
+                    logger.write_log(traceback.format_exc()) 
+
+                    try:
+                        close_menu(kb, True)
+                    except Exception:
+                        pass
+
+    elif md_type == "Logs":
+
+        previous_merchant = (None, time.time())
+        mari_items = [item for item, data in settings.get("auto_purchase_items_mari", {}).items() if data.get("Purchase")]
+        jester_items = [item for item, data in settings.get("auto_purchase_items_jester", {}).items() if data.get("Purchase")]
+
+        if is_idle_mode:
+            logger.write_log("SolsScope will only detect merchants whilst in IDLE mode and will not purchase/sell to them.")
+
+        while not stop_event.is_set():
+            
+            if pause_event.is_set():
+                time.sleep(2)
+                continue
+
+            merchant_spawn = get_latest_merchant_info(previous_merchant[1])
+
+            if merchant_spawn:
+
+                    if merchant_spawn[1] > previous_merchant[1]:
+                        previous_merchant = merchant_spawn
+
+                        if (auto_sell or len(mari_items) > 0 or len(jester_items) > 0) and not is_idle_mode:
+                                
+                            with keyboard_lock:
+
+                                try:
+                                    logger.write_log("Merchant Detection: Using Merchant Teleport item...")
+                                    use_item("Merchant Teleport", 1, True, mkey, kb, settings, reader) 
+                                    time.sleep(settings.get("global_wait_time", 0.2) + 0.5) 
+
+                                    logger.write_log("Merchant Detection: Attempting interaction (E key)...")
+                                    kb.press('e')
+                                    time.sleep(0.2)
+                                    kb.release('e')
+                                    time.sleep(0.2)
+                                    merchant_skip_dialogue(kb, True, True)
+                                    time.sleep(2)
+                                    merchant_skip_dialogue(kb, True, True)
+                                    time.sleep(2)
+
+                                    logger.write_log("Merchant Detection: Taking screenshot...")
+                                    pag.screenshot(screenshot_path)
+                                    time.sleep(0.2)
+
+                                    logger.write_log("Merchant Detection: Processing screenshot with OCR...")
+                                    image = cv2.imread(screenshot_path)
+                                    if image is None:
+                                        logger.write_log("Merchant Detection Error: Failed to read screenshot file.")
+                                        continue
+
+                                    x1p, y1p, x2p, y2p = COORDS_PERCENT["merchant_box"]
+                                    x1 = round(x1p * COORDS["scr_wid"])
+                                    y1 = round(y1p * COORDS["scr_hei"])
+                                    x2 = round(x2p * COORDS["scr_wid"])
+                                    y2 = round(y2p * COORDS["scr_hei"])
+                                    merchant_crop = image[y1:y2, x1:x2]
+                                    
+                                    ocr_results = reader.readtext(merchant_crop, detail=0)
+                                    ocr_merchant_raw = " ".join(ocr_results).strip()
+
+                                    ocr_merchant_clean = re.sub(r"[^a-zA-Z']", "", ocr_merchant_raw).lower()
+                                    detected_merchant_name = fuzzy_match_merchant(ocr_merchant_clean, POSSIBLE_MERCHANTS)
+
+                                    if not detected_merchant_name:
+                                        logger.write_log(f"Merchant Detection: Could not identify merchant from OCR ('{ocr_merchant_raw}'). Skipping.")
+                                        continue
+
+                                    merchant_short_name = detected_merchant_name.split("'")[0] 
+                                    logger.write_log(f"Merchant Detected: {merchant_short_name} (Raw OCR: '{ocr_merchant_raw}')")
+                                    rnow = datetime.now()
+
+                                    logger.write_log("Merchant Detection: Opening Shop...")
+                                    if merchant_short_name == "Mari":
+                                        open_mari(kb, True, True)
+                                    elif merchant_short_name == "Jester":
+                                        if TGIFRIDAY:
+                                            open_mari(kb, True, True)
+                                        else:
+                                            open_jester_shop(kb, True, True)
+                                        open_mari(kb, True, True)
+                                    time.sleep(3)
+
+                                    del image
+
+                                    pag.screenshot(screenshot_path)
+
+                                    image = cv2.imread(screenshot_path)
+                                    if image is None:
+                                        logger.write_log("Merchant Detection Error: Failed to read screenshot file.")
+                                        continue
+
+                                    file_to_send = create_discord_file_from_path(screenshot_path, filename="merchant.png")
+                                    ping_content = ""
+                                    if merchant_short_name == "Mari":
+                                        emb_color = discord.Colour.from_rgb(255, 255, 255)
+                                        thumbnail_url = "https://static.wikia.nocookie.net/sol-rng/images/3/37/MARI_HIGH_QUALITYY.png/revision/latest"
+                                        if settings.get("ping_mari", False) and settings.get("mari_ping_id", 0) != 0:
+                                            ping_content += f"<@&{settings['mari_ping_id']}>"
+                                    elif merchant_short_name == "Jester":
+                                        emb_color = discord.Colour.from_rgb(176, 49, 255)
+                                        thumbnail_url = "https://static.wikia.nocookie.net/sol-rng/images/d/db/Headshot_of_Jester.png/revision/latest"
+                                        if settings.get("ping_jester", False) and settings.get("jester_ping_id", 0) != 0:
+                                            ping_content += f"<@&{settings['jester_ping_id']}>"
+                                    else:
+                                        emb_color = discord.Colour.default()
+                                        thumbnail_url = None
+
+                                    emb = discord.Embed(
+                                        title=f"{merchant_short_name} Spawned!",
+                                        description=f"A **{merchant_short_name}** has been detected.\n**Time:** <t:{str(int(merchant_spawn[1]))}>\nDetection Method: **{md_type}**",
+                                        colour=emb_color
+                                    )
+                                    if thumbnail_url: emb.set_thumbnail(url=thumbnail_url)
+                                    if file_to_send: emb.set_image(url="attachment://merchant.png")
+                                    if ps_link_valid: emb.add_field(name="Server Invite", value=settings['private_server_link'], inline=False)
+
+                                    emb.set_footer(text=f"SolsScope v{LOCALVERSION}")
+
+                                    logger.write_log("Merchant Detection: Detecting items...")
+                                    item_list = MARI_ITEMS if merchant_short_name == "Mari" else JESTER_ITEMS
+                                    item_ocr_results = []
+                                    for box_name, (x1, y1, x2, y2) in manual_boxes.items():
+                                        if x1 >= image.shape[1] or y1 >= image.shape[0] or x2 <= x1 or y2 <= y1:
+                                            logger.write_log(f"Warning: Invalid coordinates for {box_name}. Skipping OCR.")
+                                            continue
+
+                                        cropped = image[y1:y2, x1:x2]
+
+                                        ocr_results = reader.readtext(cropped, detail=0)
+                                        ocr_raw = " ".join(ocr_results).strip().replace('\n', ' ')
+
+                                        matched = fuzzy_match(ocr_raw, item_list, threshold=0.5)
+                                        logger.write_log(f" > {box_name}: OCR='{ocr_raw}', Match='{matched}'")
+
+                                        detected_items[box_name] = matched
+                                        item_ocr_results.append(f"**{box_name}:** `{matched}` (Raw: `{ocr_raw}`)")
+                                    emb.add_field(name="Detected Items", value="\n".join(item_ocr_results) if item_ocr_results else "None", inline=False)
+
+                                    if not (settings.get("mention", False) and settings.get("mention_id", 0) != 0) and settings.get(f"{merchant_short_name.lower()}_ping_id", 0) != 0:
+                                        ping_content = f"<@{settings['mention_id']}>{ping_content}"
+
+                                    try:
+                                        webhook.send(content=ping_content.strip(), embed=emb, file=file_to_send)
+                                        forward_webhook_msg(
+                                            primary_webhook_url=webhook.url,
+                                            secondary_urls=settings.get("SECONDARY_WEBHOOK_URLS", []),
+                                            content=ping_content.strip(), embed=emb, file=file_to_send
+                                        )
+                                    except Exception as wh_e:
+                                        logger.write_log(f"Error sending merchant detection webhook: {wh_e}")
+
+                                    purchase_settings = settings.get("auto_purchase_items_mari" if merchant_short_name == "Mari" else "auto_purchase_items_jester", {})
+                                    items_to_buy = {box_name: item_name for box_name, item_name in detected_items.items() if purchase_settings.get(item_name, {"Purchase" : False}).get("Purchase", False)}
+
+                                    if items_to_buy:
+                                        logger.write_log(f"Merchant Detection: Attempting to auto-purchase items: {list(items_to_buy.values())}")
+                                        if TGIFRIDAY and not check_tab_menu_open(reader, COORDS_PERCENT, COORDS):
+                                            kb.press(keyboard.Key.tab)
+                                            time.sleep(0.05)
+                                            kb.release(keyboard.Key.tab)
+                                            time.sleep(0.05)
+                                        for box_name, item_name in items_to_buy.items():
+                                            try:
+                                                buy_item(kb, True, True, str(purchase_settings.get(item_name).get("amount", 1)), box_name[-1])
+                                                logger.write_log(f"Auto-purchased: {item_name}")
+                                                time.sleep(3)
+
+                                                try:
+                                                    purch_emb = discord.Embed(
+                                                        title=f"Auto-Purchased from {merchant_short_name}",
+                                                        description=f"Item: **{item_name}**\nAmount: **{str(purchase_settings.get(item_name).get('amount', 1))}**",
+                                                        colour=emb_color
+                                                    )
+                                                    purch_emb.set_footer(text=f"SolsScope v{LOCALVERSION}")
+                                                    if merchants.get(merchant_short_name.lower()).get("items").get(item_name.lower()).get("item_image_url"): purch_emb.set_thumbnail(url=merchants.get(merchant_short_name.lower()).get("items").get(item_name.lower()).get("item_image_url"))
+                                                    webhook.send(embed=purch_emb)
+                                                    forward_webhook_msg(
+                                                        primary_webhook_url=webhook.url,
+                                                        secondary_urls=settings.get("SECONDARY_WEBHOOK_URLS", []),
+                                                        embed=purch_emb
+                                                    )
+                                                except Exception as purch_wh_e:
+                                                    logger.write_log(f"Error sending purchase confirmation webhook: {purch_wh_e}")
+                                            except Exception as buy_e:
+                                                logger.write_log(f"Error auto-purchasing {item_name}: {buy_e}")
+
+                                    if auto_sell and merchant_short_name == "Jester":
+                                        time.sleep(0.2)
+                                        kb.press('e')
+                                        time.sleep(0.2)
+                                        kb.release('e')
+                                        merchant_skip_dialogue(kb, True, True)
+                                        time.sleep(3)
+                                        merchant_skip_dialogue(kb, True, True)
+                                        time.sleep(3)
+                                        if TGIFRIDAY:
+                                            open_jester_shop(kb, True, True)
+                                        else:
+                                            open_jester_ex(kb, True, True)
+                                        time.sleep(3)
+                                        while not stop_event.is_set():
+                                            pag.screenshot(ex_screenshot_path)
+                                            time.sleep(0.2)
+                                            logger.write_log("Merchant Detection: Processing screenshot with OCR...")
+                                            image = cv2.imread(ex_screenshot_path)
+                                            if image is None:
+                                                logger.write_log("Merchant Detection Error: Failed to read screenshot file.")
+                                                continue
+                                            x1p, y1p, x2p, y2p = COORDS_PERCENT["first_sell_item_box_pos"]
+                                            x1 = round(x1p * COORDS["scr_wid"])
+                                            y1 = round(y1p * COORDS["scr_hei"])
+                                            x2 = round(x2p * COORDS["scr_wid"]) 
+                                            y2 = round(y2p * COORDS["scr_hei"])
+                                            exchange_crop = image[y1:y2, x1:x2]
+                                            ocr_results = reader.readtext(exchange_crop, detail=0)
+                                            ocr_ex_item_raw = " ".join(ocr_results).strip().replace('\n', ' ')
+                                            ocr_ex_item_clean = re.sub(r"[^a-zA-Z']", "", ocr_ex_item_raw).lower()
+
+                                            detected_item_name = fuzzy_match_auto_sell(ocr_ex_item_clean, JESTER_SELL_ITEMS)
+                                            logger.write_log(f"Item: {detected_item_name} || OCR: {ocr_ex_item_raw}")
+                                            if detected_item_name == "Void Coin":
+                                                logger.write_log("Void Coin detected in first slot, skipping to second slot.")
+                                                _break_second = False
+                                                while detected_item_name in JESTER_ITEMS and not stop_event.is_set():
+                                                    logger.write_log("Auto-Sell: Taking screenshot")
+                                                    pag.screenshot(ex_screenshot_path)
+                                                    time.sleep(0.2)
+                                                    logger.write_log("Auto-Sell: Processing screenshot with OCR...")
+                                                    image = cv2.imread(ex_screenshot_path)
+                                                    if image is None:
+                                                        logger.write_log("Auto-Sell Error: Failed to read screenshot file.")
+                                                        continue
+                                                    x1p, y1p, x2p, y2p = COORDS_PERCENT["second_sell_item_box_pos"]
+                                                    x1 = round(x1p * COORDS["scr_wid"])
+                                                    y1 = round(y1p * COORDS["scr_hei"])
+                                                    x2 = round(x2p * COORDS["scr_wid"])
+                                                    y2 = round(y2p * COORDS["scr_hei"])
+                                                    exchange_crop = image[y1:y2, x1:x2]
+                                                    ocr_results = reader.readtext(exchange_crop, detail=0)
+                                                    ocr_ex_item_raw = " ".join(ocr_results).strip().replace('\n', ' ')
+                                                    ocr_ex_item_clean = re.sub(r"[^a-zA-Z']", "", ocr_ex_item_raw).lower()
+
+                                                    detected_item_name = fuzzy_match_auto_sell(ocr_ex_item_clean, JESTER_SELL_ITEMS)
+                                                    if detected_item_name == "Void Coin":
+                                                        _break_second = True
+                                                        logger.write_log("Auto-Sell: Void coin detected in second slot, stopping job.")
+                                                        break
+                                                    elif detected_item_name in JESTER_SELL_ITEMS and settings.get("items_to_sell", {}).get(detected_item_name, False):
+                                                        logger.write_log(f"Auto-Sell: {detected_item_name} was detected")
+                                                        time.sleep(0.2)
+                                                        jester_exchange_first(kb, True, True, settings.get("amount_of_item_to_sell", 1))
+                                                        time.sleep(4.5)
+                                                        sell_emb = discord.Embed(
+                                                            title=f"Auto-Sold to {merchant_short_name}",
+                                                            description=f"Item: **{detected_item_name}**\nAmount: **{str(settings.get('amount_of_item_to_sell', 1))}**\nMaximum Profit: **{str(settings.get('amount_of_item_to_sell', 1) * merchants.get(merchant_short_name.lower()).get('exchange').get(detected_item_name.lower()).get('price'))}P",
+                                                            colour=emb_color
+                                                        )
+                                                        sell_emb.set_footer(text=f"SolsScope v{LOCALVERSION}")
+                                                        if merchants.get(merchant_short_name.lower()).get("exchange").get(detected_item_name.lower()).get("item_image_url"): sell_emb.set_thumbnail(url=merchants.get(merchant_short_name.lower()).get("exchange").get(detected_item_name.lower()).get("item_image_url"))
+                                                        webhook.send(embed=sell_emb)
+                                                        forward_webhook_msg(
+                                                            primary_webhook_url=webhook.url,
+                                                            secondary_urls=settings.get("SECONDARY_WEBHOOK_URLS", []),
+                                                            embed=sell_emb
+                                                        )
+                                                    else:
+                                                        logger.write_log("Auto-Sell: No items were found in the second box or unsure if Void Coin was not detected, ending auto sell job.")
+                                                        _break_second = True
+                                                        break
+                                                    time.sleep(1)
+                                                if _break_second:
+                                                    break
+                                            elif detected_item_name in JESTER_SELL_ITEMS and settings.get("items_to_get", {}).get(detected_item_name, False):
+                                                logger.write_log(f"Auto-Sell: {detected_item_name} was detected")
+                                                time.sleep(0.2)
+                                                jester_exchange_second(kb, True, True, settings.get("amount_of_item_to_sell", 1))
+                                                time.sleep(4.5)
+                                                sell_emb = discord.Embed(
+                                                    title=f"Auto-Sold to {merchant_short_name}",
+                                                    description=f"Item: **{detected_item_name}**\nAmount: **{str(settings.get('amount_of_item_to_sell', 1))}**\nMaximum Profit: **{str(settings.get('amount_of_item_to_sell', 1) * merchants.get(merchant_short_name.lower()).get('exchange').get(detected_item_name.lower()).get('price'))}P**",
+                                                    colour=emb_color
+                                                )
+                                                sell_emb.set_footer(text=f"SolsScope v{LOCALVERSION}")
+                                                if merchants.get(merchant_short_name.lower()).get("exchange").get(detected_item_name.lower()).get("item_image_url"): sell_emb.set_thumbnail(url=merchants.get(merchant_short_name.lower()).get("exchange").get(detected_item_name.lower()).get("item_image_url"))
+                                                webhook.send(embed=sell_emb)
+                                                forward_webhook_msg(
+                                                    primary_webhook_url=webhook.url,
+                                                    secondary_urls=settings.get("SECONDARY_WEBHOOK_URLS", []),
+                                                    embed=sell_emb
+                                                )
+                                            else:
+                                                logger.write_log("Auto-Sell: No item was found or unsure if Void Coin was not detected, ending auto sell job.")
+                                                break
+                                            time.sleep(1)
+
+                                        close_menu(kb, True, is_merchant=True)
+                                        time.sleep(0.5)
+                                        reset_character()
+                                        time.sleep(3)
+
+                                    if afk_in_limbo and not is_idle_mode:
+                                        logger.write_log("Teleporting back to limbo...")
+                                        use_item("Portable Crack", 1, True, mkey, kb, settings, reader)
+                                        time.sleep(0.5)
+
+                                    if stop_event.wait(timeout=cooldown_interval):
+                                        break
+
+                                except Exception as e:
+                                    logger.write_log(f"Error in Merchant Detection loop: {e}")
+                                    import traceback
+                                    logger.write_log(traceback.format_exc()) 
+
+                                    try:
+                                        close_menu(kb, True)
+                                    except Exception:
+                                        pass
+                        
+                        else:
+                            ping_content = ""
+                            if merchant_spawn[0] == "Mari":
+                                emb_color = discord.Colour.from_rgb(255, 255, 255)
+                                thumbnail_url = "https://static.wikia.nocookie.net/sol-rng/images/3/37/MARI_HIGH_QUALITYY.png/revision/latest"
+                                if settings.get("ping_mari", False) and settings.get("mari_ping_id", 0) != 0:
+                                    ping_content += f"<@&{settings['mari_ping_id']}>"
+                            elif merchant_spawn[0] == "Jester":
+                                emb_color = discord.Colour.from_rgb(176, 49, 255)
+                                thumbnail_url = "https://static.wikia.nocookie.net/sol-rng/images/d/db/Headshot_of_Jester.png/revision/latest"
+                                if settings.get("ping_jester", False) and settings.get("jester_ping_id", 0) != 0:
+                                    ping_content += f"<@&{settings['jester_ping_id']}>"
+                            else:
+                                emb_color = discord.Colour.default()
+                                thumbnail_url = None
+
+                            emb = discord.Embed(
+                                title=f"{merchant_spawn[0]} Spawned!",
+                                description=f"A **{merchant_spawn[0]}** has been detected.\n**Time:** <t:{str(int(merchant_spawn[1]))}>\nDetection Method: **{md_type}**",
                                 colour=emb_color
                             )
-                            sell_emb.set_footer(text=f"SolsScope v{LOCALVERSION}")
-                            if merchants.get(merchant_short_name.lower()).get("exchange").get(detected_item_name.lower()).get("item_image_url"): sell_emb.set_thumbnail(url=merchants.get(merchant_short_name.lower()).get("exchange").get(detected_item_name.lower()).get("item_image_url"))
-                            webhook.send(embed=sell_emb)
+                            if thumbnail_url: emb.set_thumbnail(url=thumbnail_url)
+                            if ps_link_valid: emb.add_field(name="Server Invite", value=settings['private_server_link'], inline=False)
+
+                            emb.set_footer(text=f"SolsScope v{LOCALVERSION}")
+                            webhook.send(content=ping_content, embed=emb)
                             forward_webhook_msg(
                                 primary_webhook_url=webhook.url,
                                 secondary_urls=settings.get("SECONDARY_WEBHOOK_URLS", []),
-                                embed=sell_emb
+                                embed=emb,
+                                content=ping_content
                             )
-                        else:
-                            logger.write_log("Auto-Sell: No item was found or unsure if Void Coin was not detected, ending auto sell job.")
-                            break
-                        time.sleep(1)
 
-                    close_menu(kb, True, is_merchant=True)
-                    time.sleep(0.5)
-                    reset_character()
-                    time.sleep(3)
-
-                if afk_in_limbo and not is_idle_mode:
-                    logger.write_log("Teleporting back to limbo...")
-                    use_item("Portable Crack", 1, True, mkey, kb, settings, reader)
-                    time.sleep(0.5)
-
-                if stop_event.wait(timeout=cooldown_interval):
-                    break
-
-            except Exception as e:
-                logger.write_log(f"Error in Merchant Detection loop: {e}")
-                import traceback
-                logger.write_log(traceback.format_exc()) 
-
-                try:
-                    close_menu(kb, True)
-                except Exception:
-                    pass
+    else:
+        logger.write_log(f"Unknown Merchant Detection Type: {md_type}")
+            
 
     logger.write_log("Merchant Detection thread stopped.")
 
@@ -2280,6 +2666,138 @@ def auto_craft(webhook, settings: dict, stop_event: threading.Event, sniped_even
                                     logger.write_log(f"Error sending potion crafted webhook: {wh_e}")
 
                         _prev_f3 = _f3_isfull
+                
+                if settings["auto_craft_item"].get("Void Heart", False):
+                    search_for_potion_in_cauldron(kb, True, True, "Void")
+
+                    time.sleep(0.2)
+                    mkey.move_to_natural(round(float(COORDS_PERCENT["scroll_mouse_position"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["scroll_mouse_position"][1] * COORDS["scr_hei"])))
+                    time.sleep(0.2)
+                    ms.scroll(0, 30); time.sleep(0.2)
+                    ms.scroll(0, 30); time.sleep(0.2)
+
+                    _ = detect_add_potions(False, reader, COORDS_PERCENT, COORDS)
+
+                    if not _[0]:
+                        add_amount_to_potion(kb, True, True, 50)
+
+                    _ = detect_add_potions(False, reader, COORDS_PERCENT, COORDS)
+                    if _[0] and not _[1]:
+                        add_amount_to_potion(kb, True, True, 5)
+                    elif not _[0] and not _[1]:
+                        add_amount_to_potion(kb, True, True, 5, 1)
+                    
+                    _ = detect_add_potions(False, reader, COORDS_PERCENT, COORDS)
+                    if _[0]:
+                        if _[1] and not _[2]:
+                            add_amount_to_potion(kb, True, True, 2)
+                        elif not _[1] and not _[2]:
+                            add_amount_to_potion(kb, True, True, 2, 1)
+                    else:
+                        if _[1] and not _[2]:
+                            add_amount_to_potion(kb, True, True, 2, 1)
+                        elif not _[1] and not _[2]:
+                            add_amount_to_potion(kb, True, True, 2, 2)
+
+                    mkey.move_to_natural(round(float(COORDS_PERCENT["scroll_mouse_position"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["scroll_mouse_position"][1] * COORDS["scr_hei"])))
+                    time.sleep(0.2)
+                    ms.scroll(0, -30); time.sleep(0.2)
+                    ms.scroll(0, -30); time.sleep(0.2)
+
+                    _s = detect_add_potions(True, reader, COORDS_PERCENT, COORDS)
+
+                    if TGIFRIDAY:
+                        time.sleep(0.2)
+                        mkey.move_to_natural(round(float(COORDS_PERCENT["scroll_mouse_position"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["scroll_mouse_position"][1] * COORDS["scr_hei"])))
+                        time.sleep(0.2)
+                        ms.scroll(0, 30); time.sleep(0.2)
+                        ms.scroll(0, 30); time.sleep(0.2)
+                        _ = detect_add_potions(False, reader, COORDS_PERCENT, COORDS)
+                        moves = get_autocraft_path(_, _s, 5)
+                        if moves != -1:
+                            add_amount_to_potion(kb, True, True, 10, moves)
+                    else:                    
+                        if not _s[2]:
+                            add_amount_to_potion(kb, True, True, 10, 0, True)
+
+                    if TGIFRIDAY:
+                        time.sleep(0.2)
+                        mkey.move_to_natural(round(float(COORDS_PERCENT["scroll_mouse_position"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["scroll_mouse_position"][1] * COORDS["scr_hei"])))
+                        time.sleep(0.2)
+                        ms.scroll(0, 30); time.sleep(0.2)
+                        ms.scroll(0, 30); time.sleep(0.2)
+                        _ = detect_add_potions(False, reader, COORDS_PERCENT, COORDS)
+
+                    time.sleep(0.2)
+                    mkey.move_to_natural(round(float(COORDS_PERCENT["scroll_mouse_position"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["scroll_mouse_position"][1] * COORDS["scr_hei"])))
+                    time.sleep(0.2)
+                    ms.scroll(0, -30); time.sleep(0.2)
+                    ms.scroll(0, -30); time.sleep(0.2)
+
+                    _s = detect_add_potions(True, reader, COORDS_PERCENT, COORDS)
+
+                    if TGIFRIDAY:
+                        time.sleep(0.2)
+                        mkey.move_to_natural(round(float(COORDS_PERCENT["scroll_mouse_position"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["scroll_mouse_position"][1] * COORDS["scr_hei"])))
+                        time.sleep(0.2)
+                        ms.scroll(0, 30); time.sleep(0.2)
+                        ms.scroll(0, 30); time.sleep(0.2)
+                        moves = get_autocraft_path(_, _s, 4)
+                        if moves != -1:
+                            add_amount_to_potion(kb, True, True, 10, moves)
+                    else:
+                    
+                        if not _s[2] and not _s[1]:
+                            add_amount_to_potion(kb, True, True, 10, 1, True)
+                        elif _s[2] and not _s[1]:
+                            add_amount_to_potion(kb, True, True, 10, 0, True)
+                    
+                    time.sleep(0.2)
+                    mkey.move_to_natural(round(float(COORDS_PERCENT["scroll_mouse_position"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["scroll_mouse_position"][1] * COORDS["scr_hei"])))
+                    time.sleep(0.2)
+                    ms.scroll(0, 30); time.sleep(0.2)
+                    ms.scroll(0, 30); time.sleep(0.2)
+
+                    if send_item_crafted_notification:
+
+                        _ = detect_add_potions(False, reader, COORDS_PERCENT, COORDS)
+
+                        if _[0]:
+                            _prev_void = True
+                        else:
+                            _prev_void = False
+
+                    press_craft_button(kb, True, True)
+
+                    if send_item_crafted_notification:
+                        _void_isfull = False
+
+                        _ = detect_add_potions(False, reader, COORDS_PERCENT, COORDS)
+
+                        if _[0]:
+                            _void_isfull = True
+                        else:
+                            _void_isfull = False
+
+                        if _prev_void != _void_isfull:
+                            potions_crafted += 1
+                            emb = create_autocraft_embed("Void Heart")
+                            if emb:
+                                try:
+                                    webhook.send(embed=emb)
+                                    forward_webhook_msg(
+                                        primary_webhook_url=webhook.url,
+                                        secondary_urls=settings.get("SECONDARY_WEBHOOK_URLS", []),
+                                        embed=emb
+                                    )
+                                except Exception as wh_e:
+                                    logger.write_log(f"Error sending potion crafted webhook: {wh_e}")
+
+                        _prev_void = _void_isfull
+
+                    if job == "Void Heart":
+                        press_auto_button(kb, True, True)
+                    time.sleep(1)
 
                 time.sleep(1)
                 kb.press('f')
@@ -3001,6 +3519,8 @@ def auto_questboard(settings: dict, webhook, stop_event: threading.Event, sniped
     COORDS_PERCENT = get_coords_percent(COORDS)
 
     VIP_STATUS = settings.get("vip_status", "No VIP")
+    afk_in_limbo = settings.get("mode", "Normal") == "Limbo"
+    is_idle_mode = settings.get("mode", "Normal") == "IDLE"
     
     while not stop_event.is_set():
 
@@ -3200,6 +3720,11 @@ def auto_questboard(settings: dict, webhook, stop_event: threading.Event, sniped
             time.sleep(1)
             reset_character()
             time.sleep(3)
+            
+            if afk_in_limbo and not is_idle_mode:
+                logger.write_log("Teleporting back to limbo...")
+                use_item("Portable Crack", 1, True, mkey, kb, settings, reader)
+                time.sleep(0.5)
         logger.write_log(f"Auto Quest Board: Waiting {wait_interval} seconds...")
         if stop_event.wait(timeout=wait_interval):
             break

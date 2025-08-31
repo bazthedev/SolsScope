@@ -23,6 +23,8 @@ WEBHOOK_ICON_URL = "https://raw.githubusercontent.com/bazthedev/SolsScope/a93aaa
 
 PATH_DIR = os.path.expandvars(r"%localappdata%\SolsScope\path")
 
+PYTHON_EXE = os.path.join(MACROPATH, "py", "python.exe")
+
 DEFAULTSETTINGS = {
     "WEBHOOK_URL": "",
     "__version__": LOCALVERSION,
@@ -185,12 +187,13 @@ DEFAULTSETTINGS = {
     "themes" : {
         "Default" : os.path.join(MACROPATH, "theme", "default.ssthm")
     },
-    "vok_taran" : False,
+    #"vok_taran" : False,
     "enable_ui_nav_key" : "#",
     "skip_autocraft_download" : False,
     "send_item_crafted_notification" : True,
     "delay" : 0.05,
-    "vip_status" : "No VIP"
+    "vip_status" : "No VIP",
+    "merchant_detection_type" : "Legacy"
 }
 
 VALIDSETTINGSKEYS = list(DEFAULTSETTINGS.keys())
@@ -244,11 +247,12 @@ TOOLTIPS = {
     "use_reset_aura" : "Equip the reset aura when a new aura is rolled.",
     "use_alternate_uinav" : "Use the alternate paths for UI navigation. Enable this if pressing the left arrow with UI nav on takes you to the storage button.",
     "themes" : "List of themes that are available to be applied.",
-    "vok_taran" : "Types \"vok taran\" in the chat every 30 minutes to spawn a Sand Storm biome.",
+    #"vok_taran" : "Types \"vok taran\" in the chat every 30 minutes to spawn a Sand Storm biome.",
     "enable_ui_nav_key" : "The key needed to be pressed to enable UI Navigation.",
     "skip_autocraft_download" : "Skip downloading the Auto Craft Data.",
     "send_item_crafted_notification" : "Send a notification whenever an item is crafted during Auto Craft. This may cause the program to take longer per potion.",
-    "delay" : "How long to wait between actions. A larger number is recommended for potato PCs."
+    "delay" : "How long to wait between actions. A larger number is recommended for potato PCs (~0.5).",
+    "merchant_detection_type" : "Choose either Legacy (use the Merchant Teleporter every 60/90s) or Logs (scan log file for merchant spawns)."
 }
 
 DONOTDISPLAY = ["__version__", "current_theme"]
@@ -256,10 +260,10 @@ NOTRECOMMENDED = []
 
 GENERAL_KEYS = ["WEBHOOK_URL", "private_server_link", "mode", "themes", "SECONDARY_WEBHOOK_URLS", "failsafe_key", "use_roblox_player", "global_wait_time", "mention", "mention_id"]
 AURAS_KEYS = ["minimum_roll", "minimum_ping", "use_reset_aura", "reset_aura", "take_screenshot_on_detection"]
-BIOMES_KEYS = ["auto_biome_randomizer", "auto_strange_controller", "vok_taran", "pop_in_glitch", "pop_in_dreamspace"]
+BIOMES_KEYS = ["auto_biome_randomizer", "auto_strange_controller", "pop_in_glitch", "pop_in_dreamspace"]
 SNIPER_KEYS = ["sniper_enabled", "sniper_toggles", "DISCORD_TOKEN", "sniper_logs", "scan_channels"]
 
-ACTIONS_KEYS = ["merchant_detection", "auto_sell_to_jester", "do_obby", "vip_status", "notify_obby_completion", "has_abyssal_hunter"]
+ACTIONS_KEYS = ["merchant_detection", "merchant_detection_type", "auto_sell_to_jester", "do_obby", "vip_status", "notify_obby_completion", "has_abyssal_hunter"]
 
 MARI_MERCHANT_KEYS = ["ping_mari", "mari_ping_id", "auto_purchase_items_mari"]
 JESTER_MERCHANT_KEYS = ["ping_jester", "jester_ping_id", "auto_purchase_items_jester", "amount_of_item_to_sell", "items_to_sell"]
@@ -294,7 +298,8 @@ STARTUP_MSGS = [
 
 ACCEPTEDPOTIONS = [
     "Jewelry Potion", "Zombie Potion", "Rage Potion", "Diver Potion", "Potion of Bound", "Heavenly Potion", "Godly Potion (Zeus)",
-    "Godly Potion (Poseidon)", "Godly Potion (Hades)", "Warp Potion", "Godlike Potion", "Forbidden Potion I", "Forbidden Potion II", "Forbidden Potion III"
+    "Godly Potion (Poseidon)", "Godly Potion (Hades)", "Warp Potion", "Godlike Potion", "Forbidden Potion I", "Forbidden Potion II",
+    "Forbidden Potion III", "Void Heart"
 ]
 
 ACCEPTEDAUTOPOP = {

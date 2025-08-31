@@ -70,7 +70,7 @@
 ## Support & Documentation
 
 - **Video Guide**: [Setup Tutorial](https://www.youtube.com/watch?v=Y12uiAbqMDc)
-- **Discord Support**: [Join our server](https://discord.com/invite/y6NV89Na)
+- **Discord Support**: [Join our server](https://discord.gg/8khGXqG7nA)
 - **Wiki**: [Detailed documentation](https://github.com/bazthedev/SolsScope/wiki)
 
 ---

@@ -20,7 +20,7 @@ from discord.ext import commands, tasks
 import time
 import pyautogui as pag
 
-from uinav import open_inventory, open_storage, close_menu, search_in_menu, buy_item
+from uinav import open_inventory, open_storage, close_menu, search_in_menu, buy_item, load_delay
 
 class Plugin:
     DEFAULTSETTINGS = {
@@ -50,7 +50,8 @@ class Plugin:
         self.name = "Remote Bot"
         self.version = "1.0.4"
         self.authors = ["bazthedev"]
-        self.requires = "1.2.8"
+        self.requires = "2.0.0"
+        self.requirements = []
         self.autocraft_compatible = True
         self.macro = macro
         
@@ -296,12 +297,13 @@ class Plugin:
                 @client.command()
                 @commands.is_owner()
                 async def storage_scr(ctx):
+                    d = load_delay()
                     with self.macro.keyboard_lock:
                         await ctx.send("Taking screenshot of Aura Storage, please wait, this will take a few seconds.")
                         open_storage(self._keyboard, True)
-                        time.sleep(0.05)
+                        time.sleep(d)
                         storimg = pag.screenshot(f"{self.MACROPATH}/scr/screenshot_storage.png")
-                        await asyncio.sleep(0.1)
+                        await asyncio.sleep(d)
                         close_menu(self._keyboard, True)
                         await ctx.send(file=discord.File(f"{self.MACROPATH}/scr/screenshot_storage.png"))
 
@@ -335,14 +337,15 @@ class Plugin:
                 @client.command()
                 @commands.is_owner()
                 async def inv_scr(ctx):
+                    d = load_delay()
                     with self.macro.keyboard_lock:
                         await ctx.send("Taking screenshot of inventory, please wait, this will take a few seconds.")
                         open_inventory(self._keyboard, False)
-                        time.sleep(0.05)
+                        time.sleep(d)
                         search_in_menu(self._keyboard, True, False, True, True)
-                        time.sleep(0.05)
+                        time.sleep(d)
                         self.storimg = pag.screenshot(f"{self.MACROPATH}/scr/screenshot_inventory.png")
-                        await asyncio.sleep(0.1)
+                        await asyncio.sleep(d)
                         close_menu(self._keyboard, True)
                         await ctx.send(file=discord.File(f"{self.MACROPATH}/scr/screenshot_inventory.png"))
 

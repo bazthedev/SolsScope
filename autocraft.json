@@ -102,5 +102,12 @@
             "+1350% Luck",
             "+75% Roll Speed"
         ]
+    },
+    "Void Heart" : {
+        "colour" : "#1d1329",
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/8/8b/VoidHeartGif.gif/revision/latest",
+        "effects" : [
+            "+300000 Luck for next 1 RollX"
+        ]
     }
 }

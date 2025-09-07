@@ -29,7 +29,8 @@ def validate_theme(theme_text: str) -> bool:
         "qmessagebox qpushbutton", "#creditscontainer", "#developercard",
         "#developercard:hover", "#sectioncard", "#versionlabel",
         "#donatecardbutton", "#donatecardbutton:hover", "#donatecardbutton:pressed",
-        "qdialog#popoutwindow", "qwidget#popoutconfigbox"
+        "qdialog#popoutwindow", "qwidget#popoutconfigbox","qwidget#calibrationeditor",
+        "qwidget#calibrationeditorcontent"
     }
 
     for sel in required_selectors:

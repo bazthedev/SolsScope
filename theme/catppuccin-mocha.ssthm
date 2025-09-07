@@ -651,3 +651,14 @@ QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
     padding: 12px;
     margin: 3px;
 }
+
+/* Main CalibrationEditor window */
+QWidget#CalibrationEditor {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                                stop:0 #2f2f2f, stop:1 #252525);
+}
+
+/* Scroll area content widget */
+QWidget#CalibrationEditorContent {
+    background: transparent;  /* inherit from parent */
+}

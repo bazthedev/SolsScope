@@ -325,3 +325,14 @@ QWidget#CalibrationEditor {
 QWidget#CalibrationEditorContent {
     background: transparent;  /* inherit from parent */
 }
+
+QDialog#screenRegionDialog {
+    background: #1a1a1a;
+    border: 2px solid #333333;
+    border-radius: 10px;
+    padding: 15px;
+}
+
+QDialog#screenRegionDialogContent {
+    background: transparent; /* inherit from parent */
+}

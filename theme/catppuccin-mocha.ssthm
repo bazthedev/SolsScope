@@ -662,3 +662,16 @@ QWidget#CalibrationEditor {
 QWidget#CalibrationEditorContent {
     background: transparent;  /* inherit from parent */
 }
+
+/* Screen Region Dialog */
+QDialog#screenRegionDialog {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                                stop:0 #313244, stop:1 #1e1e2e);
+    border: 2px solid #45475a;
+    border-radius: 10px;
+    padding: 15px;
+}
+
+QDialog#screenRegionDialogContent {
+    background: transparent; /* inherit from parent */
+}

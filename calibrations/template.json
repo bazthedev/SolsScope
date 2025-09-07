@@ -66,6 +66,7 @@
         },
         "jester_auto_ex_first" : [],
         "jester_auto_ex_second" : [],
-        "questboard_quest_region" : []
+        "questboard_quest_region" : [],
+        "first_item_text_region" : []
     }
 }

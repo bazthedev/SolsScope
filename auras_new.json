@@ -814,5 +814,17 @@
         "rarity" : "7700000",
         "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/b/bc/Nautilost.gif/revision/latest",
         "native_biome" : ""
+    },
+    "terror" : {
+        "emb_colour" : "#8e0b43",
+        "rarity" : "400000",
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/9/90/TerrorColl.gif/revision/latest",
+        "native_biome" : ""
+    },
+    "prowler" : {
+        "emb_colour" : "#1b4cba",
+        "rarity" : "540000",
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/c/c9/Prowlercollet.gif/revision/latest",
+        "native_biome" : "anotherrealm"
     }
 }

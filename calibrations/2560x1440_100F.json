@@ -207,6 +207,14 @@
         "jester_auto_ex_second": [
             928,
             957
+        ],
+        "jester_exchange_confirm" : [
+            1155,
+            787
+        ],
+        "merchant_skip_dialog" : [
+            1279,
+            1049
         ]
     },
     "ocr_regions": {

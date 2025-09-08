@@ -1,0 +1,276 @@
+{
+    "width": 1920,
+    "height": 1080,
+    "scale": 150,
+    "windowed" : true,
+    "clicks": {
+        "open_inventory": [
+            27,
+            328
+        ],
+        "items_btn": [
+            844,
+            213
+        ],
+        "search_bar": [
+            560,
+            233
+        ],
+        "first_inv_item": [
+            560,
+            281
+        ],
+        "item_amount": [
+            379,
+            369
+        ],
+        "use_item": [
+            453,
+            371
+        ],
+        "close_menu": [
+            943,
+            188
+        ],
+        "open_storage": [
+            27,
+            253
+        ],
+        "first_aura_position": [
+            545,
+            279
+        ],
+        "equip_aura": [
+            415,
+            412
+        ],
+        "collection": [
+            27,
+            287
+        ],
+        "exit_collection": [
+            254,
+            123
+        ],
+        "questboard_right": [
+            909,
+            348
+        ],
+        "questboard_left": [
+            375,
+            348
+        ],
+        "questboard_exit": [
+            640,
+            587
+        ],
+        "questboard_dismiss": [
+            1199,
+            521
+        ],
+        "questboard_accept": [
+            1074,
+            522
+        ],
+        "menu": [
+            31,
+            441
+        ],
+        "settings": [
+            642,
+            377
+        ],
+        "rolling": [
+            461,
+            248
+        ],
+        "cutscene_skip": [
+            749,
+            390
+        ],
+        "close_settings_menu": [
+            863,
+            227
+        ],
+        "autocraft_craft": [
+            388,
+            369
+        ],
+        "autocraft_auto": [
+            474,
+            369
+        ],
+        "autocraft_search": [
+            607,
+            211
+        ],
+        "autocraft_first_potion": [
+            770,
+            261
+        ],
+        "autocraft_first_add": [
+            529,
+            407
+        ],
+        "autocraft_first_amt": [
+            477,
+            407
+        ],
+        "autocraft_second_add": [
+            531,
+            443
+        ],
+        "autocraft_second_amt": [
+            479,
+            441
+        ],
+        "autocraft_third_add": [
+            533,
+            477
+        ],
+        "autocraft_third_amt": [
+            478,
+            479
+        ],
+        "autocraft_first_scrolled_add": [
+            533,
+            427
+        ],
+        "autocraft_first_scrolled_amt": [
+            480,
+            426
+        ],
+        "autocraft_second_scrolled_add": [
+            534,
+            463
+        ],
+        "autocraft_second_scrolled_amt": [
+            479,
+            460
+        ],
+        "autocraft_third_scrolled_add": [
+            530,
+            499
+        ],
+        "autocraft_third_scrolled_amt": [
+            483,
+            498
+        ],
+        "autocraft_scroll": [
+            433,
+            448
+        ],
+        "jester_open": [
+            441,
+            591
+        ],
+        "jester_exchange": [
+            571,
+            589
+        ],
+        "merchant_amount": [
+            457,
+            385
+        ],
+        "merchant_purchase": [
+            492,
+            415
+        ],
+        "merchant_slot_1": [
+            391,
+            468
+        ],
+        "merchant_slot_2": [
+            505,
+            462
+        ],
+        "merchant_slot_3": [
+            640,
+            465
+        ],
+        "merchant_slot_4": [
+            766,
+            463
+        ],
+        "merchant_slot_5": [
+            903,
+            466
+        ],
+        "merchant_close": [
+            937,
+            213
+        ],
+        "jester_auto_ex_first": [
+            366,
+            467
+        ],
+        "jester_auto_ex_second": [
+            467,
+            462
+        ]
+    },
+    "ocr_regions": {
+        "merchant_name": [
+            507,
+            439,
+            600,
+            463
+        ],
+        "merchant_boxes": {
+            "Box 1": [
+                329,
+                446,
+                447,
+                489
+            ],
+            "Box 2": [
+                452,
+                447,
+                574,
+                489
+            ],
+            "Box 3": [
+                579,
+                445,
+                698,
+                487
+            ],
+            "Box 4": [
+                710,
+                451,
+                828,
+                489
+            ],
+            "Box 5": [
+                837,
+                448,
+                952,
+                489
+            ]
+        },
+        "jester_auto_ex_first": [
+            323,
+            446,
+            414,
+            487
+        ],
+        "jester_auto_ex_second": [
+            421,
+            449,
+            508,
+            489
+        ],
+        "questboard_quest_region": [
+            1016,
+            181,
+            1251,
+            207
+        ],
+        "first_item_text_region": [
+            485,
+            242,
+            618,
+            256
+        ]
+    }
+}

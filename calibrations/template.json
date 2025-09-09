@@ -53,7 +53,9 @@
         "merchant_slot_5" : [],
         "merchant_close" : [],
         "jester_auto_ex_first" : [],
-        "jester_auto_ex_second" : []
+        "jester_auto_ex_second" : [],
+        "jester_exchange_confirm" : [],
+        "merchant_skip_dialog" : []
     },
     "ocr_regions" : {
         "merchant_name" : [],
@@ -67,6 +69,8 @@
         "jester_auto_ex_first" : [],
         "jester_auto_ex_second" : [],
         "questboard_quest_region" : [],
-        "first_item_text_region" : []
+        "first_item_text_region" : [],
+        "autocraft_top_add" : [],
+        "autocraft_scrolled_bottom_add" : []
     }
 }

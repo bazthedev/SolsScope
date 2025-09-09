@@ -64,32 +64,19 @@ pynput_special_buttons = {
     "Button.middle": Button.middle
 }
 
-def run_macro(macro):
-    sleep(2)  # initial delay
-    macro_start = perf_counter()
+def run_macro(macro, delay=2):
+    sleep(delay)
 
-    for i, action in enumerate(macro):
-        # Compute time until this action
-        target_time = action["timestamp"]
-        now = perf_counter() - macro_start
-        time_to_wait = target_time - now
-        if time_to_wait > 0:
-            sleep(time_to_wait)
-
-        # Execute the action
+    for action in macro:
         match action["type"]:
+            case "wait":
+                sleep(action["duration"] / 1000.0)
             case "key_press":
                 key = action["key"]
-                if key.startswith("Key."):
-                    kc.press(pynput_special_keys[key])
-                else:
-                    kc.press(key)
+                kc.press(pynput_special_keys.get(key, key))
             case "key_release":
                 key = action["key"]
-                if key.startswith("Key."):
-                    kc.release(pynput_special_keys[key])
-                else:
-                    kc.release(key)
+                kc.release(pynput_special_keys.get(key, key))
             case "mouse_movement":
                 mkey.move_to(int(action["x"]), int(action["y"]))
             case "mouse_press":
@@ -100,65 +87,85 @@ def run_macro(macro):
                 if "x" in action:
                     mkey.move_to(int(action["x"]), int(action["y"]))
                 mc.scroll(action["dx"], action["dy"])
-                """case "wait":
-                # Optional: if your macro has wait durations separate from timestamps
-                sleep(action.get("duration", 0))"""
 
-macro_actions = [{'type': 'key_press', 'key': 'Key.right', 'timestamp': 1.2704156000017974},
-{'type': 'wait', 'duration': 1.502, 'timestamp': 1.2704156000017974},
-{'type': 'key_release', 'key': 'Key.right', 'timestamp': 2.7723954000011872},
-{'type': 'key_press', 'key': 'a', 'timestamp': 2.7723943000000872},
-{'type': 'wait', 'duration': 2.25, 'timestamp': 2.7723943000000872},
-{'type': 'key_release', 'key': 'a', 'timestamp': 5.022426900000937},
-{'type': 'key_press', 'key': 'w', 'timestamp': 5.022425400002248},
-{'type': 'wait', 'duration': 5.247, 'timestamp': 5.022425400002248},
-{'type': 'key_release', 'key': 'w', 'timestamp': 10.269403400001465},
-{'type': 'key_press', 'key': 'd', 'timestamp': 10.269403500002227},
-{'type': 'wait', 'duration': 3.422, 'timestamp': 10.269403500002227},
-{'type': 'key_press', 'key': 'w', 'timestamp': 13.691526900003737},
-{'type': 'wait', 'duration': 0.065, 'timestamp': 13.691526900003737},
-{'type': 'key_release', 'key': 'd', 'timestamp': 13.756434800003262},
-{'type': 'wait', 'duration': 0.609, 'timestamp': 13.756434800003262},
-{'type': 'key_press', 'key': 'a', 'timestamp': 14.365559300002133},
-{'type': 'wait', 'duration': 1.339, 'timestamp': 14.365559300002133},
-{'type': 'key_release', 'key': 'a', 'timestamp': 15.70456820000254},
-{'type': 'key_release', 'key': 'w', 'timestamp': 15.728893200002858},
-{'type': 'key_press', 'key': 's', 'timestamp': 15.728893200002858},
-{'type': 'wait', 'duration': 0.266, 'timestamp': 15.728893200002858},
-{'type': 'key_release', 'key': 's', 'timestamp': 15.994997500003592},
-{'type': 'key_press', 'key': 'Key.space', 'timestamp': 15.994997500003592},
-{'type': 'key_press', 'key': 'w', 'timestamp': 15.994997500003592},
-{'type': 'wait', 'duration': 0.229, 'timestamp': 15.994997500003592},
-{'type': 'key_release', 'key': 'Key.space', 'timestamp': 16.223998100002063},
-{'type': 'wait', 'duration': 1.579, 'timestamp': 16.223998100002063},
-{'type': 'key_release', 'key': 'w', 'timestamp': 17.802799200002482}]
+
+macro_actions = [{'type': 'key_press', 'key': 's'},
+{'type': 'wait', 'duration': 10},
+{'type': 'key_press', 'key': 'd'},
+{'type': 'wait', 'duration': 2588},
+{'type': 'key_release', 'key': 'd'},
+{'type': 'wait', 'duration': 2490},
+{'type': 'key_release', 'key': 's'},
+{'type': 'wait', 'duration': 112},
+{'type': 'key_press', 'key': 'd'},
+{'type': 'wait', 'duration': 1125},
+{'type': 'key_press', 'key': 's'},
+{'type': 'wait', 'duration': 399},
+{'type': 'key_release', 'key': 's'},
+{'type': 'wait', 'duration': 21},
+{'type': 'key_release', 'key': 'd'},
+{'type': 'wait', 'duration': 231},
+{'type': 'key_press', 'key': 'w'},
+{'type': 'wait', 'duration': 113},
+{'type': 'key_release', 'key': 'w'},
+{'type': 'wait', 'duration': 365},
+{'type': 'key_press', 'key': 'Key.space'},
+{'type': 'wait', 'duration': 127},
+{'type': 'key_press', 'key': 's'},
+{'type': 'wait', 'duration': 41},
+{'type': 'key_release', 'key': 'Key.space'},
+{'type': 'wait', 'duration': 831},
+{'type': 'key_release', 'key': 's'},
+{'type': 'wait', 'duration': 202},
+{'type': 'key_press', 'key': 'a'},
+{'type': 'wait', 'duration': 619},
+{'type': 'key_press', 'key': 's'},
+{'type': 'wait', 'duration': 1389},
+{'type': 'key_release', 'key': 'a'},
+{'type': 'wait', 'duration': 475},
+{'type': 'key_release', 'key': 's'},
+{'type': 'wait', 'duration': 1299},
+{'type': 'key_press', 'key': 'e'},
+{'type': 'wait', 'duration': 125},
+{'type': 'key_release', 'key': 'e'}]
 
 if __name__ == "__main__":
-    run_macro([{'type': 'key_press', 'key': 'Key.right', 'timestamp': 1.2704156000017974},
-{'type': 'wait', 'duration': 1.502, 'timestamp': 1.2704156000017974},
-{'type': 'key_release', 'key': 'Key.right', 'timestamp': 2.7723954000011872},
-{'type': 'key_press', 'key': 'a', 'timestamp': 2.7723943000000872},
-{'type': 'wait', 'duration': 2.25, 'timestamp': 2.7723943000000872},
-{'type': 'key_release', 'key': 'a', 'timestamp': 5.022426900000937},
-{'type': 'key_press', 'key': 'w', 'timestamp': 5.022425400002248},
-{'type': 'wait', 'duration': 5.247, 'timestamp': 5.022425400002248},
-{'type': 'key_release', 'key': 'w', 'timestamp': 10.269403400001465},
-{'type': 'key_press', 'key': 'd', 'timestamp': 10.269403500002227},
-{'type': 'wait', 'duration': 3.422, 'timestamp': 10.269403500002227},
-{'type': 'key_press', 'key': 'w', 'timestamp': 13.691526900003737},
-{'type': 'wait', 'duration': 0.065, 'timestamp': 13.691526900003737},
-{'type': 'key_release', 'key': 'd', 'timestamp': 13.756434800003262},
-{'type': 'wait', 'duration': 0.609, 'timestamp': 13.756434800003262},
-{'type': 'key_press', 'key': 'a', 'timestamp': 14.365559300002133},
-{'type': 'wait', 'duration': 1.339, 'timestamp': 14.365559300002133},
-{'type': 'key_release', 'key': 'a', 'timestamp': 15.70456820000254},
-{'type': 'key_release', 'key': 'w', 'timestamp': 15.728893200002858},
-{'type': 'key_press', 'key': 's', 'timestamp': 15.728893200002858},
-{'type': 'wait', 'duration': 0.266, 'timestamp': 15.728893200002858},
-{'type': 'key_release', 'key': 's', 'timestamp': 15.994997500003592},
-{'type': 'key_press', 'key': 'Key.space', 'timestamp': 15.994997500003592},
-{'type': 'key_press', 'key': 'w', 'timestamp': 15.994997500003592},
-{'type': 'wait', 'duration': 0.229, 'timestamp': 15.994997500003592},
-{'type': 'key_release', 'key': 'Key.space', 'timestamp': 16.223998100002063},
-{'type': 'wait', 'duration': 1.579, 'timestamp': 16.223998100002063},
-{'type': 'key_release', 'key': 'w', 'timestamp': 17.802799200002482}])
+    run_macro([{'type': 'key_press', 'key': 's'},
+{'type': 'wait', 'duration': 10},
+{'type': 'key_press', 'key': 'd'},
+{'type': 'wait', 'duration': 2588},
+{'type': 'key_release', 'key': 'd'},
+{'type': 'wait', 'duration': 2490},
+{'type': 'key_release', 'key': 's'},
+{'type': 'wait', 'duration': 112},
+{'type': 'key_press', 'key': 'd'},
+{'type': 'wait', 'duration': 1125},
+{'type': 'key_press', 'key': 's'},
+{'type': 'wait', 'duration': 399},
+{'type': 'key_release', 'key': 's'},
+{'type': 'wait', 'duration': 21},
+{'type': 'key_release', 'key': 'd'},
+{'type': 'wait', 'duration': 231},
+{'type': 'key_press', 'key': 'w'},
+{'type': 'wait', 'duration': 113},
+{'type': 'key_release', 'key': 'w'},
+{'type': 'wait', 'duration': 365},
+{'type': 'key_press', 'key': 'Key.space'},
+{'type': 'wait', 'duration': 127},
+{'type': 'key_press', 'key': 's'},
+{'type': 'wait', 'duration': 41},
+{'type': 'key_release', 'key': 'Key.space'},
+{'type': 'wait', 'duration': 831},
+{'type': 'key_release', 'key': 's'},
+{'type': 'wait', 'duration': 202},
+{'type': 'key_press', 'key': 'a'},
+{'type': 'wait', 'duration': 619},
+{'type': 'key_press', 'key': 's'},
+{'type': 'wait', 'duration': 1389},
+{'type': 'key_release', 'key': 'a'},
+{'type': 'wait', 'duration': 475},
+{'type': 'key_release', 'key': 's'},
+{'type': 'wait', 'duration': 1299},
+{'type': 'key_press', 'key': 'e'},
+{'type': 'wait', 'duration': 125},
+{'type': 'key_release', 'key': 'e'}])

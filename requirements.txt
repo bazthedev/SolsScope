@@ -11,3 +11,4 @@ pyqt6
 keyboard
 pyscreenrec
 watchdog
+pywin32

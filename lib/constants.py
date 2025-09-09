@@ -24,6 +24,8 @@ WEBHOOK_ICON_URL = "https://raw.githubusercontent.com/bazthedev/SolsScope/a93aaa
 PATH_DIR = os.path.expandvars(r"%localappdata%\SolsScope\path")
 
 PYTHON_EXE = os.path.join(MACROPATH, "py", "python.exe")
+ASSETDIR = os.path.join(MACROPATH, "assets")
+CALIBDIR = os.path.join(MACROPATH, "calibrations.json")
 
 DEFAULTSETTINGS = {
     "WEBHOOK_URL": "",
@@ -193,7 +195,11 @@ DEFAULTSETTINGS = {
     "send_item_crafted_notification" : True,
     "delay" : 0.05,
     "vip_status" : "No VIP",
-    "merchant_detection_type" : "Legacy"
+    "merchant_detection_type" : "Legacy",
+    "interaction_type" : "Mouse",
+    "enable_player_logger" : True,
+    "calibration" : "",
+    #"watch_ad_for_autocraft" : False
 }
 
 VALIDSETTINGSKEYS = list(DEFAULTSETTINGS.keys())
@@ -252,7 +258,11 @@ TOOLTIPS = {
     "skip_autocraft_download" : "Skip downloading the Auto Craft Data.",
     "send_item_crafted_notification" : "Send a notification whenever an item is crafted during Auto Craft. This may cause the program to take longer per potion.",
     "delay" : "How long to wait between actions. A larger number is recommended for potato PCs (~0.5).",
-    "merchant_detection_type" : "Choose either Legacy (use the Merchant Teleporter every 60/90s) or Logs (scan log file for merchant spawns)."
+    "merchant_detection_type" : "Choose either Legacy (use the Merchant Teleporter every 60/90s) or Logs (scan log file for merchant spawns).",
+    "interaction_type" : "Choose how you want the Macro to perform actions in the game.",
+    "enable_player_logger" : "Enable the player logger for biomes other than glitched/dreamspace.",
+    "calibration" : "How the macro runs based on your screen size.",
+    #"watch_ad_for_autocraft" : "Watch the add every hour to get increased rates."
 }
 
 DONOTDISPLAY = ["__version__", "current_theme"]
@@ -260,10 +270,10 @@ NOTRECOMMENDED = []
 
 GENERAL_KEYS = ["WEBHOOK_URL", "private_server_link", "mode", "themes", "SECONDARY_WEBHOOK_URLS", "failsafe_key", "use_roblox_player", "global_wait_time", "mention", "mention_id"]
 AURAS_KEYS = ["minimum_roll", "minimum_ping", "use_reset_aura", "reset_aura", "take_screenshot_on_detection"]
-BIOMES_KEYS = ["auto_biome_randomizer", "auto_strange_controller", "pop_in_glitch", "pop_in_dreamspace"]
+BIOMES_KEYS = ["auto_biome_randomizer", "auto_strange_controller", "enable_player_logger", "pop_in_glitch", "pop_in_dreamspace"]
 SNIPER_KEYS = ["sniper_enabled", "sniper_toggles", "DISCORD_TOKEN", "sniper_logs", "scan_channels"]
 
-ACTIONS_KEYS = ["merchant_detection", "merchant_detection_type", "auto_sell_to_jester", "do_obby", "vip_status", "notify_obby_completion", "has_abyssal_hunter"]
+ACTIONS_KEYS = ["calibration", "merchant_detection", "merchant_detection_type", "auto_sell_to_jester", "do_obby", "vip_status", "notify_obby_completion", "has_abyssal_hunter"]
 
 MARI_MERCHANT_KEYS = ["ping_mari", "mari_ping_id", "auto_purchase_items_mari"]
 JESTER_MERCHANT_KEYS = ["ping_jester", "jester_ping_id", "auto_purchase_items_jester", "amount_of_item_to_sell", "items_to_sell"]

@@ -446,7 +446,7 @@ def convert_boxes(percent_boxes, scr_wid, scr_hei):
 
 
 
-def detect_add_potions(scrolled : bool, reader, COORDS_PERCENT, COORDS) -> list:
+def detect_add_potions(scrolled : bool, reader, REGIONS) -> list:
 
     screenshot_path = os.path.join(MACROPATH, "scr", "screenshot_autocraft.png")
 
@@ -458,16 +458,10 @@ def detect_add_potions(scrolled : bool, reader, COORDS_PERCENT, COORDS) -> list:
     image = cv2.imread(screenshot_path)
 
     if image is None:
-        return [False, False, False]
-    
-    add_potions_data = []
+        return False
     
     if not scrolled:
-        x1p, y1p, x2p, y2p = COORDS_PERCENT["potion_slot_1_add"]
-        x1 = round(x1p * COORDS["scr_wid"])
-        y1 = round(y1p * COORDS["scr_hei"])
-        x2 = round(x2p * COORDS["scr_wid"])
-        y2 = round(y2p * COORDS["scr_hei"])
+        x1, y1, x2, y2 = REGIONS["autocraft_top_add"]
         add_crop = image[y1:y2, x1:x2]
         
         ocr_results = reader.readtext(add_crop, detail=0)
@@ -478,70 +472,22 @@ def detect_add_potions(scrolled : bool, reader, COORDS_PERCENT, COORDS) -> list:
             ocr_add_clean = re.sub(r"[^a-zA-Z']", "", ocr_add_raw).lower()
             final_text = fuzzy_match_merchant(ocr_add_clean, ["add"])
 
-            if final_text.lower() == "add":
-                add_potions_data.append(False)
-            else:
-                add_potions_data.append(True)
-
-            del ocr_add_clean, final_text
-        else:
-            add_potions_data.append(True)
-
-        x1p, y1p, x2p, y2p = COORDS_PERCENT["potion_slot_2_add"]
-        x1 = round(x1p * COORDS["scr_wid"])
-        y1 = round(y1p * COORDS["scr_hei"])
-        x2 = round(x2p * COORDS["scr_wid"])
-        y2 = round(y2p * COORDS["scr_hei"])
-        add_crop = image[y1:y2, x1:x2]
-        
-        ocr_results = reader.readtext(add_crop, detail=0)
-        ocr_add_raw = " ".join(ocr_results).strip()
-
-        if ocr_add_raw:
-
-            ocr_add_clean = re.sub(r"[^a-zA-Z']", "", ocr_add_raw).lower()
-            final_text = fuzzy_match_merchant(ocr_add_clean, ["add"])
+            del image, add_crop, x1, y1, x2, y2, ocr_results, ocr_add_raw
+            collect()
 
             if final_text.lower() == "add":
-                add_potions_data.append(False)
+                return False
             else:
-                add_potions_data.append(True)
+                return True
 
-            del ocr_add_clean, final_text
         else:
-            add_potions_data.append(True)
-
-        x1p, y1p, x2p, y2p = COORDS_PERCENT["potion_slot_3_add"]
-        x1 = round(x1p * COORDS["scr_wid"])
-        y1 = round(y1p * COORDS["scr_hei"])
-        x2 = round(x2p * COORDS["scr_wid"])
-        y2 = round(y2p * COORDS["scr_hei"])
-        add_crop = image[y1:y2, x1:x2]
-        
-        ocr_results = reader.readtext(add_crop, detail=0)
-        ocr_add_raw = " ".join(ocr_results).strip()
-
-        if ocr_add_raw:
-
-            ocr_add_clean = re.sub(r"[^a-zA-Z']", "", ocr_add_raw).lower()
-            final_text = fuzzy_match_merchant(ocr_add_clean, ["add"])
-
-            if final_text.lower() == "add":
-                add_potions_data.append(False)
-            else:
-                add_potions_data.append(True)
-
-            del ocr_add_clean, final_text
-        else:
-            add_potions_data.append(True)
+            del image, add_crop, x1, y1, x2, y2, ocr_results, ocr_add_raw
+            collect()
+            return True
 
     else:
 
-        x1p, y1p, x2p, y2p = COORDS_PERCENT["potion_slot_1_scroll_add"]
-        x1 = round(x1p * COORDS["scr_wid"])
-        y1 = round(y1p * COORDS["scr_hei"])
-        x2 = round(x2p * COORDS["scr_wid"])
-        y2 = round(y2p * COORDS["scr_hei"])
+        x1, y1, x2, y2 = REGIONS["autocraft_scrolled_bottom_add"]
         add_crop = image[y1:y2, x1:x2]
         
         ocr_results = reader.readtext(add_crop, detail=0)
@@ -551,68 +497,20 @@ def detect_add_potions(scrolled : bool, reader, COORDS_PERCENT, COORDS) -> list:
 
             ocr_add_clean = re.sub(r"[^a-zA-Z']", "", ocr_add_raw).lower()
             final_text = fuzzy_match_merchant(ocr_add_clean, ["add"])
+            
+            del image, add_crop, x1, y1, x2, y2, ocr_results, ocr_add_raw
+            collect()
 
             if final_text.lower() == "add":
-                add_potions_data.append(False)
+                return False
             else:
-                add_potions_data.append(True)
+                return True
 
-            del ocr_add_clean, final_text
         else:
-            add_potions_data.append(True)
+            del image, add_crop, x1, y1, x2, y2, ocr_results, ocr_add_raw
+            collect()
+            return True
 
-        x1p, y1p, x2p, y2p = COORDS_PERCENT["potion_slot_2_scroll_add"]
-        x1 = round(x1p * COORDS["scr_wid"])
-        y1 = round(y1p * COORDS["scr_hei"])
-        x2 = round(x2p * COORDS["scr_wid"])
-        y2 = round(y2p * COORDS["scr_hei"])
-        add_crop = image[y1:y2, x1:x2]
-        
-        ocr_results = reader.readtext(add_crop, detail=0)
-        ocr_add_raw = " ".join(ocr_results).strip()
-
-        if ocr_add_raw:
-
-            ocr_add_clean = re.sub(r"[^a-zA-Z']", "", ocr_add_raw).lower()
-            final_text = fuzzy_match_merchant(ocr_add_clean, ["add"])
-
-            if final_text.lower() == "add":
-                add_potions_data.append(False)
-            else:
-                add_potions_data.append(True)
-
-            del ocr_add_clean, final_text
-        else:
-            add_potions_data.append(True)
-
-        x1p, y1p, x2p, y2p = COORDS_PERCENT["potion_slot_3_scroll_add"]
-        x1 = round(x1p * COORDS["scr_wid"])
-        y1 = round(y1p * COORDS["scr_hei"])
-        x2 = round(x2p * COORDS["scr_wid"])
-        y2 = round(y2p * COORDS["scr_hei"])
-        add_crop = image[y1:y2, x1:x2]
-        
-        ocr_results = reader.readtext(add_crop, detail=0)
-        ocr_add_raw = " ".join(ocr_results).strip()
-
-        if ocr_add_raw:
-
-            ocr_add_clean = re.sub(r"[^a-zA-Z']", "", ocr_add_raw).lower()
-            final_text = fuzzy_match_merchant(ocr_add_clean, ["add"])
-
-            if final_text.lower() == "add":
-                add_potions_data.append(False)
-            else:
-                add_potions_data.append(True)
-
-            del ocr_add_clean, final_text
-        else:
-            add_potions_data.append(True)
-
-    del image, x1p, y1p, x2p, y2p, add_crop, x1, y1, x2, y2, ocr_results, ocr_add_raw
-    collect()
-    
-    return add_potions_data
 
 
 def check_tab_menu_open(reader, COORDS_PERCENT, COORDS) -> bool:

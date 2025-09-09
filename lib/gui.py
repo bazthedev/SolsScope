@@ -67,6 +67,8 @@ from stats import load_stats
 
 from packager import PackageInstallerGUI
 
+from calibrations import get_available_calibrations, CalibrationEditor, download_all_calibrations, get_best_calibration, get_screen_info
+
 try:
     from PIL import Image
     PIL_AVAILABLE = True
@@ -266,6 +268,16 @@ class MainWindow(QMainWindow):
             themes = [theme for theme in self.settings.get("themes", {})]
             self.theme_dropdown.addItems(themes)
             self.theme_dropdown.setCurrentText(self.settings.get("current_theme", "Default"))
+
+    def refresh_calibrations_dropdown(self):
+        if hasattr(self, "calibrations_dropdown") and isinstance(self.calibrations_dropdown, QComboBox):
+            self.calibrations_dropdown.clear()
+            self.calibrations_dropdown.addItems(get_available_calibrations())
+            screen_info = get_screen_info()
+            if self.settings.get("calibration", "") != "":
+                self.calibrations_dropdown.setCurrentText(self.settings.get("calibration"))
+            else:
+                self.calibrations_dropdown.setCurrentText(get_best_calibration(screen_info["width"], screen_info["height"], screen_info["scale"], screen_info["windowed"]))
 
     def apply_theme_button(self):
         self.logger.write_log("Presenting user with theme file dialog prompt.")
@@ -811,6 +823,47 @@ class MainWindow(QMainWindow):
         QDialog#popoutWindow {
             background: #252525;
         }
+
+        /* Screen Region Dialog */
+        QDialog#screenRegionDialog {
+            background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                                    stop: 0 #2f2f2f, stop: 1 #252525);
+            border: 2px solid #404040;
+            border-radius: 10px;
+            padding: 15px;
+        }
+
+        QDialog#screenRegionDialog QLabel {
+            color: #ffffff;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        QDialog#screenRegionDialog QLineEdit {
+            min-width: 100px;
+        }
+
+        /* Main CalibrationEditor window */
+        QWidget#CalibrationEditor {
+            background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                                        stop:0 #2f2f2f, stop:1 #252525);
+        }
+
+        /* Scroll area content widget */
+        QWidget#CalibrationEditorContent {
+            background: transparent;  /* inherit from parent */
+        }
+
+        QDialog#screenRegionDialog {
+            background: #2f2f2f;
+            border: 2px solid #404040;
+            border-radius: 10px;
+            padding: 15px;
+        }
+        QDialog#screenRegionDialogContent {
+            background: transparent;
+        }
+
         """
 
         def validate_theme(theme_text: str) -> bool:
@@ -842,7 +895,9 @@ class MainWindow(QMainWindow):
                 "qmessagebox qpushbutton", "#creditscontainer", "#developercard",
                 "#developercard:hover", "#sectioncard", "#versionlabel",
                 "#donatecardbutton", "#donatecardbutton:hover", "#donatecardbutton:pressed",
-                "qdialog#popoutwindow", "qwidget#popoutconfigbox"
+                "qdialog#popoutwindow", "qwidget#popoutconfigbox", "qwidget#calibrationeditor",
+                "qwidget#calibrationeditorcontent", "qdialog#screenregiondialog",
+                "qdialog#screenregiondialogcontent"
             }
 
             for sel in required_selectors:
@@ -969,14 +1024,6 @@ class MainWindow(QMainWindow):
 
             self.tab_entries[tab_name] = {}
 
-            if tab_name == "Actions":
-                uinav_button = QPushButton("UI Navigation Controls")
-                uinav_button.setToolTip("Toggle UI Navigation options.")
-                uinav_button.clicked.connect(self.open_uinav_controls_settings)
-                uinav_button.setStyleSheet("text-align: left; padding: 8px; font-size: 11px;")
-                uinav_button.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-                content_layout.addWidget(uinav_button)
-
             self.populate_tab(content_layout, keys, self.tab_entries[tab_name])
 
             if tab_name == "General":
@@ -1021,6 +1068,16 @@ class MainWindow(QMainWindow):
         self.logger.write_log(f"Applied theme {selected_theme} from dropdown.")
         QMessageBox.information(self, "Theme Applied", f"Theme '{selected_theme}' has been applied.")
 
+    def start_calibration(self, calibration_name):
+        self.hide()
+        editor = CalibrationEditor(calibration_name=calibration_name, theme_style=self.load_theme(self.settings.get("themes", {}).get(self.settings.get("current_theme", "Default"), os.path.join(MACROPATH, "theme", "default.ssthm"))), parent=self)
+        editor.setWindowFlags(editor.windowFlags() | Qt.WindowType.Window)
+        editor.show()
+
+    def dl_calibrations(self):
+        download_all_calibrations()
+        self.refresh_calibrations_dropdown()
+
     
     def create_widgets(self, settings_subset, parent_layout, entry_dict):
         """Recursively creates widgets for settings items using PyQt layouts."""
@@ -1044,6 +1101,32 @@ class MainWindow(QMainWindow):
             label = QLabel(formatted_key + ":")
             if tooltip_text:
                 label.setToolTip(tooltip_text)
+
+            if key == "calibration":
+                h_layout = QHBoxLayout()
+
+                calibrations_dropdown = QComboBox()
+                self.calibrations_dropdown = calibrations_dropdown
+                options = get_available_calibrations()
+                calibrations_dropdown.addItems(options)
+                if value in options:
+                    calibrations_dropdown.setCurrentText(value)
+                h_layout.addWidget(calibrations_dropdown)
+                entry_dict[key] = calibrations_dropdown
+
+                cal_button = QPushButton("Calibrate")
+                cal_button.setFixedWidth(100)
+                cal_button.clicked.connect(lambda _, w=calibrations_dropdown: self.start_calibration(w.currentText()))
+                h_layout.addWidget(cal_button)
+
+                dl_button = QPushButton("Download Calibrations")
+                dl_button.setFixedWidth(250)
+                dl_button.clicked.connect(self.dl_calibrations)
+                h_layout.addWidget(dl_button)
+
+                form_layout.addRow(label, h_layout)
+                self.refresh_calibrations_dropdown()
+                continue
 
             if key == "mode":
                 widget = QComboBox()
@@ -1120,6 +1203,16 @@ class MainWindow(QMainWindow):
             if key == "merchant_detection_type":
                 widget = QComboBox()
                 options = ["Legacy", "Logs"]
+                widget.addItems(options)
+                if value in options:
+                    widget.setCurrentText(value)
+                form_layout.addRow(label, widget)
+                entry_dict[key] = widget
+                continue
+
+            if key == "interaction_type":
+                widget = QComboBox()
+                options = ["Mouse", "UI Navigation"]
                 widget.addItems(options)
                 if value in options:
                     widget.setCurrentText(value)
@@ -1353,6 +1446,13 @@ class MainWindow(QMainWindow):
         button_layout = QVBoxLayout(button_frame)
         button_layout.setSpacing(10)
         
+        uinav_button = QPushButton("UI Navigation Controls")
+        uinav_button.setToolTip("Toggle UI Navigation options.")
+        uinav_button.clicked.connect(self.open_uinav_controls_settings)
+        uinav_button.setStyleSheet("text-align: left; padding: 8px; font-size: 11px;")
+        uinav_button.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        button_layout.addWidget(uinav_button)
+
         # Mari Merchant Settings Button
         mari_button = QPushButton("Mari Merchant Settings")
         mari_button.setToolTip("Configure Mari merchant auto-purchase and ping settings")
@@ -2039,7 +2139,8 @@ class MainWindow(QMainWindow):
         left_acks = [
             "AllanQute (_justalin) - Path inspiration",
             "dolphSol - Creative inspiration",
-            "Mr. Void - Helping to create the logic for the new auto craft"
+            "Mr. Void - Helping to create the logic for the new auto craft",
+            "gummyballer - Helping with calibrations"
         ]
         
         right_acks = [
@@ -2678,7 +2779,7 @@ class MainWindow(QMainWindow):
                 "Auto Craft Logic": (auto_craft, [self.webhook, self.settings, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.mouse_controller, self.ignore_lock, self.ignore_next_detection, self.reader, self.pause_event, self.items_crafted]),
                 "Aura Detection": (aura_detection, [self.settings, self.webhook, self.stop_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.ignore_lock, self.ignore_next_detection, self.pause_event, self.reader]) if not self.settings.get("disable_aura_detection") else None,
                 "Biome Detection": (biome_detection, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.mkey, self.keyboard_controller, self.keyboard_lock, self.pause_event, self]) if not self.settings.get("disable_biome_detection") else None,
-                "Keep Alive": (keep_alive, [self.settings, self.stop_event, self.sniped_event, self.keyboard_lock,  self.keyboard_controller, self.pause_event]) if not self.settings.get("disable_autokick_prevention") else None,
+                "Keep Alive": (keep_alive, [self.settings, self.stop_event, self.sniped_event, self.keyboard_lock,  self.keyboard_controller, self.pause_event, self.mkey]) if not self.settings.get("disable_autokick_prevention") else None,
                 "Disconnect Prevention": (disconnect_prevention, [self.settings, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.pause_event]) if self.settings.get("disconnect_prevention") else None,
                 "Merchant Detection": (merchant_detection, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.ignore_lock, self.ignore_next_detection, self.reader, self.pause_event]) if (self.settings.get("merchant_detection") or self.settings.get("auto_sell_to_jester")) and MERCHANT_DETECTION_POSSIBLE else None,
                 "Auto Strange Controller": (auto_sc, [self.settings, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.pause_event, self.reader]) if self.settings.get("auto_strange_controller") else None,
@@ -2695,7 +2796,7 @@ class MainWindow(QMainWindow):
                 "Aura Detection": (aura_detection, [self.settings, self.webhook, self.stop_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.ignore_lock, self.ignore_next_detection, self.pause_event, self.reader]) if not self.settings.get("disable_aura_detection") else None,
                 "Eden Detection": (eden_detection, [self.settings, self.webhook, self.stop_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.mouse_controller, self.pause_event, self.reader]) if not self.settings.get("disable_eden_detection_in_limbo") else None,
                 "Biome Detection": (biome_detection, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.mkey, self.keyboard_controller, self.keyboard_lock, self.pause_event, self]) if not self.settings.get("disable_biome_detection") else None,
-                "Keep Alive": (keep_alive, [self.settings, self.stop_event, self.sniped_event, self.keyboard_lock, self.keyboard_controller, self.pause_event]) if not self.settings.get("disable_autokick_prevention") else None,
+                "Keep Alive": (keep_alive, [self.settings, self.stop_event, self.sniped_event, self.keyboard_lock, self.keyboard_controller, self.pause_event, self.mkey]) if not self.settings.get("disable_autokick_prevention") else None,
                 "Disconnect Prevention": (disconnect_prevention, [self.settings, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.pause_event]) if self.settings.get("disconnect_prevention") else None,
                 "Merchant Detection": (merchant_detection, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.ignore_lock, self.ignore_next_detection, self.reader, self.pause_event]) if (self.settings.get("merchant_detection") or self.settings.get("auto_sell_to_jester")) and MERCHANT_DETECTION_POSSIBLE else None,
                 "Auto Strange Controller": (auto_sc, [self.settings, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.pause_event, self.reader]) if self.settings.get("auto_strange_controller") else None,
@@ -2711,7 +2812,7 @@ class MainWindow(QMainWindow):
             targets = {
                 "Aura Detection": (aura_detection, [self.settings, self.webhook, self.stop_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.ignore_lock, self.ignore_next_detection, self.pause_event, self.reader]) if not self.settings.get("disable_aura_detection") else None,
                 "Biome Detection": (biome_detection, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.mkey, self.keyboard_controller, self.keyboard_lock, self.pause_event, self]) if not self.settings.get("disable_biome_detection") else None,
-                "Keep Alive": (keep_alive, [self.settings, self.stop_event, self.sniped_event, self.keyboard_lock, self.keyboard_controller, self.pause_event]) if not self.settings.get("disable_autokick_prevention") else None,
+                "Keep Alive": (keep_alive, [self.settings, self.stop_event, self.sniped_event, self.keyboard_lock, self.keyboard_controller, self.pause_event, self.mkey]) if not self.settings.get("disable_autokick_prevention") else None,
                 "Auto Strange Controller": (auto_sc, [self.settings, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.pause_event, self.reader]) if self.settings.get("auto_strange_controller") else None,
                 "Auto Biome Randomizer": (auto_br, [self.settings, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.pause_event, self.reader]) if self.settings.get("auto_biome_randomizer") else None,
                 "Inventory Screenshots": (inventory_screenshot, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.pause_event, self.reader]) if self.settings.get("periodic_screenshots", {}).get("inventory") else None,
@@ -2724,7 +2825,7 @@ class MainWindow(QMainWindow):
             targets = {
                 "Aura Detection": (aura_detection, [self.settings, self.webhook, self.stop_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.ignore_lock, self.ignore_next_detection, self.pause_event, self.reader]) if not self.settings.get("disable_aura_detection") else None,
                 "Biome Detection": (biome_detection, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.mkey, self.keyboard_controller, self.keyboard_lock, self.pause_event, self]) if not self.settings.get("disable_biome_detection") else None,
-                "Keep Alive": (keep_alive, [self.settings, self.stop_event, self.sniped_event, self.keyboard_lock, self.keyboard_controller, self.pause_event]) if not self.settings.get("disable_autokick_prevention") else None,
+                "Keep Alive": (keep_alive, [self.settings, self.stop_event, self.sniped_event, self.keyboard_lock, self.keyboard_controller, self.pause_event, self.mkey]) if not self.settings.get("disable_autokick_prevention") else None,
                 "Disconnect Prevention": (disconnect_prevention, [self.settings, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.pause_event]) if self.settings.get("disconnect_prevention") else None,
                 "Merchant Detection": (merchant_detection, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.ignore_lock, self.ignore_next_detection, self.reader, self.pause_event]) if (self.settings.get("merchant_detection") or self.settings.get("auto_sell_to_jester")) and MERCHANT_DETECTION_POSSIBLE else None,
                 "Auto Strange Controller": (auto_sc, [self.settings, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.pause_event, self.reader]) if self.settings.get("auto_strange_controller") else None,

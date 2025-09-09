@@ -22,6 +22,7 @@ import re
 from PIL import ImageGrab
 from gc import collect
 from itertools import cycle
+import queue
 
 try:
     import cv2
@@ -33,7 +34,7 @@ except ImportError as e:
 
 try:
     #import eden_vip, fish_market, fish_market_abyssal, fishing_spot, obby, questboard, shrine_part1, shrine_part2, shrine_part3
-    import qb_vip, questboard
+    import qb_vip, eden_vip, obby_vip, stella_vip
     IMPORTED_ALL_PATHS = True
 except ImportError:
     IMPORTED_ALL_PATHS = False
@@ -76,49 +77,45 @@ from uinav import (
     load_keybind
 )
 
+import mousenav
+
 from mmint import run_macro
 
 from stats import increment_stat, load_stats
 
-
+from calibrations import validate_calibrations, validate_regions, get_calibrations, get_regions
 
 def use_item(item_name: str, amount: int, _close_menu: bool, mkey, kb, settings: dict, reader):
     logger = get_logger()
     logger.write_log(f"Attempting to use item: {item_name} (Amount: {amount})")
 
-    COORDS_PERCENT = get_coords_percent(COORDS)
 
-    if not COORDS_PERCENT:
-        logger.write_log("Could not determine screen ratio.")
+    delay = 0.2
+
+    if not settings.get("calibration"):
+        logger.write_log("A calibration has not been selected.")
+        return
+    
+    CLICKS = get_calibrations(settings.get("calibration"))
+    
+    if not validate_calibrations(settings.get("calibration"), ["open_inventory", "items_btn", "search_bar", "first_inv_item", "item_amount", "use_item", "close_menu"]):
+        logger.write_log("Could not verify all calibrations.")
         return
 
+    
     try:
-
-        if TGIFRIDAY and check_tab_menu_open(reader, COORDS_PERCENT, COORDS):
-            kb.press(keyboard.Key.tab)
-            time.sleep(0.05)
-            kb.release(keyboard.Key.tab)
-            time.sleep(0.05)
-
-        open_inventory(kb, False)
-        time.sleep(0.05)
-        search_in_menu(kb, False, False, True, False)
-
-        time.sleep(0.05)
-
+        mkey.left_click_xy_natural(CLICKS["open_inventory"][0], CLICKS["open_inventory"][1])
+        time.sleep(delay)
+        mkey.left_click_xy_natural(CLICKS["items_btn"][0], CLICKS["items_btn"][1])
+        time.sleep(delay)
+        mkey.left_click_xy_natural(CLICKS["search_bar"][0], CLICKS["search_bar"][1])
+        time.sleep(delay)
         pag.write(item_name, 0.05)
-
-        time.sleep(0.5)
-
-        kb.press(keyboard.Key.enter)
-        time.sleep(0.1)
-        kb.release(keyboard.Key.enter)
-        time.sleep(1)
-
-        select_item(kb, False, False)
-#
-        time.sleep(0.05)
-
+        time.sleep(delay)
+        mkey.left_click_xy_natural(CLICKS["first_inv_item"][0], CLICKS["first_inv_item"][1])
+        time.sleep(delay)
+        mkey.left_click_xy_natural(CLICKS["item_amount"][0], CLICKS["item_amount"][1])
+        time.sleep(delay)
         kb.press(keyboard.Key.ctrl)
         kb.press("a")
         time.sleep(0.05)
@@ -131,34 +128,24 @@ def use_item(item_name: str, amount: int, _close_menu: bool, mkey, kb, settings:
         time.sleep(0.05)
         kb.release(keyboard.Key.enter)
         time.sleep(1)
-        kb.press(keyboard.Key.right)
-        time.sleep(0.05)
-        kb.release(keyboard.Key.right)
-        time.sleep(0.05)
-
-        kb.press(keyboard.Key.enter)
-        time.sleep(0.05)
-        kb.release(keyboard.Key.enter)
-        time.sleep(1)
-
-        kb.press(load_keybind())
-        time.sleep(0.05)
-        kb.release(load_keybind())
-        time.sleep(1)
-
-        if _close_menu:
-            close_menu(kb, True, True)
-        logger.write_log(f"Used item: {item_name}")
+        mkey.left_click_xy_natural(CLICKS["use_item"][0], CLICKS["use_item"][1])
+        time.sleep(delay)
+        mkey.left_click_xy_natural(CLICKS["close_menu"][0], CLICKS["close_menu"][1])
+        time.sleep(delay)
     except Exception as e:
-        logger.write_log(f"Error during use_item execution: {e}")
-
+        logger.write_log(f"Error whilst using item: {e}")
         try:
-            close_menu(kb, True)
+            time.sleep(delay)
+            mkey.left_click_xy_natural(CLICKS["close_menu"][0], CLICKS["close_menu"][1])
+            time.sleep(delay)
         except Exception as close_e:
             logger.write_log(f"Error trying to close menu after item use error: {close_e}")
 
 def equip_aura(aura_name, unequip, mkey, kb, settings: dict, ignore_next_detection: set, ignore_lock: threading.Lock, reader):
     logger = get_logger()
+
+    success = False
+
     try:
         with open(get_auras_path(), "r", encoding="utf-8") as f:
             auras = json.load(f)
@@ -166,20 +153,21 @@ def equip_aura(aura_name, unequip, mkey, kb, settings: dict, ignore_next_detecti
         logger.write_log(f"Error loading auras data for detection: {e}. Aura detection stopped.")
         return
     
-    COORDS_PERCENT = get_coords_percent(COORDS)
+    delay = 0.2
 
-    if not COORDS_PERCENT:
-        logger.write_log("Could not determine screen ratio.")
+    if not settings.get("calibration"):
+        logger.write_log("A calibration has not been selected.")
+        return
+    
+    CLICKS = get_calibrations(settings.get("calibration"))
+    
+    if not validate_calibrations(settings.get("calibration"), ["open_storage", "first_aura_position", "search_bar", "equip_aura", "close_menu"]):
+        logger.write_log("Could not verify all calibrations.")
         return
     
     full_aura_name = resolve_full_aura_name(aura_name, auras)
     _ = None
     
-    if TGIFRIDAY and not check_tab_menu_open(reader, COORDS_PERCENT, COORDS):
-        kb.press(keyboard.Key.tab)
-        time.sleep(0.05)
-        kb.release(keyboard.Key.tab)
-        time.sleep(0.05)
 
     while _ is None:
         _ = get_latest_equipped_aura()
@@ -191,20 +179,43 @@ def equip_aura(aura_name, unequip, mkey, kb, settings: dict, ignore_next_detecti
         except Exception as e:
             logger.write_log(f"Error checking current equipped aura: {e}.")
 
-    if unequip:
-        logger.write_log(f"Unequipping Aura: {aura_name} (resolved as '{full_aura_name}')")
-    else:
-        logger.write_log(f"Equipping Aura: {aura_name} (resolved as '{full_aura_name}')")
-        with ignore_lock:
-            ignore_next_detection.add(full_aura_name.lower())
+    logger.write_log(f"{'Unequipping' if unequip else 'Equipping'} Aura: {aura_name} (resolved as '{full_aura_name}')")
+
     try:
-        open_storage(kb, True)
+        mkey.left_click_xy_natural(CLICKS["open_storage"][0], CLICKS["open_storage"][1])
+        time.sleep(delay)
+        mkey.left_click_xy_natural(CLICKS["search_bar"][0], CLICKS["search_bar"][1])
+        time.sleep(delay)
+        kb.press(keyboard.Key.backspace)
         time.sleep(0.2)
-        search_for_aura(kb, False, True, aura_name)
-        time.sleep(0.2)
-        equip_selected_aura(kb, True, False)
+        kb.release(keyboard.Key.backspace)
+        time.sleep(delay)
+        pag.write(aura_name, 0.05)
+        mkey.left_click_xy_natural(CLICKS["first_aura_position"][0], CLICKS["first_aura_position"][1])
+        time.sleep(delay)
+        mkey.left_click_xy_natural(CLICKS["equip_aura"][0], CLICKS["equip_aura"][1])
+        time.sleep(delay)
+        mkey.left_click_xy_natural(CLICKS["close_menu"][0], CLICKS["close_menu"][1])
     except Exception as e:
         logger.write_log(f"Unable to equip aura: {e}")
+        try:
+            time.sleep(delay)
+            mkey.left_click_xy_natural(CLICKS["close_menu"][0], CLICKS["close_menu"][1])
+            time.sleep(delay)
+        except Exception as close_e:
+            logger.write_log(f"Error whilst closing menu: {close_e}")
+    
+    time.sleep(0.5)
+    new_aura = get_latest_equipped_aura()
+    if new_aura and new_aura.lower() == full_aura_name.lower():
+        with ignore_lock:
+            ignore_next_detection.add(full_aura_name.lower())
+        logger.write_log(f"Aura '{full_aura_name}' successfully equipped.")
+        success = True
+    else:
+        logger.write_log(f"Failed to equip aura '{full_aura_name}', continuing without ignoring.")
+
+    return success
 
 
 def aura_detection(settings: dict, webhook, stop_event: threading.Event, keyboard_lock: threading.Lock, mkey, kb, ignore_lock, ignore_next_detection, pause_event, reader):
@@ -232,12 +243,6 @@ def aura_detection(settings: dict, webhook, stop_event: threading.Event, keyboar
         logger.write_log(f"Initial aura state: {previous_aura}")
     except Exception as e:
         logger.write_log(f"Error getting initial aura state: {e}")
-
-    COORDS_PERCENT = get_coords_percent(COORDS)
-
-    if not COORDS_PERCENT:
-        logger.write_log("Could not determine screen ratio.")
-        return
 
     while not stop_event.is_set():
         
@@ -362,12 +367,20 @@ def aura_detection(settings: dict, webhook, stop_event: threading.Event, keyboar
 
                 reset_aura_target = settings.get("reset_aura", "")
                 use_reset_aura = settings.get("use_reset_aura", False)
-                if use_reset_aura and current_aura != reset_aura_target and not settings.get("mode", "Normal") == "IDLE" and not settings.get("mode", "Normal") == "Fishing":
+                if (
+                    use_reset_aura
+                    and current_aura != reset_aura_target
+                    and settings.get("mode", "Normal") not in ["IDLE", "Fishing"]
+                ):
                     logger.write_log(f"Resetting aura back to {reset_aura_target}...")
                     with keyboard_lock:
                         try:
-                            equip_aura(reset_aura_target, False, mkey, kb, settings, ignore_next_detection, ignore_lock, reader)
-                            previous_aura = reset_aura_target
+                            success = equip_aura(reset_aura_target, False, mkey, kb, settings,
+                                                ignore_next_detection, ignore_lock, reader)
+                            if success:
+                                previous_aura = reset_aura_target
+                            else:
+                                logger.write_log("Reset aura equip failed — keeping previous aura unchanged.")
                             time.sleep(2)
                         except Exception as reset_e:
                             logger.write_log(f"Error during aura reset: {reset_e}")
@@ -389,6 +402,7 @@ def aura_detection(settings: dict, webhook, stop_event: threading.Event, keyboar
 def biome_detection(settings: dict, webhook, stop_event: threading.Event, sniped_event: threading.Event, mkey, kb, keyboard_lock, pause_event : threading.Event, gui):
     logger = get_logger()
     logger.write_log("Biome Detection thread started.")
+    
     
     pllogger = PlayerLogger(get_active_log_directory(), webhook, settings, logger)
 
@@ -493,6 +507,9 @@ def biome_detection(settings: dict, webhook, stop_event: threading.Event, sniped
                         emb.set_footer(text=f"SolsScope v{LOCALVERSION}")
                     else:
                         ping_content = ""
+                        if settings.get("enable_player_logger", True):
+                            pl_thread = threading.Thread(target=run_logger, args=(current_biome.upper(), end_event), daemon=True)
+                            pl_thread.start()
 
                     emb.set_thumbnail(url=biomes.get(current_biome.lower()).get("img_url"))
                     increment_stat(current_biome.lower())
@@ -523,6 +540,10 @@ def biome_detection(settings: dict, webhook, stop_event: threading.Event, sniped
 def portable_crack(settings: dict, stop_event: threading.Event, sniped_event: threading.Event, mkey, kb, keyboard_lock, pause_event, reader):
 
     logger = get_logger()
+    
+    if not settings.get("calibration"):
+        logger.write_log("No calibration is selected.")
+        return
 
     afk_in_limbo = settings.get("mode", "Normal") == "Limbo"
     is_idle_mode = settings.get("mode", "Normal") == "IDLE"
@@ -548,11 +569,15 @@ def portable_crack(settings: dict, stop_event: threading.Event, sniped_event: th
                 break
         logger.write_log("Portable Crack thread stopped.")
 
-def keep_alive(settings: dict, stop_event: threading.Event, sniped_event: threading.Event, keyboard_lock: threading.Lock, kb, pause_event):
+def keep_alive(settings: dict, stop_event: threading.Event, sniped_event: threading.Event, keyboard_lock: threading.Lock, kb, pause_event, mkey):
     logger = get_logger()
     if stop_event.wait(timeout=5):
         return
     logger.write_log("Keep Alive (Anti-AFK) thread started.")
+
+    if not settings.get("calibration"):
+        logger.write_log("No calibratoin is selected.")
+        return
 
     while not stop_event.is_set():
 
@@ -572,22 +597,26 @@ def keep_alive(settings: dict, stop_event: threading.Event, sniped_event: thread
         with keyboard_lock:
             try:
                 logger.write_log("Keep Alive: Performing anti-AFK action (close check).")
-                kb.press(keyboard.Key.space)
-                time.sleep(0.02)
-                kb.release(keyboard.Key.space)
-                time.sleep(0.02)
-                kb.press(keyboard.Key.space)
-                time.sleep(0.02)
-                kb.release(keyboard.Key.space)
-                time.sleep(0.02)
+                if not validate_calibrations(settings.get("calibration"), ["close_menu"]):
+                    mkey.left_click_xy_natural(get_calibrations(settings.get("calibration"))["close_menu"][0], get_calibrations(settings.get("calibration"))["close_menu"][1])
+                else:
+                    kb.press(keyboard.Key.space)
+                    time.sleep(0.02)
+                    kb.release(keyboard.Key.space)
+                    time.sleep(0.02)
+                    kb.press(keyboard.Key.space)
+                    time.sleep(0.02)
+                    kb.release(keyboard.Key.space)
+                    time.sleep(0.02)
             except Exception as e:
                 logger.write_log(f"Error during Keep Alive action: {e}")
 
     logger.write_log("Keep Alive (Anti-AFK) thread stopped.")
 
+
+
 def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sniped_event: threading.Event, keyboard_lock: threading.Lock, mkey, kb, ignore_lock, ignore_next_detection, reader, pause_event):
     logger = get_logger()
-
     if not MERCHANT_DETECTION_POSSIBLE:
         logger.write_log("Merchant Detection cannot start: Missing dependencies (cv2/easyocr).")
         return
@@ -624,11 +653,32 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
         return
 
     required_coords = [
-        "merchant_box", "manual_boxes"
+        "jester_open", "jester_exchange", "merchant_amount", "merchant_purchase",
+        "merchant_slot_1", "merchant_slot_2", "merchant_slot_3", "merchant_slot_4",
+        "merchant_slot_5", "merchant_close", "jester_auto_ex_first", "jester_auto_ex_second",
+        "merchant_skip_dialog", "jester_exchange_confirm"
     ]
-    if not all(coord in COORDS for coord in required_coords):
-        logger.write_log("Cannot start Merchant Detection: Required coordinates missing.")
+
+    required_regions = [
+        "merchant_name", "merchant_boxes", "jester_auto_ex_first"
+    ]
+
+    if not settings.get("calibration"):
+        logger.write_log("Cannot start Merchant Detection: No calibration selected.")
         return
+    
+    if not validate_calibrations(settings.get("calibration"), required_coords):
+        logger.write_log("Cannot start Merchant Detection: Calibration is invalid.")
+        return
+    
+    if not validate_regions(settings.get("calibration"), required_regions):
+        logger.write_log("Could not start Merchant Detection: Calibration is invalid.")
+        return
+    
+    CLICKS = get_calibrations(settings.get("calibration"))
+    REGIONS = get_regions(settings.get("calibration"))
+
+    delay = 0.2
 
     ps_link_valid = validate_pslink(settings.get("private_server_link", ""))
 
@@ -653,14 +703,7 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
     if (is_autocraft or is_idle_mode) and md_type == "Legacy":
         logger.write_log("Merchant Detection cannot be started in this mode whilst it is using Legacy Detection.")
         return
-
-    COORDS_PERCENT = get_coords_percent(COORDS)
-
-    if not COORDS_PERCENT:
-        logger.write_log("Could not determine screen ratio.")
-        return
     
-    manual_boxes = convert_boxes(COORDS_PERCENT["manual_boxes"], COORDS["scr_wid"], COORDS["scr_hei"])
     screenshot_path = os.path.join(MACROPATH, "scr", "screenshot_merchant.png")
     ex_screenshot_path = os.path.join(MACROPATH, "scr", "screenshot_exchange.png")
     
@@ -683,11 +726,6 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
             
             with keyboard_lock: 
 
-                if TGIFRIDAY and not check_tab_menu_open(reader, COORDS_PERCENT, COORDS):
-                    kb.press(keyboard.Key.tab)
-                    time.sleep(0.05)
-                    kb.release(keyboard.Key.tab)
-                    time.sleep(0.05)
 
                 try:
                     logger.write_log("Merchant Detection: Using Merchant Teleport item...")
@@ -699,9 +737,9 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
                     time.sleep(0.2)
                     kb.release('e')
                     time.sleep(0.2)
-                    merchant_skip_dialogue(kb, True, True)
+                    mkey.left_click_xy_natural(CLICKS["merchant_skip_dialog"][0], CLICKS["merchant_skip_dialog"][1])
                     time.sleep(2)
-                    merchant_skip_dialogue(kb, True, True)
+                    mkey.left_click_xy_natural(CLICKS["merchant_skip_dialog"][0], CLICKS["merchant_skip_dialog"][1])
                     time.sleep(2)
 
                     logger.write_log("Merchant Detection: Taking screenshot...")
@@ -714,11 +752,7 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
                         logger.write_log("Merchant Detection Error: Failed to read screenshot file.")
                         continue
 
-                    x1p, y1p, x2p, y2p = COORDS_PERCENT["merchant_box"]
-                    x1 = round(x1p * COORDS["scr_wid"])
-                    y1 = round(y1p * COORDS["scr_hei"])
-                    x2 = round(x2p * COORDS["scr_wid"])
-                    y2 = round(y2p * COORDS["scr_hei"])
+                    x1, y1, x2, y2 = REGIONS["merchant_box"]
                     merchant_crop = image[y1:y2, x1:x2]
                     
                     ocr_results = reader.readtext(merchant_crop, detail=0)
@@ -736,14 +770,8 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
                     rnow = datetime.now()
 
                     logger.write_log("Merchant Detection: Opening Shop...")
-                    if merchant_short_name == "Mari":
-                        open_mari(kb, True, True)
-                    elif merchant_short_name == "Jester":
-                        if TGIFRIDAY:
-                            open_mari(kb, True, True)
-                        else:
-                            open_jester_shop(kb, True, True)
-                        open_mari(kb, True, True)
+                    time.sleep(delay)
+                    mkey.left_click_xy_natural(CLICKS["jester_open"][0], CLICKS["jester_open"][1])
                     time.sleep(3)
 
                     del image
@@ -785,7 +813,7 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
                     logger.write_log("Merchant Detection: Detecting items...")
                     item_list = MARI_ITEMS if merchant_short_name == "Mari" else JESTER_ITEMS
                     item_ocr_results = []
-                    for box_name, (x1, y1, x2, y2) in manual_boxes.items():
+                    for box_name, (x1, y1, x2, y2) in REGIONS["merchant_boxes"].items():
                         if x1 >= image.shape[1] or y1 >= image.shape[0] or x2 <= x1 or y2 <= y1:
                             logger.write_log(f"Warning: Invalid coordinates for {box_name}. Skipping OCR.")
                             continue
@@ -820,14 +848,16 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
 
                     if items_to_buy:
                         logger.write_log(f"Merchant Detection: Attempting to auto-purchase items: {list(items_to_buy.values())}")
-                        if TGIFRIDAY and not check_tab_menu_open(reader, COORDS_PERCENT, COORDS):
-                            kb.press(keyboard.Key.tab)
-                            time.sleep(0.05)
-                            kb.release(keyboard.Key.tab)
-                            time.sleep(0.05)
                         for box_name, item_name in items_to_buy.items():
                             try:
-                                buy_item(kb, True, True, str(purchase_settings.get(item_name).get("amount", 1)), box_name[-1])
+                                coord_key = f"merch_slot_{box_name[-1]}"
+                                mkey.left_click_xy_natural(CLICKS[coord_key][0], CLICKS[coord_key][1])
+                                time.sleep(delay)
+                                mkey.left_click_xy_natural(CLICKS["merchant_amount"][0], CLICKS["merchant_amount"][1])
+                                time.sleep(delay)
+                                kb.type(str(purchase_settings.get(item_name).get("amount", 1)))
+                                time.sleep(delay)
+                                mkey.left_click_xy_natural(CLICKS["merchant_purchase"][0], CLICKS["merchant_purchase"][1])
                                 logger.write_log(f"Auto-purchased: {item_name}")
                                 time.sleep(3)
 
@@ -855,14 +885,11 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
                         kb.press('e')
                         time.sleep(0.2)
                         kb.release('e')
-                        merchant_skip_dialogue(kb, True, True)
+                        mkey.left_click_xy_natural(CLICKS["merchant_skip_dialog"][0], CLICKS["merchant_skip_dialog"][1])
                         time.sleep(3)
-                        merchant_skip_dialogue(kb, True, True)
+                        mkey.left_click_xy_natural(CLICKS["merchant_skip_dialog"][0], CLICKS["merchant_skip_dialog"][1])
                         time.sleep(3)
-                        if TGIFRIDAY:
-                            open_jester_shop(kb, True, True)
-                        else:
-                            open_jester_ex(kb, True, True)
+                        mkey.left_click_xy_natural(CLICKS["jester_exchange"][0], CLICKS["jester_exchange"][1])
                         time.sleep(3)
                         while not stop_event.is_set():
                             pag.screenshot(ex_screenshot_path)
@@ -872,11 +899,7 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
                             if image is None:
                                 logger.write_log("Merchant Detection Error: Failed to read screenshot file.")
                                 continue
-                            x1p, y1p, x2p, y2p = COORDS_PERCENT["first_sell_item_box_pos"]
-                            x1 = round(x1p * COORDS["scr_wid"])
-                            y1 = round(y1p * COORDS["scr_hei"])
-                            x2 = round(x2p * COORDS["scr_wid"]) 
-                            y2 = round(y2p * COORDS["scr_hei"])
+                            x1, y1, x2, y2 = REGIONS["jester_auto_ex_first"]
                             exchange_crop = image[y1:y2, x1:x2]
                             ocr_results = reader.readtext(exchange_crop, detail=0)
                             ocr_ex_item_raw = " ".join(ocr_results).strip().replace('\n', ' ')
@@ -896,11 +919,7 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
                                     if image is None:
                                         logger.write_log("Auto-Sell Error: Failed to read screenshot file.")
                                         continue
-                                    x1p, y1p, x2p, y2p = COORDS_PERCENT["second_sell_item_box_pos"]
-                                    x1 = round(x1p * COORDS["scr_wid"])
-                                    y1 = round(y1p * COORDS["scr_hei"])
-                                    x2 = round(x2p * COORDS["scr_wid"])
-                                    y2 = round(y2p * COORDS["scr_hei"])
+                                    x1, y1, x2, y2 = REGIONS["jester_auto_ex_second"]
                                     exchange_crop = image[y1:y2, x1:x2]
                                     ocr_results = reader.readtext(exchange_crop, detail=0)
                                     ocr_ex_item_raw = " ".join(ocr_results).strip().replace('\n', ' ')
@@ -913,8 +932,16 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
                                         break
                                     elif detected_item_name in JESTER_SELL_ITEMS and settings.get("items_to_sell", {}).get(detected_item_name, False):
                                         logger.write_log(f"Auto-Sell: {detected_item_name} was detected")
-                                        time.sleep(0.2)
-                                        jester_exchange_first(kb, True, True, settings.get("amount_of_item_to_sell", 1))
+                                        time.sleep(delay)
+                                        mkey.left_click_xy_natural(CLICKS["jester_auto_ex_second"][0], CLICKS["jester_auto_ex_second"][1])
+                                        time.sleep(delay)
+                                        mkey.left_click_xy_natural(CLICKS["merchant_amount"][0], CLICKS["merchant_amount"][1])
+                                        time.sleep(delay)
+                                        kb.type(str(settings.get("amount_of_item_to_sell", 1)))
+                                        time.sleep(delay)
+                                        mkey.left_click_xy_natural(CLICKS["merchant_purchase"][0], CLICKS["merchant_purchase"][1])
+                                        time.sleep(delay)
+                                        mkey.left_click_xy_natural(CLICKS["jester_exchange_confirm"][0], CLICKS["jester_exchange_confirm"][1])
                                         time.sleep(4.5)
                                         sell_emb = discord.Embed(
                                             title=f"Auto-Sold to {merchant_short_name}",
@@ -939,7 +966,16 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
                             elif detected_item_name in JESTER_SELL_ITEMS and settings.get("items_to_get", {}).get(detected_item_name, False):
                                 logger.write_log(f"Auto-Sell: {detected_item_name} was detected")
                                 time.sleep(0.2)
-                                jester_exchange_second(kb, True, True, settings.get("amount_of_item_to_sell", 1))
+                                time.sleep(delay)
+                                mkey.left_click_xy_natural(CLICKS["jester_auto_ex_first"][0], CLICKS["jester_auto_ex_first"][1])
+                                time.sleep(delay)
+                                mkey.left_click_xy_natural(CLICKS["merchant_amount"][0], CLICKS["merchant_amount"][1])
+                                time.sleep(delay)
+                                kb.type(str(settings.get("amount_of_item_to_sell", 1)))
+                                time.sleep(delay)
+                                mkey.left_click_xy_natural(CLICKS["merchant_purchase"][0], CLICKS["merchant_purchase"][1])
+                                time.sleep(delay)
+                                mkey.left_click_xy_natural(CLICKS["jester_exchange_confirm"][0], CLICKS["jester_exchange_confirm"][1])
                                 time.sleep(4.5)
                                 sell_emb = discord.Embed(
                                     title=f"Auto-Sold to {merchant_short_name}",
@@ -959,7 +995,7 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
                                 break
                             time.sleep(1)
 
-                        close_menu(kb, True, is_merchant=True)
+                        mkey.left_click_xy_natural(CLICKS["merchant_close"][0], CLICKS["merchant_close"][1])
                         time.sleep(0.5)
                         reset_character()
                         time.sleep(3)
@@ -978,7 +1014,7 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
                     logger.write_log(traceback.format_exc()) 
 
                     try:
-                        close_menu(kb, True)
+                        mkey.left_click_xy_natural(CLICKS["merchant_close"][0], CLICKS["merchant_close"][1])
                     except Exception:
                         pass
 
@@ -1005,6 +1041,9 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
                         previous_merchant = merchant_spawn
 
                         if (auto_sell or len(mari_items) > 0 or len(jester_items) > 0) and not is_idle_mode:
+
+                            detected_merchant_name = None
+                            detected_items = {}
                                 
                             with keyboard_lock:
 
@@ -1018,9 +1057,9 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
                                     time.sleep(0.2)
                                     kb.release('e')
                                     time.sleep(0.2)
-                                    merchant_skip_dialogue(kb, True, True)
+                                    mkey.left_click_xy_natural(CLICKS["merchant_skip_dialog"][0], CLICKS["merchant_skip_dialog"][1])
                                     time.sleep(2)
-                                    merchant_skip_dialogue(kb, True, True)
+                                    mkey.left_click_xy_natural(CLICKS["merchant_skip_dialog"][0], CLICKS["merchant_skip_dialog"][1])
                                     time.sleep(2)
 
                                     logger.write_log("Merchant Detection: Taking screenshot...")
@@ -1033,11 +1072,7 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
                                         logger.write_log("Merchant Detection Error: Failed to read screenshot file.")
                                         continue
 
-                                    x1p, y1p, x2p, y2p = COORDS_PERCENT["merchant_box"]
-                                    x1 = round(x1p * COORDS["scr_wid"])
-                                    y1 = round(y1p * COORDS["scr_hei"])
-                                    x2 = round(x2p * COORDS["scr_wid"])
-                                    y2 = round(y2p * COORDS["scr_hei"])
+                                    x1, y1, x2, y2 = REGIONS["merchant_box"]
                                     merchant_crop = image[y1:y2, x1:x2]
                                     
                                     ocr_results = reader.readtext(merchant_crop, detail=0)
@@ -1055,14 +1090,8 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
                                     rnow = datetime.now()
 
                                     logger.write_log("Merchant Detection: Opening Shop...")
-                                    if merchant_short_name == "Mari":
-                                        open_mari(kb, True, True)
-                                    elif merchant_short_name == "Jester":
-                                        if TGIFRIDAY:
-                                            open_mari(kb, True, True)
-                                        else:
-                                            open_jester_shop(kb, True, True)
-                                        open_mari(kb, True, True)
+                                    time.sleep(delay)
+                                    mkey.left_click_xy_natural(CLICKS["jester_open"][0], CLICKS["jester_open"][1])
                                     time.sleep(3)
 
                                     del image
@@ -1092,7 +1121,7 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
 
                                     emb = discord.Embed(
                                         title=f"{merchant_short_name} Spawned!",
-                                        description=f"A **{merchant_short_name}** has been detected.\n**Time:** <t:{str(int(merchant_spawn[1]))}>\nDetection Method: **{md_type}**",
+                                        description=f"A **{merchant_short_name}** has been detected.\n**Time:** <t:{str(int(time.time()))}>\nDetection Method: **{md_type}**",
                                         colour=emb_color
                                     )
                                     if thumbnail_url: emb.set_thumbnail(url=thumbnail_url)
@@ -1104,7 +1133,7 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
                                     logger.write_log("Merchant Detection: Detecting items...")
                                     item_list = MARI_ITEMS if merchant_short_name == "Mari" else JESTER_ITEMS
                                     item_ocr_results = []
-                                    for box_name, (x1, y1, x2, y2) in manual_boxes.items():
+                                    for box_name, (x1, y1, x2, y2) in REGIONS["merchant_boxes"].items():
                                         if x1 >= image.shape[1] or y1 >= image.shape[0] or x2 <= x1 or y2 <= y1:
                                             logger.write_log(f"Warning: Invalid coordinates for {box_name}. Skipping OCR.")
                                             continue
@@ -1139,14 +1168,16 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
 
                                     if items_to_buy:
                                         logger.write_log(f"Merchant Detection: Attempting to auto-purchase items: {list(items_to_buy.values())}")
-                                        if TGIFRIDAY and not check_tab_menu_open(reader, COORDS_PERCENT, COORDS):
-                                            kb.press(keyboard.Key.tab)
-                                            time.sleep(0.05)
-                                            kb.release(keyboard.Key.tab)
-                                            time.sleep(0.05)
                                         for box_name, item_name in items_to_buy.items():
                                             try:
-                                                buy_item(kb, True, True, str(purchase_settings.get(item_name).get("amount", 1)), box_name[-1])
+                                                coord_key = f"merch_slot_{box_name[-1]}"
+                                                mkey.left_click_xy_natural(CLICKS[coord_key][0], CLICKS[coord_key][1])
+                                                time.sleep(delay)
+                                                mkey.left_click_xy_natural(CLICKS["merchant_amount"][0], CLICKS["merchant_amount"][1])
+                                                time.sleep(delay)
+                                                kb.type(str(purchase_settings.get(item_name).get("amount", 1)))
+                                                time.sleep(delay)
+                                                mkey.left_click_xy_natural(CLICKS["merchant_purchase"][0], CLICKS["merchant_purchase"][1])
                                                 logger.write_log(f"Auto-purchased: {item_name}")
                                                 time.sleep(3)
 
@@ -1174,14 +1205,11 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
                                         kb.press('e')
                                         time.sleep(0.2)
                                         kb.release('e')
-                                        merchant_skip_dialogue(kb, True, True)
+                                        mkey.left_click_xy_natural(CLICKS["merchant_skip_dialog"][0], CLICKS["merchant_skip_dialog"][1])
                                         time.sleep(3)
-                                        merchant_skip_dialogue(kb, True, True)
+                                        mkey.left_click_xy_natural(CLICKS["merchant_skip_dialog"][0], CLICKS["merchant_skip_dialog"][1])
                                         time.sleep(3)
-                                        if TGIFRIDAY:
-                                            open_jester_shop(kb, True, True)
-                                        else:
-                                            open_jester_ex(kb, True, True)
+                                        mkey.left_click_xy_natural(CLICKS["jester_exchange"][0], CLICKS["jester_exchange"][1])
                                         time.sleep(3)
                                         while not stop_event.is_set():
                                             pag.screenshot(ex_screenshot_path)
@@ -1191,11 +1219,7 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
                                             if image is None:
                                                 logger.write_log("Merchant Detection Error: Failed to read screenshot file.")
                                                 continue
-                                            x1p, y1p, x2p, y2p = COORDS_PERCENT["first_sell_item_box_pos"]
-                                            x1 = round(x1p * COORDS["scr_wid"])
-                                            y1 = round(y1p * COORDS["scr_hei"])
-                                            x2 = round(x2p * COORDS["scr_wid"]) 
-                                            y2 = round(y2p * COORDS["scr_hei"])
+                                            x1, y1, x2, y2 = REGIONS["jester_auto_ex_first"]
                                             exchange_crop = image[y1:y2, x1:x2]
                                             ocr_results = reader.readtext(exchange_crop, detail=0)
                                             ocr_ex_item_raw = " ".join(ocr_results).strip().replace('\n', ' ')
@@ -1215,11 +1239,7 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
                                                     if image is None:
                                                         logger.write_log("Auto-Sell Error: Failed to read screenshot file.")
                                                         continue
-                                                    x1p, y1p, x2p, y2p = COORDS_PERCENT["second_sell_item_box_pos"]
-                                                    x1 = round(x1p * COORDS["scr_wid"])
-                                                    y1 = round(y1p * COORDS["scr_hei"])
-                                                    x2 = round(x2p * COORDS["scr_wid"])
-                                                    y2 = round(y2p * COORDS["scr_hei"])
+                                                    x1, y1, x2, y2 = REGIONS["jester_auto_ex_second"]
                                                     exchange_crop = image[y1:y2, x1:x2]
                                                     ocr_results = reader.readtext(exchange_crop, detail=0)
                                                     ocr_ex_item_raw = " ".join(ocr_results).strip().replace('\n', ' ')
@@ -1232,8 +1252,16 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
                                                         break
                                                     elif detected_item_name in JESTER_SELL_ITEMS and settings.get("items_to_sell", {}).get(detected_item_name, False):
                                                         logger.write_log(f"Auto-Sell: {detected_item_name} was detected")
-                                                        time.sleep(0.2)
-                                                        jester_exchange_first(kb, True, True, settings.get("amount_of_item_to_sell", 1))
+                                                        time.sleep(delay)
+                                                        mkey.left_click_xy_natural(CLICKS["jester_auto_ex_second"][0], CLICKS["jester_auto_ex_second"][1])
+                                                        time.sleep(delay)
+                                                        mkey.left_click_xy_natural(CLICKS["merchant_amount"][0], CLICKS["merchant_amount"][1])
+                                                        time.sleep(delay)
+                                                        kb.type(str(settings.get("amount_of_item_to_sell", 1)))
+                                                        time.sleep(delay)
+                                                        mkey.left_click_xy_natural(CLICKS["merchant_purchase"][0], CLICKS["merchant_purchase"][1])
+                                                        time.sleep(delay)
+                                                        mkey.left_click_xy_natural(CLICKS["jester_exchange_confirm"][0], CLICKS["jester_exchange_confirm"][1])
                                                         time.sleep(4.5)
                                                         sell_emb = discord.Embed(
                                                             title=f"Auto-Sold to {merchant_short_name}",
@@ -1258,7 +1286,16 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
                                             elif detected_item_name in JESTER_SELL_ITEMS and settings.get("items_to_get", {}).get(detected_item_name, False):
                                                 logger.write_log(f"Auto-Sell: {detected_item_name} was detected")
                                                 time.sleep(0.2)
-                                                jester_exchange_second(kb, True, True, settings.get("amount_of_item_to_sell", 1))
+                                                time.sleep(delay)
+                                                mkey.left_click_xy_natural(CLICKS["jester_auto_ex_first"][0], CLICKS["jester_auto_ex_first"][1])
+                                                time.sleep(delay)
+                                                mkey.left_click_xy_natural(CLICKS["merchant_amount"][0], CLICKS["merchant_amount"][1])
+                                                time.sleep(delay)
+                                                kb.type(str(settings.get("amount_of_item_to_sell", 1)))
+                                                time.sleep(delay)
+                                                mkey.left_click_xy_natural(CLICKS["merchant_purchase"][0], CLICKS["merchant_purchase"][1])
+                                                time.sleep(delay)
+                                                mkey.left_click_xy_natural(CLICKS["jester_exchange_confirm"][0], CLICKS["jester_exchange_confirm"][1])
                                                 time.sleep(4.5)
                                                 sell_emb = discord.Embed(
                                                     title=f"Auto-Sold to {merchant_short_name}",
@@ -1278,7 +1315,7 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
                                                 break
                                             time.sleep(1)
 
-                                        close_menu(kb, True, is_merchant=True)
+                                        mkey.left_click_xy_natural(CLICKS["merchant_close"][0], CLICKS["merchant_close"][1])
                                         time.sleep(0.5)
                                         reset_character()
                                         time.sleep(3)
@@ -1297,7 +1334,7 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
                                     logger.write_log(traceback.format_exc()) 
 
                                     try:
-                                        close_menu(kb, True)
+                                        mkey.left_click_xy_natural(CLICKS["merchant_close"][0], CLICKS["merchant_close"][1])
                                     except Exception:
                                         pass
                         
@@ -1378,7 +1415,9 @@ def auto_craft(webhook, settings: dict, stop_event: threading.Event, sniped_even
                 time.sleep(1)
                 reset_character()
                 time.sleep(1)
-                collection_align(kb, True)
+                mkey.left_click_xy_natural(CLICKS["collection"][0], CLICKS["collection"][1])
+                time.sleep(1)
+                mkey.left_click_xy_natural(CLICKS["exit_collection"][0], CLICKS["exit_collection"][1])
                 time.sleep(1)
             except Exception as e:
                 logger.write_log(f"Error during camera alignment: {e}")
@@ -1387,7 +1426,7 @@ def auto_craft(webhook, settings: dict, stop_event: threading.Event, sniped_even
 
             if not has_abyssal:
                 try:
-                    close_check(kb, True)
+                    mkey.left_click_xy_natural(CLICKS["close_menu"][0], CLICKS["close_menu"][1])
                     time.sleep(0.4)
                     right_click_drag(1000, 0)
                     time.sleep(0.4)
@@ -1429,7 +1468,7 @@ def auto_craft(webhook, settings: dict, stop_event: threading.Event, sniped_even
                 equip_aura("Abyssal", False, mkey, kb, settings, ignore_next_detection, ignore_lock, reader)
                 time.sleep(2)
                 try:
-                    close_check(kb, True)
+                    mkey.left_click_xy_natural(CLICKS["close_menu"][0], CLICKS["close_menu"][1])
                     time.sleep(0.4)
                     right_click_drag(1000, 0)
                     time.sleep(0.4)
@@ -1467,7 +1506,7 @@ def auto_craft(webhook, settings: dict, stop_event: threading.Event, sniped_even
                 try:
                     right_click_drag(0, 600)
                     time.sleep(1)
-                    run_macro(f"{PATH_DIR}/stella.mms")
+                    stella_vip.run_macro(stella_vip.macro_actions)
                     time.sleep(1)
                 except Exception as e:
                     logger.write_log(f"Error during walk to Stella's: {e}")
@@ -1487,15 +1526,51 @@ def auto_craft(webhook, settings: dict, stop_event: threading.Event, sniped_even
     else:
         logger.write_log("Ensure you are standing near the cauldron with the 'F' prompt visible.")
 
-    COORDS_PERCENT = get_coords_percent(COORDS)
-
-    if not COORDS_PERCENT:
-        logger.write_log("Could not determine screen ratio.")
-        return
-    
     screenshot_path = os.path.join(MACROPATH, "scr", "screenshot_autocraft.png")
 
     send_item_crafted_notification = settings.get("send_item_crafted_notification", True)
+
+    if not settings.get("calibration"):
+        logger.write_log("Cannot start Auto Craft: No calibration selected.")
+        return
+    
+    if not validate_calibrations(settings.get("calibration"), ["autocraft_craft", "autocraft_auto", "autocraft_search", "autocraft_first_potion", "autocraft_first_add", "autocraft_first_amt", "autocraft_second_add", "autocraft_second_amt", "autocraft_third_add", "autocraft_third_amt", "autocraft_first_scrolled_add", "autocraft_first_scrolled_amt", "autocraft_second_scrolled_add", "autocraft_second_scrolled_amt", "autocraft_third_scrolled_add", "autocraft_third_scrolled_amt", "autocraft_scroll"]):
+        logger.write_log("Cannot start Auto Craft: Calibration is invalid.")
+        return
+    
+    if not validate_regions(settings.get("calibration"), ["autocraft_top_add", "autocraft_scrolled_bottom_add"]):
+        logger.write_log("Could not start Auto Craft: Calibration is invalid.")
+        return
+
+    
+    CLICKS = get_calibrations(settings.get("calibration"))
+    REGIONS = get_regions(settings.get("calibration"))
+
+    delay = 0.2
+
+    def _search(potion_name : str):
+        kb.press("f")
+        time.sleep(0.2)
+        kb.release("f")
+        time.sleep(delay)
+        kb.press("f")
+        time.sleep(0.2)
+        kb.release("f")
+        time.sleep(delay)
+        mkey.left_click_xy_natural(CLICKS["autocraft_search"][0], CLICKS["autocraft_search"][1])
+        time.sleep(delay)
+        mkey.left_click_xy_natural(CLICKS["autocraft_first_potion"][0], CLICKS["autocraft_first_potion"][1])
+        time.sleep(delay)
+        ms.scroll(0, 30); time.sleep(delay)
+        ms.scroll(0, 30); time.sleep(delay)
+        ms.scroll(0, 30); time.sleep(delay)
+        mkey.left_click_xy_natural(CLICKS["autocraft_search"][0], CLICKS["autocraft_search"][1])
+        time.sleep(delay)
+        pag.write(potion_name)
+        time.sleep(delay)
+        mkey.left_click_xy_natural(CLICKS["autocraft_first_potion"][0], CLICKS["autocraft_first_potion"][1])
+        time.sleep(delay)
+
 
     while not stop_event.is_set():
 
@@ -1508,43 +1583,39 @@ def auto_craft(webhook, settings: dict, stop_event: threading.Event, sniped_even
             try:
                 wait_time = settings.get("global_wait_time", 0.2)
 
-                if TGIFRIDAY and not check_tab_menu_open(reader, COORDS_PERCENT, COORDS):
-                    kb.press(keyboard.Key.tab)
-                    time.sleep(0.05)
-                    kb.release(keyboard.Key.tab)
-                    time.sleep(0.05)
-
                 if settings["auto_craft_item"].get("Jewelry Potion", False):
-                    search_for_potion_in_cauldron(kb, True, True, "Jewelry")
+                    
+                    _search("Jewelry")
 
+                    mkey.move_to_natural(CLICKS["autocraft_scroll"][0], CLICKS["autocraft_scroll"][1])
+                    time.sleep(delay)
+                    ms.scroll(0, 30); time.sleep(delay)
+                    ms.scroll(0, 30); time.sleep(delay)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_first_amt"][0], CLICKS["autocraft_first_amt"][1])
                     time.sleep(0.2)
-                    mkey.move_to_natural(round(float(COORDS_PERCENT["scroll_mouse_position"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["scroll_mouse_position"][1] * COORDS["scr_hei"])))
-                    time.sleep(0.2)
-                    ms.scroll(0, 30); time.sleep(0.2)
-                    ms.scroll(0, 30); time.sleep(0.2)
-
-                    _ = detect_add_potions(False, reader, COORDS_PERCENT, COORDS)
-
-                    if not _[0]:
-                        add_amount_to_potion(kb, True, True, 20)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_first_amt"][0], CLICKS["autocraft_first_amt"][1])
+                    time.sleep(delay)
+                    pag.write("20")
+                    time.sleep(delay)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_first_add"][0], CLICKS["autocraft_first_add"][1])
 
                     if send_item_crafted_notification:
 
-                        _ = detect_add_potions(False, reader, COORDS_PERCENT, COORDS)
+                        _ = detect_add_potions(False, reader, REGIONS)
 
-                        if _[0]:
+                        if _:
                             _prev_jewel = True
                         else:
                             _prev_jewel = False
 
-                    press_craft_button(kb, True, True)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_craft"][0], CLICKS["autocraft_craft"][1])
 
                     if send_item_crafted_notification:
                         _jewel_isfull = False
 
-                        _ = detect_add_potions(False, reader, COORDS_PERCENT, COORDS)
+                        _ = detect_add_potions(False, reader, REGIONS)
 
-                        if _[0]:
+                        if _:
                             _jewel_isfull = True
                         else:
                             _jewel_isfull = False
@@ -1566,40 +1637,43 @@ def auto_craft(webhook, settings: dict, stop_event: threading.Event, sniped_even
                         _prev_jewel = _jewel_isfull
 
                     if job == "Jewelry Potion":
-                        press_auto_button(kb, True, True)
+                        mkey.left_click_xy_natural(CLICKS["autocraft_auto"][0], CLICKS["autocraft_auto"][1])
                     time.sleep(1)
 
                 if settings["auto_craft_item"].get("Zombie Potion", False):
-                    search_for_potion_in_cauldron(kb, True, True, "Zombie")
+                    _search("Zombie")
 
-                    _ = detect_add_potions(False, reader, COORDS_PERCENT, COORDS)
-
-                    if not _[0]:
-                        add_amount_to_potion(kb, True, True, 10)
-
-                    _ = detect_add_potions(False, reader, COORDS_PERCENT, COORDS)
-                    if _[0] and not _[1]:
-                        add_amount_to_potion(kb, True, True, 1)
-                    elif not _[0] and not _[1]:
-                        add_amount_to_potion(kb, True, True, 1, 1)
+                    mkey.move_to_natural(CLICKS["autocraft_scroll"][0], CLICKS["autocraft_scroll"][1])
+                    time.sleep(delay)
+                    ms.scroll(0, 30); time.sleep(delay)
+                    ms.scroll(0, 30); time.sleep(delay)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_first_amt"][0], CLICKS["autocraft_first_amt"][1])
+                    time.sleep(0.2)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_first_amt"][0], CLICKS["autocraft_first_amt"][1])
+                    time.sleep(delay)
+                    pag.write("10")
+                    time.sleep(delay)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_first_add"][0], CLICKS["autocraft_first_add"][1])
+                    time.sleep(delay)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_second_add"][0], CLICKS["autocraft_second_add"][1])
 
                     if send_item_crafted_notification:
 
-                        _ = detect_add_potions(False, reader, COORDS_PERCENT, COORDS)
+                        _ = detect_add_potions(False, reader, REGIONS)
 
-                        if _[0]:
+                        if _:
                             _prev_zomb = True
                         else:
                             _prev_zomb = False
 
-                    press_craft_button(kb, True, True)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_craft"][0], CLICKS["autocraft_craft"][1])
 
                     if send_item_crafted_notification:
                         _zomb_isfull = False
 
-                        _ = detect_add_potions(False, reader, COORDS_PERCENT, COORDS)
+                        _ = detect_add_potions(False, reader, REGIONS)
 
-                        if _[0]:
+                        if _:
                             _zomb_isfull = True
                         else:
                             _zomb_isfull = False
@@ -1621,34 +1695,41 @@ def auto_craft(webhook, settings: dict, stop_event: threading.Event, sniped_even
                         _prev_zomb = _zomb_isfull
 
                     if job == "Zombie Potion":
-                        press_auto_button(kb, True, True)
+                        mkey.left_click_xy_natural(CLICKS["autocraft_auto"][0], CLICKS["autocraft_auto"][1])
                     time.sleep(1)
 
                 if settings["auto_craft_item"].get("Rage Potion", False):
-                    search_for_potion_in_cauldron(kb, True, True, "Rage")
+                    _search("Rage")
 
-                    _ = detect_add_potions(False, reader, COORDS_PERCENT, COORDS)
-
-                    if not _[0]:
-                        add_amount_to_potion(kb, True, True, 10)
+                    mkey.move_to_natural(CLICKS["autocraft_scroll"][0], CLICKS["autocraft_scroll"][1])
+                    time.sleep(delay)
+                    ms.scroll(0, 30); time.sleep(delay)
+                    ms.scroll(0, 30); time.sleep(delay)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_first_amt"][0], CLICKS["autocraft_first_amt"][1])
+                    time.sleep(0.2)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_first_amt"][0], CLICKS["autocraft_first_amt"][1])
+                    time.sleep(delay)
+                    pag.write("10")
+                    time.sleep(delay)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_first_add"][0], CLICKS["autocraft_first_add"][1])
 
                     if send_item_crafted_notification:
 
-                        _ = detect_add_potions(False, reader, COORDS_PERCENT, COORDS)
+                        _ = detect_add_potions(False, reader, REGIONS)
 
-                        if _[0]:
+                        if _:
                             _prev_rage = True
                         else:
                             _prev_rage = False
 
-                    press_craft_button(kb, True, True)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_craft"][0], CLICKS["autocraft_craft"][1])
 
                     if send_item_crafted_notification:
                         _rage_isfull = False
 
-                        _ = detect_add_potions(False, reader, COORDS_PERCENT, COORDS)
+                        _ = detect_add_potions(False, reader, REGIONS)
 
-                        if _[0]:
+                        if _:
                             _rage_isfull = True
                         else:
                             _rage_isfull = False
@@ -1670,41 +1751,43 @@ def auto_craft(webhook, settings: dict, stop_event: threading.Event, sniped_even
                         _prev_rage = _rage_isfull
 
                     if job == "Rage Potion":
-                        press_auto_button(kb, True, True)
+                        mkey.left_click_xy_natural(CLICKS["autocraft_auto"][0], CLICKS["autocraft_auto"][1])
                     time.sleep(1)
 
                 if settings["auto_craft_item"].get("Diver Potion", False):
-                    search_for_potion_in_cauldron(kb, True, True, "Diver")
+                    _search("Diver")
 
-                    _ = detect_add_potions(False, reader, COORDS_PERCENT, COORDS)
-
-                    if not _[0]:
-                        add_amount_to_potion(kb, True, True, 10)
-                        _ = detect_add_potions(False, reader, COORDS_PERCENT, COORDS)
-                        if _[0] and not _[1]:
-                            add_amount_to_potion(kb, True, True, 1)
-                        elif not _[0] and not _[1]:
-                            add_amount_to_potion(kb, True, True, 1, 1)
-                    elif _[0] and not _[1]:
-                        add_amount_to_potion(kb, True, True, 1)
+                    mkey.move_to_natural(CLICKS["autocraft_scroll"][0], CLICKS["autocraft_scroll"][1])
+                    time.sleep(delay)
+                    ms.scroll(0, 30); time.sleep(delay)
+                    ms.scroll(0, 30); time.sleep(delay)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_first_amt"][0], CLICKS["autocraft_first_amt"][1])
+                    time.sleep(0.2)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_first_amt"][0], CLICKS["autocraft_first_amt"][1])
+                    time.sleep(delay)
+                    pag.write("20")
+                    time.sleep(delay)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_first_add"][0], CLICKS["autocraft_first_add"][1])
+                    time.sleep(delay)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_second_add"][0], CLICKS["autocraft_second_add"][1])
 
                     if send_item_crafted_notification:
 
-                        _ = detect_add_potions(False, reader, COORDS_PERCENT, COORDS)
+                        _ = detect_add_potions(False, reader, REGIONS)
 
-                        if _[0]:
+                        if _:
                             _prev_dive = True
                         else:
                             _prev_dive = False
 
-                    press_craft_button(kb, True, True)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_craft"][0], CLICKS["autocraft_craft"][1])
 
                     if send_item_crafted_notification:
                         _diver_isfull = False
 
-                        _ = detect_add_potions(False, reader, COORDS_PERCENT, COORDS)
+                        _ = detect_add_potions(False, reader, REGIONS)
 
-                        if _[0]:
+                        if _:
                             _diver_isfull = True
                         else:
                             _diver_isfull = False
@@ -1726,89 +1809,77 @@ def auto_craft(webhook, settings: dict, stop_event: threading.Event, sniped_even
                         _prev_dive = _diver_isfull
 
                     if job == "Diver Potion":
-                        press_auto_button(kb, True, True)
+                        mkey.left_click_xy_natural(CLICKS["autocraft_auto"][0], CLICKS["autocraft_auto"][1])
                     time.sleep(1)
 
                 if settings["auto_craft_item"].get("Potion of Bound", False):
-                    search_for_potion_in_cauldron(kb, True, True, "Bound")
+                    _search("Bound")
 
+                    mkey.move_to_natural(CLICKS["autocraft_scroll"][0], CLICKS["autocraft_scroll"][1])
+                    time.sleep(delay)
+                    ms.scroll(0, 30); time.sleep(delay)
+                    ms.scroll(0, 30); time.sleep(delay)
+                    time.sleep(delay)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_first_add"][0], CLICKS["autocraft_first_add"][1])
+                    time.sleep(delay)
+                    mkey.move_to_natural(CLICKS["autocraft_scroll"][0], CLICKS["autocraft_scroll"][1])
+                    time.sleep(delay)
+                    ms.scroll(0, 30); time.sleep(delay)
+                    ms.scroll(0, 30); time.sleep(delay)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_second_amt"][0], CLICKS["autocraft_second_amt"][1])
                     time.sleep(0.2)
-                    mkey.move_to_natural(round(float(COORDS_PERCENT["scroll_mouse_position"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["scroll_mouse_position"][1] * COORDS["scr_hei"])))
+                    mkey.left_click_xy_natural(CLICKS["autocraft_second_amt"][0], CLICKS["autocraft_second_amt"][1])
+                    time.sleep(delay)
+                    pag.write("3")
+                    time.sleep(delay)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_second_add"][0], CLICKS["autocraft_second_add"][1])
+                    time.sleep(delay)
+                    mkey.move_to_natural(CLICKS["autocraft_scroll"][0], CLICKS["autocraft_scroll"][1])
+                    time.sleep(delay)
+                    ms.scroll(0, 30); time.sleep(delay)
+                    ms.scroll(0, 30); time.sleep(delay)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_third_amt"][0], CLICKS["autocraft_third_amt"][1])
                     time.sleep(0.2)
-                    ms.scroll(0, 30); time.sleep(0.2)
-                    ms.scroll(0, 30); time.sleep(0.2)
-
-                    _ = detect_add_potions(False, reader, COORDS_PERCENT, COORDS)
-
-                    if not _[0]:
-                        add_amount_to_potion(kb, True, True, 1)
-
-                    _ = detect_add_potions(False, reader, COORDS_PERCENT, COORDS)
-                    if _[0] and not _[1]:
-                        add_amount_to_potion(kb, True, True, 3)
-                    elif not _[0] and not _[1]:
-                        add_amount_to_potion(kb, True, True, 3, 1)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_third_amt"][0], CLICKS["autocraft_third_amt"][1])
+                    time.sleep(delay)
+                    pag.write("10")
+                    time.sleep(delay)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_third_add"][0], CLICKS["autocraft_third_add"][1])
+                    time.sleep(delay)
+                    ms.scroll(0, -30); time.sleep(delay)
+                    ms.scroll(0, -30); time.sleep(delay)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_third_scrolled_amt"][0], CLICKS["autocraft_third_scrolled_amt"][1])
+                    time.sleep(0.2)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_third_scrolled_amt"][0], CLICKS["autocraft_third_scrolled_amt"][1])
+                    time.sleep(delay)
+                    pag.write("100")
+                    time.sleep(delay)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_third_scrolled_add"][0], CLICKS["autocraft_third_scrolled_add"][1])
                     
-                    _ = detect_add_potions(False, reader, COORDS_PERCENT, COORDS)
-                    if _[0]:
-                        if _[1] and not _[2]:
-                            add_amount_to_potion(kb, True, True, 10)
-                        elif not _[1] and not _[2]:
-                            add_amount_to_potion(kb, True, True, 10, 1)
-                    else:
-                        if _[1] and not _[2]:
-                            add_amount_to_potion(kb, True, True, 10, 1)
-                        elif not _[1] and not _[2]:
-                            add_amount_to_potion(kb, True, True, 10, 2)
 
-                    if TGIFRIDAY:
-                        mkey.move_to_natural(round(float(COORDS_PERCENT["scroll_mouse_position"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["scroll_mouse_position"][1] * COORDS["scr_hei"])))
-                        time.sleep(0.2)
-                        ms.scroll(0, 30); time.sleep(0.2)
-                        ms.scroll(0, 30); time.sleep(0.2)
-                        _ = detect_add_potions(False, reader, COORDS_PERCENT, COORDS)
-
-                    mkey.move_to_natural(round(float(COORDS_PERCENT["scroll_mouse_position"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["scroll_mouse_position"][1] * COORDS["scr_hei"])))
-                    time.sleep(0.2)
-                    ms.scroll(0, -30); time.sleep(0.2)
-                    ms.scroll(0, -30); time.sleep(0.2)
-                    _s = detect_add_potions(True, reader, COORDS_PERCENT, COORDS)
-
-                    if TGIFRIDAY:
-                        time.sleep(0.2)
-                        mkey.move_to_natural(round(float(COORDS_PERCENT["scroll_mouse_position"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["scroll_mouse_position"][1] * COORDS["scr_hei"])))
-                        time.sleep(0.2)
-                        ms.scroll(0, 30); time.sleep(0.2)
-                        ms.scroll(0, 30); time.sleep(0.2)
-                        moves = get_autocraft_path(_, _s, 4)
-                        if moves != -1:
-                            add_amount_to_potion(kb, True, True, 100, moves)
-                    else:
-                        if not _s[2]:
-                            add_amount_to_potion(kb, True, True, 100, 0, True)
 
                     if send_item_crafted_notification:
                         time.sleep(0.2)
-                        mkey.move_to_natural(round(float(COORDS_PERCENT["scroll_mouse_position"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["scroll_mouse_position"][1] * COORDS["scr_hei"])))
+                        mkey.move_to_natural(CLICKS["autocraft_scroll"][0], CLICKS["autocraft_scroll"][1])
                         time.sleep(0.2)
                         ms.scroll(0, -30); time.sleep(0.2)
                         ms.scroll(0, -30); time.sleep(0.2)
 
-                        _s = detect_add_potions(True, reader, COORDS_PERCENT, COORDS)
+                        _s = detect_add_potions(True, reader, REGIONS)
 
-                        if _s[2]:
+                        if _s:
                             _prev_bound = True
                         else:
                             _prev_bound = False
 
-                    press_craft_button(kb, True, True)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_craft"][0], CLICKS["autocraft_craft"][1])
 
                     if send_item_crafted_notification:
                         _bound_isfull = False
 
-                        _s = detect_add_potions(True, reader, COORDS_PERCENT, COORDS)
+                        _s = detect_add_potions(True, reader, REGIONS)
 
-                        if _s[2]:
+                        if _s:
                             _bound_isfull = True
                         else:
                             _bound_isfull = False
@@ -1830,123 +1901,70 @@ def auto_craft(webhook, settings: dict, stop_event: threading.Event, sniped_even
                         _prev_bound = _bound_isfull
                     
                     time.sleep(0.2)
-                    mkey.move_to_natural(round(float(COORDS_PERCENT["scroll_mouse_position"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["scroll_mouse_position"][1] * COORDS["scr_hei"])))
+                    mkey.move_to_natural(CLICKS["autocraft_scroll"][0], CLICKS["autocraft_scroll"][1])
                     time.sleep(0.2)
                     ms.scroll(0, 30); time.sleep(0.2)
                     ms.scroll(0, 30); time.sleep(0.2)
 
                     if job == "Potion of Bound":
-                        press_auto_button(kb, True, True)
+                        mkey.left_click_xy_natural(CLICKS["autocraft_auto"][0], CLICKS["autocraft_auto"][1])
                     time.sleep(1)
 
                 if settings["auto_craft_item"].get("Heavenly Potion", False):
-                    search_for_potion_in_cauldron(kb, True, True, "Heavenly")
+                    _search("Heavenly")
 
+                    mkey.move_to_natural(CLICKS["autocraft_scroll"][0], CLICKS["autocraft_scroll"][1])
+                    time.sleep(delay)
+                    ms.scroll(0, 30); time.sleep(delay)
+                    ms.scroll(0, 30); time.sleep(delay)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_first_amt"][0], CLICKS["autocraft_first_amt"][1])
                     time.sleep(0.2)
-                    mkey.move_to_natural(round(float(COORDS_PERCENT["scroll_mouse_position"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["scroll_mouse_position"][1] * COORDS["scr_hei"])))
+                    mkey.left_click_xy_natural(CLICKS["autocraft_first_amt"][0], CLICKS["autocraft_first_amt"][1])
+                    time.sleep(delay)
+                    pag.write("250")
+                    time.sleep(delay)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_first_add"][0], CLICKS["autocraft_first_add"][1])
+                    time.sleep(delay)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_second_add"][0], CLICKS["autocraft_second_add"][1])
+                    time.sleep(delay)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_second_add"][0], CLICKS["autocraft_second_add"][1])
+                    time.sleep(delay)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_third_add"][0], CLICKS["autocraft_third_add"][1])
+
+                    mkey.move_to_natural(CLICKS["autocraft_scroll"][0], CLICKS["autocraft_scroll"][1])
+                    time.sleep(delay)
+                    ms.scroll(0, -30); time.sleep(delay)
+                    ms.scroll(0, -30); time.sleep(delay)
+                    time.sleep(delay)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_second_scrolled_add"][0], CLICKS["autocraft_second_scrolled_add"][1])
+                    time.sleep(delay)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_second_scrolled_add"][0], CLICKS["autocraft_second_scrolled_add"][1])
+
+                    mkey.left_click_xy_natural(CLICKS["autocraft_third_scrolled_amt"][0], CLICKS["autocraft_third_scrolled_amt"][1])
                     time.sleep(0.2)
-                    ms.scroll(0, 30); time.sleep(0.2)
-                    ms.scroll(0, 30); time.sleep(0.2)
-
-                    _ = detect_add_potions(False, reader, COORDS_PERCENT, COORDS)
-
-                    if not _[0]:
-                        add_amount_to_potion(kb, True, True, 250)
-
-                    _ = detect_add_potions(False, reader, COORDS_PERCENT, COORDS)
-                    if _[0] and not _[1]:
-                        add_amount_to_potion(kb, True, True, 2)
-                    elif not _[0] and not _[1]:
-                        add_amount_to_potion(kb, True, True, 2, 1)
-                    
-                    _ = detect_add_potions(False, reader, COORDS_PERCENT, COORDS)
-                    if _[0]:
-                        if _[1] and not _[2]:
-                            add_amount_to_potion(kb, True, True, 1)
-                        elif not _[1] and not _[2]:
-                            add_amount_to_potion(kb, True, True, 1, 1)
-                    else:
-                        if _[1] and not _[2]:
-                            add_amount_to_potion(kb, True, True, 1, 1)
-                        elif not _[1] and not _[2]:
-                            add_amount_to_potion(kb, True, True, 1, 2)
-
-                    mkey.move_to_natural(round(float(COORDS_PERCENT["scroll_mouse_position"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["scroll_mouse_position"][1] * COORDS["scr_hei"])))
-                    time.sleep(0.2)
-                    ms.scroll(0, -30); time.sleep(0.2)
-                    ms.scroll(0, -30); time.sleep(0.2)
-
-                    _s = detect_add_potions(True, reader, COORDS_PERCENT, COORDS)
-
-                    if TGIFRIDAY:
-                        time.sleep(0.2)
-                        mkey.move_to_natural(round(float(COORDS_PERCENT["scroll_mouse_position"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["scroll_mouse_position"][1] * COORDS["scr_hei"])))
-                        time.sleep(0.2)
-                        ms.scroll(0, 30); time.sleep(0.2)
-                        ms.scroll(0, 30); time.sleep(0.2)
-                        _ = detect_add_potions(False, reader, COORDS_PERCENT, COORDS)
-                        moves = get_autocraft_path(_, _s, 5)
-                        if moves != -1:
-                            add_amount_to_potion(kb, True, True, 5, moves)
-                    else:                    
-                        if not _s[2]:
-                            add_amount_to_potion(kb, True, True, 5, 0, True)
-
-                    if TGIFRIDAY:
-                        time.sleep(0.2)
-                        mkey.move_to_natural(round(float(COORDS_PERCENT["scroll_mouse_position"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["scroll_mouse_position"][1] * COORDS["scr_hei"])))
-                        time.sleep(0.2)
-                        ms.scroll(0, 30); time.sleep(0.2)
-                        ms.scroll(0, 30); time.sleep(0.2)
-                        _ = detect_add_potions(False, reader, COORDS_PERCENT, COORDS)
-
-                    time.sleep(0.2)
-                    mkey.move_to_natural(round(float(COORDS_PERCENT["scroll_mouse_position"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["scroll_mouse_position"][1] * COORDS["scr_hei"])))
-                    time.sleep(0.2)
-                    ms.scroll(0, -30); time.sleep(0.2)
-                    ms.scroll(0, -30); time.sleep(0.2)
-
-                    _s = detect_add_potions(True, reader, COORDS_PERCENT, COORDS)
-
-                    if TGIFRIDAY:
-                        time.sleep(0.2)
-                        mkey.move_to_natural(round(float(COORDS_PERCENT["scroll_mouse_position"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["scroll_mouse_position"][1] * COORDS["scr_hei"])))
-                        time.sleep(0.2)
-                        ms.scroll(0, 30); time.sleep(0.2)
-                        ms.scroll(0, 30); time.sleep(0.2)
-                        moves = get_autocraft_path(_, _s, 4)
-                        if moves != -1:
-                            add_amount_to_potion(kb, True, True, 2, moves)
-                    else:
-                    
-                        if not _s[2] and not _s[1]:
-                            add_amount_to_potion(kb, True, True, 2, 1, True)
-                        elif _s[2] and not _s[1]:
-                            add_amount_to_potion(kb, True, True, 2, 0, True)
-                    
-                    time.sleep(0.2)
-                    mkey.move_to_natural(round(float(COORDS_PERCENT["scroll_mouse_position"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["scroll_mouse_position"][1] * COORDS["scr_hei"])))
-                    time.sleep(0.2)
-                    ms.scroll(0, 30); time.sleep(0.2)
-                    ms.scroll(0, 30); time.sleep(0.2)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_third_scrolled_amt"][0], CLICKS["autocraft_third_scrolled_amt"][1])
+                    time.sleep(delay)
+                    pag.write("5")
+                    time.sleep(delay)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_third_scrolled_add"][0], CLICKS["autocraft_third_scrolled_add"][1])
 
                     if send_item_crafted_notification:
 
-                        _ = detect_add_potions(False, reader, COORDS_PERCENT, COORDS)
+                        _ = detect_add_potions(False, reader, REGIONS)
 
-                        if _[0]:
+                        if _:
                             _prev_heaven = True
                         else:
                             _prev_heaven = False
 
-                    press_craft_button(kb, True, True)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_craft"][0], CLICKS["autocraft_craft"][1])
 
                     if send_item_crafted_notification:
                         _heaven_isfull = False
 
-                        _ = detect_add_potions(False, reader, COORDS_PERCENT, COORDS)
+                        _ = detect_add_potions(False, reader, REGIONS)
 
-                        if _[0]:
+                        if _:
                             _heaven_isfull = True
                         else:
                             _heaven_isfull = False
@@ -1968,110 +1986,68 @@ def auto_craft(webhook, settings: dict, stop_event: threading.Event, sniped_even
                         _prev_heaven = _heaven_isfull
 
                     if job == "Heavenly Potion":
-                        press_auto_button(kb, True, True)
+                        mkey.left_click_xy_natural(CLICKS["autocraft_auto"][0], CLICKS["autocraft_auto"][1])
                     time.sleep(1)
 
                 if settings["auto_craft_item"].get("Godly Potion (Zeus)", False):
-                    search_for_potion_in_cauldron(kb, True, True, "Zeus")
+                    _search("Zeus")
 
+                    mkey.move_to_natural(CLICKS["autocraft_scroll"][0], CLICKS["autocraft_scroll"][1])
+                    time.sleep(delay)
+                    ms.scroll(0, 30); time.sleep(delay)
+                    ms.scroll(0, 30); time.sleep(delay)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_first_amt"][0], CLICKS["autocraft_first_amt"][1])
                     time.sleep(0.2)
-                    mkey.move_to_natural(round(float(COORDS_PERCENT["scroll_mouse_position"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["scroll_mouse_position"][1] * COORDS["scr_hei"])))
+                    mkey.left_click_xy_natural(CLICKS["autocraft_first_amt"][0], CLICKS["autocraft_first_amt"][1])
+                    time.sleep(delay)
+                    pag.write("50")
+                    time.sleep(delay)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_first_add"][0], CLICKS["autocraft_first_add"][1])
+                    time.sleep(delay)
+
+                    mkey.left_click_xy_natural(CLICKS["autocraft_second_amt"][0], CLICKS["autocraft_second_amt"][1])
                     time.sleep(0.2)
-                    ms.scroll(0, 30); time.sleep(0.2)
-                    ms.scroll(0, 30); time.sleep(0.2)
-
-                    _ = detect_add_potions(False, reader, COORDS_PERCENT, COORDS)
-
-                    if not _[0]:
-                        add_amount_to_potion(kb, True, True, 25)
-
-                    _ = detect_add_potions(False, reader, COORDS_PERCENT, COORDS)
-                    if _[0] and not _[1]:
-                        add_amount_to_potion(kb, True, True, 25)
-                    elif not _[0] and not _[1]:
-                        add_amount_to_potion(kb, True, True, 25, 1)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_second_amt"][0], CLICKS["autocraft_second_amt"][1])
+                    time.sleep(delay)
+                    pag.write("25")
+                    time.sleep(delay)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_second_add"][0], CLICKS["autocraft_second_add"][1])
+                    time.sleep(delay)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_third_add"][0], CLICKS["autocraft_third_add"][1])
+                    time.sleep(delay)
+                    ms.scroll(0, -30); time.sleep(delay)
+                    ms.scroll(0, -30); time.sleep(delay)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_second_scrolled_add"][0], CLICKS["autocraft_second_scrolled_add"][1])
+                    time.sleep(delay)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_third_scrolled_amt"][0], CLICKS["autocraft_third_scrolled_amt"][1])
+                    time.sleep(0.2)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_third_scrolled_amt"][0], CLICKS["autocraft_third_scrolled_amt"][1])
+                    time.sleep(delay)
+                    pag.write("15")
+                    time.sleep(delay)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_third_scrolled_add"][0], CLICKS["autocraft_third_scrolled_add"][1])
+                    time.sleep(delay)
+                    ms.scroll(0, 30); time.sleep(delay)
+                    ms.scroll(0, 30); time.sleep(delay)
                     
-                    _ = detect_add_potions(False, reader, COORDS_PERCENT, COORDS)
-                    if _[0]:
-                        if _[1] and not _[2]:
-                            add_amount_to_potion(kb, True, True, 1)
-                        elif not _[1] and not _[2]:
-                            add_amount_to_potion(kb, True, True, 1, 1)
-                    else:
-                        if _[1] and not _[2]:
-                            add_amount_to_potion(kb, True, True, 1, 1)
-                        elif not _[1] and not _[2]:
-                            add_amount_to_potion(kb, True, True, 1, 2)
-
-
-                    mkey.move_to_natural(round(float(COORDS_PERCENT["scroll_mouse_position"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["scroll_mouse_position"][1] * COORDS["scr_hei"])))
-                    time.sleep(0.2)
-                    ms.scroll(0, -30); time.sleep(0.2)
-                    ms.scroll(0, -30); time.sleep(0.2)
-
-                    _s = detect_add_potions(True, reader, COORDS_PERCENT, COORDS)
-
-                    if TGIFRIDAY:
-                        time.sleep(0.2)
-                        mkey.move_to_natural(round(float(COORDS_PERCENT["scroll_mouse_position"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["scroll_mouse_position"][1] * COORDS["scr_hei"])))
-                        time.sleep(0.2)
-                        ms.scroll(0, 30); time.sleep(0.2)
-                        ms.scroll(0, 30); time.sleep(0.2)
-                        _ = detect_add_potions(False, reader, COORDS_PERCENT, COORDS)
-                        moves = get_autocraft_path(_, _s, 5)
-                        if moves != -1:
-                            add_amount_to_potion(kb, True, True, 15, moves)
-                    else:
-                        if not _s[2]:
-                            add_amount_to_potion(kb, True, True, 15, 0, True)
-
-                    mkey.move_to_natural(round(float(COORDS_PERCENT["scroll_mouse_position"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["scroll_mouse_position"][1] * COORDS["scr_hei"])))
-                    time.sleep(0.2)
-                    ms.scroll(0, -30); time.sleep(0.2)
-                    ms.scroll(0, -30); time.sleep(0.2)
-
-                    _s = detect_add_potions(True, reader, COORDS_PERCENT, COORDS)
-
-                    
-                    if TGIFRIDAY:
-                        time.sleep(0.2)
-                        mkey.move_to_natural(round(float(COORDS_PERCENT["scroll_mouse_position"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["scroll_mouse_position"][1] * COORDS["scr_hei"])))
-                        time.sleep(0.2)
-                        ms.scroll(0, 30); time.sleep(0.2)
-                        ms.scroll(0, 30); time.sleep(0.2)
-                        _ = detect_add_potions(False, reader, COORDS_PERCENT, COORDS)
-                        moves = get_autocraft_path(_, _s, 4)
-                        if moves != -1:
-                            add_amount_to_potion(kb, True, True, 1, moves)
-                    else:
-                        if not _s[2] and not _s[1]:
-                            add_amount_to_potion(kb, True, True, 1, 1, True)
-                        elif _s[2] and not _s[1]:
-                            add_amount_to_potion(kb, True, True, 1, 0, True)
-                    
-                    time.sleep(0.2)
-                    mkey.move_to_natural(round(float(COORDS_PERCENT["scroll_mouse_position"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["scroll_mouse_position"][1] * COORDS["scr_hei"])))
-                    time.sleep(0.2)
-                    ms.scroll(0, 30); time.sleep(0.2)
-                    ms.scroll(0, 30); time.sleep(0.2)
 
                     if send_item_crafted_notification:
 
-                        _ = detect_add_potions(False, reader, COORDS_PERCENT, COORDS)
+                        _ = detect_add_potions(False, reader, REGIONS)
 
-                        if _[0]:
+                        if _:
                             _prev_zeus = True
                         else:
                             _prev_zeus = False
 
-                    press_craft_button(kb, True, True)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_craft"][0], CLICKS["autocraft_craft"][1])
 
                     if send_item_crafted_notification:
                         _zeus_isfull = False
 
-                        _ = detect_add_potions(False, reader, COORDS_PERCENT, COORDS)
+                        _ = detect_add_potions(False, reader, REGIONS)
 
-                        if _[0]:
+                        if _:
                             _zeus_isfull = True
                         else:
                             _zeus_isfull = False
@@ -2093,89 +2069,60 @@ def auto_craft(webhook, settings: dict, stop_event: threading.Event, sniped_even
                         _prev_zeus = _zeus_isfull
 
                     if job == "Godly Potion (Zeus)":
-                        press_auto_button(kb, True, True)
+                        mkey.left_click_xy_natural(CLICKS["autocraft_auto"][0], CLICKS["autocraft_auto"][1])
                     time.sleep(1)
 
                 if settings["auto_craft_item"].get("Godly Potion (Poseidon)", False):
-                    search_for_potion_in_cauldron(kb, True, True, "Poseidon")
+                    _search("Poseidon")
 
+                    mkey.move_to_natural(CLICKS["autocraft_scroll"][0], CLICKS["autocraft_scroll"][1])
+                    time.sleep(delay)
+                    ms.scroll(0, 30); time.sleep(delay)
+                    ms.scroll(0, 30); time.sleep(delay)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_first_amt"][0], CLICKS["autocraft_first_amt"][1])
                     time.sleep(0.2)
-                    mkey.move_to_natural(round(float(COORDS_PERCENT["scroll_mouse_position"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["scroll_mouse_position"][1] * COORDS["scr_hei"])))
-                    time.sleep(0.2)
-                    ms.scroll(0, 30); time.sleep(0.2)
-                    ms.scroll(0, 30); time.sleep(0.2)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_first_amt"][0], CLICKS["autocraft_first_amt"][1])
+                    time.sleep(delay)
+                    pag.write("50")
+                    time.sleep(delay)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_first_add"][0], CLICKS["autocraft_first_add"][1])
+                    time.sleep(delay)
+                    mkey.move_to_natural(CLICKS["autocraft_scroll"][0], CLICKS["autocraft_scroll"][1])
+                    time.sleep(delay)
+                    ms.scroll(0, 30); time.sleep(delay)
+                    ms.scroll(0, 30); time.sleep(delay)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_second_add"][0], CLICKS["autocraft_second_add"][1])
+                    time.sleep(delay)
+                    mkey.move_to_natural(CLICKS["autocraft_scroll"][0], CLICKS["autocraft_scroll"][1])
+                    time.sleep(delay)
+                    ms.scroll(0, 30); time.sleep(delay)
+                    ms.scroll(0, 30); time.sleep(delay)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_third_add"][0], CLICKS["autocraft_third_add"][1])
+                    time.sleep(delay)
+                    ms.scroll(0, -30); time.sleep(delay)
+                    ms.scroll(0, -30); time.sleep(delay)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_third_scrolled_add"][0], CLICKS["autocraft_third_scrolled_add"][1])
 
-                    _ = detect_add_potions(False, reader, COORDS_PERCENT, COORDS)
-
-                    if not _[0]:
-                        add_amount_to_potion(kb, True, True, 50)
-
-                    _ = detect_add_potions(False, reader, COORDS_PERCENT, COORDS)
-                    if _[0] and not _[1]:
-                        add_amount_to_potion(kb, True, True, 1)
-                    elif not _[0] and not _[1]:
-                        add_amount_to_potion(kb, True, True, 1, 1)
-                    
-                    _ = detect_add_potions(False, reader, COORDS_PERCENT, COORDS)
-                    if _[0]:
-                        if _[1] and not _[2]:
-                            add_amount_to_potion(kb, True, True, 1)
-                        elif not _[1] and not _[2]:
-                            add_amount_to_potion(kb, True, True, 1, 1)
-                    else:
-                        if _[1] and not _[2]:
-                            add_amount_to_potion(kb, True, True, 1, 1)
-                        elif not _[1] and not _[2]:
-                            add_amount_to_potion(kb, True, True, 1, 2)
-
-                    if TGIFRIDAY:
-                        mkey.move_to_natural(round(float(COORDS_PERCENT["scroll_mouse_position"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["scroll_mouse_position"][1] * COORDS["scr_hei"])))
-                        time.sleep(0.2)
-                        ms.scroll(0, 30); time.sleep(0.2)
-                        ms.scroll(0, 30); time.sleep(0.2)
-                        _ = detect_add_potions(False, reader, COORDS_PERCENT, COORDS)
-
-                    mkey.move_to_natural(round(float(COORDS_PERCENT["scroll_mouse_position"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["scroll_mouse_position"][1] * COORDS["scr_hei"])))
-                    time.sleep(0.2)
-                    ms.scroll(0, -30); time.sleep(0.2)
-                    ms.scroll(0, -30); time.sleep(0.2)
-                    _s = detect_add_potions(True, reader, COORDS_PERCENT, COORDS)
-                    mkey.move_to_natural(round(float(COORDS_PERCENT["scroll_mouse_position"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["scroll_mouse_position"][1] * COORDS["scr_hei"])))
-                    time.sleep(0.2)
-                    ms.scroll(0, 30); time.sleep(0.2)
-                    ms.scroll(0, 30); time.sleep(0.2)
-                    
-                    if TGIFRIDAY:
-                        moves = get_autocraft_path(_, _s, 4)
-                        if moves != -1:
-                            add_amount_to_potion(kb, True, True, 1, moves)
-                    else:
-                        if not _s[2]:
-                            add_amount_to_potion(kb, True, True, 1, 0, True)
-                    
-                    time.sleep(0.2)
-                    mkey.move_to_natural(round(float(COORDS_PERCENT["scroll_mouse_position"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["scroll_mouse_position"][1] * COORDS["scr_hei"])))
-                    time.sleep(0.2)
-                    ms.scroll(0, 30); time.sleep(0.2)
-                    ms.scroll(0, 30); time.sleep(0.2)
+                    ms.scroll(0, 30); time.sleep(delay)
+                    ms.scroll(0, 30); time.sleep(delay)
 
                     if send_item_crafted_notification:
 
-                        _ = detect_add_potions(False, reader, COORDS_PERCENT, COORDS)
+                        _ = detect_add_potions(False, reader, REGIONS)
 
-                        if _[0]:
+                        if _:
                             _prev_poseidon = True
                         else:
                             _prev_poseidon = False
 
-                    press_craft_button(kb, True, True)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_craft"][0], CLICKS["autocraft_craft"][1])
 
                     if send_item_crafted_notification:
                         _poseidon_isfull = False
 
-                        _ = detect_add_potions(False, reader, COORDS_PERCENT, COORDS)
+                        _ = detect_add_potions(False, reader, REGIONS)
 
-                        if _[0]:
+                        if _:
                             _poseidon_isfull = True
                         else:
                             _poseidon_isfull = False
@@ -2197,46 +2144,47 @@ def auto_craft(webhook, settings: dict, stop_event: threading.Event, sniped_even
                         _prev_poseidon = _poseidon_isfull
 
                     if job == "Godly Potion (Poseidon)":
-                        press_auto_button(kb, True, True)
+                        mkey.left_click_xy_natural(CLICKS["autocraft_auto"][0], CLICKS["autocraft_auto"][1])
                     time.sleep(1)
 
                 if settings["auto_craft_item"].get("Godly Potion (Hades)", False):
-                    search_for_potion_in_cauldron(kb, True, True, "Hades")
+                    _search("Hades")
 
+                    mkey.move_to_natural(CLICKS["autocraft_scroll"][0], CLICKS["autocraft_scroll"][1])
+                    time.sleep(delay)
+                    ms.scroll(0, 30); time.sleep(delay)
+                    ms.scroll(0, 30); time.sleep(delay)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_first_amt"][0], CLICKS["autocraft_first_amt"][1])
                     time.sleep(0.2)
-                    mkey.move_to_natural(round(float(COORDS_PERCENT["scroll_mouse_position"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["scroll_mouse_position"][1] * COORDS["scr_hei"])))
-                    time.sleep(0.2)
-                    ms.scroll(0, 30); time.sleep(0.2)
-                    ms.scroll(0, 30); time.sleep(0.2)
-
-                    _ = detect_add_potions(False, reader, COORDS_PERCENT, COORDS)
-
-                    if not _[0]:
-                        add_amount_to_potion(kb, True, True, 50)
-                        
-                    _ = detect_add_potions(False, reader, COORDS_PERCENT, COORDS)
-                    if _[0] and not _[1]:
-                        add_amount_to_potion(kb, True, True, 1)
-                    elif not _[0] and not _[1]:
-                        add_amount_to_potion(kb, True, True, 1, 1)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_first_amt"][0], CLICKS["autocraft_first_amt"][1])
+                    time.sleep(delay)
+                    pag.write("50")
+                    time.sleep(delay)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_first_add"][0], CLICKS["autocraft_first_add"][1])
+                    time.sleep(delay)
+                    mkey.move_to_natural(CLICKS["autocraft_scroll"][0], CLICKS["autocraft_scroll"][1])
+                    time.sleep(delay)
+                    ms.scroll(0, 30); time.sleep(delay)
+                    ms.scroll(0, 30); time.sleep(delay)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_second_add"][0], CLICKS["autocraft_second_add"][1])
 
                     if send_item_crafted_notification:
 
-                        _ = detect_add_potions(False, reader, COORDS_PERCENT, COORDS)
+                        _ = detect_add_potions(False, reader, REGIONS)
 
-                        if _[0]:
+                        if _:
                             _prev_hades = True
                         else:
                             _prev_hades = False
 
-                    press_craft_button(kb, True, True)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_craft"][0], CLICKS["autocraft_craft"][1])
 
                     if send_item_crafted_notification:
                         _hades_isfull = False
 
-                        _ = detect_add_potions(False, reader, COORDS_PERCENT, COORDS)
+                        _ = detect_add_potions(False, reader, REGIONS)
 
-                        if _[0]:
+                        if _:
                             _hades_isfull = True
                         else:
                             _hades_isfull = False
@@ -2258,89 +2206,93 @@ def auto_craft(webhook, settings: dict, stop_event: threading.Event, sniped_even
                         _prev_hades = _hades_isfull
 
                     if job == "Godly Potion (Hades)":
-                        press_auto_button(kb, True, True)
+                        mkey.left_click_xy_natural(CLICKS["autocraft_auto"][0], CLICKS["autocraft_auto"][1])
                     time.sleep(1)
 
                 if settings["auto_craft_item"].get("Warp Potion", False):
-                    search_for_potion_in_cauldron(kb, True, True, "Warp")
+                    _search("Warp")
 
+                    mkey.move_to_natural(CLICKS["autocraft_scroll"][0], CLICKS["autocraft_scroll"][1])
+                    time.sleep(delay)
+                    ms.scroll(0, 30); time.sleep(delay)
+                    ms.scroll(0, 30); time.sleep(delay)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_first_add"][0], CLICKS["autocraft_first_add"][1])
+                    time.sleep(delay)
+
+                    mkey.move_to_natural(CLICKS["autocraft_scroll"][0], CLICKS["autocraft_scroll"][1])
+                    time.sleep(delay)
+                    ms.scroll(0, 30); time.sleep(delay)
+                    ms.scroll(0, 30); time.sleep(delay)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_second_amt"][0], CLICKS["autocraft_second_amt"][1])
                     time.sleep(0.2)
-                    mkey.move_to_natural(round(float(COORDS_PERCENT["scroll_mouse_position"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["scroll_mouse_position"][1] * COORDS["scr_hei"])))
+                    mkey.left_click_xy_natural(CLICKS["autocraft_second_amt"][0], CLICKS["autocraft_second_amt"][1])
+                    time.sleep(delay)
+                    pag.write("5")
+                    time.sleep(delay)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_second_add"][0], CLICKS["autocraft_second_add"][1])
+                    time.sleep(delay)
+
+                    mkey.left_click_xy_natural(CLICKS["autocraft_third_amt"][0], CLICKS["autocraft_third_amt"][1])
                     time.sleep(0.2)
-                    ms.scroll(0, 30); time.sleep(0.2)
-                    ms.scroll(0, 30); time.sleep(0.2)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_third_amt"][0], CLICKS["autocraft_third_amt"][1])
+                    time.sleep(delay)
+                    pag.write("7")
+                    time.sleep(delay)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_third_add"][0], CLICKS["autocraft_third_add"][1])
+                    time.sleep(delay)
 
-                    _ = detect_add_potions(False, reader, COORDS_PERCENT, COORDS)
-
-                    if not _[0]:
-                        add_amount_to_potion(kb, True, True, 1)
-
-                    _ = detect_add_potions(False, reader, COORDS_PERCENT, COORDS)
-                    if _[0] and not _[1]:
-                        add_amount_to_potion(kb, True, True, 5)
-                    elif not _[0] and not _[1]:
-                        add_amount_to_potion(kb, True, True, 5, 1)
-                    
-                    _ = detect_add_potions(False, reader, COORDS_PERCENT, COORDS)
-                    if _[0]:
-                        if _[1] and not _[2]:
-                            add_amount_to_potion(kb, True, True, 7)
-                        elif not _[1] and not _[2]:
-                            add_amount_to_potion(kb, True, True, 7, 1)
-                    else:
-                        if _[1] and not _[2]:
-                            add_amount_to_potion(kb, True, True, 7, 1)
-                        elif not _[1] and not _[2]:
-                            add_amount_to_potion(kb, True, True, 7, 2)
-
-                    if TGIFRIDAY:
-                        mkey.move_to_natural(round(float(COORDS_PERCENT["scroll_mouse_position"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["scroll_mouse_position"][1] * COORDS["scr_hei"])))
-                        time.sleep(0.2)
-                        ms.scroll(0, 30); time.sleep(0.2)
-                        ms.scroll(0, 30); time.sleep(0.2)
-                        _ = detect_add_potions(False, reader, COORDS_PERCENT, COORDS)
-
-                    mkey.move_to_natural(round(float(COORDS_PERCENT["scroll_mouse_position"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["scroll_mouse_position"][1] * COORDS["scr_hei"])))
+                    ms.scroll(0, -30); time.sleep(delay)
+                    ms.scroll(0, -30); time.sleep(delay)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_first_scrolled_amt"][0], CLICKS["autocraft_first_scrolled_amt"][1])
                     time.sleep(0.2)
-                    ms.scroll(0, -30); time.sleep(0.2)
-                    ms.scroll(0, -30); time.sleep(0.2)
-                    _s = detect_add_potions(True, reader, COORDS_PERCENT, COORDS)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_first_scrolled_amt"][0], CLICKS["autocraft_first_scrolled_amt"][1])
+                    time.sleep(delay)
+                    pag.write("100")
+                    time.sleep(delay)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_first_scrolled_add"][0], CLICKS["autocraft_first_scrolled_add"][1])
 
-                    mkey.move_to_natural(round(float(COORDS_PERCENT["scroll_mouse_position"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["scroll_mouse_position"][1] * COORDS["scr_hei"])))
+                    ms.scroll(0, -30); time.sleep(delay)
+                    ms.scroll(0, -30); time.sleep(delay)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_second_scrolled_amt"][0], CLICKS["autocraft_second_scrolled_amt"][1])
                     time.sleep(0.2)
-                    ms.scroll(0, 30); time.sleep(0.2)
-                    ms.scroll(0, 30); time.sleep(0.2)
-                    
-                    if TGIFRIDAY:
-                        moves = get_autocraft_path(_, _s, 6)
-                        if moves != -1:
-                            add_amount_to_potion(kb, True, True, 1000, moves)
-                    else:
-                        if not _s[0]:
-                            add_amount_to_potion(kb, True, True, 1000, 0, True)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_second_scrolled_amt"][0], CLICKS["autocraft_second_scrolled_amt"][1])
+                    time.sleep(delay)
+                    pag.write("200")
+                    time.sleep(delay)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_second_scrolled_add"][0], CLICKS["autocraft_second_scrolled_add"][1])
+
+                    ms.scroll(0, -30); time.sleep(delay)
+                    ms.scroll(0, -30); time.sleep(delay)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_third_scrolled_amt"][0], CLICKS["autocraft_third_scrolled_amt"][1])
+                    time.sleep(0.2)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_third_scrolled_amt"][0], CLICKS["autocraft_third_scrolled_amt"][1])
+                    time.sleep(delay)
+                    pag.write("1000")
+                    time.sleep(delay)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_third_scrolled_add"][0], CLICKS["autocraft_third_scrolled_add"][1])
 
                     if send_item_crafted_notification:                        
                         time.sleep(0.2)
-                        mkey.move_to_natural(round(float(COORDS_PERCENT["scroll_mouse_position"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["scroll_mouse_position"][1] * COORDS["scr_hei"])))
+                        mkey.move_to_natural(CLICKS["autocraft_scroll"][0], CLICKS["autocraft_scroll"][1])
                         time.sleep(0.2)
                         ms.scroll(0, -30); time.sleep(0.2)
                         ms.scroll(0, -30); time.sleep(0.2)
 
-                        _s = detect_add_potions(True, reader, COORDS_PERCENT, COORDS)
+                        _s = detect_add_potions(True, reader, REGIONS)
 
-                        if _s[2]:
+                        if _s:
                             _prev_warp = True
                         else:
                             _prev_warp = False
 
-                    press_craft_button(kb, True, True)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_craft"][0], CLICKS["autocraft_craft"][1])
 
                     if send_item_crafted_notification:
                         _warp_isfull = False
 
-                        _s = detect_add_potions(True, reader, COORDS_PERCENT, COORDS)
+                        _s = detect_add_potions(True, reader, REGIONS)
 
-                        if _s[2]:
+                        if _s:
                             _warp_isfull = True
                         else:
                             _warp_isfull = False
@@ -2362,94 +2314,69 @@ def auto_craft(webhook, settings: dict, stop_event: threading.Event, sniped_even
                         _prev_warp = _warp_isfull
                     
                     time.sleep(0.2)
-                    mkey.move_to_natural(round(float(COORDS_PERCENT["scroll_mouse_position"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["scroll_mouse_position"][1] * COORDS["scr_hei"])))
+                    mkey.move_to_natural(CLICKS["autocraft_scroll"][0], CLICKS["autocraft_scroll"][1])
                     time.sleep(0.2)
                     ms.scroll(0, 30); time.sleep(0.2)
                     ms.scroll(0, 30); time.sleep(0.2)
 
                     if job == "Warp Potion":
-                        press_auto_button(kb, True, True)
+                        mkey.left_click_xy_natural(CLICKS["autocraft_auto"][0], CLICKS["autocraft_auto"][1])
                     time.sleep(1)
 
                 if settings["auto_craft_item"].get("Godlike Potion", False):
-                    search_for_potion_in_cauldron(kb, True, True, "Godlike")
+                    _search("Godlike")
 
+                    mkey.move_to_natural(CLICKS["autocraft_scroll"][0], CLICKS["autocraft_scroll"][1])
+                    time.sleep(delay)
+                    ms.scroll(0, 30); time.sleep(delay)
+                    ms.scroll(0, 30); time.sleep(delay)
+                    time.sleep(delay)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_first_add"][0], CLICKS["autocraft_first_add"][1])
+                    time.sleep(delay)
+                    mkey.move_to_natural(CLICKS["autocraft_scroll"][0], CLICKS["autocraft_scroll"][1])
+                    time.sleep(delay)
+                    ms.scroll(0, 30); time.sleep(delay)
+                    ms.scroll(0, 30); time.sleep(delay)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_second_add"][0], CLICKS["autocraft_second_add"][1])
+                    time.sleep(delay)
+                    mkey.move_to_natural(CLICKS["autocraft_scroll"][0], CLICKS["autocraft_scroll"][1])
+                    time.sleep(delay)
+                    ms.scroll(0, 30); time.sleep(delay)
+                    ms.scroll(0, 30); time.sleep(delay)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_third_add"][0], CLICKS["autocraft_third_add"][1])
+                    time.sleep(delay)
+                    ms.scroll(0, -30); time.sleep(delay)
+                    ms.scroll(0, -30); time.sleep(delay)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_third_scrolled_amt"][0], CLICKS["autocraft_third_scrolled_amt"][1])
                     time.sleep(0.2)
-                    mkey.move_to_natural(round(float(COORDS_PERCENT["scroll_mouse_position"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["scroll_mouse_position"][1] * COORDS["scr_hei"])))
-                    time.sleep(0.2)
-                    ms.scroll(0, 30); time.sleep(0.2)
-                    ms.scroll(0, 30); time.sleep(0.2)
-
-                    _ = detect_add_potions(False, reader, COORDS_PERCENT, COORDS)
-
-                    if not _[0]:
-                        add_amount_to_potion(kb, True, True, 1)
-
-                    _ = detect_add_potions(False, reader, COORDS_PERCENT, COORDS)
-                    if _[0] and not _[1]:
-                        add_amount_to_potion(kb, True, True, 1)
-                    elif not _[0] and not _[1]:
-                        add_amount_to_potion(kb, True, True, 1, 1)
-                    
-                    _ = detect_add_potions(False, reader, COORDS_PERCENT, COORDS)
-                    if _[0]:
-                        if _[1] and not _[2]:
-                            add_amount_to_potion(kb, True, True, 1)
-                        elif not _[1] and not _[2]:
-                            add_amount_to_potion(kb, True, True, 1, 1)
-                    else:
-                        if _[1] and not _[2]:
-                            add_amount_to_potion(kb, True, True, 1, 1)
-                        elif not _[1] and not _[2]:
-                            add_amount_to_potion(kb, True, True, 1, 2)
-
-                    if TGIFRIDAY:
-                        mkey.move_to_natural(round(float(COORDS_PERCENT["scroll_mouse_position"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["scroll_mouse_position"][1] * COORDS["scr_hei"])))
-                        time.sleep(0.2)
-                        ms.scroll(0, 30); time.sleep(0.2)
-                        ms.scroll(0, 30); time.sleep(0.2)
-                        _ = detect_add_potions(False, reader, COORDS_PERCENT, COORDS)
-
-                    mkey.move_to_natural(round(float(COORDS_PERCENT["scroll_mouse_position"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["scroll_mouse_position"][1] * COORDS["scr_hei"])))
-                    time.sleep(0.2)
-                    ms.scroll(0, -30); time.sleep(0.2)
-                    ms.scroll(0, -30); time.sleep(0.2)
-                    _s = detect_add_potions(True, reader, COORDS_PERCENT, COORDS)
-                    mkey.move_to_natural(round(float(COORDS_PERCENT["scroll_mouse_position"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["scroll_mouse_position"][1] * COORDS["scr_hei"])))
-                    time.sleep(0.2)
-                    ms.scroll(0, 30); time.sleep(0.2)
-                    ms.scroll(0, 30); time.sleep(0.2)
-                    
-                    if TGIFRIDAY:
-                        moves = get_autocraft_path(_, _s, 4)
-                        if moves != -1:
-                            add_amount_to_potion(kb, True, True, 600, moves)
-                    else:
-                        if not _s[2]:
-                            add_amount_to_potion(kb, True, True, 600, 0, True)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_third_scrolled_amt"][0], CLICKS["autocraft_third_scrolled_amt"][1])
+                    time.sleep(delay)
+                    pag.write("600")
+                    time.sleep(delay)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_third_scrolled_add"][0], CLICKS["autocraft_third_scrolled_add"][1])
 
                     if send_item_crafted_notification:                        
                         time.sleep(0.2)
-                        mkey.move_to_natural(round(float(COORDS_PERCENT["scroll_mouse_position"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["scroll_mouse_position"][1] * COORDS["scr_hei"])))
+                        mkey.move_to_natural(CLICKS["autocraft_scroll"][0], CLICKS["autocraft_scroll"][1])
                         time.sleep(0.2)
                         ms.scroll(0, -30); time.sleep(0.2)
                         ms.scroll(0, -30); time.sleep(0.2)
 
-                        _s = detect_add_potions(True, reader, COORDS_PERCENT, COORDS)
+                        _s = detect_add_potions(True, reader, REGIONS)
 
-                        if _s[2]:
+                        if _s:
                             _prev_godlike = True
                         else:
                             _prev_godlike = False
 
-                    press_craft_button(kb, True, True)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_craft"][0], CLICKS["autocraft_craft"][1])
 
                     if send_item_crafted_notification:
                         _godlike_isfull = False
 
-                        _s = detect_add_potions(True, reader, COORDS_PERCENT, COORDS)
+                        _s = detect_add_potions(True, reader, REGIONS)
 
-                        if _s[2]:
+                        if _s:
                             _godlike_isfull = True
                         else:
                             _godlike_isfull = False
@@ -2471,54 +2398,44 @@ def auto_craft(webhook, settings: dict, stop_event: threading.Event, sniped_even
                         _prev_godlike = _godlike_isfull
                     
                     time.sleep(0.2)
-                    mkey.move_to_natural(round(float(COORDS_PERCENT["scroll_mouse_position"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["scroll_mouse_position"][1] * COORDS["scr_hei"])))
+                    mkey.move_to_natural(CLICKS["autocraft_scroll"][0], CLICKS["autocraft_scroll"][1])
                     time.sleep(0.2)
                     ms.scroll(0, 30); time.sleep(0.2)
                     ms.scroll(0, 30); time.sleep(0.2)
 
                 if settings["auto_craft_item"].get("Forbidden Potion I", False):
-                    search_for_potion_in_cauldron(kb, True, True, "Forbidden Potion I")
+                    _search("Forbidden Potion I")
 
-                    _ = detect_add_potions(False, reader, COORDS_PERCENT, COORDS)
-
-                    if not _[0]:
-                        add_amount_to_potion(kb, True, True, 2)
-
-                    _ = detect_add_potions(False, reader, COORDS_PERCENT, COORDS)
-                    if _[0] and not _[1]:
-                        add_amount_to_potion(kb, True, True, 1)
-                    elif not _[0] and not _[1]:
-                        add_amount_to_potion(kb, True, True, 1, 1)
-                    
-                    _ = detect_add_potions(False, reader, COORDS_PERCENT, COORDS)
-                    if _[0]:
-                        if _[1] and not _[2]:
-                            add_amount_to_potion(kb, True, True, 1)
-                        elif not _[1] and not _[2]:
-                            add_amount_to_potion(kb, True, True, 1, 1)
-                    else:
-                        if _[1] and not _[2]:
-                            add_amount_to_potion(kb, True, True, 1, 1)
-                        elif not _[1] and not _[2]:
-                            add_amount_to_potion(kb, True, True, 1, 2)
+                    mkey.move_to_natural(CLICKS["autocraft_scroll"][0], CLICKS["autocraft_scroll"][1])
+                    time.sleep(delay)
+                    ms.scroll(0, 30); time.sleep(delay)
+                    ms.scroll(0, 30); time.sleep(delay)
+                    time.sleep(delay)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_first_add"][0], CLICKS["autocraft_first_add"][1])
+                    time.sleep(delay)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_first_add"][0], CLICKS["autocraft_first_add"][1])
+                    time.sleep(delay)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_second_add"][0], CLICKS["autocraft_second_add"][1])
+                    time.sleep(delay)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_third_add"][0], CLICKS["autocraft_third_add"][1])
 
                     if send_item_crafted_notification:
 
-                        _ = detect_add_potions(False, reader, COORDS_PERCENT, COORDS)
+                        _ = detect_add_potions(False, reader, REGIONS)
 
-                        if _[0]:
+                        if _:
                             _prev_f1 = True
                         else:
                             _prev_f1 = False
 
-                    press_craft_button(kb, True, True)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_craft"][0], CLICKS["autocraft_craft"][1])
 
                     if send_item_crafted_notification:
                         _f1_isfull = False
 
-                        _ = detect_add_potions(False, reader, COORDS_PERCENT, COORDS)
+                        _ = detect_add_potions(False, reader, REGIONS)
 
-                        if _[0]:
+                        if _:
                             _f1_isfull = True
                         else:
                             _f1_isfull = False
@@ -2540,49 +2457,51 @@ def auto_craft(webhook, settings: dict, stop_event: threading.Event, sniped_even
                         _prev_f1 = _f1_isfull
                 
                 if settings["auto_craft_item"].get("Forbidden Potion II", False):
-                    search_for_potion_in_cauldron(kb, True, True, "Forbidden Potion II")
-                    press_craft_button(kb, True, True)
+                    _search("Forbidden Potion II")
 
-                    _ = detect_add_potions(False, reader, COORDS_PERCENT, COORDS)
-
-                    if not _[0]:
-                        add_amount_to_potion(kb, True, True, 20)
-
-                    _ = detect_add_potions(False, reader, COORDS_PERCENT, COORDS)
-                    if _[0] and not _[1]:
-                        add_amount_to_potion(kb, True, True, 10)
-                    elif not _[0] and not _[1]:
-                        add_amount_to_potion(kb, True, True, 10, 1)
-                    
-                    _ = detect_add_potions(False, reader, COORDS_PERCENT, COORDS)
-                    if _[0]:
-                        if _[1] and not _[2]:
-                            add_amount_to_potion(kb, True, True, 1)
-                        elif not _[1] and not _[2]:
-                            add_amount_to_potion(kb, True, True, 1, 1)
-                    else:
-                        if _[1] and not _[2]:
-                            add_amount_to_potion(kb, True, True, 1, 1)
-                        elif not _[1] and not _[2]:
-                            add_amount_to_potion(kb, True, True, 1, 2)
+                    mkey.move_to_natural(CLICKS["autocraft_scroll"][0], CLICKS["autocraft_scroll"][1])
+                    time.sleep(delay)
+                    ms.scroll(0, 30); time.sleep(delay)
+                    ms.scroll(0, 30); time.sleep(delay)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_first_amt"][0], CLICKS["autocraft_first_amt"][1])
+                    time.sleep(0.2)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_first_amt"][0], CLICKS["autocraft_first_amt"][1])
+                    time.sleep(delay)
+                    pag.write("20")
+                    time.sleep(delay)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_first_add"][0], CLICKS["autocraft_first_add"][1])
+                    time.sleep(delay)
+                    mkey.move_to_natural(CLICKS["autocraft_scroll"][0], CLICKS["autocraft_scroll"][1])
+                    time.sleep(delay)
+                    ms.scroll(0, 30); time.sleep(delay)
+                    ms.scroll(0, 30); time.sleep(delay)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_second_amt"][0], CLICKS["autocraft_second_amt"][1])
+                    time.sleep(0.2)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_second_amt"][0], CLICKS["autocraft_second_amt"][1])
+                    time.sleep(delay)
+                    pag.write("10")
+                    time.sleep(delay)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_second_add"][0], CLICKS["autocraft_second_add"][1])
+                    time.sleep(delay)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_third_add"][0], CLICKS["autocraft_third_add"][1])
 
                     if send_item_crafted_notification:
 
-                        _ = detect_add_potions(False, reader, COORDS_PERCENT, COORDS)
+                        _ = detect_add_potions(False, reader, REGIONS)
 
-                        if _[0]:
+                        if _:
                             _prev_f2 = True
                         else:
                             _prev_f2 = False
 
-                    press_craft_button(kb, True, True)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_craft"][0], CLICKS["autocraft_craft"][1])
 
                     if send_item_crafted_notification:
                         _f2_isfull = False
 
-                        _ = detect_add_potions(False, reader, COORDS_PERCENT, COORDS)
+                        _ = detect_add_potions(False, reader, REGIONS)
 
-                        if _[0]:
+                        if _:
                             _f2_isfull = True
                         else:
                             _f2_isfull = False
@@ -2604,49 +2523,51 @@ def auto_craft(webhook, settings: dict, stop_event: threading.Event, sniped_even
                         _prev_f2 = _f2_isfull
 
                 if settings["auto_craft_item"].get("Forbidden Potion III", False):
-                    search_for_potion_in_cauldron(kb, True, True, "Forbidden Potion III")
-                    press_craft_button(kb, True, True)
+                    _search("Forbidden Potion III")
 
-                    _ = detect_add_potions(False, reader, COORDS_PERCENT, COORDS)
-
-                    if not _[0]:
-                        add_amount_to_potion(kb, True, True, 100)
-
-                    _ = detect_add_potions(False, reader, COORDS_PERCENT, COORDS)
-                    if _[0] and not _[1]:
-                        add_amount_to_potion(kb, True, True, 65)
-                    elif not _[0] and not _[1]:
-                        add_amount_to_potion(kb, True, True, 65, 1)
-                    
-                    _ = detect_add_potions(False, reader, COORDS_PERCENT, COORDS)
-                    if _[0]:
-                        if _[1] and not _[2]:
-                            add_amount_to_potion(kb, True, True, 1)
-                        elif not _[1] and not _[2]:
-                            add_amount_to_potion(kb, True, True, 1, 1)
-                    else:
-                        if _[1] and not _[2]:
-                            add_amount_to_potion(kb, True, True, 1, 1)
-                        elif not _[1] and not _[2]:
-                            add_amount_to_potion(kb, True, True, 1, 2)
+                    mkey.move_to_natural(CLICKS["autocraft_scroll"][0], CLICKS["autocraft_scroll"][1])
+                    time.sleep(delay)
+                    ms.scroll(0, 30); time.sleep(delay)
+                    ms.scroll(0, 30); time.sleep(delay)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_first_amt"][0], CLICKS["autocraft_first_amt"][1])
+                    time.sleep(0.2)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_first_amt"][0], CLICKS["autocraft_first_amt"][1])
+                    time.sleep(delay)
+                    pag.write("100")
+                    time.sleep(delay)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_first_add"][0], CLICKS["autocraft_first_add"][1])
+                    time.sleep(delay)
+                    mkey.move_to_natural(CLICKS["autocraft_scroll"][0], CLICKS["autocraft_scroll"][1])
+                    time.sleep(delay)
+                    ms.scroll(0, 30); time.sleep(delay)
+                    ms.scroll(0, 30); time.sleep(delay)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_second_amt"][0], CLICKS["autocraft_second_amt"][1])
+                    time.sleep(0.2)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_second_amt"][0], CLICKS["autocraft_second_amt"][1])
+                    time.sleep(delay)
+                    pag.write("65")
+                    time.sleep(delay)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_second_add"][0], CLICKS["autocraft_second_add"][1])
+                    time.sleep(delay)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_third_add"][0], CLICKS["autocraft_third_add"][1])
                     
                     if send_item_crafted_notification:
 
-                        _ = detect_add_potions(False, reader, COORDS_PERCENT, COORDS)
+                        _ = detect_add_potions(False, reader, REGIONS)
 
-                        if _[0]:
+                        if _:
                             _prev_f3 = True
                         else:
                             _prev_f3 = False
 
-                    press_craft_button(kb, True, True)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_craft"][0], CLICKS["autocraft_craft"][1])
 
                     if send_item_crafted_notification:
                         _f3_isfull = False
 
-                        _ = detect_add_potions(False, reader, COORDS_PERCENT, COORDS)
+                        _ = detect_add_potions(False, reader, REGIONS)
 
-                        if _[0]:
+                        if _:
                             _f3_isfull = True
                         else:
                             _f3_isfull = False
@@ -2668,113 +2589,78 @@ def auto_craft(webhook, settings: dict, stop_event: threading.Event, sniped_even
                         _prev_f3 = _f3_isfull
                 
                 if settings["auto_craft_item"].get("Void Heart", False):
-                    search_for_potion_in_cauldron(kb, True, True, "Void")
+                    _search("Void")
 
+                    mkey.move_to_natural(CLICKS["autocraft_scroll"][0], CLICKS["autocraft_scroll"][1])
+                    time.sleep(delay)
+                    ms.scroll(0, 30); time.sleep(delay)
+                    ms.scroll(0, 30); time.sleep(delay)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_first_amt"][0], CLICKS["autocraft_first_amt"][1])
                     time.sleep(0.2)
-                    mkey.move_to_natural(round(float(COORDS_PERCENT["scroll_mouse_position"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["scroll_mouse_position"][1] * COORDS["scr_hei"])))
+                    mkey.left_click_xy_natural(CLICKS["autocraft_first_amt"][0], CLICKS["autocraft_first_amt"][1])
+                    time.sleep(delay)
+                    pag.write("50")
+                    time.sleep(delay)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_first_add"][0], CLICKS["autocraft_first_add"][1])
+                    time.sleep(delay)
+                    mkey.move_to_natural(CLICKS["autocraft_scroll"][0], CLICKS["autocraft_scroll"][1])
+                    time.sleep(delay)
+                    ms.scroll(0, 30); time.sleep(delay)
+                    ms.scroll(0, 30); time.sleep(delay)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_second_amt"][0], CLICKS["autocraft_second_amt"][1])
                     time.sleep(0.2)
-                    ms.scroll(0, 30); time.sleep(0.2)
-                    ms.scroll(0, 30); time.sleep(0.2)
-
-                    _ = detect_add_potions(False, reader, COORDS_PERCENT, COORDS)
-
-                    if not _[0]:
-                        add_amount_to_potion(kb, True, True, 50)
-
-                    _ = detect_add_potions(False, reader, COORDS_PERCENT, COORDS)
-                    if _[0] and not _[1]:
-                        add_amount_to_potion(kb, True, True, 5)
-                    elif not _[0] and not _[1]:
-                        add_amount_to_potion(kb, True, True, 5, 1)
-                    
-                    _ = detect_add_potions(False, reader, COORDS_PERCENT, COORDS)
-                    if _[0]:
-                        if _[1] and not _[2]:
-                            add_amount_to_potion(kb, True, True, 2)
-                        elif not _[1] and not _[2]:
-                            add_amount_to_potion(kb, True, True, 2, 1)
-                    else:
-                        if _[1] and not _[2]:
-                            add_amount_to_potion(kb, True, True, 2, 1)
-                        elif not _[1] and not _[2]:
-                            add_amount_to_potion(kb, True, True, 2, 2)
-
-                    mkey.move_to_natural(round(float(COORDS_PERCENT["scroll_mouse_position"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["scroll_mouse_position"][1] * COORDS["scr_hei"])))
+                    mkey.left_click_xy_natural(CLICKS["autocraft_second_amt"][0], CLICKS["autocraft_second_amt"][1])
+                    time.sleep(delay)
+                    pag.write("5")
+                    time.sleep(delay)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_second_add"][0], CLICKS["autocraft_second_add"][1])
+                    time.sleep(delay)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_third_add"][0], CLICKS["autocraft_third_add"][1])
+                    time.sleep(delay)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_third_add"][0], CLICKS["autocraft_third_add"][1])
+                    time.sleep(delay)
+                    ms.scroll(0, -30); time.sleep(delay)
+                    ms.scroll(0, -30); time.sleep(delay)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_second_scrolled_amt"][0], CLICKS["autocraft_second_scrolled_amt"][1])
                     time.sleep(0.2)
-                    ms.scroll(0, -30); time.sleep(0.2)
-                    ms.scroll(0, -30); time.sleep(0.2)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_second_scrolled_amt"][0], CLICKS["autocraft_second_scrolled_amt"][1])
+                    time.sleep(delay)
+                    pag.write("10")
+                    time.sleep(delay)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_second_scrolled_add"][0], CLICKS["autocraft_second_scrolled_add"][1])
 
-                    _s = detect_add_potions(True, reader, COORDS_PERCENT, COORDS)
-
-                    if TGIFRIDAY:
-                        time.sleep(0.2)
-                        mkey.move_to_natural(round(float(COORDS_PERCENT["scroll_mouse_position"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["scroll_mouse_position"][1] * COORDS["scr_hei"])))
-                        time.sleep(0.2)
-                        ms.scroll(0, 30); time.sleep(0.2)
-                        ms.scroll(0, 30); time.sleep(0.2)
-                        _ = detect_add_potions(False, reader, COORDS_PERCENT, COORDS)
-                        moves = get_autocraft_path(_, _s, 5)
-                        if moves != -1:
-                            add_amount_to_potion(kb, True, True, 10, moves)
-                    else:                    
-                        if not _s[2]:
-                            add_amount_to_potion(kb, True, True, 10, 0, True)
-
-                    if TGIFRIDAY:
-                        time.sleep(0.2)
-                        mkey.move_to_natural(round(float(COORDS_PERCENT["scroll_mouse_position"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["scroll_mouse_position"][1] * COORDS["scr_hei"])))
-                        time.sleep(0.2)
-                        ms.scroll(0, 30); time.sleep(0.2)
-                        ms.scroll(0, 30); time.sleep(0.2)
-                        _ = detect_add_potions(False, reader, COORDS_PERCENT, COORDS)
-
+                    ms.scroll(0, -30); time.sleep(delay)
+                    ms.scroll(0, -30); time.sleep(delay)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_third_scrolled_amt"][0], CLICKS["autocraft_third_scrolled_amt"][1])
                     time.sleep(0.2)
-                    mkey.move_to_natural(round(float(COORDS_PERCENT["scroll_mouse_position"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["scroll_mouse_position"][1] * COORDS["scr_hei"])))
-                    time.sleep(0.2)
-                    ms.scroll(0, -30); time.sleep(0.2)
-                    ms.scroll(0, -30); time.sleep(0.2)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_third_scrolled_amt"][0], CLICKS["autocraft_third_scrolled_amt"][1])
+                    time.sleep(delay)
+                    pag.write("10")
+                    time.sleep(delay)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_third_scrolled_add"][0], CLICKS["autocraft_third_scrolled_add"][1])
 
-                    _s = detect_add_potions(True, reader, COORDS_PERCENT, COORDS)
-
-                    if TGIFRIDAY:
-                        time.sleep(0.2)
-                        mkey.move_to_natural(round(float(COORDS_PERCENT["scroll_mouse_position"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["scroll_mouse_position"][1] * COORDS["scr_hei"])))
-                        time.sleep(0.2)
-                        ms.scroll(0, 30); time.sleep(0.2)
-                        ms.scroll(0, 30); time.sleep(0.2)
-                        moves = get_autocraft_path(_, _s, 4)
-                        if moves != -1:
-                            add_amount_to_potion(kb, True, True, 10, moves)
-                    else:
-                    
-                        if not _s[2] and not _s[1]:
-                            add_amount_to_potion(kb, True, True, 10, 1, True)
-                        elif _s[2] and not _s[1]:
-                            add_amount_to_potion(kb, True, True, 10, 0, True)
-                    
-                    time.sleep(0.2)
-                    mkey.move_to_natural(round(float(COORDS_PERCENT["scroll_mouse_position"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["scroll_mouse_position"][1] * COORDS["scr_hei"])))
-                    time.sleep(0.2)
-                    ms.scroll(0, 30); time.sleep(0.2)
-                    ms.scroll(0, 30); time.sleep(0.2)
+                    mkey.move_to_natural(CLICKS["autocraft_scroll"][0], CLICKS["autocraft_scroll"][1])
+                    time.sleep(delay)
+                    ms.scroll(0, -30); time.sleep(delay)
+                    ms.scroll(0, -30); time.sleep(delay)
 
                     if send_item_crafted_notification:
 
-                        _ = detect_add_potions(False, reader, COORDS_PERCENT, COORDS)
+                        _ = detect_add_potions(False, reader, REGIONS)
 
-                        if _[0]:
+                        if _:
                             _prev_void = True
                         else:
                             _prev_void = False
 
-                    press_craft_button(kb, True, True)
+                    mkey.left_click_xy_natural(CLICKS["autocraft_craft"][0], CLICKS["autocraft_craft"][1])
 
                     if send_item_crafted_notification:
                         _void_isfull = False
 
-                        _ = detect_add_potions(False, reader, COORDS_PERCENT, COORDS)
+                        _ = detect_add_potions(False, reader, REGIONS)
 
-                        if _[0]:
+                        if _:
                             _void_isfull = True
                         else:
                             _void_isfull = False
@@ -2795,8 +2681,13 @@ def auto_craft(webhook, settings: dict, stop_event: threading.Event, sniped_even
 
                         _prev_void = _void_isfull
 
+                    mkey.move_to_natural(CLICKS["autocraft_scroll"][0], CLICKS["autocraft_scroll"][1])
+                    time.sleep(delay)
+                    ms.scroll(0, 30); time.sleep(delay)
+                    ms.scroll(0, 30); time.sleep(delay)
+
                     if job == "Void Heart":
-                        press_auto_button(kb, True, True)
+                        mkey.left_click_xy_natural(CLICKS["autocraft_auto"][0], CLICKS["autocraft_auto"][1])
                     time.sleep(1)
 
                 time.sleep(1)
@@ -2805,10 +2696,10 @@ def auto_craft(webhook, settings: dict, stop_event: threading.Event, sniped_even
                 kb.release('f')
                 time.sleep(1)
                 
-                close_cauldron(kb, True, True)
+                mkey.left_click_xy_natural(CLICKS["close_menu"][0], CLICKS["close_menu"][1])
 
                 time.sleep(1)
-                mkey.move_to_natural(round(float(COORDS_PERCENT["scroll_mouse_position"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["scroll_mouse_position"][1] * COORDS["scr_hei"])))
+                mkey.move_to_natural(CLICKS["autocraft_scroll"][0], CLICKS["autocraft_scroll"][1])
                 time.sleep(0.2)
                 ms.scroll(0, -30); time.sleep(0.2)
                 ms.scroll(0, -30); time.sleep(0.2)
@@ -2825,10 +2716,10 @@ def auto_craft(webhook, settings: dict, stop_event: threading.Event, sniped_even
                 kb.release('f')
                 time.sleep(1)
                 
-                close_cauldron(kb, True, True)
+                mkey.left_click_xy_natural(CLICKS["close_menu"][0], CLICKS["close_menu"][1])
 
                 time.sleep(1)
-                mkey.move_to_natural(round(float(COORDS_PERCENT["scroll_mouse_position"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["scroll_mouse_position"][1] * COORDS["scr_hei"])))
+                mkey.move_to_natural(CLICKS["autocraft_scroll"][0], CLICKS["autocraft_scroll"][1])
                 time.sleep(0.2)
                 ms.scroll(0, -30); time.sleep(0.2)
                 ms.scroll(0, -30); time.sleep(0.2)
@@ -2851,6 +2742,7 @@ def auto_br(settings: dict, stop_event: threading.Event, sniped_event: threading
     if stop_event.wait(timeout=5):
         return
     logger.write_log("Auto Biome Randomizer thread started.")
+
     while not stop_event.is_set():
 
         if pause_event.is_set():
@@ -2896,11 +2788,16 @@ def inventory_screenshot(settings: dict, webhook, stop_event: threading.Event, s
         return
     logger.write_log("Periodic Inventory Screenshot thread started.")
 
-    COORDS_PERCENT = get_coords_percent(COORDS)
-
-    if not COORDS_PERCENT:
-        logger.write_log("Could not determine screen ratio.")
+    if not settings.get("calibration"):
+        logger.write_log("A calibration has not been selected.")
         return
+    
+    if not validate_calibrations(settings.get("calibration"), ["open_inventory", "items_btn", "search_bar", "close_menu"]):
+        logger.write_log("Could not verify all calibrations.")
+        return
+    
+    CLICKS = get_calibrations(settings.get("calibration"))
+    delay = 0.2
 
     while not stop_event.is_set():
 
@@ -2912,24 +2809,18 @@ def inventory_screenshot(settings: dict, webhook, stop_event: threading.Event, s
         screenshot_path = os.path.join(MACROPATH, "scr", "screenshot_inventory.png")
         file_to_send = None
         with keyboard_lock:
-            try:
-                open_inventory(kb, False)
-                time.sleep(0.05)
-                search_in_menu(kb, True, False, True, True)
-                time.sleep(0.05)
-                pag.screenshot(screenshot_path)
-                file_to_send = create_discord_file_from_path(screenshot_path, filename="inventory.png")
-                if TGIFRIDAY and check_tab_menu_open(reader, COORDS_PERCENT, COORDS):
-                    kb.press(keyboard.Key.tab)
-                    time.sleep(0.05)
-                    kb.release(keyboard.Key.tab)
-                    time.sleep(0.05)
-                close_menu(kb, True)
-            except Exception as e:
-                logger.write_log(f"Error taking inventory screenshot: {e}")
 
-                try: close_menu(kb, True)
-                except: pass
+            mkey.left_click_xy_natural(CLICKS["open_inventory"][0], CLICKS["open_inventory"][1])
+            time.sleep(delay)
+            mkey.left_click_xy_natural(CLICKS["items_btn"][0], CLICKS["items_btn"][1])
+            time.sleep(delay)
+            mkey.left_click_xy_natural(CLICKS["search_bar"][0], CLICKS["search_bar"][1])
+            time.sleep(delay)
+            pag.screenshot(screenshot_path)
+            file_to_send = create_discord_file_from_path(screenshot_path, filename="inventory.png")
+            time.sleep(delay)
+            mkey.left_click_xy_natural(CLICKS["close_menu"][0], CLICKS["close_menu"][1])
+            time.sleep(delay)
 
         if file_to_send:
             try:
@@ -2958,11 +2849,16 @@ def storage_screenshot(settings: dict, webhook, stop_event: threading.Event, sni
         return
     logger.write_log("Periodic Aura Storage Screenshot thread started.")
 
-    COORDS_PERCENT = get_coords_percent(COORDS)
-
-    if not COORDS_PERCENT:
-        logger.write_log("Could not determine screen ratio.")
+    if not settings.get("calibration"):
+        logger.write_log("A calibration has not been selected.")
         return
+    
+    if not validate_calibrations(settings.get("calibration"), ["open_storage", "search_bar", "close_menu"]):
+        logger.write_log("Could not verify all calibrations.")
+        return
+    
+    CLICKS = get_calibrations(settings.get("calibration"))
+    delay = 0.2
 
     while not stop_event.is_set():
 
@@ -2974,21 +2870,20 @@ def storage_screenshot(settings: dict, webhook, stop_event: threading.Event, sni
         screenshot_path = os.path.join(MACROPATH, "scr", "screenshot_storage.png")
         file_to_send = None
         with keyboard_lock:
-            try:
-                open_storage(kb, True)
-                time.sleep(0.05)
-                pag.screenshot(screenshot_path)
-                file_to_send = create_discord_file_from_path(screenshot_path, filename="storage.png")
-                if TGIFRIDAY and check_tab_menu_open(reader, COORDS_PERCENT, COORDS):
-                    kb.press(keyboard.Key.tab)
-                    time.sleep(0.05)
-                    kb.release(keyboard.Key.tab)
-                    time.sleep(0.05)
-                close_menu(kb, True)
-            except Exception as e:
-                logger.write_log(f"Error taking storage screenshot: {e}")
-                try: close_menu(kb, True)
-                except: pass
+            
+            mkey.left_click_xy_natural(CLICKS["open_storage"][0], CLICKS["open_storage"][1])
+            time.sleep(delay)
+            mkey.left_click_xy_natural(CLICKS["search_bar"][0], CLICKS["search_bar"][1])
+            time.sleep(delay)
+            kb.press(keyboard.Key.backspace)
+            time.sleep(0.2)
+            kb.release(keyboard.Key.backspace)
+            time.sleep(delay)
+            pag.screenshot(screenshot_path)
+            file_to_send = create_discord_file_from_path(screenshot_path, filename="storage.png")
+            time.sleep(delay)
+            mkey.left_click_xy_natural(CLICKS["close_menu"][0], CLICKS["close_menu"][1])
+            time.sleep(delay)
 
         if file_to_send:
             try:
@@ -3003,6 +2898,7 @@ def storage_screenshot(settings: dict, webhook, stop_event: threading.Event, sni
                  )
             except Exception as wh_e:
                 logger.write_log(f"Error sending storage screenshot webhook: {wh_e}")
+
         wait_interval = 1260 
         logger.write_log(f"Storage Screenshot: Waiting {wait_interval} seconds...")
         if stop_event.wait(timeout=wait_interval):
@@ -3133,6 +3029,7 @@ def do_obby(settings: dict, webhook, stop_event: threading.Event, sniped_event: 
     if stop_event.wait(timeout=5):
         return
     logger.write_log("Obby Blessing thread started.")
+    nav_mode = settings.get("interaction_type", "Mouse")
 
     is_autocraft = settings.get("mode", "Normal") == "Auto Craft"
     has_abyssal = settings.get("has_abyssal_hunter", False)
@@ -3143,7 +3040,17 @@ def do_obby(settings: dict, webhook, stop_event: threading.Event, sniped_event: 
         logger.write_log("Obby thread not started due to missing paths.")
         return
     
-    COORDS_PERCENT = get_coords_percent(COORDS)
+    if not settings.get("calibration"):
+        logger.write_log("A calibration has not been selected.")
+        return
+    
+    if not validate_calibrations(settings.get("calibration"), ["questboard_right", "questboard_left", "questboard_exit", "questboard_dismiss", "questboard_accept", "close_menu"]):
+        logger.write_log("Could not verify all calibrations.")
+        return
+    
+    CLICKS = get_calibrations(settings.get("calibration"))
+    delay = 0.2
+    VIP_STATUS = settings.get("vip_status", "No VIP")
 
     while not stop_event.is_set():
 
@@ -3158,16 +3065,27 @@ def do_obby(settings: dict, webhook, stop_event: threading.Event, sniped_event: 
                 time.sleep(1)
                 reset_character()
                 time.sleep(1)
-                collection_align(kb, True)
+                mkey.left_click_xy_natural(CLICKS["collection"][0], CLICKS["collection"][1])
+                time.sleep(1)
+                mkey.left_click_xy_natural(CLICKS["exit_collection"][0], CLICKS["exit_collection"][1])
+                time.sleep(1)
             except Exception as e:
                 logger.write_log(f"Error during obby alignment: {e}")
                 continue
 
-            if not has_abyssal:
+            if nav_mode in ["VIP", "VIP+"]:
+
+                obby_vip.run_macro(obby_vip.macro_actions)
+            
+            else:
+                # obby.run_macro(obby.macro_actions)
+                pass
+
+            """if not has_abyssal:
                 logger.write_log("Begin Phase 1 of Obby")
                 #obby.run_macro()
-                """try:
-                    close_check(kb, True)
+                try:
+                    mkey.left_click_xy_natural(CLICKS["close_menu"][0], CLICKS["close_menu"][1])
                     time.sleep(0.4)
                     right_click_drag(500, 0)
                     time.sleep(0.4)
@@ -3232,7 +3150,7 @@ def do_obby(settings: dict, webhook, stop_event: threading.Event, sniped_event: 
                     time.sleep(1)
                 except Exception as e:
                     logger.write_log(f"Error during obby phase 4: {e}")
-                    continue"""
+                    continue
             else:
                 saved_aura = None
                 while saved_aura is None:
@@ -3246,7 +3164,7 @@ def do_obby(settings: dict, webhook, stop_event: threading.Event, sniped_event: 
                 logger.write_log("Begin Phase 1 of Obby")
                 try:
                     time.sleep(1)
-                    mkey.move_to_natural(round(float(COORDS_PERCENT["close_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["close_pos"][1] * COORDS["scr_hei"])))
+                    mkey.left_click_xy_natural(CLICKS["close_menu"][0], CLICKS["close_menu"][1])
                     time.sleep(0.4)
                     right_click_drag(500, 0)
                     time.sleep(0.4)
@@ -3318,7 +3236,7 @@ def do_obby(settings: dict, webhook, stop_event: threading.Event, sniped_event: 
                 if saved_aura:
                     equip_aura(saved_aura, False, mkey, kb, settings, ignore_next_detection, ignore_lock, reader)
                 else:
-                    equip_aura("Abyssal", True, mkey, kb, settings, ignore_next_detection, ignore_lock, reader)
+                    equip_aura("Abyssal", True, mkey, kb, settings, ignore_next_detection, ignore_lock, reader)"""
 
             logger.write_log("Completed obby, realigning incase of failure.")
             try:
@@ -3326,9 +3244,9 @@ def do_obby(settings: dict, webhook, stop_event: threading.Event, sniped_event: 
                 time.sleep(1)
                 reset_character()
                 time.sleep(1)
-                mkey.left_click_xy_natural(round(float(COORDS_PERCENT["collection_open_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["collection_open_pos"][1] * COORDS["scr_hei"])))
-                time.sleep(0.5)
-                mkey.left_click_xy_natural(round(float(COORDS_PERCENT["exit_collection_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["exit_collection_pos"][1] * COORDS["scr_hei"])))
+                mkey.left_click_xy_natural(CLICKS["collection"][0], CLICKS["collection"][1])
+                time.sleep(1)
+                mkey.left_click_xy_natural(CLICKS["exit_collection"][0], CLICKS["exit_collection"][1])
                 time.sleep(1)
             except Exception as e:
                 logger.write_log(f"Error during obby alignment: {e}")
@@ -3358,9 +3276,9 @@ def do_obby(settings: dict, webhook, stop_event: threading.Event, sniped_event: 
                     time.sleep(1)
                     reset_character()
                     time.sleep(1)
-                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["collection_open_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["collection_open_pos"][1] * COORDS["scr_hei"])))
-                    time.sleep(0.5)
-                    mkey.left_click_xy_natural(round(float(COORDS_PERCENT["exit_collection_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["exit_collection_pos"][1] * COORDS["scr_hei"])))
+                    mkey.left_click_xy_natural(CLICKS["collection"][0], CLICKS["collection"][1])
+                    time.sleep(1)
+                    mkey.left_click_xy_natural(CLICKS["exit_collection"][0], CLICKS["exit_collection"][1])
                     time.sleep(1)
                 except Exception as e:
                     logger.write_log(f"Error during camera alignment: {e}")
@@ -3368,40 +3286,7 @@ def do_obby(settings: dict, webhook, stop_event: threading.Event, sniped_event: 
 
                 logger.write_log("Begin position alignment.")
 
-                if not has_abyssal:
-                    try:
-                        mkey.move_to_natural(round(float(COORDS_PERCENT["close_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["close_pos"][1] * COORDS["scr_hei"])))
-                        time.sleep(0.4)
-                        right_click_drag(1000, 0)
-                        time.sleep(0.4)
-                        kb.press("d")
-                        time.sleep(3)
-                        kb.release("d")
-                        time.sleep(0.4)
-                        kb.press("w")
-                        time.sleep(8)
-                        kb.release("w")
-                        time.sleep(0.4)
-                        kb.press("a")
-                        time.sleep(3)
-                        kb.release("a")
-                        time.sleep(0.4)
-                        kb.press("w")
-                        time.sleep(1)
-                        kb.release("w")
-                        time.sleep(0.4)
-                        kb.press("d")
-                        time.sleep(0.75)
-                        kb.release("d")
-                        time.sleep(0.4)
-                        kb.press("w")
-                        time.sleep(1)
-                        kb.release("w")
-                    except Exception as e:
-                        logger.write_log(f"Error during position alignment: {e}")
-                        continue
-
-                else:
+                if has_abyssal:
                     saved_aura = None
                     while saved_aura is None:
                         try:
@@ -3413,7 +3298,7 @@ def do_obby(settings: dict, webhook, stop_event: threading.Event, sniped_event: 
                     equip_aura("Abyssal", False, mkey, kb, settings, ignore_next_detection, ignore_lock, reader)
                     time.sleep(2)
                     try:
-                        mkey.move_to_natural(round(float(COORDS_PERCENT["close_pos"][0] * COORDS["scr_wid"])), round(float(COORDS_PERCENT["close_pos"][1] * COORDS["scr_hei"])))
+                        mkey.left_click_xy_natural(CLICKS["close_menu"][0], CLICKS["close_menu"][1])
                         time.sleep(0.4)
                         right_click_drag(1000, 0)
                         time.sleep(0.4)
@@ -3450,15 +3335,20 @@ def do_obby(settings: dict, webhook, stop_event: threading.Event, sniped_event: 
 
                 if not has_abyssal:
                     try:
-                        right_click_drag(0, 600)
-                        time.sleep(1)
-                        run_macro(f"{PATH_DIR}/stella.mms")
+                        if VIP_STATUS in ["VIP", "VIP+"]:
+                            stella_vip.run_macro(qb_vip.macro_actions)
+                        elif VIP_STATUS == "No VIP":
+                            #stella.run_macro(stella.macro_actions)
+                            continue
+                        else:
+                            continue
                         time.sleep(1)
                     except Exception as e:
                         logger.write_log(f"Error during walk to Stella's: {e}")
                         continue
                 else:
-                    try:
+                    continue
+                    """try:
                         right_click_drag(0, 600)
                         time.sleep(1)
                         run_macro(f"{PATH_DIR}/stella_abyssal.mms")
@@ -3469,7 +3359,7 @@ def do_obby(settings: dict, webhook, stop_event: threading.Event, sniped_event: 
                     if saved_aura:
                         equip_aura(saved_aura, False, mkey, kb, settings, ignore_next_detection, ignore_lock, reader)
                     else:
-                        equip_aura("Abyssal", True, mkey, kb, settings, ignore_next_detection, ignore_lock, reader)
+                        equip_aura("Abyssal", True, mkey, kb, settings, ignore_next_detection, ignore_lock, reader)"""
             
             elif afk_in_limbo and not is_idle_mode:
                 logger.write_log("Teleporting back to limbo...")
@@ -3486,6 +3376,7 @@ def do_obby(settings: dict, webhook, stop_event: threading.Event, sniped_event: 
 
 def auto_questboard(settings: dict, webhook, stop_event: threading.Event, sniped_event: threading.Event, keyboard_lock: threading.Lock, mkey, kb, ms, reader, pause_event):
     logger = get_logger()
+    nav_mode = settings.get("interaction_type", "Mouse")
     if stop_event.wait(timeout=5):
         return
     logger.write_log("Auto Quest Board thread started.")
@@ -3512,11 +3403,21 @@ def auto_questboard(settings: dict, webhook, stop_event: threading.Event, sniped
         logger.write_log(f"Error loading tracked quests: {e}. Auto Quest Board stopped.")
         return
     
-    if not IMPORTED_ALL_PATHS:
-        logger.write_log("Could not start auto quest due to missing paths.")
+    if not settings.get("calibration"):
+        logger.write_log("A calibration has not been selected.")
         return
     
-    COORDS_PERCENT = get_coords_percent(COORDS)
+    if not validate_calibrations(settings.get("calibration"), ["collection", "exit_collection", "close_menu"]):
+        logger.write_log("Could not verify all calibrations.")
+        return
+    
+    if not validate_regions(settings.get("calibration"), ["questboard_quest_region"]):
+        logger.write_log("Could not start auto questboard: Calibration is invalid.")
+        return
+    
+    CLICKS = get_calibrations(settings.get("calibration"))
+    REGIONS = get_regions(settings.get("calibration"))
+    delay = 0.2
 
     VIP_STATUS = settings.get("vip_status", "No VIP")
     afk_in_limbo = settings.get("mode", "Normal") == "Limbo"
@@ -3536,14 +3437,19 @@ def auto_questboard(settings: dict, webhook, stop_event: threading.Event, sniped
             time.sleep(1)
             reset_character()
             time.sleep(1)
-            collection_align(kb, True)
+            mkey.left_click_xy_natural(CLICKS["collection"][0], CLICKS["collection"][1])
+            time.sleep(1)
+            mkey.left_click_xy_natural(CLICKS["exit_collection"][0], CLICKS["exit_collection"][1])
             time.sleep(1)
             if VIP_STATUS in ["VIP", "VIP+"]:
                 qb_vip.run_macro(qb_vip.macro_actions)
             elif VIP_STATUS == "No VIP":
-                questboard.run_macro(questboard.macro_actions)
+                #questboard.run_macro(questboard.macro_actions)
+                return
             else:
                 logger.write_log(f"VIP Status ({VIP_STATUS}) is unrecognised.")
+                return
+            
             time.sleep(1)
             kb.press("e")
             time.sleep(0.2)
@@ -3554,7 +3460,6 @@ def auto_questboard(settings: dict, webhook, stop_event: threading.Event, sniped
 
             detected_quests = []
 
-            next_quest(kb, True, True)
             time.sleep(1)
 
             for i in range(5):
@@ -3565,11 +3470,7 @@ def auto_questboard(settings: dict, webhook, stop_event: threading.Event, sniped
                     logger.write_log("Auto Quest Board Error: Failed to read screenshot file.")
                     continue
                 
-                x1p, y1p, x2p, y2p = COORDS_PERCENT["questboard_title_range"]
-                x1 = round(x1p * COORDS["scr_wid"])
-                y1 = round(y1p * COORDS["scr_hei"])
-                x2 = round(x2p * COORDS["scr_wid"])
-                y2 = round(y2p * COORDS["scr_hei"])
+                x1, y1, x2, y2 = REGIONS["questboard_quest_region"]
 
                 quest_title_crop = image[y1:y2, x1:x2]
                 ocr_results = reader.readtext(quest_title_crop, detail=0)
@@ -3578,15 +3479,10 @@ def auto_questboard(settings: dict, webhook, stop_event: threading.Event, sniped
                 ocr_quest_clean = re.sub(r"[^a-zA-Z']", "", ocr_quest_raw).lower()
                 detected_quest = fuzzy_match_qb(ocr_quest_clean, ALL_QB)
 
-                if TGIFRIDAY and check_tab_menu_open(reader, COORDS_PERCENT, COORDS):
-                    kb.press(keyboard.Key.tab)
-                    time.sleep(0.05)
-                    kb.release(keyboard.Key.tab)
-                    time.sleep(0.05)
-
                 if not detected_quest:
-                    logger.write_log(f"Auto Quest Board: Could not identify quest from OCR ('{ocr_quest_raw}'). Dismissing.")
-                    dismiss_quest(kb, True, True)
+                    logger.write_log(f"Auto Quest Board: Could not identify quest from OCR ('{ocr_quest_raw}'). Dismissing.") 
+                    mkey.left_click_xy_natural(CLICKS["questboard_dismiss"][0], CLICKS["questboard_dismiss"][1])
+                    time.sleep(1)
                 else:
                     logger.write_log(f"Auto Quest Board: Detected Quest ('{detected_quest}')")
 
@@ -3596,11 +3492,12 @@ def auto_questboard(settings: dict, webhook, stop_event: threading.Event, sniped
 
                         if not quest_data:
                             logger.write_log(f"Auto Quest Board: Could not find data for quest ('{detected_quest}'). Skipping")
-                            dismiss_quest(kb, True, True)
+                            mkey.left_click_xy_natural(CLICKS["questboard_dismiss"][0], CLICKS["questboard_dismiss"][1])
+                            time.sleep(1)
                         else:
                             if settings.get("quests_to_accept", {}).get(detected_quest, False) and detected_quest not in tracked_quests.get("quest_board", []) and len(tracked_quests.get("quest_board", [])) <= 3:
                                 logger.write_log(f"Auto Quest Board: Accepted Quest ('{detected_quest}')")
-                                accept_quest(kb, True, True)
+                                mkey.left_click_xy_natural(CLICKS["questboard_accept"][0], CLICKS["questboard_accept"][1])
                                 time.sleep(0.2)
                                 tracked_quests["quest_board"].append(detected_quest)
                                 previous_quest = detected_quest
@@ -3635,13 +3532,15 @@ def auto_questboard(settings: dict, webhook, stop_event: threading.Event, sniped
                                     secondary_urls=settings.get("SECONDARY_WEBHOOK_URLS", []),
                                     embed=emb
                                 )
-                                next_quest(kb, True, True)
+                                mkey.left_click_xy_natural(CLICKS["questboard_right"][0], CLICKS["questboard_right"][1])
+                                time.sleep(0.2)
                             elif detected_quest in tracked_quests.get("quest_board", []):
                                 if previous_quest == detected_quest:
                                     logger.write_log("Quest already accepted and same as previous quest, therefore no more quests.")
                                     break
                                 logger.write_log("Quest already accepted, attempting to claim.")
-                                accept_quest(kb, True, True)
+                                mkey.left_click_xy_natural(CLICKS["questboard_accept"][0], CLICKS["questboard_accept"][1])
+                                time.sleep(0.2)
                                 previous_quest = detected_quest
 
                                 time.sleep(2)
@@ -3653,11 +3552,7 @@ def auto_questboard(settings: dict, webhook, stop_event: threading.Event, sniped
                                     logger.write_log("Auto Quest Board Error: Failed to read screenshot file.")
                                     continue
                                 
-                                x1p, y1p, x2p, y2p = COORDS_PERCENT["questboard_title_range"]
-                                x1 = round(x1p * COORDS["scr_wid"])
-                                y1 = round(y1p * COORDS["scr_hei"])
-                                x2 = round(x2p * COORDS["scr_wid"])
-                                y2 = round(y2p * COORDS["scr_hei"])
+                                x1, y1, x2, y2 = REGIONS["questboard_quest_region"]
 
                                 quest_title_crop = image[y1:y2, x1:x2]
                                 ocr_results = reader.readtext(quest_title_crop, detail=0)
@@ -3669,7 +3564,8 @@ def auto_questboard(settings: dict, webhook, stop_event: threading.Event, sniped
                                 if previous_quest == detected_quest:
                                     logger.write_log("Quest is not yet completed, moving to next quest.")
                                     time.sleep(3)
-                                    next_quest(kb, True, True)
+                                    mkey.left_click_xy_natural(CLICKS["questboard_right"][0], CLICKS["questboard_right"][1])
+                                    time.sleep(0.2)
                                 else:
                                     logger.write_log("Quest was completed, removing from tracked quests.")
                                     tracked_quests["quest_board"].remove(previous_quest)
@@ -3706,15 +3602,18 @@ def auto_questboard(settings: dict, webhook, stop_event: threading.Event, sniped
                                     )
                             else:
                                 logger.write_log(f"Auto Quest Board: Quest ('{detected_quest}') is set to be dismissed.")
-                                dismiss_quest(kb, True, True)
+                                mkey.left_click_xy_natural(CLICKS["questboard_dismiss"][0], CLICKS["questboard_dismiss"][1])
+                                time.sleep(1)
                                 previous_quest = detected_quest
                     else:
                         logger.write_log(f"Auto Quest Board: Quest ('{detected_quest}') is not supported yet, dismissing.")
-                        dismiss_quest(kb, True, True)
+                        mkey.left_click_xy_natural(CLICKS["questboard_dismiss"][0], CLICKS["questboard_dismiss"][1])
+                        time.sleep(1)
                         previous_quest = detected_quest
                     time.sleep(3)
 
-            exit_quest(kb, True, True)
+            mkey.left_click_xy_natural(CLICKS["questboard_exit"][0], CLICKS["questboard_exit"][1])
+            time.sleep(1)
             time.sleep(3)
             reset_character()
             time.sleep(1)
@@ -3736,6 +3635,16 @@ def auto_pop(biome: str, settings: dict, stop_event: threading.Event, keyboard_l
     logger.write_log(f"Auto Pop sequence initiated for biome: {biome}")
     biome_lower = biome.lower()
 
+    if not settings.get("calibration"):
+        logger.write_log("A calibration has not been selected.")
+        return
+    
+    if not validate_calibrations(settings.get("calibration"), ["collection", "exit_collection", "close_menu"]):
+        logger.write_log("Could not verify all calibrations.")
+        return
+    
+    CLICKS = get_calibrations(settings.get("calibration"))
+
     if biome_lower == "glitched" and settings.get("pop_in_glitch", False):
         pop_settings = settings.get("auto_use_items_in_glitch", {})
     elif biome_lower == "dreamspace" and settings.get("pop_in_dreamspace", False):
@@ -3748,12 +3657,21 @@ def auto_pop(biome: str, settings: dict, stop_event: threading.Event, keyboard_l
         logger.write_log("Auto Pop: Changing cutscene settings...")
         with keyboard_lock:
             try:
-                change_rolling_cutscene(kb, True, True, 9999999999)
-                close_menu(kb, True, True)
+                mkey.left_click_xy_natural(CLICKS["menu"][0], CLICKS["menu"][1])
+                time.sleep(1)
+                mkey.left_click_xy_natural(CLICKS["settings"][0], CLICKS["settings"][1])
+                time.sleep(1)
+                mkey.left_click_xy_natural(CLICKS["rolling"][0], CLICKS["rolling"][1])
+                time.sleep(1)
+                mkey.left_click_xy_natural(CLICKS["cutscene_skip"][0], CLICKS["cutscene_skip"][1])
+                time.sleep(1)
+                pag.write("9999999999")
+                mkey.left_click_xy_natural(CLICKS["close_menu"][0], CLICKS["close_menu"][1])
+                time.sleep(1)                
             except Exception as cs_e:
                 logger.write_log(f"Error changing cutscene settings: {cs_e}")
 
-                try: close_check(kb, True)
+                try: mkey.left_click_xy_natural(CLICKS["close_menu"][0], CLICKS["close_menu"][1])
                 except: pass
 
     item_keys = list(pop_settings.keys()) 
@@ -3807,6 +3725,18 @@ def eden_detection(settings: dict, webhook, stop_event: threading.Event, keyboar
     logger.write_log("Starting Eden Detection...")
 
     previous_spawn = 0
+
+    if not settings.get("calibration"):
+        logger.write_log("A calibration has not been selected.")
+        return
+    
+    if not validate_calibrations(settings.get("calibration"), ["collection", "exit_collection", "close_menu"]):
+        logger.write_log("Could not verify all calibrations.")
+        return
+    
+    CLICKS = get_calibrations(settings.get("calibration"))
+    delay = 0.2
+    VIP_STATUS = settings.get("vip_status", "No VIP")
     
     while not stop_event.is_set():
         
@@ -3845,10 +3775,19 @@ def eden_detection(settings: dict, webhook, stop_event: threading.Event, keyboar
                     logger.write_log("Teleporting to limbo...")
                     use_item("Portable Crack", 1, True, mkey, kb, settings, reader)
                     time.sleep(1)
-                    collection_align(kb, True)
+                    mkey.left_click_xy_natural(CLICKS["collection"][0], CLICKS["collection"][1])
+                    time.sleep(1)
+                    mkey.left_click_xy_natural(CLICKS["exit_collection"][0], CLICKS["exit_collection"][1])
                     time.sleep(1)
 
-                    #eden_vip.run_macro()
+                    if VIP_STATUS in ["VIP", "VIP+"]:
+                        eden_vip.run_macro(eden_vip.macro_actions)
+                    elif VIP_STATUS == "No VIP":
+                        #eden.run_macro(eden.macro_actions)
+                        return
+                    else:
+                        logger.write_log(f"VIP Status ({VIP_STATUS}) is unrecognised.")
+                        return
 
                 previous_spawn = time_of_spawn
     

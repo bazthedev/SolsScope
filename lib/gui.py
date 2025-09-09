@@ -2140,7 +2140,6 @@ class MainWindow(QMainWindow):
             "AllanQute (_justalin) - Path inspiration",
             "dolphSol - Creative inspiration",
             "Mr. Void - Helping to create the logic for the new auto craft",
-            "gummyballer - Helping with calibrations"
         ]
         
         right_acks = [

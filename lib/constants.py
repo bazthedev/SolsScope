@@ -262,7 +262,7 @@ TOOLTIPS = {
     "interaction_type" : "Choose how you want the Macro to perform actions in the game.",
     "enable_player_logger" : "Enable the player logger for biomes other than glitched/dreamspace.",
     "calibration" : "How the macro runs based on your screen size.",
-    #"watch_ad_for_autocraft" : "Watch the add every hour to get increased rates."
+    #"watch_ad_for_autocraft" : "Watch the add every hour to get increased rates.",
 }
 
 DONOTDISPLAY = ["__version__", "current_theme"]

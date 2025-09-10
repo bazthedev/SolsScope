@@ -752,7 +752,7 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
                         logger.write_log("Merchant Detection Error: Failed to read screenshot file.")
                         continue
 
-                    x1, y1, x2, y2 = REGIONS["merchant_box"]
+                    x1, y1, x2, y2 = REGIONS["merchant_name"]
                     merchant_crop = image[y1:y2, x1:x2]
                     
                     ocr_results = reader.readtext(merchant_crop, detail=0)
@@ -1072,7 +1072,7 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
                                         logger.write_log("Merchant Detection Error: Failed to read screenshot file.")
                                         continue
 
-                                    x1, y1, x2, y2 = REGIONS["merchant_box"]
+                                    x1, y1, x2, y2 = REGIONS["merchant_name"]
                                     merchant_crop = image[y1:y2, x1:x2]
                                     
                                     ocr_results = reader.readtext(merchant_crop, detail=0)

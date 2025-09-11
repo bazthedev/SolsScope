@@ -38,7 +38,7 @@ from constants import (
     ACTIONS_KEYS, MARI_MERCHANT_KEYS, JESTER_MERCHANT_KEYS, AUTOCRAFT_ITEM_KEYS,
     BIOME_CONFIG_KEYS, GLITCHED_ITEMS_KEYS, DREAMSPACE_ITEMS_KEYS,
     DONOTDISPLAY, LIMBO_KEYS, DONOTACCEPTRESET, TOOLTIPS, SKIP_DLS_KEYS,
-    MACRO_OVERRIDES, UINAV_CONTROLS_KEYS
+    MACRO_OVERRIDES, ACTIONS_CONFIG
 )
 from utils import (
     get_logger, set_global_logger, Logger, format_key, 
@@ -1446,8 +1446,8 @@ class MainWindow(QMainWindow):
         button_layout = QVBoxLayout(button_frame)
         button_layout.setSpacing(10)
         
-        uinav_button = QPushButton("UI Navigation Controls")
-        uinav_button.setToolTip("Toggle UI Navigation options.")
+        uinav_button = QPushButton("Actions Controls")
+        uinav_button.setToolTip("Toggle Actions options.")
         uinav_button.clicked.connect(self.open_uinav_controls_settings)
         uinav_button.setStyleSheet("text-align: left; padding: 8px; font-size: 11px;")
         uinav_button.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
@@ -1772,7 +1772,7 @@ class MainWindow(QMainWindow):
             self.show_status_message("Macro Overrides saved successfully!", 3000)
 
     def open_uinav_controls_settings(self):
-        """Open UI Navigation Controls dialog."""
+        """Open Actions Controls dialog."""
         current_settings = load_settings()
         dialog = UINavControls(current_settings, self)
         
@@ -1783,7 +1783,7 @@ class MainWindow(QMainWindow):
                 current_settings[key] = value
             # Save settings
             update_settings(current_settings)
-            self.show_status_message("UI Navigation Controls saved successfully!", 3000)
+            self.show_status_message("Action Controls saved successfully!", 3000)
 
     def show_status_message(self, message, timeout=2000):
         """Show a temporary status message."""
@@ -3522,4 +3522,4 @@ class UINavControls(SettingsDialog):
     """Dialog for Macro Overrides."""
     
     def __init__(self, settings, parent=None):
-        super().__init__("UI Navigation Controls", UINAV_CONTROLS_KEYS, settings, parent)
+        super().__init__("Actions Configuration", ACTIONS_CONFIG, settings, parent)

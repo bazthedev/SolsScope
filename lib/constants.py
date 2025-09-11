@@ -199,7 +199,10 @@ DEFAULTSETTINGS = {
     "interaction_type" : "Mouse",
     "enable_player_logger" : True,
     "calibration" : "",
-    #"watch_ad_for_autocraft" : False
+    #"watch_ad_for_autocraft" : False,
+    "typing_delay" : 0.2,
+    "typing_hold" : 0.2,
+    "typing_jitter" : 0.1
 }
 
 VALIDSETTINGSKEYS = list(DEFAULTSETTINGS.keys())
@@ -263,6 +266,9 @@ TOOLTIPS = {
     "enable_player_logger" : "Enable the player logger for biomes other than glitched/dreamspace.",
     "calibration" : "How the macro runs based on your screen size.",
     #"watch_ad_for_autocraft" : "Watch the add every hour to get increased rates.",
+    "typing_delay" : "How long typing waits between each character.",
+    "typing_hold" : "How long typing holds a key for (max about 0.3-0.5)",
+    "typing_jitter" : "Random amount added to delay to act human."
 }
 
 DONOTDISPLAY = ["__version__", "current_theme"]
@@ -279,7 +285,7 @@ MARI_MERCHANT_KEYS = ["ping_mari", "mari_ping_id", "auto_purchase_items_mari"]
 JESTER_MERCHANT_KEYS = ["ping_jester", "jester_ping_id", "auto_purchase_items_jester", "amount_of_item_to_sell", "items_to_sell"]
 AUTOCRAFT_ITEM_KEYS = ["auto_craft_item", "skip_auto_mode_warning", "do_not_walk_to_stella"]
 
-UINAV_CONTROLS_KEYS = ["enable_ui_nav_key", "delay", "use_alternate_uinav"]
+ACTIONS_CONFIG = ["enable_ui_nav_key", "delay", "typing_delay", "typing_hold", "typing_jitter", "use_alternate_uinav"]
 
 BIOME_CONFIG_KEYS = ["biomes"]
 GLITCHED_ITEMS_KEYS = ["auto_use_items_in_glitch"]

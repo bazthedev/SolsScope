@@ -22,7 +22,6 @@ import re
 from PIL import ImageGrab
 from gc import collect
 from itertools import cycle
-import queue
 
 try:
     import cv2
@@ -54,7 +53,7 @@ from utils import (
     fuzzy_match_merchant, exists_procs_by_name, validate_pslink, fuzzy_match_auto_sell,
     fuzzy_match_qb, rgb2hex, right_click_drag, left_click_drag, resolve_full_aura_name,
     get_coords_percent, convert_boxes, detect_add_potions, check_tab_menu_open,
-    get_autocraft_path
+    get_autocraft_path, _type
 )
 from roblox_utils import (
     get_latest_equipped_aura, get_latest_hovertext, detect_client_disconnect,
@@ -74,7 +73,7 @@ from uinav import (
     search_for_potion_in_cauldron, press_craft_button, press_auto_button,
     accept_quest, dismiss_quest, next_quest, exit_quest, search_for_aura, equip_selected_aura,
     add_amount_to_potion, close_cauldron, TGIFRIDAY, merchant_skip_dialogue, open_jester_ex,
-    load_keybind
+    load_keybind, load_delay
 )
 
 import mousenav
@@ -90,7 +89,7 @@ def use_item(item_name: str, amount: int, _close_menu: bool, mkey, kb, settings:
     logger.write_log(f"Attempting to use item: {item_name} (Amount: {amount})")
 
 
-    delay = 0.2
+    delay = load_delay()
 
     if not settings.get("calibration"):
         logger.write_log("A calibration has not been selected.")
@@ -110,7 +109,7 @@ def use_item(item_name: str, amount: int, _close_menu: bool, mkey, kb, settings:
         time.sleep(delay)
         mkey.left_click_xy_natural(CLICKS["search_bar"][0], CLICKS["search_bar"][1])
         time.sleep(delay)
-        pag.write(item_name, interval=0.3)
+        _type(kb, settings.get("typing_jitter", 0.2), settings.get("typing_delay", 0.2), settings.get("typing_hold", 0.2), item_name)
         time.sleep(delay)
         mkey.left_click_xy_natural(CLICKS["first_inv_item"][0], CLICKS["first_inv_item"][1])
         time.sleep(delay)
@@ -122,7 +121,7 @@ def use_item(item_name: str, amount: int, _close_menu: bool, mkey, kb, settings:
         kb.release("a")
         kb.release(keyboard.Key.ctrl)
         time.sleep(0.05)
-        pag.write(str(amount), interval=0.3)
+        _type(kb, settings.get("typing_jitter", 0.2), settings.get("typing_delay", 0.2), settings.get("typing_hold", 0.2), str(amount))
         time.sleep(1)
         kb.press(keyboard.Key.enter)
         time.sleep(0.05)
@@ -153,7 +152,7 @@ def equip_aura(aura_name, unequip, mkey, kb, settings: dict, ignore_next_detecti
         logger.write_log(f"Error loading auras data for detection: {e}. Aura detection stopped.")
         return
     
-    delay = 0.2
+    delay = load_delay()
 
     if not settings.get("calibration"):
         logger.write_log("A calibration has not been selected.")
@@ -190,7 +189,7 @@ def equip_aura(aura_name, unequip, mkey, kb, settings: dict, ignore_next_detecti
         time.sleep(0.2)
         kb.release(keyboard.Key.backspace)
         time.sleep(delay)
-        pag.write(aura_name, interval=0.3)
+        _type(kb, settings.get("typing_jitter", 0.2), settings.get("typing_delay", 0.2), settings.get("typing_hold", 0.2), aura_name)
         mkey.left_click_xy_natural(CLICKS["first_aura_position"][0], CLICKS["first_aura_position"][1])
         time.sleep(delay)
         mkey.left_click_xy_natural(CLICKS["equip_aura"][0], CLICKS["equip_aura"][1])
@@ -678,7 +677,7 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
     CLICKS = get_calibrations(settings.get("calibration"))
     REGIONS = get_regions(settings.get("calibration"))
 
-    delay = 0.2
+    delay = load_delay()
 
     ps_link_valid = validate_pslink(settings.get("private_server_link", ""))
 
@@ -1018,6 +1017,11 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
                     except Exception:
                         pass
 
+                    if afk_in_limbo and not is_idle_mode:
+                        logger.write_log("Teleporting back to limbo...")
+                        use_item("Portable Crack", 1, True, mkey, kb, settings, reader)
+                        time.sleep(0.5)
+
     elif md_type == "Logs":
 
         previous_merchant = (None, time.time())
@@ -1337,6 +1341,11 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
                                         mkey.left_click_xy_natural(CLICKS["merchant_close"][0], CLICKS["merchant_close"][1])
                                     except Exception:
                                         pass
+
+                                    if afk_in_limbo and not is_idle_mode:
+                                        logger.write_log("Teleporting back to limbo...")
+                                        use_item("Portable Crack", 1, True, mkey, kb, settings, reader)
+                                        time.sleep(0.5)
                         
                         else:
                             ping_content = ""
@@ -1546,7 +1555,7 @@ def auto_craft(webhook, settings: dict, stop_event: threading.Event, sniped_even
     CLICKS = get_calibrations(settings.get("calibration"))
     REGIONS = get_regions(settings.get("calibration"))
 
-    delay = 0.2
+    delay = load_delay()
 
     def _search(potion_name : str):
         kb.press("f")
@@ -1566,7 +1575,7 @@ def auto_craft(webhook, settings: dict, stop_event: threading.Event, sniped_even
         ms.scroll(0, 30); time.sleep(delay)
         mkey.left_click_xy_natural(CLICKS["autocraft_search"][0], CLICKS["autocraft_search"][1])
         time.sleep(delay)
-        pag.write(potion_name, interval=0.3)
+        _type(kb, settings.get("typing_jitter", 0.2), settings.get("typing_delay", 0.2), settings.get("typing_hold", 0.2), potion_name)
         time.sleep(delay)
         mkey.left_click_xy_natural(CLICKS["autocraft_first_potion"][0], CLICKS["autocraft_first_potion"][1])
         time.sleep(delay)
@@ -1595,7 +1604,7 @@ def auto_craft(webhook, settings: dict, stop_event: threading.Event, sniped_even
                     time.sleep(0.2)
                     mkey.left_click_xy_natural(CLICKS["autocraft_first_amt"][0], CLICKS["autocraft_first_amt"][1])
                     time.sleep(delay)
-                    pag.write("20", interval=0.3)
+                    _type(kb, settings.get("typing_jitter", 0.2), settings.get("typing_delay", 0.2), settings.get("typing_hold", 0.2), "20")
                     time.sleep(delay)
                     mkey.left_click_xy_natural(CLICKS["autocraft_first_add"][0], CLICKS["autocraft_first_add"][1])
 
@@ -1651,7 +1660,7 @@ def auto_craft(webhook, settings: dict, stop_event: threading.Event, sniped_even
                     time.sleep(0.2)
                     mkey.left_click_xy_natural(CLICKS["autocraft_first_amt"][0], CLICKS["autocraft_first_amt"][1])
                     time.sleep(delay)
-                    pag.write("10", interval=0.3)
+                    _type(kb, settings.get("typing_jitter", 0.2), settings.get("typing_delay", 0.2), settings.get("typing_hold", 0.2), "10")
                     time.sleep(delay)
                     mkey.left_click_xy_natural(CLICKS["autocraft_first_add"][0], CLICKS["autocraft_first_add"][1])
                     time.sleep(delay)
@@ -1709,7 +1718,7 @@ def auto_craft(webhook, settings: dict, stop_event: threading.Event, sniped_even
                     time.sleep(0.2)
                     mkey.left_click_xy_natural(CLICKS["autocraft_first_amt"][0], CLICKS["autocraft_first_amt"][1])
                     time.sleep(delay)
-                    pag.write("10", interval=0.3)
+                    _type(kb, settings.get("typing_jitter", 0.2), settings.get("typing_delay", 0.2), settings.get("typing_hold", 0.2), "10")
                     time.sleep(delay)
                     mkey.left_click_xy_natural(CLICKS["autocraft_first_add"][0], CLICKS["autocraft_first_add"][1])
 
@@ -1765,7 +1774,7 @@ def auto_craft(webhook, settings: dict, stop_event: threading.Event, sniped_even
                     time.sleep(0.2)
                     mkey.left_click_xy_natural(CLICKS["autocraft_first_amt"][0], CLICKS["autocraft_first_amt"][1])
                     time.sleep(delay)
-                    pag.write("20", interval=0.3)
+                    _type(kb, settings.get("typing_jitter", 0.2), settings.get("typing_delay", 0.2), settings.get("typing_hold", 0.2), "20")
                     time.sleep(delay)
                     mkey.left_click_xy_natural(CLICKS["autocraft_first_add"][0], CLICKS["autocraft_first_add"][1])
                     time.sleep(delay)
@@ -1830,7 +1839,7 @@ def auto_craft(webhook, settings: dict, stop_event: threading.Event, sniped_even
                     time.sleep(0.2)
                     mkey.left_click_xy_natural(CLICKS["autocraft_second_amt"][0], CLICKS["autocraft_second_amt"][1])
                     time.sleep(delay)
-                    pag.write("3", interval=0.3)
+                    _type(kb, settings.get("typing_jitter", 0.2), settings.get("typing_delay", 0.2), settings.get("typing_hold", 0.2), "3")
                     time.sleep(delay)
                     mkey.left_click_xy_natural(CLICKS["autocraft_second_add"][0], CLICKS["autocraft_second_add"][1])
                     time.sleep(delay)
@@ -1842,7 +1851,7 @@ def auto_craft(webhook, settings: dict, stop_event: threading.Event, sniped_even
                     time.sleep(0.2)
                     mkey.left_click_xy_natural(CLICKS["autocraft_third_amt"][0], CLICKS["autocraft_third_amt"][1])
                     time.sleep(delay)
-                    pag.write("10", interval=0.3)
+                    _type(kb, settings.get("typing_jitter", 0.2), settings.get("typing_delay", 0.2), settings.get("typing_hold", 0.2), "10")
                     time.sleep(delay)
                     mkey.left_click_xy_natural(CLICKS["autocraft_third_add"][0], CLICKS["autocraft_third_add"][1])
                     time.sleep(delay)
@@ -1852,7 +1861,7 @@ def auto_craft(webhook, settings: dict, stop_event: threading.Event, sniped_even
                     time.sleep(0.2)
                     mkey.left_click_xy_natural(CLICKS["autocraft_third_scrolled_amt"][0], CLICKS["autocraft_third_scrolled_amt"][1])
                     time.sleep(delay)
-                    pag.write("100", interval=0.3)
+                    _type(kb, settings.get("typing_jitter", 0.2), settings.get("typing_delay", 0.2), settings.get("typing_hold", 0.2), "100")
                     time.sleep(delay)
                     mkey.left_click_xy_natural(CLICKS["autocraft_third_scrolled_add"][0], CLICKS["autocraft_third_scrolled_add"][1])
                     
@@ -1921,7 +1930,7 @@ def auto_craft(webhook, settings: dict, stop_event: threading.Event, sniped_even
                     time.sleep(0.2)
                     mkey.left_click_xy_natural(CLICKS["autocraft_first_amt"][0], CLICKS["autocraft_first_amt"][1])
                     time.sleep(delay)
-                    pag.write("250", interval=0.3)
+                    _type(kb, settings.get("typing_jitter", 0.2), settings.get("typing_delay", 0.2), settings.get("typing_hold", 0.2), "250")
                     time.sleep(delay)
                     mkey.left_click_xy_natural(CLICKS["autocraft_first_add"][0], CLICKS["autocraft_first_add"][1])
                     time.sleep(delay)
@@ -1944,7 +1953,7 @@ def auto_craft(webhook, settings: dict, stop_event: threading.Event, sniped_even
                     time.sleep(0.2)
                     mkey.left_click_xy_natural(CLICKS["autocraft_third_scrolled_amt"][0], CLICKS["autocraft_third_scrolled_amt"][1])
                     time.sleep(delay)
-                    pag.write("5", interval=0.3)
+                    _type(kb, settings.get("typing_jitter", 0.2), settings.get("typing_delay", 0.2), settings.get("typing_hold", 0.2), "5")
                     time.sleep(delay)
                     mkey.left_click_xy_natural(CLICKS["autocraft_third_scrolled_add"][0], CLICKS["autocraft_third_scrolled_add"][1])
 
@@ -2000,7 +2009,7 @@ def auto_craft(webhook, settings: dict, stop_event: threading.Event, sniped_even
                     time.sleep(0.2)
                     mkey.left_click_xy_natural(CLICKS["autocraft_first_amt"][0], CLICKS["autocraft_first_amt"][1])
                     time.sleep(delay)
-                    pag.write("50", interval=0.3)
+                    _type(kb, settings.get("typing_jitter", 0.2), settings.get("typing_delay", 0.2), settings.get("typing_hold", 0.2), "50")
                     time.sleep(delay)
                     mkey.left_click_xy_natural(CLICKS["autocraft_first_add"][0], CLICKS["autocraft_first_add"][1])
                     time.sleep(delay)
@@ -2009,7 +2018,7 @@ def auto_craft(webhook, settings: dict, stop_event: threading.Event, sniped_even
                     time.sleep(0.2)
                     mkey.left_click_xy_natural(CLICKS["autocraft_second_amt"][0], CLICKS["autocraft_second_amt"][1])
                     time.sleep(delay)
-                    pag.write("25", interval=0.3)
+                    _type(kb, settings.get("typing_jitter", 0.2), settings.get("typing_delay", 0.2), settings.get("typing_hold", 0.2), "25")
                     time.sleep(delay)
                     mkey.left_click_xy_natural(CLICKS["autocraft_second_add"][0], CLICKS["autocraft_second_add"][1])
                     time.sleep(delay)
@@ -2023,7 +2032,7 @@ def auto_craft(webhook, settings: dict, stop_event: threading.Event, sniped_even
                     time.sleep(0.2)
                     mkey.left_click_xy_natural(CLICKS["autocraft_third_scrolled_amt"][0], CLICKS["autocraft_third_scrolled_amt"][1])
                     time.sleep(delay)
-                    pag.write("15", interval=0.3)
+                    _type(kb, settings.get("typing_jitter", 0.2), settings.get("typing_delay", 0.2), settings.get("typing_hold", 0.2), "15")
                     time.sleep(delay)
                     mkey.left_click_xy_natural(CLICKS["autocraft_third_scrolled_add"][0], CLICKS["autocraft_third_scrolled_add"][1])
                     time.sleep(delay)
@@ -2083,7 +2092,7 @@ def auto_craft(webhook, settings: dict, stop_event: threading.Event, sniped_even
                     time.sleep(0.2)
                     mkey.left_click_xy_natural(CLICKS["autocraft_first_amt"][0], CLICKS["autocraft_first_amt"][1])
                     time.sleep(delay)
-                    pag.write("50", interval=0.3)
+                    _type(kb, settings.get("typing_jitter", 0.2), settings.get("typing_delay", 0.2), settings.get("typing_hold", 0.2), "50")
                     time.sleep(delay)
                     mkey.left_click_xy_natural(CLICKS["autocraft_first_add"][0], CLICKS["autocraft_first_add"][1])
                     time.sleep(delay)
@@ -2158,7 +2167,7 @@ def auto_craft(webhook, settings: dict, stop_event: threading.Event, sniped_even
                     time.sleep(0.2)
                     mkey.left_click_xy_natural(CLICKS["autocraft_first_amt"][0], CLICKS["autocraft_first_amt"][1])
                     time.sleep(delay)
-                    pag.write("50", interval=0.3)
+                    _type(kb, settings.get("typing_jitter", 0.2), settings.get("typing_delay", 0.2), settings.get("typing_hold", 0.2), "50")
                     time.sleep(delay)
                     mkey.left_click_xy_natural(CLICKS["autocraft_first_add"][0], CLICKS["autocraft_first_add"][1])
                     time.sleep(delay)
@@ -2227,7 +2236,7 @@ def auto_craft(webhook, settings: dict, stop_event: threading.Event, sniped_even
                     time.sleep(0.2)
                     mkey.left_click_xy_natural(CLICKS["autocraft_second_amt"][0], CLICKS["autocraft_second_amt"][1])
                     time.sleep(delay)
-                    pag.write("5", interval=0.3)
+                    _type(kb, settings.get("typing_jitter", 0.2), settings.get("typing_delay", 0.2), settings.get("typing_hold", 0.2), "5")
                     time.sleep(delay)
                     mkey.left_click_xy_natural(CLICKS["autocraft_second_add"][0], CLICKS["autocraft_second_add"][1])
                     time.sleep(delay)
@@ -2236,7 +2245,7 @@ def auto_craft(webhook, settings: dict, stop_event: threading.Event, sniped_even
                     time.sleep(0.2)
                     mkey.left_click_xy_natural(CLICKS["autocraft_third_amt"][0], CLICKS["autocraft_third_amt"][1])
                     time.sleep(delay)
-                    pag.write("7", interval=0.3)
+                    _type(kb, settings.get("typing_jitter", 0.2), settings.get("typing_delay", 0.2), settings.get("typing_hold", 0.2), "7")
                     time.sleep(delay)
                     mkey.left_click_xy_natural(CLICKS["autocraft_third_add"][0], CLICKS["autocraft_third_add"][1])
                     time.sleep(delay)
@@ -2247,7 +2256,7 @@ def auto_craft(webhook, settings: dict, stop_event: threading.Event, sniped_even
                     time.sleep(0.2)
                     mkey.left_click_xy_natural(CLICKS["autocraft_first_scrolled_amt"][0], CLICKS["autocraft_first_scrolled_amt"][1])
                     time.sleep(delay)
-                    pag.write("100", interval=0.3)
+                    _type(kb, settings.get("typing_jitter", 0.2), settings.get("typing_delay", 0.2), settings.get("typing_hold", 0.2), "100")
                     time.sleep(delay)
                     mkey.left_click_xy_natural(CLICKS["autocraft_first_scrolled_add"][0], CLICKS["autocraft_first_scrolled_add"][1])
 
@@ -2257,7 +2266,7 @@ def auto_craft(webhook, settings: dict, stop_event: threading.Event, sniped_even
                     time.sleep(0.2)
                     mkey.left_click_xy_natural(CLICKS["autocraft_second_scrolled_amt"][0], CLICKS["autocraft_second_scrolled_amt"][1])
                     time.sleep(delay)
-                    pag.write("200", interval=0.3)
+                    _type(kb, settings.get("typing_jitter", 0.2), settings.get("typing_delay", 0.2), settings.get("typing_hold", 0.2), "200")
                     time.sleep(delay)
                     mkey.left_click_xy_natural(CLICKS["autocraft_second_scrolled_add"][0], CLICKS["autocraft_second_scrolled_add"][1])
 
@@ -2267,7 +2276,7 @@ def auto_craft(webhook, settings: dict, stop_event: threading.Event, sniped_even
                     time.sleep(0.2)
                     mkey.left_click_xy_natural(CLICKS["autocraft_third_scrolled_amt"][0], CLICKS["autocraft_third_scrolled_amt"][1])
                     time.sleep(delay)
-                    pag.write("1000", interval=0.3)
+                    _type(kb, settings.get("typing_jitter", 0.2), settings.get("typing_delay", 0.2), settings.get("typing_hold", 0.2), "1000")
                     time.sleep(delay)
                     mkey.left_click_xy_natural(CLICKS["autocraft_third_scrolled_add"][0], CLICKS["autocraft_third_scrolled_add"][1])
 
@@ -2351,7 +2360,7 @@ def auto_craft(webhook, settings: dict, stop_event: threading.Event, sniped_even
                     time.sleep(0.2)
                     mkey.left_click_xy_natural(CLICKS["autocraft_third_scrolled_amt"][0], CLICKS["autocraft_third_scrolled_amt"][1])
                     time.sleep(delay)
-                    pag.write("600", interval=0.3)
+                    _type(kb, settings.get("typing_jitter", 0.2), settings.get("typing_delay", 0.2), settings.get("typing_hold", 0.2), "600")
                     time.sleep(delay)
                     mkey.left_click_xy_natural(CLICKS["autocraft_third_scrolled_add"][0], CLICKS["autocraft_third_scrolled_add"][1])
 
@@ -2467,7 +2476,7 @@ def auto_craft(webhook, settings: dict, stop_event: threading.Event, sniped_even
                     time.sleep(0.2)
                     mkey.left_click_xy_natural(CLICKS["autocraft_first_amt"][0], CLICKS["autocraft_first_amt"][1])
                     time.sleep(delay)
-                    pag.write("20", interval=0.3)
+                    _type(kb, settings.get("typing_jitter", 0.2), settings.get("typing_delay", 0.2), settings.get("typing_hold", 0.2), "20")
                     time.sleep(delay)
                     mkey.left_click_xy_natural(CLICKS["autocraft_first_add"][0], CLICKS["autocraft_first_add"][1])
                     time.sleep(delay)
@@ -2479,7 +2488,7 @@ def auto_craft(webhook, settings: dict, stop_event: threading.Event, sniped_even
                     time.sleep(0.2)
                     mkey.left_click_xy_natural(CLICKS["autocraft_second_amt"][0], CLICKS["autocraft_second_amt"][1])
                     time.sleep(delay)
-                    pag.write("10", interval=0.3)
+                    _type(kb, settings.get("typing_jitter", 0.2), settings.get("typing_delay", 0.2), settings.get("typing_hold", 0.2), "10")
                     time.sleep(delay)
                     mkey.left_click_xy_natural(CLICKS["autocraft_second_add"][0], CLICKS["autocraft_second_add"][1])
                     time.sleep(delay)
@@ -2533,7 +2542,7 @@ def auto_craft(webhook, settings: dict, stop_event: threading.Event, sniped_even
                     time.sleep(0.2)
                     mkey.left_click_xy_natural(CLICKS["autocraft_first_amt"][0], CLICKS["autocraft_first_amt"][1])
                     time.sleep(delay)
-                    pag.write("100", interval=0.3)
+                    _type(kb, settings.get("typing_jitter", 0.2), settings.get("typing_delay", 0.2), settings.get("typing_hold", 0.2), "100")
                     time.sleep(delay)
                     mkey.left_click_xy_natural(CLICKS["autocraft_first_add"][0], CLICKS["autocraft_first_add"][1])
                     time.sleep(delay)
@@ -2545,7 +2554,7 @@ def auto_craft(webhook, settings: dict, stop_event: threading.Event, sniped_even
                     time.sleep(0.2)
                     mkey.left_click_xy_natural(CLICKS["autocraft_second_amt"][0], CLICKS["autocraft_second_amt"][1])
                     time.sleep(delay)
-                    pag.write("65", interval=0.3)
+                    _type(kb, settings.get("typing_jitter", 0.2), settings.get("typing_delay", 0.2), settings.get("typing_hold", 0.2), "65")
                     time.sleep(delay)
                     mkey.left_click_xy_natural(CLICKS["autocraft_second_add"][0], CLICKS["autocraft_second_add"][1])
                     time.sleep(delay)
@@ -2599,7 +2608,7 @@ def auto_craft(webhook, settings: dict, stop_event: threading.Event, sniped_even
                     time.sleep(0.2)
                     mkey.left_click_xy_natural(CLICKS["autocraft_first_amt"][0], CLICKS["autocraft_first_amt"][1])
                     time.sleep(delay)
-                    pag.write("50", interval=0.3)
+                    _type(kb, settings.get("typing_jitter", 0.2), settings.get("typing_delay", 0.2), settings.get("typing_hold", 0.2), "50")
                     time.sleep(delay)
                     mkey.left_click_xy_natural(CLICKS["autocraft_first_add"][0], CLICKS["autocraft_first_add"][1])
                     time.sleep(delay)
@@ -2611,7 +2620,7 @@ def auto_craft(webhook, settings: dict, stop_event: threading.Event, sniped_even
                     time.sleep(0.2)
                     mkey.left_click_xy_natural(CLICKS["autocraft_second_amt"][0], CLICKS["autocraft_second_amt"][1])
                     time.sleep(delay)
-                    pag.write("5", interval=0.3)
+                    _type(kb, settings.get("typing_jitter", 0.2), settings.get("typing_delay", 0.2), settings.get("typing_hold", 0.2), "5")
                     time.sleep(delay)
                     mkey.left_click_xy_natural(CLICKS["autocraft_second_add"][0], CLICKS["autocraft_second_add"][1])
                     time.sleep(delay)
@@ -2625,7 +2634,7 @@ def auto_craft(webhook, settings: dict, stop_event: threading.Event, sniped_even
                     time.sleep(0.2)
                     mkey.left_click_xy_natural(CLICKS["autocraft_second_scrolled_amt"][0], CLICKS["autocraft_second_scrolled_amt"][1])
                     time.sleep(delay)
-                    pag.write("10", interval=0.3)
+                    _type(kb, settings.get("typing_jitter", 0.2), settings.get("typing_delay", 0.2), settings.get("typing_hold", 0.2), "10")
                     time.sleep(delay)
                     mkey.left_click_xy_natural(CLICKS["autocraft_second_scrolled_add"][0], CLICKS["autocraft_second_scrolled_add"][1])
 
@@ -2635,7 +2644,7 @@ def auto_craft(webhook, settings: dict, stop_event: threading.Event, sniped_even
                     time.sleep(0.2)
                     mkey.left_click_xy_natural(CLICKS["autocraft_third_scrolled_amt"][0], CLICKS["autocraft_third_scrolled_amt"][1])
                     time.sleep(delay)
-                    pag.write("10", interval=0.3)
+                    _type(kb, settings.get("typing_jitter", 0.2), settings.get("typing_delay", 0.2), settings.get("typing_hold", 0.2), "10")
                     time.sleep(delay)
                     mkey.left_click_xy_natural(CLICKS["autocraft_third_scrolled_add"][0], CLICKS["autocraft_third_scrolled_add"][1])
 
@@ -2797,7 +2806,7 @@ def inventory_screenshot(settings: dict, webhook, stop_event: threading.Event, s
         return
     
     CLICKS = get_calibrations(settings.get("calibration"))
-    delay = 0.2
+    delay = load_delay()
 
     while not stop_event.is_set():
 
@@ -2858,7 +2867,7 @@ def storage_screenshot(settings: dict, webhook, stop_event: threading.Event, sni
         return
     
     CLICKS = get_calibrations(settings.get("calibration"))
-    delay = 0.2
+    delay = load_delay()
 
     while not stop_event.is_set():
 
@@ -3049,7 +3058,7 @@ def do_obby(settings: dict, webhook, stop_event: threading.Event, sniped_event: 
         return
     
     CLICKS = get_calibrations(settings.get("calibration"))
-    delay = 0.2
+    delay = load_delay()
     VIP_STATUS = settings.get("vip_status", "No VIP")
 
     while not stop_event.is_set():
@@ -3417,7 +3426,7 @@ def auto_questboard(settings: dict, webhook, stop_event: threading.Event, sniped
     
     CLICKS = get_calibrations(settings.get("calibration"))
     REGIONS = get_regions(settings.get("calibration"))
-    delay = 0.2
+    delay = load_delay()
 
     VIP_STATUS = settings.get("vip_status", "No VIP")
     afk_in_limbo = settings.get("mode", "Normal") == "Limbo"
@@ -3665,7 +3674,7 @@ def auto_pop(biome: str, settings: dict, stop_event: threading.Event, keyboard_l
                 time.sleep(1)
                 mkey.left_click_xy_natural(CLICKS["cutscene_skip"][0], CLICKS["cutscene_skip"][1])
                 time.sleep(1)
-                pag.write("9999999999", interval=0.3)
+                _type(kb, settings.get("typing_jitter", 0.2), settings.get("typing_delay", 0.2), settings.get("typing_hold", 0.2), "9999999999")
                 mkey.left_click_xy_natural(CLICKS["close_menu"][0], CLICKS["close_menu"][1])
                 time.sleep(1)                
             except Exception as cs_e:
@@ -3735,7 +3744,7 @@ def eden_detection(settings: dict, webhook, stop_event: threading.Event, keyboar
         return
     
     CLICKS = get_calibrations(settings.get("calibration"))
-    delay = 0.2
+    delay = load_delay()
     VIP_STATUS = settings.get("vip_status", "No VIP")
     
     while not stop_event.is_set():
@@ -3819,7 +3828,7 @@ def vok_taran(settings: dict, webhook, stop_event: threading.Event, keyboard_loc
             kb.release("/")
             time.sleep(0.05)
 
-            pag.write("vok taran", interval=0.3)
+            _type(kb, settings.get("typing_jitter", 0.2), settings.get("typing_delay", 0.2), settings.get("typing_hold", 0.2), "vok taran")
 
             kb.press(keyboard.Key.enter)
             time.sleep(0.05)

@@ -92,7 +92,7 @@
         "multiplier" : 1,
         "rare" : false,
         "event" : true,
-        "img_url" : "",
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/b/ba/AnotherRealmBiome.png/revision/latest",
         "enabled" : true,
         "display_name" : "Another Realm"
     }

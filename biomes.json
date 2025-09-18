@@ -87,12 +87,13 @@
         "img_url" : "https://cdn.drawception.com/drawings/953223/dDnRqtqgrN.png",
         "enabled" : false
     },
-    "anotherrealm" : {
+    "unknown" : {
         "colour" : "#0c43db",
         "multiplier" : 1,
         "rare" : false,
         "event" : true,
         "img_url" : "",
-        "enabled" : true
+        "enabled" : true,
+        "display_name" : "Another Realm"
     }
 }

@@ -85,7 +85,7 @@
         "rare" : false,
         "event" : true,
         "img_url" : "https://cdn.drawception.com/drawings/953223/dDnRqtqgrN.png",
-        "enabled" : false
+        "enabled" : true
     },
     "unknown" : {
         "colour" : "#0c43db",

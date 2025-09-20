@@ -34,6 +34,8 @@ except ImportError as e:
 try:
     #import eden_vip, fish_market, fish_market_abyssal, fishing_spot, obby, questboard, shrine_part1, shrine_part2, shrine_part3
     import qb_vip, eden_vip, obby_vip, stella_vip
+    import obby, qb
+    import stella_abyssal, obby_abyssal
     IMPORTED_ALL_PATHS = True
 except ImportError:
     IMPORTED_ALL_PATHS = False
@@ -294,7 +296,7 @@ def aura_detection(settings: dict, webhook, stop_event: threading.Event, keyboar
                          biome_multiplier = biomes[current_biome_key].get("multiplier", 1.0)
                          if biome_multiplier > 0:
                              effective_rarity = int(base_rarity / biome_multiplier)
-                             description += f"**Rarity:** 1 / {effective_rarity:,} (from {current_biome})\n"
+                             description += f"**Rarity:** 1 / {effective_rarity:,} (from {current_biome if not biomes[current_biome_key].get('display_name') else biomes[current_biome_key].get('display_name')})\n"
                          else:
                              description += f"**Rarity:** 1 / {base_rarity:,} (Base)\n" 
                     else:
@@ -463,8 +465,8 @@ def biome_detection(settings: dict, webhook, stop_event: threading.Event, sniped
                 emb_color_hex = prev_biome_data.get("colour", "#808080")
                 emb_rgb = hex2rgb(emb_color_hex)
                 emb = discord.Embed(
-                    title=f"Biome Ended: {previous_biome}",
-                    description=f"Biome **{previous_biome}** has ended.\n**Time:** <t:{str(int(time.time()))}>",
+                    title=f"Biome Ended: {previous_biome if not prev_biome_data.get('display_name') else prev_biome_data.get('display_name')}",
+                    description=f"Biome **{previous_biome if not prev_biome_data.get('display_name') else prev_biome_data.get('display_name')}** has ended.\n**Time:** <t:{str(int(time.time()))}>",
                     colour=discord.Colour.from_rgb(*emb_rgb)
                 )
                 emb.set_thumbnail(url=biomes.get(previous_biome.lower()).get("img_url"))
@@ -488,8 +490,8 @@ def biome_detection(settings: dict, webhook, stop_event: threading.Event, sniped
                     emb_color_hex = new_biome_data.get("colour", "#808080")
                     emb_rgb = hex2rgb(emb_color_hex)
 
-                    description = f"Biome {current_biome} has started!\nTime: <t:{str(int(time.time()))}>"
-                    title = f"Event Biome Started: {current_biome}" if is_event else f"Biome Started: {current_biome}"
+                    description = f"Biome {current_biome if not new_biome_data.get('display_name') else new_biome_data.get('display_name')} has started!\nTime: <t:{str(int(time.time()))}>"
+                    title = f"Event Biome Started: {current_biome if not new_biome_data.get('display_name') else new_biome_data.get('display_name')}" if is_event else f"Biome Started: {current_biome if not new_biome_data.get('display_name') else new_biome_data.get('display_name')}"
 
                     emb = discord.Embed(
                         title=title,
@@ -849,7 +851,7 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
                         logger.write_log(f"Merchant Detection: Attempting to auto-purchase items: {list(items_to_buy.values())}")
                         for box_name, item_name in items_to_buy.items():
                             try:
-                                coord_key = f"merch_slot_{box_name[-1]}"
+                                coord_key = f"merchant_slot_{box_name[-1]}"
                                 mkey.left_click_xy_natural(CLICKS[coord_key][0], CLICKS[coord_key][1])
                                 time.sleep(delay)
                                 mkey.left_click_xy_natural(CLICKS["merchant_amount"][0], CLICKS["merchant_amount"][1])
@@ -1174,7 +1176,7 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
                                         logger.write_log(f"Merchant Detection: Attempting to auto-purchase items: {list(items_to_buy.values())}")
                                         for box_name, item_name in items_to_buy.items():
                                             try:
-                                                coord_key = f"merch_slot_{box_name[-1]}"
+                                                coord_key = f"merchant_slot_{box_name[-1]}"
                                                 mkey.left_click_xy_natural(CLICKS[coord_key][0], CLICKS[coord_key][1])
                                                 time.sleep(delay)
                                                 mkey.left_click_xy_natural(CLICKS["merchant_amount"][0], CLICKS["merchant_amount"][1])
@@ -3082,170 +3084,24 @@ def do_obby(settings: dict, webhook, stop_event: threading.Event, sniped_event: 
                 logger.write_log(f"Error during obby alignment: {e}")
                 continue
 
-            if nav_mode in ["VIP", "VIP+"]:
+            if has_abyssal:
+                if equip_aura("Abyssal", False, mkey, kb, settings, ignore_next_detection, ignore_lock, reader):
+                    obby_abyssal.run_macro(obby_abyssal.macro_actions)
+                else:
+                    if nav_mode in ["VIP", "VIP+"]:
+
+                        obby_vip.run_macro(obby_vip.macro_actions)
+                    
+                    else:
+                        obby.run_macro(obby.macro_actions)
+            elif nav_mode in ["VIP", "VIP+"]:
 
                 obby_vip.run_macro(obby_vip.macro_actions)
             
             else:
-                # obby.run_macro(obby.macro_actions)
-                pass
-
-            """if not has_abyssal:
-                logger.write_log("Begin Phase 1 of Obby")
-                #obby.run_macro()
-                try:
-                    mkey.left_click_xy_natural(CLICKS["close_menu"][0], CLICKS["close_menu"][1])
-                    time.sleep(0.4)
-                    right_click_drag(500, 0)
-                    time.sleep(0.4)
-                    kb.press("w")
-                    time.sleep(10)
-                    kb.release("w")
-                    time.sleep(0.4)
-                    right_click_drag(-500, 0)
-                    time.sleep(0.4)
-                    kb.press("w")
-                    time.sleep(2)
-                    kb.release("w")
-                    time.sleep(0.4)
-                    right_click_drag(500, 0)
-                    time.sleep(0.4)
-                    kb.press("w")
-                    time.sleep(3)
-                    kb.release("w")
-                    time.sleep(0.4)
-                    kb.press("d")
-                    time.sleep(4)
-                    kb.release("d")
-                    time.sleep(0.4)
-                    kb.press("w")
-                    time.sleep(0.4)
-                    kb.release("w")
-                    time.sleep(0.4)
-                    kb.press("a")
-                    time.sleep(0.6)
-                    kb.release("a")
-                    time.sleep(0.4)
-                    kb.press("w")
-                    time.sleep(1)
-                    kb.release("w")
-                    time.sleep(1)
-                except Exception as e:
-                    logger.write_log(f"Error during obby phase 1: {e}")
-                    continue
-
-                logger.write_log("Phase 1 complete, begin phase 2.")
-
-                try:
-                    #run_macro(f"{PATH_DIR}/obby1.mms")
-                    time.sleep(1)
-                except Exception as e:
-                    logger.write_log(f"Error during obby phase 2: {e}")
-                    continue
-
-                logger.write_log("Phase 2 complete, begin phase 3.")
-
-                try:
-                    right_click_drag(0, 600)
-                    time.sleep(1)
-                except Exception as e:
-                    logger.write_log(f"Error during obby phase 3: {e}")
-                    continue
-
-                logger.write_log("Phase 3 complete, begin phase 4.")
-
-                try:
-                    run_macro(f"{PATH_DIR}/obby2.mms")
-                    time.sleep(1)
-                except Exception as e:
-                    logger.write_log(f"Error during obby phase 4: {e}")
-                    continue
-            else:
-                saved_aura = None
-                while saved_aura is None:
-                    try:
-                        saved_aura = get_latest_equipped_aura().lower()
-                    except Exception as e:
-                        logger.write_log(f"Error checking current equipped aura: {e}.")
-                logger.write_log("Completing Obby with Abyssal Hunter")
-                equip_aura("Abyssal", False, mkey, kb, settings, ignore_next_detection, ignore_lock, reader)
-                time.sleep(2)
-                logger.write_log("Begin Phase 1 of Obby")
-                try:
-                    time.sleep(1)
-                    mkey.left_click_xy_natural(CLICKS["close_menu"][0], CLICKS["close_menu"][1])
-                    time.sleep(0.4)
-                    right_click_drag(500, 0)
-                    time.sleep(0.4)
-                    kb.press("w")
-                    time.sleep(5)
-                    kb.release("w")
-                    time.sleep(0.4)
-                    right_click_drag(-500, 0)
-                    time.sleep(0.4)
-                    kb.press("w")
-                    time.sleep(1.2)
-                    kb.release("w")
-                    time.sleep(0.4)
-                    right_click_drag(500, 0)
-                    time.sleep(0.4)
-                    kb.press("w")
-                    time.sleep(1)
-                    kb.release("w")
-                    time.sleep(0.4)
-                    kb.press("d")
-                    time.sleep(1)
-                    kb.release("d")
-                    time.sleep(0.4)
-                    kb.press("w")
-                    time.sleep(0.2)
-                    kb.release("w")
-                    time.sleep(0.4)
-                    kb.press("a")
-                    time.sleep(0.4)
-                    kb.release("a")
-                    time.sleep(0.4)
-                    kb.press("w")
-                    time.sleep(0.5)
-                    kb.release("w")
-                    time.sleep(1)
-                except Exception as e:
-                    logger.write_log(f"Error during obby phase 1: {e}")
-                    continue
-
-                logger.write_log("Phase 1 complete, begin phase 2.")
-
-                try:
-                    right_click_drag(0, 600)
-                    time.sleep(1)
-                except Exception as e:
-                    logger.write_log(f"Error during obby phase 2: {e}")
-                    continue
-
-                logger.write_log("Phase 2 complete, begin phase 3.")
-
-                try:
-                    run_macro(f"{PATH_DIR}/obby1_abyssal.mms")
-                    time.sleep(1)
-                except Exception as e:
-                    logger.write_log(f"Error during obby phase 3: {e}")
-                    continue
-
-                logger.write_log("Phase 3 complete, begin phase 4.")
-
-                try:
-                    run_macro(f"{PATH_DIR}/obby2_abyssal.mms")
-                    time.sleep(1)
-                except Exception as e:
-                    logger.write_log(f"Error during obby phase 4: {e}")
-                    continue
-
-                logger.write_log("Phase 4 complete")
-
-                if saved_aura:
-                    equip_aura(saved_aura, False, mkey, kb, settings, ignore_next_detection, ignore_lock, reader)
-                else:
-                    equip_aura("Abyssal", True, mkey, kb, settings, ignore_next_detection, ignore_lock, reader)"""
+                obby.run_macro(obby.macro_actions)
+            
+            time.sleep(1)
 
             logger.write_log("Completed obby, realigning incase of failure.")
             try:
@@ -3260,6 +3116,7 @@ def do_obby(settings: dict, webhook, stop_event: threading.Event, sniped_event: 
             except Exception as e:
                 logger.write_log(f"Error during obby alignment: {e}")
                 continue
+
 
             if settings.get("notify_obby_completion", False):
                 emb = discord.Embed(
@@ -3279,101 +3136,30 @@ def do_obby(settings: dict, webhook, stop_event: threading.Event, sniped_event: 
                 )
             
             if is_autocraft and IMPORTED_ALL_PATHS:
-                logger.write_log("Walking back to Stella's")
-                try:
-                    reset_character()
-                    time.sleep(1)
-                    reset_character()
-                    time.sleep(1)
-                    mkey.left_click_xy_natural(CLICKS["collection"][0], CLICKS["collection"][1])
-                    time.sleep(1)
-                    mkey.left_click_xy_natural(CLICKS["exit_collection"][0], CLICKS["exit_collection"][1])
-                    time.sleep(1)
-                except Exception as e:
-                    logger.write_log(f"Error during camera alignment: {e}")
-                    continue
-
-                logger.write_log("Begin position alignment.")
-
                 if has_abyssal:
-                    saved_aura = None
-                    while saved_aura is None:
-                        try:
-                            saved_aura = get_latest_equipped_aura().lower()
-                        except Exception as e:
-                            logger.write_log(f"Error checking current equipped aura: {e}.")
-                    logger.write_log("Walking to Stella with Abyssal Hunter")
-                    time.sleep(2)
-                    equip_aura("Abyssal", False, mkey, kb, settings, ignore_next_detection, ignore_lock, reader)
-                    time.sleep(2)
-                    try:
-                        mkey.left_click_xy_natural(CLICKS["close_menu"][0], CLICKS["close_menu"][1])
-                        time.sleep(0.4)
-                        right_click_drag(1000, 0)
-                        time.sleep(0.4)
-                        kb.press("d")
-                        time.sleep(1.8)
-                        kb.release("d")
-                        time.sleep(0.4)
-                        kb.press("w")
-                        time.sleep(6)
-                        kb.release("w")
-                        time.sleep(0.4)
-                        kb.press("a")
-                        time.sleep(1.3)
-                        kb.release("a")
-                        time.sleep(0.4)
-                        kb.press("w")
-                        time.sleep(0.5)
-                        kb.release("w")
-                        time.sleep(0.4)
-                        kb.press("d")
-                        time.sleep(0.4)
-                        kb.release("d")
-                        time.sleep(0.4)
-                        kb.press("w")
-                        time.sleep(0.5)
-                        kb.release("w")
-                    except Exception as e:
-                        logger.write_log(f"Error during position alignment: {e}")
-                        continue
-
-                logger.write_log("Finished position alignment, walking to Stella.")
-
-                time.sleep(1)
-
-                if not has_abyssal:
-                    try:
-                        if VIP_STATUS in ["VIP", "VIP+"]:
-                            stella_vip.run_macro(qb_vip.macro_actions)
-                        elif VIP_STATUS == "No VIP":
-                            #stella.run_macro(stella.macro_actions)
-                            continue
-                        else:
-                            continue
-                        time.sleep(1)
-                    except Exception as e:
-                        logger.write_log(f"Error during walk to Stella's: {e}")
-                        continue
-                else:
-                    continue
-                    """try:
-                        right_click_drag(0, 600)
-                        time.sleep(1)
-                        run_macro(f"{PATH_DIR}/stella_abyssal.mms")
-                        time.sleep(1)
-                    except Exception as e:
-                        logger.write_log(f"Error during walk to Stella's: {e}")
-                        continue
-                    if saved_aura:
-                        equip_aura(saved_aura, False, mkey, kb, settings, ignore_next_detection, ignore_lock, reader)
+                    if equip_aura("Abyssal", False, mkey, kb, settings, ignore_next_detection, ignore_lock, reader):
+                        stella_abyssal.run_macro(stella_abyssal.macro_actions)
                     else:
-                        equip_aura("Abyssal", True, mkey, kb, settings, ignore_next_detection, ignore_lock, reader)"""
+                        if nav_mode in ["VIP", "VIP+"]:
+
+                            stella_vip.run_macro(stella_vip.macro_actions)
+                        
+                        else:
+                            logger.write_log("Walking back to Stella is not supported with No VIP")
+                elif nav_mode in ["VIP", "VIP+"]:
+
+                    stella_vip.run_macro(stella_vip.macro_actions)
+                
+                else:
+                    logger.write_log("Walking back to Stella is not supported with No VIP")
             
             elif afk_in_limbo and not is_idle_mode:
                 logger.write_log("Teleporting back to limbo...")
                 use_item("Portable Crack", 1, True, mkey, kb, settings, reader)
                 time.sleep(0.5)
+
+            if has_abyssal:
+                equip_aura("Abyssal", True, mkey, kb, settings, ignore_next_detection, ignore_lock, reader)
 
         wait_interval = 600 
         logger.write_log(f"Obby: Waiting {wait_interval} seconds...")
@@ -3383,7 +3169,7 @@ def do_obby(settings: dict, webhook, stop_event: threading.Event, sniped_event: 
 
     logger.write_log("Obby/Blessing thread stopped.")
 
-def auto_questboard(settings: dict, webhook, stop_event: threading.Event, sniped_event: threading.Event, keyboard_lock: threading.Lock, mkey, kb, ms, reader, pause_event):
+def auto_questboard(settings: dict, webhook, stop_event: threading.Event, sniped_event: threading.Event, keyboard_lock: threading.Lock, mkey, kb, ms, ignore_lock, ignore_next_detection, pause_event, reader):
     logger = get_logger()
     nav_mode = settings.get("interaction_type", "Mouse")
     if stop_event.wait(timeout=5):
@@ -3450,14 +3236,22 @@ def auto_questboard(settings: dict, webhook, stop_event: threading.Event, sniped
             time.sleep(1)
             mkey.left_click_xy_natural(CLICKS["exit_collection"][0], CLICKS["exit_collection"][1])
             time.sleep(1)
+            equip_aura("Abyssal", True, mkey, kb, settings, ignore_next_detection, ignore_lock, reader)
+            time.sleep(1)
+
             if VIP_STATUS in ["VIP", "VIP+"]:
                 qb_vip.run_macro(qb_vip.macro_actions)
             elif VIP_STATUS == "No VIP":
-                #questboard.run_macro(questboard.macro_actions)
+                qb.run_macro(qb.macro_actions)
                 return
             else:
                 logger.write_log(f"VIP Status ({VIP_STATUS}) is unrecognised.")
                 return
+            
+            time.sleep(1)
+            kb.press(keyboard.Key.left)
+            time.sleep(1.5)
+            kb.release(keyboard.Key.left)
             
             time.sleep(1)
             kb.press("e")
@@ -3580,7 +3374,7 @@ def auto_questboard(settings: dict, webhook, stop_event: threading.Event, sniped
                                     tracked_quests["quest_board"].remove(previous_quest)
                                     with open(TRACKED_QUESTS_PATH, "w", encoding="utf-8") as f:
                                         json.dump(tracked_quests, f, indent=4)
-                                    description = f"**Objective**: {quest_data.get('objective', "Failed to fetch objective.")}\n**Difficulty**: "
+                                    description = f"**Objective**: {quest_data.get('objective', 'Failed to fetch objective.')}\n**Difficulty**: "
                                     for i in range(quest_data.get("difficulty", 1)):
                                         description += ":star:"
                                     description += "\n**Rewards**:\n"
@@ -3791,12 +3585,8 @@ def eden_detection(settings: dict, webhook, stop_event: threading.Event, keyboar
 
                     if VIP_STATUS in ["VIP", "VIP+"]:
                         eden_vip.run_macro(eden_vip.macro_actions)
-                    elif VIP_STATUS == "No VIP":
-                        #eden.run_macro(eden.macro_actions)
-                        return
                     else:
-                        logger.write_log(f"VIP Status ({VIP_STATUS}) is unrecognised.")
-                        return
+                        logger.write_log(f"VIP Status ({VIP_STATUS}) is not currently supported by Auto Eden.")
 
                 previous_spawn = time_of_spawn
     

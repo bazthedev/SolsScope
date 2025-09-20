@@ -35,6 +35,8 @@ from collections import defaultdict
 from discord_utils import forward_webhook_msg
 from utils import hex2rgb
 import requests
+import queue
+import threading
 
 _active_log_dir = None
 _keyboard_controller = keyboard.Controller()
@@ -191,32 +193,48 @@ def get_latest_equipped_aura():
 
     return None
 
+
 def check_for_eden_spawn():
-    """Checks if eden has spawned in the server."""
-    EDEN_SIGNS = ["[expchat/mountclientapp (debug)]", "incoming messagereceived status: success text:", "<font color=" "the devourer of the void, eden has appeared somewhere in ", "the limbo"]
+    """Checks if Eden has spawned in the server."""
+    
+    EDEN_REGEX = (
+        r'<font color="rgb\(\d{1,3},\d{1,3},\d{1,3}\)">'
+        r'<stroke color="rgb\(\d{1,3},\d{1,3},\d{1,3}\)" thickness="\d+" transparency="\d+">'
+        r'The Devourer of the Void, <b>(.*?)</b> has appeared somewhere in <i>(.*?)</i>\.'
+        r'</stroke></font>'
+    )
+
+    EDEN_SIGNS = [
+        r"\[expchat/mountclientapp \(debug\)\]",
+        r"incoming messagereceived status: success text:"
+    ]
 
     log_content = _get_latest_log_content(purpose="eden_detection")
     if not log_content:
-        return None, time.time()
-    
+        return None, int(time.time() * 1000)
+
     try:
         for line in reversed(log_content):
-            match = re.search(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z", line)
-            if match:
-                timestamp_str = match.group()
-                dt = datetime.strptime(timestamp_str, "%Y-%m-%dT%H:%M:%S.%fZ")
-                dt = dt.replace(tzinfo=timezone.utc)
-                unix_millis = int(dt.timestamp() * 1000)
-                found_signs = []
-                for sign in EDEN_SIGNS:
-                    if sign in line.lower():
-                        found_signs.append(sign)
-            if len(found_signs) == len(EDEN_SIGNS):
+            ts_match = re.search(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z", line)
+            if not ts_match:
+                continue
+            timestamp_str = ts_match.group()
+            dt = datetime.strptime(timestamp_str, "%Y-%m-%dT%H:%M:%S.%fZ")
+            dt = dt.replace(tzinfo=timezone.utc)
+            unix_millis = int(dt.timestamp() * 1000)
+
+            eden_match = re.search(EDEN_REGEX, line, re.IGNORECASE)
+            if not eden_match:
+                continue
+
+            if all(re.search(sign, line, re.IGNORECASE) for sign in EDEN_SIGNS):
                 return True, unix_millis
-        return False, time.time()
+
+        return False, int(time.time() * 1000)
+
     except Exception as e:
-        get_logger().write_log(f"Error parsing equipped aura from logs: {e}")
-        return None, time.time()
+        get_logger().write_log(f"Error finding Eden from logs: {e}")
+        return None, int(time.time() * 1000)
     
 
 def get_latest_merchant_info(previous_timestamp : float):
@@ -555,6 +573,28 @@ class PlayerLogger:
         self.settings = settings
         self.biome = None
         self.player_log_data = []
+        self.to_send = queue.Queue()
+        self._stop_event = threading.Event()
+
+        self.worker_thread = threading.Thread(target=self._process_queue, daemon=True)
+        self.worker_thread.start()
+
+    def _process_queue(self):
+        while not self._stop_event.is_set():
+            try:
+                embed, content = self.to_send.get(timeout=0.5)
+                self.send_embed(embed, content)
+                time.sleep(3)
+                self.to_send.task_done()
+            except queue.Empty:
+                continue
+
+    def stop_worker(self):
+        self._stop_event.set()
+        self.worker_thread.join()
+
+    def _send_embed(self, embed, content=None):
+        self.to_send.put((embed, content))
 
     def init_player_logs(self, biome):
         file_name = f"{biome}_{datetime.now().strftime('%H-%M-%S')}.log"
@@ -589,7 +629,7 @@ class PlayerLogger:
         if img_url:
             _emb.set_thumbnail(url=img_url)
         _emb.set_footer(text=f"SolsScope v{LOCALVERSION}")
-        self.send_embed(_emb)
+        self._send_embed(_emb)
 
     def process_player_event(self, event, log_file_name, joined=True, prev_event=None):
         ts = event.get("timestamp")

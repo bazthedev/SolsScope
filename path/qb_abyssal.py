@@ -5,23 +5,6 @@ from pynput.keyboard import Key, Controller as KeyboardController
 from pynput.mouse import Button, Controller as MouseController
 from mousekey import MouseKey
 from time import sleep, perf_counter
-from fractions import Fraction
-
-NONVIP = True
-SCALE = float(Fraction(342, 277))
-
-
-def preprocess_macro(macro, nonvip=True):
-    processed = []
-    for action in macro:
-        if action["type"] == "wait":
-            new_action = action.copy()
-            if nonvip:
-                new_action["duration"] = int(action["duration"] * SCALE)
-            processed.append(new_action)
-        else:
-            processed.append(action.copy())
-    return processed
 
 kc = KeyboardController()
 mc = MouseController()
@@ -106,44 +89,83 @@ def run_macro(macro, delay=2):
                 mc.scroll(action["dx"], action["dy"])
 
 
-macro_actions = [{'type': 'key_press', 'key': 'd'},
-{'type': 'wait', 'duration': 1},
-{'type': 'key_press', 'key': 's'},
-{'type': 'wait', 'duration': 2601},
-{'type': 'key_release', 'key': 'd'},
-{'type': 'wait', 'duration': 2883},
-{'type': 'key_release', 'key': 's'},
-{'type': 'wait', 'duration': 147},
+macro_actions = [{'type': 'key_press', 'key': 's'},
+{'type': 'wait', 'duration': 7},
 {'type': 'key_press', 'key': 'd'},
-{'type': 'wait', 'duration': 1515},
-{'type': 'key_press', 'key': 's'},
-{'type': 'wait', 'duration': 486},
-{'type': 'key_release', 'key': 's'},
-{'type': 'wait', 'duration': 441},
+{'type': 'wait', 'duration': 1621},
 {'type': 'key_release', 'key': 'd'},
-{'type': 'wait', 'duration': 400},
-{'type': 'key_press', 'key': 'w'},
-{'type': 'wait', 'duration': 205},
-{'type': 'key_release', 'key': 'w'},
-{'type': 'wait', 'duration': 290},
-{'type': 'key_press', 'key': 'Key.space'},
-{'type': 'wait', 'duration': 82},
-{'type': 'key_press', 'key': 's'},
-{'type': 'wait', 'duration': 89},
-{'type': 'key_release', 'key': 'Key.space'},
-{'type': 'wait', 'duration': 662},
-{'type': 'key_press', 'key': 'a'},
-{'type': 'wait', 'duration': 938},
+{'type': 'wait', 'duration': 1692},
 {'type': 'key_release', 'key': 's'},
-{'type': 'wait', 'duration': 969},
-{'type': 'key_release', 'key': 'a'},
-{'type': 'wait', 'duration': 144},
+{'type': 'wait', 'duration': 96},
+{'type': 'key_press', 'key': 'd'},
+{'type': 'wait', 'duration': 757},
 {'type': 'key_press', 'key': 's'},
-{'type': 'wait', 'duration': 307},
+{'type': 'wait', 'duration': 414},
+{'type': 'key_release', 'key': 's'},
+{'type': 'wait', 'duration': 281},
+{'type': 'key_press', 'key': 's'},
+{'type': 'wait', 'duration': 446},
+{'type': 'key_release', 'key': 'd'},
+{'type': 'wait', 'duration': 850},
+{'type': 'key_release', 'key': 's'},
+{'type': 'wait', 'duration': 157},
+{'type': 'key_press', 'key': 'w'},
+{'type': 'wait', 'duration': 122},
+{'type': 'key_release', 'key': 'w'},
+{'type': 'wait', 'duration': 180},
+{'type': 'key_press', 'key': 'Key.space'},
+{'type': 'wait', 'duration': 27},
+{'type': 'key_press', 'key': 's'},
+{'type': 'wait', 'duration': 123},
+{'type': 'key_release', 'key': 'Key.space'},
+{'type': 'wait', 'duration': 330},
+{'type': 'key_press', 'key': 'a'},
+{'type': 'wait', 'duration': 524},
+{'type': 'key_release', 'key': 's'},
+{'type': 'wait', 'duration': 670},
+{'type': 'key_release', 'key': 'a'},
+{'type': 'wait', 'duration': 152},
+{'type': 'key_press', 'key': 's'},
+{'type': 'wait', 'duration': 337},
 {'type': 'key_release', 'key': 's'}]
 
-macro_actions = preprocess_macro(macro_actions, NONVIP)
-
-
 if __name__ == "__main__":
-    run_macro(macro_actions)
+    run_macro([{'type': 'key_press', 'key': 's'},
+{'type': 'wait', 'duration': 7},
+{'type': 'key_press', 'key': 'd'},
+{'type': 'wait', 'duration': 1621},
+{'type': 'key_release', 'key': 'd'},
+{'type': 'wait', 'duration': 1692},
+{'type': 'key_release', 'key': 's'},
+{'type': 'wait', 'duration': 96},
+{'type': 'key_press', 'key': 'd'},
+{'type': 'wait', 'duration': 757},
+{'type': 'key_press', 'key': 's'},
+{'type': 'wait', 'duration': 414},
+{'type': 'key_release', 'key': 's'},
+{'type': 'wait', 'duration': 281},
+{'type': 'key_press', 'key': 's'},
+{'type': 'wait', 'duration': 446},
+{'type': 'key_release', 'key': 'd'},
+{'type': 'wait', 'duration': 850},
+{'type': 'key_release', 'key': 's'},
+{'type': 'wait', 'duration': 157},
+{'type': 'key_press', 'key': 'w'},
+{'type': 'wait', 'duration': 122},
+{'type': 'key_release', 'key': 'w'},
+{'type': 'wait', 'duration': 180},
+{'type': 'key_press', 'key': 'Key.space'},
+{'type': 'wait', 'duration': 27},
+{'type': 'key_press', 'key': 's'},
+{'type': 'wait', 'duration': 123},
+{'type': 'key_release', 'key': 'Key.space'},
+{'type': 'wait', 'duration': 330},
+{'type': 'key_press', 'key': 'a'},
+{'type': 'wait', 'duration': 524},
+{'type': 'key_release', 'key': 's'},
+{'type': 'wait', 'duration': 670},
+{'type': 'key_release', 'key': 'a'},
+{'type': 'wait', 'duration': 152},
+{'type': 'key_press', 'key': 's'},
+{'type': 'wait', 'duration': 337},
+{'type': 'key_release', 'key': 's'}])

@@ -2707,6 +2707,9 @@ class MainWindow(QMainWindow):
         is_idle_mode = self.settings.get("mode", "Normal") == "IDLE"
         is_limbo_mode = self.settings.get("mode", "Normal") == "Limbo"
         is_fishing_mode = self.settings.get("mode", "Normal") == "Fishing"
+        vip_status = self.settings.get("vip_status", "No VIP")
+        if vip_status == "No VIP":
+            QMessageBox.warning(self, "No VIP Warning", "You are currently using No VIP, which means that walking to Stella and Eden will not work.")
         try:
             thread_targets = self._get_thread_targets(is_autocraft_mode, is_idle_mode, is_limbo_mode, is_fishing_mode)
         except ValueError as e: 

@@ -32,7 +32,6 @@ except ImportError as e:
     print(f"Optional modules for Merchant Detection (cv2, easyocr) not found. Feature disabled.\n{e}")
 
 try:
-    #import eden_vip, fish_market, fish_market_abyssal, fishing_spot, obby, questboard, shrine_part1, shrine_part2, shrine_part3
     import qb_vip, eden_vip, obby_vip, stella_vip
     import obby, qb
     import stella_abyssal, obby_abyssal
@@ -1420,119 +1419,22 @@ def auto_craft(webhook, settings: dict, stop_event: threading.Event, sniped_even
     if not settings.get("do_not_walk_to_stella", True) and not IMPORTED_ALL_PATHS:
         logger.write_log("Auto Craft: Walking To Stella's")
         with keyboard_lock:
-            logger.write_log("Walking back to Stella's")
-            try:
-                reset_character()
-                time.sleep(1)
-                reset_character()
-                time.sleep(1)
-                mkey.left_click_xy_natural(CLICKS["collection"][0], CLICKS["collection"][1])
-                time.sleep(1)
-                mkey.left_click_xy_natural(CLICKS["exit_collection"][0], CLICKS["exit_collection"][1])
-                time.sleep(1)
-            except Exception as e:
-                logger.write_log(f"Error during camera alignment: {e}")
-
-            logger.write_log("Begin position alignment.")
-
-            if not has_abyssal:
-                try:
-                    mkey.left_click_xy_natural(CLICKS["close_menu"][0], CLICKS["close_menu"][1])
-                    time.sleep(0.4)
-                    right_click_drag(1000, 0)
-                    time.sleep(0.4)
-                    kb.press("d")
-                    time.sleep(3)
-                    kb.release("d")
-                    time.sleep(0.4)
-                    kb.press("w")
-                    time.sleep(8)
-                    kb.release("w")
-                    time.sleep(0.4)
-                    kb.press("a")
-                    time.sleep(3)
-                    kb.release("a")
-                    time.sleep(0.4)
-                    kb.press("w")
-                    time.sleep(1)
-                    kb.release("w")
-                    time.sleep(0.4)
-                    kb.press("d")
-                    time.sleep(0.75)
-                    kb.release("d")
-                    time.sleep(0.4)
-                    kb.press("w")
-                    time.sleep(1)
-                    kb.release("w")
-                except Exception as e:
-                    logger.write_log(f"Error during position alignment: {e}")
-
-            else:
-                saved_aura = None
-                while saved_aura is None:
-                    try:
-                        saved_aura = get_latest_equipped_aura().lower()
-                    except Exception as e:
-                        logger.write_log(f"Error checking current equipped aura: {e}.")
-                logger.write_log("Walking to Stella with Abyssal Hunter")
-                time.sleep(2)
-                equip_aura("Abyssal", False, mkey, kb, settings, ignore_next_detection, ignore_lock, reader)
-                time.sleep(2)
-                try:
-                    mkey.left_click_xy_natural(CLICKS["close_menu"][0], CLICKS["close_menu"][1])
-                    time.sleep(0.4)
-                    right_click_drag(1000, 0)
-                    time.sleep(0.4)
-                    kb.press("d")
-                    time.sleep(1.8)
-                    kb.release("d")
-                    time.sleep(0.4)
-                    kb.press("w")
-                    time.sleep(6)
-                    kb.release("w")
-                    time.sleep(0.4)
-                    kb.press("a")
-                    time.sleep(1.3)
-                    kb.release("a")
-                    time.sleep(0.4)
-                    kb.press("w")
-                    time.sleep(0.5)
-                    kb.release("w")
-                    time.sleep(0.4)
-                    kb.press("d")
-                    time.sleep(0.4)
-                    kb.release("d")
-                    time.sleep(0.4)
-                    kb.press("w")
-                    time.sleep(0.5)
-                    kb.release("w")
-                except Exception as e:
-                    logger.write_log(f"Error during position alignment: {e}")
-
-            logger.write_log("Finished position alignment, walking to Stella.")
-
-            time.sleep(1)
-
-            if not has_abyssal:
-                try:
-                    right_click_drag(0, 600)
-                    time.sleep(1)
-                    stella_vip.run_macro(stella_vip.macro_actions)
-                    time.sleep(1)
-                except Exception as e:
-                    logger.write_log(f"Error during walk to Stella's: {e}")
-            else:
-                try:
-                    right_click_drag(0, 600)
-                    time.sleep(1)
-                    run_macro(f"{PATH_DIR}/stella_abyssal.mms")
-                    time.sleep(1)
-                except Exception as e:
-                    logger.write_log(f"Error during walk to Stella's: {e}")
-                if saved_aura:
-                    equip_aura(saved_aura, False, mkey, kb, settings, ignore_next_detection, ignore_lock, reader)
+            if has_abyssal:
+                if equip_aura("Abyssal", False, mkey, kb, settings, ignore_next_detection, ignore_lock, reader):
+                    stella_abyssal.run_macro(stella_abyssal.macro_actions)
                 else:
-                    equip_aura("Abyssal", True, mkey, kb, settings, ignore_next_detection, ignore_lock, reader)
+                    if nav_mode in ["VIP", "VIP+"]:
+
+                        stella_vip.run_macro(stella_vip.macro_actions)
+                    
+                    else:
+                        logger.write_log("Walking back to Stella is not supported with No VIP")
+            elif nav_mode in ["VIP", "VIP+"]:
+
+                stella_vip.run_macro(stella_vip.macro_actions)
+            
+            else:
+                logger.write_log("Walking back to Stella is not supported with No VIP")
 
     else:
         logger.write_log("Ensure you are standing near the cauldron with the 'F' prompt visible.")

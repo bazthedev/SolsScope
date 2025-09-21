@@ -176,44 +176,52 @@ def equip_aura(aura_name, unequip, mkey, kb, settings: dict, ignore_next_detecti
                 if not unequip:
                     logger.write_log(f"Aura {full_aura_name} is already equipped.")
                     return
+            if _.lower() != full_aura_name.lower():
+                if unequip:
+                    logger.write_log(f"Aura {full_aura_name} is already unequipped.")
+                    return
         except Exception as e:
             logger.write_log(f"Error checking current equipped aura: {e}.")
 
     logger.write_log(f"{'Unequipping' if unequip else 'Equipping'} Aura: {aura_name} (resolved as '{full_aura_name}')")
 
-    try:
-        mkey.left_click_xy_natural(CLICKS["open_storage"][0], CLICKS["open_storage"][1])
-        time.sleep(delay)
-        mkey.left_click_xy_natural(CLICKS["search_bar"][0], CLICKS["search_bar"][1])
-        time.sleep(delay)
-        kb.press(keyboard.Key.backspace)
-        time.sleep(0.2)
-        kb.release(keyboard.Key.backspace)
-        time.sleep(delay)
-        _type(kb, settings.get("typing_jitter", 0.2), settings.get("typing_delay", 0.2), settings.get("typing_hold", 0.2), aura_name)
-        mkey.left_click_xy_natural(CLICKS["first_aura_position"][0], CLICKS["first_aura_position"][1])
-        time.sleep(delay)
-        mkey.left_click_xy_natural(CLICKS["equip_aura"][0], CLICKS["equip_aura"][1])
-        time.sleep(delay)
-        mkey.left_click_xy_natural(CLICKS["close_menu"][0], CLICKS["close_menu"][1])
-    except Exception as e:
-        logger.write_log(f"Unable to equip aura: {e}")
+    with ignore_lock:
         try:
+            mkey.left_click_xy_natural(CLICKS["open_storage"][0], CLICKS["open_storage"][1])
+            time.sleep(delay)
+            mkey.left_click_xy_natural(CLICKS["search_bar"][0], CLICKS["search_bar"][1])
+            time.sleep(delay)
+            kb.press(keyboard.Key.backspace)
+            time.sleep(0.2)
+            kb.release(keyboard.Key.backspace)
+            time.sleep(delay)
+            _type(kb, settings.get("typing_jitter", 0.2), settings.get("typing_delay", 0.2), settings.get("typing_hold", 0.2), aura_name)
+            mkey.left_click_xy_natural(CLICKS["first_aura_position"][0], CLICKS["first_aura_position"][1])
+            time.sleep(delay)
+            mkey.left_click_xy_natural(CLICKS["equip_aura"][0], CLICKS["equip_aura"][1])
             time.sleep(delay)
             mkey.left_click_xy_natural(CLICKS["close_menu"][0], CLICKS["close_menu"][1])
-            time.sleep(delay)
-        except Exception as close_e:
-            logger.write_log(f"Error whilst closing menu: {close_e}")
-    
-    time.sleep(0.5)
-    new_aura = get_latest_equipped_aura()
-    if new_aura and new_aura.lower() == full_aura_name.lower():
-        with ignore_lock:
-            ignore_next_detection.add(full_aura_name.lower())
-        logger.write_log(f"Aura '{full_aura_name}' successfully equipped.")
-        success = True
-    else:
-        logger.write_log(f"Failed to equip aura '{full_aura_name}', continuing without ignoring.")
+        except Exception as e:
+            logger.write_log(f"Unable to equip aura: {e}")
+            try:
+                time.sleep(delay)
+                mkey.left_click_xy_natural(CLICKS["close_menu"][0], CLICKS["close_menu"][1])
+                time.sleep(delay)
+            except Exception as close_e:
+                logger.write_log(f"Error whilst closing menu: {close_e}")
+        
+        time.sleep(0.5)
+        new_aura = get_latest_equipped_aura()
+        if new_aura and new_aura.lower() == full_aura_name.lower() and not unequip:
+            with ignore_lock:
+                ignore_next_detection.add(full_aura_name.lower())
+            logger.write_log(f"Aura '{full_aura_name}' successfully equipped.")
+            success = True
+        elif new_aura and new_aura.lower() != full_aura_name.lower() and unequip:
+            logger.write_log(f"Aura '{full_aura_name}' successfully unequipped.")
+            success = True
+        else:
+            logger.write_log(f"Failed to equip aura '{full_aura_name}', continuing without ignoring.")
 
     return success
 
@@ -1421,16 +1429,17 @@ def auto_craft(webhook, settings: dict, stop_event: threading.Event, sniped_even
         with keyboard_lock:
             if has_abyssal:
                 if equip_aura("Abyssal", False, mkey, kb, settings, ignore_next_detection, ignore_lock, reader):
+                    logger.write_log("Using Abyssal Path for Stella")
                     stella_abyssal.run_macro(stella_abyssal.macro_actions)
                 else:
-                    if nav_mode in ["VIP", "VIP+"]:
-
+                    if VIP_STATUS in ["VIP", "VIP+"]:
+                        logger.write_log("Using VIP Path for Stella (Abyssal Equip Failed)")
                         stella_vip.run_macro(stella_vip.macro_actions)
                     
                     else:
                         logger.write_log("Walking back to Stella is not supported with No VIP")
-            elif nav_mode in ["VIP", "VIP+"]:
-
+            elif VIP_STATUS in ["VIP", "VIP+"]:
+                logger.write_log("Using VIP Path for Stella")
                 stella_vip.run_macro(stella_vip.macro_actions)
             
             else:
@@ -2988,19 +2997,21 @@ def do_obby(settings: dict, webhook, stop_event: threading.Event, sniped_event: 
 
             if has_abyssal:
                 if equip_aura("Abyssal", False, mkey, kb, settings, ignore_next_detection, ignore_lock, reader):
+                    logger.write_log("Using Abyssal Path for Obby")
                     obby_abyssal.run_macro(obby_abyssal.macro_actions)
                 else:
-                    if nav_mode in ["VIP", "VIP+"]:
-
+                    if VIP_STATUS in ["VIP", "VIP+"]:
+                        logger.write_log("Using VIP Path for Obby (Abyssal Equip Failed)")
                         obby_vip.run_macro(obby_vip.macro_actions)
                     
                     else:
+                        logger.write_log("Using Non VIP Path for Obby (Abyssal Equip Failed)")
                         obby.run_macro(obby.macro_actions)
-            elif nav_mode in ["VIP", "VIP+"]:
-
-                obby_vip.run_macro(obby_vip.macro_actions)
-            
+            elif VIP_STATUS in ["VIP", "VIP+"]:
+                logger.write_log("Using VIP Path for Obby")
+                obby_vip.run_macro(obby_vip.macro_actions)            
             else:
+                logger.write_log("Using Non VIP Path for Obby")
                 obby.run_macro(obby.macro_actions)
             
             time.sleep(1)
@@ -3040,16 +3051,16 @@ def do_obby(settings: dict, webhook, stop_event: threading.Event, sniped_event: 
             if is_autocraft and IMPORTED_ALL_PATHS:
                 if has_abyssal:
                     if equip_aura("Abyssal", False, mkey, kb, settings, ignore_next_detection, ignore_lock, reader):
+                        logger.write_log("Using Abyssal Path for Stella")
                         stella_abyssal.run_macro(stella_abyssal.macro_actions)
                     else:
-                        if nav_mode in ["VIP", "VIP+"]:
-
-                            stella_vip.run_macro(stella_vip.macro_actions)
-                        
+                        if VIP_STATUS in ["VIP", "VIP+"]:
+                            logger.write_log("Using VIP path for Stella (Abyssal Equip failed)")
+                            stella_vip.run_macro(stella_vip.macro_actions)                        
                         else:
                             logger.write_log("Walking back to Stella is not supported with No VIP")
-                elif nav_mode in ["VIP", "VIP+"]:
-
+                elif VIP_STATUS in ["VIP", "VIP+"]:
+                    logger.write_log("Using VIP Path for Stella")
                     stella_vip.run_macro(stella_vip.macro_actions)
                 
                 else:
@@ -3142,8 +3153,10 @@ def auto_questboard(settings: dict, webhook, stop_event: threading.Event, sniped
             time.sleep(1)
 
             if VIP_STATUS in ["VIP", "VIP+"]:
+                logger.write_log("Using VIP Path for Questboard")
                 qb_vip.run_macro(qb_vip.macro_actions)
             elif VIP_STATUS == "No VIP":
+                logger.write_log("Using Non VIP Path for Questboard")
                 qb.run_macro(qb.macro_actions)
                 return
             else:
@@ -3486,6 +3499,7 @@ def eden_detection(settings: dict, webhook, stop_event: threading.Event, keyboar
                     time.sleep(1)
 
                     if VIP_STATUS in ["VIP", "VIP+"]:
+                        logger.write_log("Using VIP Path for Eden")
                         eden_vip.run_macro(eden_vip.macro_actions)
                     else:
                         logger.write_log(f"VIP Status ({VIP_STATUS}) is not currently supported by Auto Eden.")

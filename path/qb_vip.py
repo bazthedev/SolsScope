@@ -7,7 +7,7 @@ from mousekey import MouseKey
 from time import sleep, perf_counter
 from fractions import Fraction
 
-NONVIP = True
+NONVIP = False
 SCALE = float(Fraction(342, 277))
 
 

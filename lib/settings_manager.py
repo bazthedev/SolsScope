@@ -1,20 +1,21 @@
 """
 SolsScope/Baz's Macro
 Created by Baz and Cresqnt
-v1.2.7
+v2.0.0
 Support server: https://discord.gg/8khGXqG7nA
 """
 
 import sys
 import os
 sys.path.insert(1, os.path.expandvars(r"%localappdata%/SolsScope/lib"))
+
 import json
 import requests
 from tkinter import messagebox
 
 from constants import (
     MACROPATH, DEFAULTSETTINGS, VALIDSETTINGSKEYS,
-    ACCEPTEDPOTIONS, ACCEPTEDAUTOPOP 
+    ACCEPTEDPOTIONS, ACCEPTEDAUTOPOP, ACCEPTED_QUESTBOARD
 )
 from utils import get_logger
 
@@ -24,6 +25,8 @@ AURAS_PATH = os.path.join(MACROPATH, "auras_new.json")
 BIOMES_PATH = os.path.join(MACROPATH, "biomes.json")
 MERCHANT_PATH = os.path.join(MACROPATH, "merchant.json")
 QUESTBOARD_PATH = os.path.join(MACROPATH, "questboard.json")
+FISHDATA_PATH = os.path.join(MACROPATH, "fish-data.json")
+AUTOCRAFT_PATH = os.path.join(MACROPATH, "autocraft.json")
 
 def get_settings_path():
     return SETTINGS_PATH
@@ -42,6 +45,12 @@ def get_merchant_path():
 
 def get_questboard_path():
     return QUESTBOARD_PATH
+
+def get_fish_path():
+    return FISHDATA_PATH
+
+def get_autocraftdata_path():
+    return AUTOCRAFT_PATH
 
 def get_auras():
     logger = get_logger()
@@ -114,6 +123,42 @@ def get_questboard():
         logger.write_log(f"Failed to download Quest Board List: {e}")
     except OSError as e:
         logger.write_log(f"Failed to save Quest Board List: {e}")
+    return False
+
+def get_fishdata():
+    logger = get_logger()
+    logger.write_log("Downloading Fish Data List...")
+    try:
+        dl = requests.get("https://raw.githubusercontent.com/cresqnt-sys/FishScope-Macro/main/fish-data.json", timeout=5)
+        dl.raise_for_status()
+        with open(FISHDATA_PATH, "wb") as f:
+            f.write(dl.content)
+        logger.write_log("Downloaded Fish Data successfully.")
+        return True
+    except requests.exceptions.Timeout:
+        logger.write_log("Failed to download Fish Data: Request timed out.")
+    except requests.exceptions.RequestException as e:
+        logger.write_log(f"Failed to download Fish Data: {e}")
+    except OSError as e:
+        logger.write_log(f"Failed to save Fish Data: {e}")
+    return False
+
+def get_autocraft_data():
+    logger = get_logger()
+    logger.write_log("Downloading Auto Craft Data...")
+    try:
+        dl = requests.get("https://raw.githubusercontent.com/bazthedev/SolsScope/main/autocraft.json", timeout=5)
+        dl.raise_for_status()
+        with open(AUTOCRAFT_PATH, "wb") as f:
+            f.write(dl.content)
+        logger.write_log("Downloaded Auto Craft Data successfully.")
+        return True
+    except requests.exceptions.Timeout:
+        logger.write_log("Failed to download Auto Craft Data: Request timed out.")
+    except requests.exceptions.RequestException as e:
+        logger.write_log(f"Failed to download Auto Craft Data: {e}")
+    except OSError as e:
+        logger.write_log(f"Failed to save Auto Craft Data: {e}")
     return False
 
 def load_settings():
@@ -247,12 +292,12 @@ def validate_settings(current_settings):
          logger.write_log(f"Error during biome toggle validation: {e}")
 
     try:
-        validated_settings["ROBLOSECURITY_KEY"], roblosec_updated = _validate_roblo_security(validated_settings.get("ROBLOSECURITY_KEY", ""))
-        if roblosec_updated:
-            logger.write_log("Settings Validation: ROBLOSECURITY format corrected.")
+        validated_settings["quests_to_accept"], quest_update = _validate_quests(validated_settings.get("quests_to_accept"))
+        if quest_update:
+            logger.write_log("Settings Validation: Quest toggle structure updated.")
             needs_update = True
     except Exception as e:
-        logger.write_log(f"Error during ROBLOSECURITY validation: {e}")
+        logger.write_log(f"Error during auto quest validation: {e}")
 
     if needs_update:
         logger.write_log("Settings validation complete. Changes were made.")
@@ -286,16 +331,23 @@ def _validate_auto_pop_structure(pop_settings):
 
 def _validate_auto_craft_structure(craft_settings):
     logger = get_logger()
+
+    # Handle case where craft_settings is not a dictionary
+    if not isinstance(craft_settings, dict):
+        logger.write_log(f"Auto Craft Validation: craft_settings is not a dictionary (type: {type(craft_settings)}). Resetting to default structure.")
+        validated_craft = DEFAULTSETTINGS["auto_craft_item"].copy()
+        return validated_craft, True
+
     validated_craft = craft_settings.copy()
     needs_update = False
     for potion in ACCEPTEDPOTIONS:
         if potion not in validated_craft:
-            validated_craft[potion] = DEFAULTSETTINGS["auto_craft_item"].get(potion, False) 
+            validated_craft[potion] = DEFAULTSETTINGS["auto_craft_item"].get(potion, False)
             logger.write_log(f"Auto Craft Validation: Added missing potion '{potion}'.")
             needs_update = True
         elif not isinstance(validated_craft[potion], bool):
              logger.write_log(f"Auto Craft Validation: Correcting type for potion '{potion}'.")
-             validated_craft[potion] = DEFAULTSETTINGS["auto_craft_item"].get(potion, False) 
+             validated_craft[potion] = DEFAULTSETTINGS["auto_craft_item"].get(potion, False)
              needs_update = True
 
     keys_to_remove = [key for key in validated_craft if key not in ACCEPTEDPOTIONS]
@@ -311,19 +363,20 @@ def _validate_biome_toggles(biome_settings, biomes_data):
     logger = get_logger()
     validated_biomes = biome_settings.copy()
     needs_update = False
-    valid_biome_names = list(biomes_data.keys()) 
+    valid_biome_names = list(biomes_data.keys())
 
     for biome_name in valid_biome_names:
         if biome_name not in validated_biomes:
-            validated_biomes[biome_name] = DEFAULTSETTINGS["biomes"].get(biome_name, False)
-            logger.write_log(f"Biome Validation: Added missing biome '{biome_name}'.")
-            needs_update = True
+            if biomes_data[biome_name]["enabled"]:
+                validated_biomes[biome_name] = DEFAULTSETTINGS["biomes"].get(biome_name, False)
+                logger.write_log(f"Biome Validation: Added missing biome '{biome_name}'.")
+                needs_update = True
         elif not isinstance(validated_biomes[biome_name], bool):
              logger.write_log(f"Biome Validation: Correcting type for biome '{biome_name}'.")
              validated_biomes[biome_name] = DEFAULTSETTINGS["biomes"].get(biome_name, False)
              needs_update = True
 
-    keys_to_remove = [key for key in validated_biomes if key not in valid_biome_names]
+    keys_to_remove = [key for key in validated_biomes if key not in valid_biome_names or not biomes_data[key]["enabled"]]
     if keys_to_remove:
         for key in keys_to_remove:
             del validated_biomes[key]
@@ -332,12 +385,28 @@ def _validate_biome_toggles(biome_settings, biomes_data):
 
     return validated_biomes, needs_update
 
-def _validate_roblo_security(current_key):
+def _validate_quests(quest_settings):
+    logger = get_logger()
+    validated_quest = quest_settings.copy()
+    needs_update = False
+    for item in ACCEPTED_QUESTBOARD:
+        if item not in validated_quest:
+            validated_quest[item] = False
+            logger.write_log(f"Auto Quest Validation: Added missing quest '{item}'.")
+            needs_update = True
+        elif not isinstance(validated_quest[item], bool):
+            logger.write_log(f"Auto Quest Validation: Correcting structure for quest '{item}'.")
+            validated_quest[item] = False 
+            needs_update = True
 
-    warning_text = "_|WARNING:-DO-NOT-SHARE-THIS.--Sharing-this-will-allow-someone-to-log-in-as-you-and-to-steal-your-ROBUX-and-items.|_"
-    if warning_text in current_key:
-        return current_key.replace(warning_text, ""), True 
-    return current_key, False 
+    keys_to_remove = [key for key in validated_quest if key not in ACCEPTED_QUESTBOARD]
+    if keys_to_remove:
+         for key in keys_to_remove:
+             del validated_quest[key]
+             logger.write_log(f"Auto Quest Validation: Removed invalid quest '{key}'.")
+             needs_update = True
+
+    return validated_quest, needs_update
 
 def migrate_settings_from_legacy_location():
     logger = get_logger()

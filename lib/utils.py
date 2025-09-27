@@ -1,22 +1,31 @@
 """
 SolsScope/Baz's Macro
 Created by Baz and Cresqnt
-v1.2.7
+v2.0.0
 Support server: https://discord.gg/8khGXqG7nA
 """
 
 import sys
 import os
 sys.path.insert(1, os.path.expandvars(r"%localappdata%/SolsScope/lib"))
+
 import psutil
 import time
-import tkinter as tk
 from difflib import SequenceMatcher
 import mousekey as mk 
 import io 
 import discord
 import datetime
 import json
+import pyautogui as pag
+import re
+from gc import collect
+import psutil
+import platform
+import cv2
+import random
+
+from constants import MACROPATH, COORDS_PERCENT1610, COORDS_PERCENT169, COORDS_PERCENT43
 
 GLOBAL_LOGGER = None
 
@@ -277,6 +286,21 @@ def calculate_coords(primary_monitor):
 
 def format_key(key: str) -> str:
     """Converts a snake_case key into a Title Case string with spaces."""
+    
+    custom_labels = {
+        "merchant_detection": "Auto Detect And Buy From Merchants",
+        #"vok_taran" : "Spawn Sand Storm using \"vok taran\"",
+        "use_gpu_for_ocr" : "Use GPU for OCR processing",
+        "enable_ui_nav_key" : "Turn on UI Navigation key bind",
+        "delay" : "Actions Delay",
+        "typing_delay" : "Typing character delay",
+        "typing_hold" : "Hold key duration",
+        "typing_jitter" : "Typing Jitter"
+    }
+
+    if key in custom_labels:
+        return custom_labels[key]    
+
     return key.replace("_", " ").title()
 
 def resolve_full_aura_name(partial_name: str, aura_dict : dict) -> str:
@@ -290,3 +314,377 @@ def resolve_full_aura_name(partial_name: str, aura_dict : dict) -> str:
         return matches[0]
 
     return min(matches, key=len)
+
+def apply_roblox_fastflags(update_status_callback=None):
+    """Apply Roblox FastFlag settings for logging"""
+    local_app_data = os.getenv('LOCALAPPDATA')
+    if not local_app_data:
+        if update_status_callback:
+            update_status_callback("Error: LOCALAPPDATA environment variable not found.")
+        return
+
+    required_flags = {
+        "FStringDebugLuaLogLevel": "trace",
+        "FStringDebugLuaLogPattern": "ExpChat/mountClientApp"
+    }
+    applied_count = 0
+    updated_count = 0
+
+    def update_json_file(json_file_path, launcher_info_str):
+        nonlocal applied_count, updated_count
+        current_settings = {}
+        needs_update = False
+        file_existed = False
+        file_dir = os.path.dirname(json_file_path)
+
+        try:
+            os.makedirs(file_dir, exist_ok=True)
+
+            if os.path.exists(json_file_path):
+                file_existed = True
+                try:
+                    with open(json_file_path, 'r', encoding="utf-8") as f:
+                        content = f.read()
+                        if content.strip(): 
+                            current_settings = json.loads(content)
+                        else:
+                            current_settings = {} 
+                except json.JSONDecodeError:
+                    if update_status_callback:
+                        update_status_callback(f"Warning: Corrupt JSON found at {json_file_path}. Overwriting for {launcher_info_str}.")
+                    current_settings = {}
+                    needs_update = True
+                except Exception as read_err:
+                    if update_status_callback:
+                        update_status_callback(f"Warning: Error reading {json_file_path}: {read_err}. Overwriting for {launcher_info_str}.")
+                    current_settings = {}
+                    needs_update = True
+            else:
+                needs_update = True
+
+            for key, value in required_flags.items():
+                if key not in current_settings or current_settings[key] != value:
+                    current_settings[key] = value
+                    needs_update = True
+
+            if needs_update:
+                with open(json_file_path, 'w', encoding="utf-8") as f:
+                    json.dump(current_settings, f, indent=2)
+                if file_existed:
+                    updated_count += 1
+                    if update_status_callback:
+                        update_status_callback(f"Updated FastFlags in {launcher_info_str} file")
+                else:
+                    applied_count += 1
+                    if update_status_callback:
+                        update_status_callback(f"Applied FastFlags to new file in {launcher_info_str}")
+
+        except Exception as e:
+            if update_status_callback:
+                update_status_callback(f"Error processing FastFlags for {launcher_info_str}: {e}")
+
+    mod_launchers_config_files = {
+        'Bloxstrap': os.path.join(local_app_data, 'Bloxstrap', 'Modifications', 'ClientSettings', 'ClientAppSettings.json'),
+        'Fishstrap': os.path.join(local_app_data, 'Fishstrap', 'Modifications', 'ClientSettings', 'ClientAppSettings.json')
+    }
+
+    for launcher_name, target_json_path in mod_launchers_config_files.items():
+        launcher_base_dir = os.path.dirname(os.path.dirname(os.path.dirname(target_json_path)))
+        if os.path.isdir(launcher_base_dir):
+            update_json_file(target_json_path, f"{launcher_name} Modifications")
+
+    roblox_versions_path = os.path.join(local_app_data, 'Roblox', 'Versions')
+    if os.path.isdir(roblox_versions_path):
+        try:
+            for item_name in os.listdir(roblox_versions_path):
+                item_path = os.path.join(roblox_versions_path, item_name)
+
+                if os.path.isdir(item_path) and item_name.startswith("version-"):
+                    version_folder_path = item_path
+                    client_settings_path = os.path.join(version_folder_path, 'ClientSettings')
+                    json_file_path = os.path.join(client_settings_path, 'ClientAppSettings.json')
+
+                    update_json_file(json_file_path, f"Roblox/{item_name}")
+        except OSError as e:
+            if update_status_callback:
+                update_status_callback(f"Error accessing Roblox versions directory: {e}")
+
+    if applied_count > 0 or updated_count > 0:
+        if update_status_callback:
+            update_status_callback(f"Finished applying/updating FastFlags ({applied_count} new, {updated_count} updated)." )
+    else:
+        if update_status_callback:
+            update_status_callback("FastFlags check complete. No changes needed or relevant folders found.")
+
+def is_quest_accepted(quest_name : str) -> bool:
+
+    with open(os.path.join(MACROPATH, "quest_tracker.json"), "r", encoding="utf-8") as f:
+        tracked_quests = json.load(f)
+
+        if quest_name in tracked_quests["quest_board"]:
+            return True
+        else:
+            return False
+        
+def get_coords_percent(coords):
+    ratio = coords["scr_wid"] / coords["scr_hei"]
+    if abs(ratio - (16/9)) < 0.01:
+        return COORDS_PERCENT169
+    elif abs(ratio - (16/10)) < 0.01:
+        return COORDS_PERCENT1610
+    elif abs(ratio - (4/3)) < 0.01:
+        return COORDS_PERCENT43
+    else:
+        print("Could not determine screen ratio, exiting.")
+        return None
+    
+def convert_boxes(percent_boxes, scr_wid, scr_hei):
+    pixel_boxes = {}
+    for name, (x1, y1, x2, y2) in percent_boxes.items():
+        pixel_boxes[name] = (
+            round(x1 * scr_wid),
+            round(y1 * scr_hei),
+            round(x2 * scr_wid),
+            round(y2 * scr_hei)
+        )
+    return pixel_boxes
+
+
+
+def detect_add_potions(scrolled : bool, reader, REGIONS) -> list:
+
+    screenshot_path = os.path.join(MACROPATH, "scr", "screenshot_autocraft.png")
+
+    time.sleep(0.6)
+
+    pag.screenshot(screenshot_path)
+    time.sleep(0.2)
+
+    image = cv2.imread(screenshot_path)
+
+    if image is None:
+        return False
+    
+    if not scrolled:
+        x1, y1, x2, y2 = REGIONS["autocraft_top_add"]
+        add_crop = image[y1:y2, x1:x2]
+        
+        ocr_results = reader.readtext(add_crop, detail=0)
+        ocr_add_raw = " ".join(ocr_results).strip()
+
+        if ocr_add_raw:
+
+            ocr_add_clean = re.sub(r"[^a-zA-Z']", "", ocr_add_raw).lower()
+            final_text = fuzzy_match_merchant(ocr_add_clean, ["add"])
+
+            del image, add_crop, x1, y1, x2, y2, ocr_results, ocr_add_raw
+            collect()
+
+            if final_text and final_text.lower() == "add":
+                return False
+            else:
+                return True
+
+        else:
+            del image, add_crop, x1, y1, x2, y2, ocr_results, ocr_add_raw
+            collect()
+            return True
+
+    else:
+
+        x1, y1, x2, y2 = REGIONS["autocraft_scrolled_bottom_add"]
+        add_crop = image[y1:y2, x1:x2]
+        
+        ocr_results = reader.readtext(add_crop, detail=0)
+        ocr_add_raw = " ".join(ocr_results).strip()
+
+        if ocr_add_raw:
+
+            ocr_add_clean = re.sub(r"[^a-zA-Z']", "", ocr_add_raw).lower()
+            final_text = fuzzy_match_merchant(ocr_add_clean, ["add"])
+            
+            del image, add_crop, x1, y1, x2, y2, ocr_results, ocr_add_raw
+            collect()
+
+            if final_text and final_text.lower() == "add":
+                return False
+            else:
+                return True
+
+        else:
+            del image, add_crop, x1, y1, x2, y2, ocr_results, ocr_add_raw
+            collect()
+            return True
+
+
+
+def check_tab_menu_open(reader, COORDS_PERCENT, COORDS) -> bool:
+
+    screenshot_path = os.path.join(MACROPATH, "scr", "screenshot_tab_menu.png")
+
+    time.sleep(0.6)
+
+    pag.screenshot(screenshot_path)
+    time.sleep(0.2)
+
+    image = cv2.imread(screenshot_path)
+
+    if image is None:
+        return False
+
+    x1p, y1p, x2p, y2p = COORDS_PERCENT["check_tab_menu"]
+    x1 = round(x1p * COORDS["scr_wid"])
+    y1 = round(y1p * COORDS["scr_hei"])
+    x2 = round(x2p * COORDS["scr_wid"])
+    y2 = round(y2p * COORDS["scr_hei"])
+    add_crop = image[y1:y2, x1:x2]
+    
+    ocr_results = reader.readtext(add_crop, detail=0)
+    ocr_add_raw = " ".join(ocr_results).strip()
+
+    if ocr_add_raw:
+
+        ocr_add_clean = re.sub(r"[^a-zA-Z']", "", ocr_add_raw).lower()
+        final_text = fuzzy_match_merchant(ocr_add_clean, ["rolls"])
+
+        if final_text and final_text.lower() == "rolls":
+            del image, x1p, y1p, x2p, y2p, add_crop, x1, y1, x2, y2, ocr_results, ocr_add_raw, ocr_add_clean, final_text
+            collect()
+            return True
+        elif not final_text:
+            del image, x1p, y1p, x2p, y2p, add_crop, x1, y1, x2, y2, ocr_results, ocr_add_raw
+            collect()
+            return False
+        
+    del image, x1p, y1p, x2p, y2p, add_crop, x1, y1, x2, y2, ocr_results, ocr_add_raw
+    collect()
+    return False
+
+
+def get_autocraft_path(nonscrolled: tuple, scrolled: tuple = (), position: int = 4) -> int:
+
+    nonscrolled = tuple(nonscrolled)
+    scrolled = tuple(scrolled)
+
+    if position == 5 and scrolled:
+        scrolled = (nonscrolled[2],) + scrolled[1:]
+
+    lookup = {
+        6: {
+            ((False, False, False), (False, False, False)): 5,
+            ((False, False, False), (False, True, False)): 4,
+            ((False, False, False), (True, False, False)): 4,
+            ((False, False, False), (True, True, False)): 3,
+            ((False, False, True), (False, False, False)): 4,
+            ((False, False, True), (False, True, False)): 3,
+            ((False, False, True), (True, False, False)): 3,
+            ((False, False, True), (True, True, False)): 2,
+            ((False, True, False), (False, False, False)): 4,
+            ((False, True, False), (False, True, False)): 3,
+            ((False, True, False), (True, False, False)): 3,
+            ((False, True, False), (True, True, False)): 2,
+            ((False, True, True), (False, False, False)): 3,
+            ((False, True, True), (False, True, False)): 2,
+            ((False, True, True), (True, False, False)): 2,
+            ((False, True, True), (True, True, False)): 1,
+            ((True, False, False), (False, False, False)): 4,
+            ((True, False, False), (False, True, False)): 3,
+            ((True, False, False), (True, False, False)): 3,
+            ((True, False, False), (True, True, False)): 2,
+            ((True, False, True), (False, False, False)): 3,
+            ((True, False, True), (False, True, False)): 2,
+            ((True, False, True), (True, False, False)): 2,
+            ((True, False, True), (True, True, False)): 1,
+            ((True, True, False), (False, False, False)): 3,
+            ((True, True, False), (False, True, False)): 2,
+            ((True, True, False), (True, False, False)): 2,
+            ((True, True, False), (True, True, False)): 1,
+            ((True, True, True), (False, False, False)): 2,
+            ((True, True, True), (False, True, False)): 1,
+            ((True, True, True), (True, False, False)): 1,
+            ((True, True, True), (True, True, False)): 0
+        },
+        5: {
+            ((False, False, False), (False,)): 4,
+            ((False, False, True), (True,)): 3,
+            ((False, True, False), (False,)): 3,
+            ((False, True, True), (True,)): 2,
+            ((True, False, False), (False,)): 3,
+            ((True, False, True), (True,)): 2,
+            ((True, True, False), (False,)): 2,
+            ((True, True, True), (True,)): 1
+        },
+        4: {
+            ((False, False, False), (False, False, False)): 3,
+            ((False, False, False), (False, True, False)): 3,
+            ((False, False, False), (True, False, False)): 3,
+            ((False, False, False), (True, True, False)): 3,
+            ((False, False, True), (False, False, False)): 2,
+            ((False, False, True), (False, True, False)): 2,
+            ((False, False, True), (True, False, False)): 2,
+            ((False, False, True), (True, True, False)): 2,
+            ((False, True, False), (False, False, False)): 2,
+            ((False, True, False), (False, True, False)): 2,
+            ((False, True, False), (True, False, False)): 2,
+            ((False, True, False), (True, True, False)): 2,
+            ((False, True, True), (False, False, False)): 1,
+            ((False, True, True), (False, True, False)): 1,
+            ((False, True, True), (True, False, False)): 1,
+            ((False, True, True), (True, True, False)): 1,
+            ((True, False, False), (False, False, False)): 2,
+            ((True, False, False), (False, True, False)): 2,
+            ((True, False, False), (True, False, False)): 2,
+            ((True, False, False), (True, True, False)): 2,
+            ((True, False, True), (False, False, False)): 1,
+            ((True, False, True), (False, True, False)): 1,
+            ((True, False, True), (True, False, False)): 1,
+            ((True, False, True), (True, True, False)): 1,
+            ((True, True, False), (False, False, False)): 1,
+            ((True, True, False), (False, True, False)): 1,
+            ((True, True, False), (True, False, False)): 1,
+            ((True, True, False), (True, True, False)): 1,
+            ((True, True, True), (False, False, False)): 0,
+            ((True, True, True), (False, True, False)): 0,
+            ((True, True, True), (True, False, False)): 0,
+            ((True, True, True), (True, True, False)): 0
+        },
+        3: {
+            ((False, False, False), ()): 2,
+            ((False, True, False), ()): 1,
+            ((True, False, False), ()): 1,
+            ((True, True, False), ()): 0
+        },
+        2: {
+            ((False, False), ()): 1,
+            ((True, False), ()): 0
+        }
+    }
+
+    return lookup.get(position, {}).get((nonscrolled, scrolled), -1)
+
+
+def get_hardware_profile():
+    info = {
+        "cpu_name": platform.processor(),
+        "cpu_cores": psutil.cpu_count(logical=False),
+        "cpu_threads": psutil.cpu_count(logical=True),
+        "ram_gb": round(psutil.virtual_memory().total / (1024**3), 1),
+        "os": platform.system() + " " + platform.release()
+    }
+    return info
+
+def get_device_score():
+    cores = psutil.cpu_count(logical=True)
+    ram_gb = psutil.virtual_memory().total / (1024**3)
+
+    score = (cores * 1.5) + (ram_gb * 0.5)
+    return score 
+    
+def _type(kb, jitter, delay, hold, text : str):
+
+    for character in text:
+
+        kb.press(character)
+        time.sleep(hold)
+        kb.release(character)
+        time.sleep(delay + random.uniform(0, jitter))

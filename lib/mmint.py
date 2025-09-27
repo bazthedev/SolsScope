@@ -1,7 +1,7 @@
 """
 SolsScope/Baz's Macro
 Created by Baz and Cresqnt
-v1.2.7
+v2.0.0
 Support server: https://discord.gg/8khGXqG7nA
 """
 
@@ -61,7 +61,7 @@ def parse_key(k):
     return special_keys.get(k, k.strip("'\""))
 
 def run_macro(path):
-    with open(path, "r") as f:
+    with open(path, "r", encoding="utf-8") as f:
         lines = f.readlines()
 
     instructions = []

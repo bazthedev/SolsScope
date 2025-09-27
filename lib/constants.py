@@ -1,7 +1,7 @@
 """
 SolsScope/Baz's Macro
 Created by Baz and Cresqnt
-v1.2.7
+v2.0.0
 Support server: https://discord.gg/8khGXqG7nA
 """
 
@@ -10,7 +10,7 @@ import os
 sys.path.insert(1, os.path.expandvars(r"%localappdata%/SolsScope/lib"))
 
 MACROPATH = os.path.expandvars(r"%localappdata%\\SolsScope") 
-LOCALVERSION = "1.2.7"
+LOCALVERSION = "2.0.0"
 
 PLACE_ID = 15532962292
 BASE_ROBLOX_URL = f"https://www.roblox.com/games/{PLACE_ID}/"
@@ -21,9 +21,11 @@ MS_RBLX_LOG_DIR = os.path.expandvars(r"%LOCALAPPDATA%\\Packages\\ROBLOXCorporati
 DISCORD_WS_BASE = "wss://gateway.discord.gg/?v=10&encoding-json"
 WEBHOOK_ICON_URL = "https://raw.githubusercontent.com/bazthedev/SolsScope/a93aaa9a42a7184047f12aa4135f3dab0857f05d/Server%20Edition/whicon.png"
 
-ALT_TESSERACT_DIR = os.path.expandvars(r"%localappdata%\Programs\Tesseract-OCR")
-
 PATH_DIR = os.path.expandvars(r"%localappdata%\SolsScope\path")
+
+PYTHON_EXE = os.path.join(MACROPATH, "py", "python.exe")
+ASSETDIR = os.path.join(MACROPATH, "assets")
+CALIBDIR = os.path.join(MACROPATH, "calibrations.json")
 
 DEFAULTSETTINGS = {
     "WEBHOOK_URL": "",
@@ -35,7 +37,7 @@ DEFAULTSETTINGS = {
     "mention_id": 0,
     "minimum_roll": "99998", 
     "minimum_ping": "349999", 
-    "reset_aura": "",
+    "reset_aura": "exotic",
     "merchant_detection": False,
     "ping_mari": False,
     "ping_jester": True,
@@ -70,7 +72,6 @@ DEFAULTSETTINGS = {
         "Santa Claus Potion": {"use": True, "amount": 5},
         "Hwachae": {"use": True, "amount": 1}
     },
-    "auto_craft_mode": False,
     "skip_auto_mode_warning": False,
     "auto_craft_item": {
         "Potion of Bound": False,
@@ -84,14 +85,8 @@ DEFAULTSETTINGS = {
     "auto_biome_randomizer": False,
     "auto_strange_controller": False,
     "failsafe_key": "ctrl+e",
-    "merchant_detec_wait": 0, 
     "private_server_link": "",
     "take_screenshot_on_detection": False,
-    "ROBLOSECURITY_KEY": "",
-    "DISCORD_TOKEN": "",
-    "sniper_enabled": False,
-    "sniper_toggles": {"Glitched": True, "Dreamspace": False},
-    "sniper_logs": True,
     "change_cutscene_on_pop": True,
     "disable_autokick_prevention": False,
     "periodic_screenshots": {"inventory": False, "storage": False},
@@ -99,16 +94,23 @@ DEFAULTSETTINGS = {
     "check_update": True,
     "auto_install_update": False,
     "biomes": { 
-        "snowy": False, "windy": False, "rainy": False, "sand storm": False,
-        "hell": False, "starfall": False, "corruption": False, "null": False,
-        "glitched": True, "dreamspace": True
+        "snowy": True, "windy": True, "rainy": True, "sand storm": True,
+        "hell": True, "starfall": True, "corruption": True, "null": True,
+        "glitched": True, "dreamspace": True,
     },
     "auto_purchase_items_mari": {
         "Lucky Potion": {"Purchase" : False, "amount" : 25},
+        "Lucky Potion L": {"Purchase" : False, "amount" : 10},
+        "Lucky Potion XL": {"Purchase" : False, "amount" : 10},
         "Speed Potion": {"Purchase" : False, "amount" : 25},
+        "Speed Potion L": {"Purchase" : False, "amount" : 10},
+        "Speed Potion XL": {"Purchase" : False, "amount" : 10},
         "Mixed Potion": {"Purchase" : False, "amount" : 25},
-        "Fortune Spoid": {"Purchase" : False, "amount" : 4},
-        "Gear": {"Purchase" : False, "amount" : 1},
+        "Fortune Spoid I": {"Purchase" : False, "amount" : 4},
+        "Fortune Spoid II": {"Purchase" : False, "amount" : 2},
+        "Fortune Spoid III": {"Purchase" : False, "amount" : 1},
+        "Gear A": {"Purchase" : False, "amount" : 1},
+        "Gear B": {"Purchase" : False, "amount" : 1},
         "Lucky Penny": {"Purchase" : False, "amount" : 3},
         "Void Coin": {"Purchase": True, "amount" : 2}
     },
@@ -125,14 +127,14 @@ DEFAULTSETTINGS = {
         "Rune of Corruption": {"Purchase" : False, "amount" : 1},
         "Rune of Nothing": {"Purchase" : False, "amount" : 1},
         "Rune of Everything": {"Purchase" : True, "amount" : 1},
-        "Strange Potion": {"Purchase" : True, "amount" : 25},
+        "Strange Potion I": {"Purchase" : True, "amount" : 15},
+        "Strange Potion II": {"Purchase" : True, "amount" : 25},
         "Stella's Candle": {"Purchase" : True, "amount" : 5},
         "Potion of Bound": {"Purchase" : True, "amount" : 1},
         "Merchant Tracker": {"Purchase" : False, "amount" : 1},
         "Heavenly Potion": {"Purchase" : True, "amount" : 1},
         "Oblivion Potion": {"Purchase" : True, "amount" : 1}
     },
-    "scan_channels": ["1282542323590496277"], 
     "mari_ping_id": 0,
     "jester_ping_id": 0,
     "do_obby": False,
@@ -153,7 +155,6 @@ DEFAULTSETTINGS = {
         "Hour Glass" : True,
         "NULL?" : True,
     },
-    "idle_mode" : False,
     "skip_merchant_download" : False,
     "redownload_libs_on_run" : False,
     "enable_auto_quest_board" : False,
@@ -166,28 +167,140 @@ DEFAULTSETTINGS = {
         "Finding a person": True,
         "Meditation I": True,
         "Meditation II": True,
-        "Meditation III": True,
-        "Delivery III": True
+        "Windy Breakthrough": True,
+        "Snowy Breakthrough": True,
+        "Rainy Breakthrough": True,
+        "SandStorm Breakthrough": True,
+        "Hell Breakthrough": True,
+        "Starfall Breakthrough": True,
+        "Corruption Breakthrough": True,
+        "Null Breakthrough": True
     },
     "skip_questboard_download" : False,
-    "notify_obby_completion" : False
+    "notify_obby_completion" : False,
+    "has_abyssal_hunter" : False,
+    "do_not_walk_to_stella" : False,
+    "current_theme" : "Default",
+    "disable_eden_detection_in_limbo" : False,
+    "do_not_interact_with_eden" : False,
+    "mode" : "Normal",
+    "use_reset_aura" : False,
+    "use_alternate_uinav" : True,
+    "themes" : {
+        "Default" : os.path.join(MACROPATH, "theme", "default.ssthm")
+    },
+    #"vok_taran" : False,
+    "enable_ui_nav_key" : "#",
+    "skip_autocraft_download" : False,
+    "send_item_crafted_notification" : True,
+    "delay" : 0.05,
+    "vip_status" : "No VIP",
+    "merchant_detection_type" : "Legacy",
+    "interaction_type" : "Mouse",
+    "enable_player_logger" : True,
+    "calibration" : "",
+    #"watch_ad_for_autocraft" : False,
+    "typing_delay" : 0.2,
+    "typing_hold" : 0.2,
+    "typing_jitter" : 0.1
 }
 
 VALIDSETTINGSKEYS = list(DEFAULTSETTINGS.keys())
 
-DONOTDISPLAY = ["__version__"]
+TOOLTIPS = {
+    "WEBHOOK_URL": "The URL that the macro posts notifications to.",
+    "use_roblox_player": "Force the Roblox Player logs to be used even if Microsoft Store version is running.",
+    "global_wait_time": "The time (in seconds) between some actions.",
+    "skip_aura_download": "Skip downloading the auras information (recommended if slow startup). This will mean you cannot detect new auras if they are released.",
+    "mention": "Mention you when detecting something.",
+    "mention_id": "ID of the user to mention. If this needs to be a role, then use & before the ID.",
+    "minimum_roll": "Minimum rarity of an aura for it to be sent to the webhook.", 
+    "minimum_ping": "Minimum rarity of an aura for it to be sent to the webhook and ping you.", 
+    "reset_aura": "The aura to be equipped when a new aura is rolled.",
+    "merchant_detection": "Detect merchants spawning by using the Merchant Teleporter item.",
+    "ping_mari": "Mention you for when a Mari spawns.",
+    "ping_jester": "Mention you for when a Jester spawns.",
+    "pop_in_glitch": "Pop potions when a glitch biome spawns.",
+    "auto_use_items_in_glitch": "The items to use when the biome spawns.",
+    "pop_in_dreamspace": "Pop potions when a dreamspace biome spawns.",
+    "auto_use_items_in_dreamspace": "The items to use when the biome spawns.",
+    "skip_auto_mode_warning": "Skip the warning that you are using auto craft mode.",
+    "auto_biome_randomizer": "Automatically use the Biome Randomizer every 35 minutes.",
+    "auto_strange_controller": "Automatically use the Strange Controller every 20 minutes.",
+    "failsafe_key": "Press this key combination to instantly terminate the program.",
+    "private_server_link": "Your Roblox Private Server URL (to be sent with notifications).",
+    "take_screenshot_on_detection": "Take a screenshot of your screen when an aura is rolled.",
+    "change_cutscene_on_pop": "Change the cutscene settings to be large to skip long cutscenes whilst popping.",
+    "disable_autokick_prevention": "Disable Auto Kick Action (Not recommended, use IDLE mode).",
+    "disconnect_prevention": "Check for if you have disconnected and attempt to rejoin the private server.",
+    "check_update": "Check for Macro updates.",
+    "auto_install_update": "Automatically download the latest macro update.",
+    "mari_ping_id": "ID of the role to be pinged when a Mari spawns.",
+    "jester_ping_id": "ID of the role to be pinged when a Jester spawns.",
+    "do_obby": "Complete the Obby for its blessing.",
+    "SECONDARY_WEBHOOK_URLS": "Webhooks to forward messages to (Does not allow Cross Macroing).",
+    "disable_aura_detection": "Disable the detection of auras (Not Recommended).",
+    "disable_biome_detection": "Disable the detection of biomes (Not Recommended).",
+    "skip_biome_download": "Skip downloading the biomes information (recommended if slow startup). This will mean you cannot detect new biomes if they are released.",
+    "auto_sell_to_jester" : "Auto sell your items to Jester when he spawns.",
+    "amount_of_item_to_sell" : "The amount of an item that should be sold to Jester.",
+    "skip_merchant_download" : "Skip downloading the Merchants information (recommended if slow startup). This will cause issues if there are new Merchants added.",
+    "enable_auto_quest_board" : "Automatically check the Quest Board every hour and accept/decline/claim quests.",
+    "skip_questboard_download" : "Skip downloading the Quests that are offered by the Quest Board.",
+    "notify_obby_completion" : "Send a message to the Webhook when you complete the obby.",
+    "has_abyssal_hunter" : "Use Abyssal Hunter when executing paths.",
+    "do_not_walk_to_stella" : "Do not walk to Stella for auto craft (Recommended if you have issues with paths).",
+    "disable_eden_detection_in_limbo" : "Disable the detection of Eden in Limbo Mode (Not Recommended).",
+    "do_not_interact_with_eden" : "Detect Eden but do not walk to and accept the contract.",
+    "mode" : "The mode that the Macro is currently in.",
+    "use_reset_aura" : "Equip the reset aura when a new aura is rolled.",
+    "use_alternate_uinav" : "Use the alternate paths for UI navigation. Enable this if pressing the left arrow with UI nav on takes you to the storage button.",
+    "themes" : "List of themes that are available to be applied.",
+    #"vok_taran" : "Types \"vok taran\" in the chat every 30 minutes to spawn a Sand Storm biome.",
+    "enable_ui_nav_key" : "The key needed to be pressed to enable UI Navigation.",
+    "skip_autocraft_download" : "Skip downloading the Auto Craft Data.",
+    "send_item_crafted_notification" : "Send a notification whenever an item is crafted during Auto Craft. This may cause the program to take longer per potion.",
+    "delay" : "How long to wait between actions. A larger number is recommended for potato PCs (~0.5).",
+    "merchant_detection_type" : "Choose either Legacy (use the Merchant Teleporter every 60/90s) or Logs (scan log file for merchant spawns).",
+    "interaction_type" : "Choose how you want the Macro to perform actions in the game.",
+    "enable_player_logger" : "Enable the player logger for biomes other than glitched/dreamspace.",
+    "calibration" : "How the macro runs based on your screen size.",
+    #"watch_ad_for_autocraft" : "Watch the add every hour to get increased rates.",
+    "typing_delay" : "How long typing waits between each character.",
+    "typing_hold" : "How long typing holds a key for (max about 0.3-0.5)",
+    "typing_jitter" : "Random amount added to delay to act human."
+}
+
+DONOTDISPLAY = ["__version__", "current_theme"]
 NOTRECOMMENDED = []
 
-GENERAL_KEYS = ["WEBHOOK_URL", "private_server_link", "SECONDARY_WEBHOOK_URLS", "failsafe_key", "idle_mode", "use_roblox_player", "global_wait_time", "mention", "mention_id", "skip_aura_download", "skip_biome_download", "skip_merchant_download", "skip_questboard_download"]
-AURAS_KEYS = ["minimum_roll", "minimum_ping", "reset_aura", "take_screenshot_on_detection"]
-BIOMES_KEYS = ["biomes", "auto_biome_randomizer", "auto_strange_controller", "pop_in_glitch", "auto_use_items_in_glitch", "pop_in_dreamspace", "auto_use_items_in_dreamspace"]
-SNIPER_KEYS = ["sniper_enabled", "sniper_toggles", "DISCORD_TOKEN", "ROBLOSECURITY_KEY", "sniper_logs", "scan_channels"]
-MERCHANT_KEYS = ["merchant_detection", "ping_mari", "mari_ping_id", "auto_purchase_items_mari", "ping_jester", "jester_ping_id", "auto_purchase_items_jester", "auto_sell_to_jester", "amount_of_item_to_sell", "items_to_sell"]
-AUTOCRAFT_KEYS = ["auto_craft_mode", "auto_craft_item", "skip_auto_mode_warning"]
-PATH_KEYS = ["do_obby", "notify_obby_completion"]
-QUEST_KEYS = ["enable_auto_quest_board", "quests_to_accept"]
+GENERAL_KEYS = ["WEBHOOK_URL", "private_server_link", "mode", "themes", "SECONDARY_WEBHOOK_URLS", "failsafe_key", "use_roblox_player", "global_wait_time", "mention", "mention_id"]
+AURAS_KEYS = ["minimum_roll", "minimum_ping", "use_reset_aura", "reset_aura", "take_screenshot_on_detection"]
+BIOMES_KEYS = ["auto_biome_randomizer", "auto_strange_controller", "enable_player_logger", "pop_in_glitch", "pop_in_dreamspace"]
+SNIPER_KEYS = ["sniper_enabled", "sniper_toggles", "DISCORD_TOKEN", "sniper_logs", "scan_channels"]
 
-OTHER_KEYS = ["disconnect_prevention", "disable_autokick_prevention", "disable_aura_detection", "disable_biome_detection", "always_on_top", "periodic_screenshots", "check_update", "auto_install_update"]
+ACTIONS_KEYS = ["calibration", "merchant_detection", "merchant_detection_type", "auto_sell_to_jester", "do_obby", "vip_status", "notify_obby_completion", "has_abyssal_hunter"]
+
+MARI_MERCHANT_KEYS = ["ping_mari", "mari_ping_id", "auto_purchase_items_mari"]
+JESTER_MERCHANT_KEYS = ["ping_jester", "jester_ping_id", "auto_purchase_items_jester", "amount_of_item_to_sell", "items_to_sell"]
+AUTOCRAFT_ITEM_KEYS = ["auto_craft_item", "skip_auto_mode_warning", "do_not_walk_to_stella"]
+
+ACTIONS_CONFIG = ["enable_ui_nav_key", "delay", "typing_delay", "typing_hold", "typing_jitter", "use_alternate_uinav"]
+
+BIOME_CONFIG_KEYS = ["biomes"]
+GLITCHED_ITEMS_KEYS = ["auto_use_items_in_glitch"]
+DREAMSPACE_ITEMS_KEYS = ["auto_use_items_in_dreamspace"]
+LIMBO_KEYS = ["disable_eden_detection_in_limbo", "do_not_interact_with_eden"]
+
+MERCHANT_KEYS = ["merchant_detection", "ping_mari", "mari_ping_id", "auto_purchase_items_mari", "ping_jester", "jester_ping_id", "auto_purchase_items_jester", "auto_sell_to_jester", "amount_of_item_to_sell", "items_to_sell"]
+AUTOCRAFT_KEYS = ["auto_craft_item", "send_item_crafted_notification", "skip_auto_mode_warning", "do_not_walk_to_stella"]
+PATH_KEYS = ["do_obby", "notify_obby_completion", "has_abyssal_hunter"]
+QUEST_KEYS = ["enable_auto_quest_board", "quests_to_accept"]
+SKIP_DLS_KEYS = ["skip_aura_download", "skip_biome_download", "skip_merchant_download", "skip_questboard_download", "skip_autocraft_download"]
+MACRO_OVERRIDES = ["disable_aura_detection", "disable_biome_detection", "disable_autokick_prevention"]
+OTHER_KEYS = ["periodic_screenshots", "take_screenshot_on_detection", "disconnect_prevention", "always_on_top", "check_update", "auto_install_update"]
+
+
 
 STARTUP_MSGS = [
     "Let's go gambling!", "Nah, I'd Roll", "I give my life...", "Take a break",
@@ -201,7 +314,8 @@ STARTUP_MSGS = [
 
 ACCEPTEDPOTIONS = [
     "Jewelry Potion", "Zombie Potion", "Rage Potion", "Diver Potion", "Potion of Bound", "Heavenly Potion", "Godly Potion (Zeus)",
-    "Godly Potion (Poseidon)", "Godly Potion (Hades)", "Warp Potion", "Godlike Potion"
+    "Godly Potion (Poseidon)", "Godly Potion (Hades)", "Warp Potion", "Godlike Potion", "Forbidden Potion I", "Forbidden Potion II",
+    "Forbidden Potion III", "Void Heart"
 ]
 
 ACCEPTEDAUTOPOP = {
@@ -226,15 +340,15 @@ ACCEPTEDAUTOPOP = {
 }
 
 MARI_ITEMS = [
-    "Void Coin", "Fortune Spoid", "Speed Potion", "Mixed Potion",
-    "Gear B", "Lucky Penny", "Gear A", "Lucky Potion"
+    "Void Coin", "Fortune Spoid I", "Fortune Spoid II", "Fortune Spoid III", "Speed Potion", "Speed Potion L", "Speed Potion XL", "Mixed Potion",
+    "Gear B", "Lucky Penny", "Gear A", "Lucky Potion", "Lucky Potion L", "Lucky Potion XL"
 ]
 
 JESTER_ITEMS = [
     "Lucky Potion", "Speed Potion", "Random Potion Sack", "Stella's Star",
     "Rune of Wind", "Rune of Frost", "Rune of Rainstorm", "Rune of Hell",
     "Rune of Galaxy", "Rune of Corruption", "Rune of Nothing", "Rune of Everything",
-    "Strange Potion", "Stella's Candle", "Merchant Tracker", "Potion of Bound",
+    "Strange Potion I", "Strange Potion II", "Stella's Candle", "Merchant Tracker", "Potion of Bound",
     "Heavenly Potion", "Oblivion Potion"
 ]
 
@@ -244,7 +358,7 @@ JESTER_SELL_ITEMS = [
 ]
 
 
-POSSIBLE_MERCHANTS = ["Mari's Shop", "Jester's Shop"]
+POSSIBLE_MERCHANTS = ["Mari", "Jester"]
 
 COORDS = {
     "aura_button_pos": (53, 538),
@@ -252,7 +366,6 @@ COORDS = {
     "default_pos": (1280, 720), 
     "close_pos": (1887, 399),
     "search_pos": (1164, 486), 
-    "secondary_pos": (564, 401), 
     "query_pos": (1086, 572), 
     "equip_pos": (812, 844), 
     "use_pos": (910, 772), 
@@ -305,49 +418,8 @@ COORDS = {
     "close_merchant_pos" : (1880, 449)
 }
 
-COORDS_PERCENT = {
-    "aura_button_pos": (53/2560, 538/1440),
-    "inv_button_pos": (32/2560, 692/1440),
-    "default_pos": (1280/2560, 720/1440),
-    "close_pos": (1887/2560, 399/1440),
-    "search_pos": (1164/2560, 486/1440),
-    "secondary_pos": (564/2560, 401/1440),
-    "query_pos": (1086/2560, 572/1440),
-    "equip_pos": (812/2560, 844/1440),
-    "use_pos": (910/2560, 772/1440),
-    "item_amt_pos": (756/2560, 772/1440),
-    "items_pos": (1692/2560, 440/1440),
-    "purchase_btn_pos": (990/2560, 860/1440),
-    "quantity_btn_pos": (910/2560, 796/1440),
-    "open_merch_pos": (876/2560, 1256/1440),
-    "merch_item_pos_1_purchase": (766/2560, 948/1440),
-    "merch_item_pos_2_purchase": (1024/2560, 948/1440),
-    "merch_item_pos_3_purchase": (1278/2560, 948/1440),
-    "merch_item_pos_4_purchase": (1512/2560, 948/1440),
-    "merch_item_pos_5_purchase": (1762/2560, 948/1440),
-    "menu_btn_pos": (32/2560, 656/1440),
-    "settings_btn_pos": (1278/2560, 738/1440),
-    "rolling_conf_pos": (888/2560, 498/1440),
-    "cutscene_conf_pos": (1518/2560, 812/1440),
-    "craft_btn_pos": (764/2560, 764/1440),
-    "hp1_pos_potions": (1064/2560, 840/1440),
-    "hp1_pos_celestial": (1064/2560, 1024/1440),
-    "hp2_pos_potions": (1064/2560, 910/1440),
-    "auto_btn_pos": (940/2560, 762/1440),
-    "hp1_recipe_pos": (1516/2560, 684/1440),
-    "hp2_recipe_pos": (1516/2560, 836/1440),
-    "warp_recipe_pos": (1516/2560, 980/1440),
-    "merchant_face_pos_1": (841/2560, 1056/1440),
-    "merchant_face_pos_2": (855/2560, 1063/1440),
-    "collection_open_pos": (40/2560, 608/1440),
-    "exit_collection_pos": (513/2560, 158/1440),
-    "start_btn_pos": (1252/2560, 1206/1440),
-    "reconnect_btn_pos": (1370/2560, 800/1440),
-    "bound_recipe_pos": (1524/2560, 994/1440),
-    "potion_search_pos": (1237/2560, 449/1440),
-    "first_potion_pos": (1520/2560, 554/1440),
-    "ms_rblx_spawn_pos": (820/2560, 548/1440),
-    "merchant_box": (1140/2560, 434/1440, 1409/2560, 477/1440),
+COORDS_PERCENT169 = {
+    "merchant_box": (971/2560, 918/1440, 1160/2560, 969/1440),
     "manual_boxes": {
         "Box 1": (656/2560, 919/1440, 890/2560, 996/1440),
         "Box 2": (908/2560, 919/1440, 1143/2560, 996/1440),
@@ -355,22 +427,61 @@ COORDS_PERCENT = {
         "Box 4": (1416/2560, 919/1440, 1650/2560, 996/1440),
         "Box 5": (1668/2560, 919/1440, 1903/2560, 996/1440)
     },
-    "exchange_menu_btn_pos": (1125/2560, 1255/1440),
-    "exchange_btn_pos": (1151/2560, 785/1440),
-    "first_sell_item_click_pos": (740/2560, 960/1440),
     "first_sell_item_box_pos": (653/2560, 920/1440, 830/2560, 994/1440),
-    "second_sell_item_click_pos": (927/2560, 961/1440),
     "second_sell_item_box_pos": (843/2560, 918/1440, 1020/2560, 994/1440),
-    "close_merchant_pos": (1880/2560, 449/1440),
     "questboard_title_range" : (2010/2560, 350/1440, 2492/2560, 422/1440),
-    "accept_quest_pos" : (2131/2560, 1085/1440),
-    "dismiss_quest_pos" : (2378/2560, 1089/1440),
-    "right_arrow_pos" : (1815/2560, 718/1440),
-    "left_arrow_pos" : (744/2560, 715/1440),
-    "exit_questboard_pos" : (1281/2560, 1250/1440),
-    "sidequest_btn_pos" : (40/2560, 750/1440),
-    "sidequest_check_complete_pos" : (1076/2560, 510/1440, 1446/2560, 508/1440),
-    "quest_completion_title" : (1055/2560, 445/1440, 1459/2560, 471/1440)
+    "potion_slot_1_add" : (1012/2560, 822/1440, 1115/2560, 858/1440),
+    "potion_slot_2_add" : (1014/2560, 894/1440, 1112/2560, 927/1440),
+    "potion_slot_3_add" : (1011/2560, 964/1440, 1115/2560, 1002/1440),
+    "potion_slot_1_scroll_add" : (1012/2560, 860/1440, 1114/2560, 897/1440),
+    "potion_slot_2_scroll_add" : (1015/2560, 933/1440, 1114/2560, 967/1440),
+    "potion_slot_3_scroll_add" : (1012/2560, 1004/1440, 1111/2560, 1039/1440),
+    "scroll_mouse_position" : (881/2560, 918/1440),
+    "check_tab_menu" : (2405/2560, 10/1440, 2507/2560, 47/1440)
+}
+
+COORDS_PERCENT43 = {
+    "merchant_box": (708/1920, 913/1440, 883/1920, 961/1440),
+    "manual_boxes": {
+        "Box 1": (490/1920, 869/1440, 669/1920, 927/1440),
+        "Box 2": (679/1920, 868/1440, 858/1920, 929/1440),
+        "Box 3": (870/1920, 868/1440, 1049/1920, 932/1440),
+        "Box 4": (1060/1920, 868/1440, 1241/1920, 930/1440),
+        "Box 5": (1251/1920, 870/1440, 1428/1920, 930/1440)
+    },
+    "first_sell_item_box_pos": (489/1920, 868/1440, 627/1920, 929/1440),
+    "second_sell_item_box_pos": (631/1920, 870/1440, 766/1920, 928/1440),
+    "questboard_title_range" : (1503/1920, 433/1440, 1873/1920, 511/1440),
+    "potion_slot_1_add" : (758/1920, 795/1440, 835/1920, 823/1440),
+    "potion_slot_2_add" : (759/1920, 849/1440, 834/1920, 877/1440),
+    "potion_slot_3_add" : (756/1920, 904/1440, 836/1920, 932/1440),
+    "potion_slot_1_scroll_add" : (757/1920, 824/1440, 835/1920, 852/1440),
+    "potion_slot_2_scroll_add" : (758/1920, 877/1440, 836/1920, 907/1440),
+    "potion_slot_3_scroll_add" : (757/1920, 932/1440, 836/1920, 959/1440),
+    "scroll_mouse_position" : (666/1920, 882/1440),
+    "check_tab_menu" : (1803/1920, 9/1440, 1872/1920, 39/1440)
+}
+
+COORDS_PERCENT1610 = {
+    "merchant_box": (711/1920, 764/1200, 891/1920, 811/1200),
+    "manual_boxes": {
+        "Box 1": (490/1920, 747/1200, 668/1920, 811/1200),
+        "Box 2": (680/1920, 748/1200, 857/1920, 810/1200),
+        "Box 3": (869/1920, 748/1200, 1050/1920, 810/1200),
+        "Box 4": (1060/1920, 748/1200, 1241/1920, 810/1200),
+        "Box 5": (1249/1920, 747/1200, 1432/1920, 810/1200)
+    },
+    "first_sell_item_box_pos": (487/1920, 750/1200, 623/1920, 811/1200),
+    "second_sell_item_box_pos": (631/1920, 747/1200, 767/1920, 810/1200),
+    "questboard_title_range" : (1502/1920, 313/1200, 1879/1920, 392/1200),
+    "potion_slot_1_add" : (757/1920, 676/1200, 835/1920, 702/1200),
+    "potion_slot_2_add" : (756/1920, 730/1200, 835/1920, 758/1200),
+    "potion_slot_3_add" : (759/1920, 786/1200, 835/1920, 812/1200),
+    "potion_slot_1_scroll_add" : (759/1920, 703/1200, 834/1920, 731/1200),
+    "potion_slot_2_scroll_add" : (758/1920, 761/1200, 835/1920, 787/1200),
+    "potion_slot_3_scroll_add" : (759/1920, 812/1200, 837/1920, 838/1200),
+    "scroll_mouse_position" : (668/1920, 756/1200),
+    "check_tab_menu" : (1803/1920, 9/1200, 1873/1920, 42/1200)
 }
 
 COMPLETION_COLOURS = [
@@ -387,7 +498,6 @@ ALL_QB = [
     "Finding a person",
     "Meditation I",
     "Meditation II",
-    "Meditation III",
     "Delivery III",
     "Delivery I",
     "Delivery II",
@@ -396,10 +506,19 @@ ALL_QB = [
     "Player Hunt #1",
     "Player Hunt #2",
     "Player Hunt #3",
-    "Breakthrough",
+    "Windy Breakthrough",
+    "Snowy Breakthrough",
+    "Rainy Breakthrough",
+    "SandStorm Breakthrough",
+    "Hell Breakthrough",
+    "Starfall Breakthrough",
+    "Corruption Breakthrough",
+    "Null Breakthrough",
     "Resonance",
     "A symbol of luck #1",
-    "A symbol of luck #2"
+    "A symbol of luck #2",
+    "Fish",
+    "Minnow"
 ]
 
 ACCEPTED_QUESTBOARD = [
@@ -411,22 +530,31 @@ ACCEPTED_QUESTBOARD = [
     "Finding a person",
     "Meditation I",
     "Meditation II",
-    "Meditation III",
-    "Delivery III"
+    "Windy Breakthrough",
+    "Snowy Breakthrough",
+    "Rainy Breakthrough",
+    "SandStorm Breakthrough",
+    "Hell Breakthrough",
+    "Starfall Breakthrough",
+    "Corruption Breakthrough",
+    "Null Breakthrough"
 ]
 
 DONOTACCEPT_QB = [
     "Delivery I",
     "Delivery II",
+    "Delivery III",
     "Delivery IV",
     "Delivery V",
     "Player Hunt #1",
     "Player Hunt #2",
     "Player Hunt #3",
-    "Breakthrough",
     "Resonance",
     "A symbol of luck #1",
-    "A symbol of luck #2"
+    "A symbol of luck #2",
+    "Catch",
+    "Fish",
+    "Minnow"
 ]
 
 QUESTBOARD_RARITY_COLOURS = [
@@ -436,3 +564,5 @@ QUESTBOARD_RARITY_COLOURS = [
     "#ff4b4b",
     "#928aff"
 ]
+
+DONOTACCEPTRESET = ["aquatic", "exotic", "undead", "jazz", "bounded", "celestial", "kyuawthuite", "arcane", "virtual", "twilight", "starscourge", "sailor", "stormal", "chromatic", "matrix", "overture", "ruins", "astral", "cosmos"]

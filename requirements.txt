@@ -5,9 +5,10 @@ requests
 pillow
 screeninfo
 mousekey
-aiohttp
-websockets
 psutil
-opencv-python
-pytesseract
+easyocr==1.7.2
 pyqt6
+keyboard
+pyscreenrec
+watchdog
+pywin32

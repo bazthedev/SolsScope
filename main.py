@@ -1,66 +1,99 @@
 """
 SolsScope/Baz's Macro
 Created by Baz and Cresqnt
-v1.2.7
+v2.0.0
 Support server: https://discord.gg/8khGXqG7nA
 """
 
 import sys
 import os
 import requests
-import zipfile
 import json
 import tkinter as tk
 from tkinter import messagebox
+from webbrowser import open as wbopen
 
-REQUIRED_LIBS = ["constants.py", "discord_utils.py", "macro_logic.py", "roblox_utils.py", "settings_manager.py", "utils.py", "mmint.py"]
-REQUIRED_PATHS = ["questboard.mms", "stella.mms", "obby1.mms", "obby2.mms", "obby1_abyssal.mms", "obby2_abyssal.mms", "stella_abyssal.mms"]
-MAIN_VER = "1.2.7"
+MAIN_VER = "2.0.0"
 PRERELEASE = False
+BUILTINPKGS = False
+
+print(f"Launcher version: {MAIN_VER}\nPrerelease: {PRERELEASE}\nPackages Built In: {BUILTINPKGS}")
 
 WORK_DIR = os.path.expandvars(r"%localappdata%\SolsScope")
+THEME_DIR = os.path.expandvars(r"%localappdata%\SolsScope\theme")
 PATH_DIR = os.path.expandvars(r"%localappdata%\SolsScope\path")
 LIB_DIR = os.path.expandvars(r"%localappdata%\SolsScope\lib")
 LEGACY_DIR = os.path.expandvars(r"%localappdata%\Baz's Macro")
+PACKAGES_DIR = os.path.expandvars(r"%localappdata%/SolsScope/py/Lib/site-packages")
+ASSET_DIR = os.path.expandvars(r"%localappdata%\SolsScope\assets")
+CALIBRATIONS_DIR = os.path.expandvars(r"%localappdata%\SolsScope\calibrations")
+
+LATEST_VERSION_URL = "https://api.github.com/repos/bazthedev/SolsScope/releases/latest"
+THEME_URL = "https://api.github.com/repos/bazthedev/SolsScope/contents/theme"
+VIDEO_URL = "https://raw.githubusercontent.com/bazthedev/SolsScope/refs/heads/main/video_url"
+
+def download_folder(url, local_dir, overwrite=True):
+    os.makedirs(local_dir, exist_ok=True)
+    response = requests.get(url)
+    response.raise_for_status()
+    items = response.json()
+    
+    for item in items:
+        if item['type'] == 'file':
+            file_url = item['download_url']
+            file_path = os.path.join(local_dir, item['name'])
+            if overwrite or not os.path.exists(file_path):
+                print(f"Downloading {file_path} from {item['download_url']}...")
+                r = requests.get(file_url)
+                r.raise_for_status()
+                with open(file_path, 'wb') as f:
+                    f.write(r.content)
+        elif item['type'] == 'dir':
+            download_folder(item['url'], os.path.join(local_dir, item['name']))
+
+if not PRERELEASE:
+    LIB_DOWNLOAD_URL = "https://raw.githubusercontent.com/bazthedev/SolsScope/main/lib/"
+    LIBS_API_URL = "https://api.github.com/repos/bazthedev/SolsScope/contents/lib?ref=main"
+    REQ_TXT_URL = "https://raw.githubusercontent.com/bazthedev/SolsScope/main/requirements.txt"
+else:
+    LIB_DOWNLOAD_URL = "https://raw.githubusercontent.com/bazthedev/SolsScope/Preview/lib/"
+    LIBS_API_URL = "https://api.github.com/repos/bazthedev/SolsScope/contents/lib?ref=Preview"
+    REQ_TXT_URL = "https://raw.githubusercontent.com/bazthedev/SolsScope/Preview/requirements.txt"
+    print("Pre-Release Version! Thank you for being a tester!")
+
+PATH_DOWNLOAD_URL = "https://raw.githubusercontent.com/bazthedev/SolsScope/refs/heads/main/path/"
+PATH_API_URL = "https://api.github.com/repos/bazthedev/SolsScope/contents/path?ref=main"
+THEME_DOWNLOAD_URL = "https://raw.githubusercontent.com/bazthedev/SolsScope/refs/heads/main/theme/"
+THEME_API_URL = "https://api.github.com/repos/bazthedev/SolsScope/contents/theme?ref=main"
+ASSETS_DOWNLOAD_URL = "https://raw.githubusercontent.com/bazthedev/SolsScope/refs/heads/main/img/assets/"
+ASSETS_API_URL = "https://api.github.com/repos/bazthedev/SolsScope/contents/img/assets?ref=main"
 
 if not os.path.exists(WORK_DIR):
     os.mkdir(WORK_DIR)
 
+if not os.path.exists(os.path.join(WORK_DIR, "player_logs")):
+    os.mkdir(os.path.join(WORK_DIR, "player_logs"))
+
+if not os.path.exists(ASSET_DIR):
+    os.mkdir(ASSET_DIR)
+    download_folder(ASSETS_API_URL, ASSET_DIR)
+    print("All assets have been downloaded, proceeding...")
+
+if not os.path.exists(THEME_DIR):
+    os.mkdir(THEME_DIR)
+    download_folder(THEME_API_URL, THEME_DIR)
+    print("All themes have been downloaded, proceeding...")
+
 if not os.path.exists(LIB_DIR):
     os.mkdir(LIB_DIR)
+    print("Lib folder not found, downloading libraries...")
+    download_folder(LIBS_API_URL, LIB_DIR)
 
 if not os.path.exists(PATH_DIR):
     os.mkdir(PATH_DIR)
+    download_folder(PATH_API_URL, PATH_DIR)
+    print("All required paths were downloaded, proceeding...")
 
-if not PRERELEASE:
-    LIB_DOWNLOAD_URL = "https://raw.githubusercontent.com/bazthedev/SolsScope/main/lib/"
-else:
-    LIB_DOWNLOAD_URL = "https://raw.githubusercontent.com/bazthedev/SolsScope/Preview/lib/"
-    print("Pre-Release Version! Thank you for being a tester!")
-
-PATH_DOWNLOAD_URL = "https://raw.githubusercontent.com/bazthedev/SolsScope/refs/heads/main/path/"
-
-for file in REQUIRED_LIBS:
-    if file not in os.listdir(LIB_DIR) or PRERELEASE:
-        print(f"{file} was not found, but is required!\nDownloading and installing it now...")
-        _download = requests.get(LIB_DOWNLOAD_URL + file, timeout=5)
-        _download.raise_for_status()
-        with open(f"{LIB_DIR}\\{file}", "wb") as f:
-            f.write(_download.content)
-            f.close()
-        print(f"{file} was downloaded and installed.")
-print("All required libraries were downloaded or already installed, proceeding...")
-
-for file in REQUIRED_PATHS:
-    if file not in os.listdir(PATH_DIR) or PRERELEASE:
-        print(f"{file} was not found, but is required!\nDownloading and installing it now...")
-        _download = requests.get(PATH_DOWNLOAD_URL + file, timeout=5)
-        _download.raise_for_status()
-        with open(f"{PATH_DIR}\\{file}", "wb") as f:
-            f.write(_download.content)
-            f.close()
-        print(f"{file} was downloaded and installed.")
-print("All required paths were downloaded, proceeding...")
 
 if not os.path.isfile(f"{WORK_DIR}\\settings.json") and os.path.isfile(f"{LEGACY_DIR}\\settings.json"):
     os.system(f"xcopy {LEGACY_DIR}\\settings.json {WORK_DIR}")
@@ -68,57 +101,55 @@ elif not os.path.isfile(f"{WORK_DIR}\\settings.json"):
     _temp = open(f"{WORK_DIR}\\settings.json", "w")
     _temp.write("{}")
     _temp.close()
+    try:
+        video = requests.get(VIDEO_URL, timeout=10)
+        video.raise_for_status()
+        wbopen(video.text)
+    except Exception as e:
+        wbopen("https://www.youtube.com/watch?v=Y12uiAbqMDc")
+
+root = tk.Tk(); root.withdraw(); root.attributes('-topmost', True)
+
+try:
+    print("Checking latest version...")
+    r = requests.get(LATEST_VERSION_URL, timeout=10)
+    r.raise_for_status()
+    data = r.json()
+    LATEST_VERSION = data["name"]   
+    print(f"The latest version is {LATEST_VERSION}")
+except Exception as e:
+    LATEST_VERSION = "2.0.0"
 
 try:
     with open(f"{WORK_DIR}\\settings.json", "r") as s:
         _tempsettings = json.load(s)
-        if MAIN_VER > _tempsettings.get("__version__", "1.0.0"):
-            print("Macro update detected, redownloading required libraries...")
-            for file in REQUIRED_LIBS:
-                print(f"{file} is being downloaded...")
-                _download = requests.get(LIB_DOWNLOAD_URL + file, timeout=5)
-                _download.raise_for_status()
-                print("Received response.")
-                with open(f"{LIB_DIR}\\{file}", "wb") as f:
-                    f.write(_download.content)
-                    f.close()
-                print(f"{file} was downloaded and installed.")
-            print("All required libraries were updated, proceeding...")
-            for file in REQUIRED_PATHS:
-                print(f"{file} is being downloaded...")
-                _download = requests.get(PATH_DOWNLOAD_URL + file, timeout=5)
-                _download.raise_for_status()
-                with open(f"{PATH_DIR}\\{file}", "wb") as f:
-                    f.write(_download.content)
-                    f.close()
-                print(f"{file} was downloaded.")
-            print("All required paths were downloaded, proceeding...")
-            _tempsettings["__version__"] = MAIN_VER
-            with open(f"{WORK_DIR}\\settings.json", "w") as f:
-                json.dump(_tempsettings, f, indent=4)
-            messagebox.showinfo("SolsScope", "If you paid for this software, then you have been scammed and should demand a refund. The only official download page for this software is https://github.com/bazthedev/SolsScope")
+        def parse_version(v):
+            try:
+                return tuple(map(int, v.split('.')))
+            except ValueError:
+                print(f"Invalid version format: '{v}'. Returning (0,0,0).")
+                return (0, 0, 0) 
+        if parse_version(LATEST_VERSION) > parse_version(_tempsettings.get("__version__", "2.0.0")):
+            if messagebox.askyesno("SolsScope", f"A new version ({LATEST_VERSION}) of SolsScope has been detected, would you like to download it?"):
+                print("Macro update detected, redownloading required libraries...")
+                download_folder(LIBS_API_URL, LIB_DIR)
+                download_folder(PATH_API_URL, PATH_DIR)
+                download_folder(THEME_API_URL, THEME_DIR)
+                download_folder(ASSETS_API_URL, ASSET_DIR)
+                print("All required libraries were updated, proceeding...")
+                _tempsettings["__version__"] = LATEST_VERSION
+                with open(f"{WORK_DIR}\\settings.json", "w", encoding="utf-8") as f:
+                    json.dump(_tempsettings, f, indent=4)
+                messagebox.showinfo("SolsScope", "If you paid for this software, then you have been scammed and should demand a refund. The only official download page for this software is https://github.com/bazthedev/SolsScope")
+                messagebox.showinfo("SolsScope",  "SolsScope is a FULLSCREEN macro. To ensure compatibility with certain features, please use Roblox in full screen.")
         elif _tempsettings.get("redownload_libs_on_run", False) or PRERELEASE:
             print("Manual redownload/prerelease initiated download.")
-            for file in REQUIRED_LIBS:
-                print(f"{file} is being downloaded...")
-                _download = requests.get(LIB_DOWNLOAD_URL + file, timeout=5)
-                _download.raise_for_status()
-                print("Received response.")
-                with open(f"{LIB_DIR}\\{file}", "wb") as f:
-                    f.write(_download.content)
-                    f.close()
-                print(f"{file} was downloaded and installed.")
-            for file in REQUIRED_PATHS:
-                print(f"{file} is being downloaded...")
-                _download = requests.get(PATH_DOWNLOAD_URL + file, timeout=5)
-                _download.raise_for_status()
-                with open(f"{PATH_DIR}\\{file}", "wb") as f:
-                    f.write(_download.content)
-                    f.close()
-                print(f"{file} was downloaded.")
-            print("All required paths were downloaded, proceeding...")
+            download_folder(LIBS_API_URL, LIB_DIR)
+            download_folder(PATH_API_URL, PATH_DIR)
+            download_folder(THEME_API_URL, THEME_DIR)
+            download_folder(ASSETS_API_URL, ASSET_DIR)
             _tempsettings["redownload_libs_on_run"] = False
-            with open(f"{WORK_DIR}\\settings.json", "w") as f:
+            with open(f"{WORK_DIR}\\settings.json", "w", encoding="utf-8") as f:
                 json.dump(_tempsettings, f, indent=4)
         else:
             print("No updates were detected.")
@@ -127,18 +158,71 @@ except Exception as e:
 
 sys.path.insert(1, LIB_DIR)
 
-
-from pathlib import Path
 import importlib
+from PyQt6.QtWidgets import QApplication, QMessageBox
+from PyQt6.QtCore import QTimer
+
+import packager
+
+packager.download_python()
+
+icon_path = os.path.join(WORK_DIR, "icon.ico")
+icon_url = "https://raw.githubusercontent.com/bazthedev/SolsScope/main/icon.ico"
+if not os.path.exists(icon_path):
+    try:
+        dl = requests.get(icon_url, timeout=10)
+        dl.raise_for_status()
+        with open(icon_path, "wb") as f:
+            f.write(dl.content)
+        print("Icon downloaded successfully.")
+    except requests.RequestException as e:
+        print(f"Failed to download icon: {e}") 
+    except OSError as e:
+        print(f"Error saving icon file: {e}") 
+    except Exception as e:
+        print(f"Unexpected error downloading/saving icon: {e}") 
+
+if not BUILTINPKGS:
+    _requirements = []
+    try:
+        reqs_txt_resp = requests.get(REQ_TXT_URL, timeout=10)
+        reqs_txt_resp.raise_for_status()
+        _requirements = reqs_txt_resp.text.split("\n")
+        print(_requirements)
+        if _requirements[-1] == "":
+            _requirements.pop()
+
+    except Exception as e:
+        print(f"Error whilst querying requirements: {e}")
+
+    if _requirements:
+        temp_app = QApplication.instance()
+        owns_app = temp_app is None
+        if owns_app:
+            temp_app = QApplication(sys.argv)
+        try:
+            installer = packager.PackageInstallerGUI(_requirements)
+            QTimer.singleShot(0, installer.start_install)
+            installer.exec()
+        finally:
+            if owns_app:
+                temp_app.quit()
+                del temp_app
+                
+sys.path.insert(0, PACKAGES_DIR)
+sys.path.insert(0, os.path.expandvars(r"%localappdata%/SolsScope/py/Scripts"))
+sys.path.insert(0, os.path.expandvars(r"%localappdata%/SolsScope/py/Lib/"))
+
+
 import screeninfo as si 
 import mousekey as mk
-from PyQt6.QtWidgets import QApplication, QMessageBox
 from gui import MainWindow
 from gui import PyQtLogger
+from calibrations import download_all_calibrations, get_best_calibration, get_screen_info
 
 CORE_MODULES = [
     'discord', 'requests', 'pynput', 'mousekey', 'screeninfo',
-    'psutil', 'websockets', 'aiohttp', 'PIL'
+    'psutil', 'PIL'
 ]
 missing_core = []
 for module_name in CORE_MODULES:
@@ -157,8 +241,6 @@ if missing_core:
     )
     print(f"ERROR: {error_message}")
     try:
-        root = tk.Tk()
-        root.withdraw()
         messagebox.showerror("Missing Core Dependencies", error_message)
     except Exception:
         pass 
@@ -166,14 +248,16 @@ if missing_core:
 
 try:
     from constants import MACROPATH, LOCALVERSION, DEFAULTSETTINGS, COORDS
-    from utils import calculate_coords, set_global_logger, parse_version, Logger, get_logger 
+    from utils import calculate_coords, set_global_logger, parse_version, Logger, get_logger, apply_roblox_fastflags
     from settings_manager import (
         migrate_settings_from_legacy_location, load_settings, update_settings,
         get_auras, get_biomes, get_settings_path, get_auras_path, get_biomes_path,
         get_merchant, get_merchant_path, get_questboard_path, get_questboard,
-        validate_settings 
+        validate_settings, get_fish_path, get_fishdata, get_autocraftdata_path,
+        get_autocraft_data
     )
-    from roblox_utils import set_active_log_directory 
+    from roblox_utils import set_active_log_directory
+    from stats import create_stats, init_stats
 except ImportError as e:
     error_message = (
         f"Failed to load a required project module.\n"
@@ -182,8 +266,6 @@ except ImportError as e:
     )
     print(f"ERROR: {error_message}")
     try:
-        root = tk.Tk()
-        root.withdraw()
         messagebox.showerror("Module Load Error", error_message)
     except Exception:
         pass
@@ -195,8 +277,6 @@ except Exception as e:
     import traceback
     traceback.print_exc()
     try:
-        root = tk.Tk()
-        root.withdraw()
         messagebox.showerror("Fatal Startup Error", error_message)
     except Exception:
         pass
@@ -211,8 +291,9 @@ def run_initial_setup(logger):
     try:
         os.makedirs(MACROPATH, exist_ok=True)
         os.makedirs(os.path.join(MACROPATH, "scr"), exist_ok=True)
+        os.makedirs(os.path.join(MACROPATH, "theme"), exist_ok=True)
         os.makedirs(os.path.join(MACROPATH, "plugins"), exist_ok=True)
-        os.makedirs(os.path.join(MACROPATH, "plugins", "config"), exist_ok=True)
+        os.makedirs(os.path.join(MACROPATH, "plugins", "config"), exist_ok=True)            
         logger.write_log(f"Core directories ensured in: {MACROPATH}")
     except OSError as e:
         logger.write_log(f"Error creating directories: {e}")
@@ -227,6 +308,19 @@ def run_initial_setup(logger):
 
     logger.write_log("Initial settings loaded and validated.")
 
+    if not os.path.exists(CALIBRATIONS_DIR):
+        os.makedirs(CALIBRATIONS_DIR, exist_ok=True)
+        download_all_calibrations()
+        screen_info = get_screen_info()
+        print(get_best_calibration(screen_info["width"], screen_info["height"], screen_info["scale"], screen_info["windowed"]))
+        settings["calibration"] = get_best_calibration(screen_info["width"], screen_info["height"], screen_info["scale"], screen_info["windowed"])
+        with open(f"{MACROPATH}/settings.json", "w") as f:
+            json.dump(settings, f, indent=4)
+        
+        print(settings["calibration"])
+        settings = load_settings()
+        print(settings["calibration"])
+
     current_settings_version = settings.get("__version__", "0.0.0")
     if parse_version(current_settings_version) != parse_version(LOCALVERSION):
         logger.write_log(f"Settings version ({current_settings_version}) differs from macro version ({LOCALVERSION}). Settings were updated/validated during load.")
@@ -235,24 +329,7 @@ def run_initial_setup(logger):
         logger.write_log(f"Warning: Running PRERELEASE version {LOCALVERSION}.")
         messagebox.showwarning("Prerelease Version", f"Warning! This is a prerelease version (v{LOCALVERSION}) of SolsScope. Expect potential bugs or errors.\nLogs are stored in: {MACROPATH}")
 
-    icon_path = os.path.join(MACROPATH, "icon.ico")
-    icon_url = "https://raw.githubusercontent.com/bazthedev/SolsScope/main/icon.ico"
-    if not os.path.exists(icon_path):
-        logger.write_log("Icon file missing, attempting download...")
-        try:
-            dl = requests.get(icon_url, timeout=10)
-            dl.raise_for_status()
-            with open(icon_path, "wb") as f:
-                f.write(dl.content)
-            logger.write_log("Icon downloaded successfully.")
-        except requests.RequestException as e:
-            logger.write_log(f"Failed to download icon: {e}") 
-        except OSError as e:
-            logger.write_log(f"Error saving icon file: {e}") 
-        except Exception as e:
-            logger.write_log(f"Unexpected error downloading/saving icon: {e}") 
-
-    print("Downloading data files")
+    print("Downloading data files...")
 
     if not settings.get("skip_aura_download", False):
         if not get_auras():
@@ -301,7 +378,31 @@ def run_initial_setup(logger):
     else:
         logger.write_log("Skipping quest board download based on settings.")
 
-    print("Done")
+    if not settings.get("skip_fishdata_download", False):
+        if not get_fishdata():
+            logger.write_log("Failed to download fish data.")
+
+    elif not os.path.exists(get_fish_path()):
+        logger.write_log("Fish Data file missing.")
+        if not get_fishdata():
+            logger.write_log("Failed to download fish data.")
+
+    else:
+        logger.write_log("Skipping fish data download based on settings.")
+
+    if not settings.get("skip_autocraft_download", False):
+        if not get_autocraft_data():
+            logger.write_log("Failed to download auto craft data.")
+
+    elif not os.path.exists(get_autocraftdata_path()):
+        logger.write_log("Auto craft file missing.")
+        if not get_autocraft_data():
+            logger.write_log("Failed to download auto craft data.")
+
+    else:
+        logger.write_log("Skipping auto craft download based on settings.")
+
+    print("Done!")
 
     if not os.path.exists(get_auras_path()):
         messagebox.showwarning("Data Missing", f"Auras data file missing and could not be downloaded:\n{get_auras_path()}\n\nAura-related features may not work correctly.")
@@ -311,86 +412,20 @@ def run_initial_setup(logger):
         messagebox.showwarning("Data Missing", f"Merchant data file missing and could not be downloaded:\n{get_merchant_path()}\n\nMerchant-related features may not work correctly.")
     if not os.path.exists(get_questboard_path()):
         messagebox.showwarning("Data Missing", f"Quest board data file missing and could not be downloaded:\n{get_questboard_path()}\n\nQuest board related features may not work correctly.")
+    if not os.path.exists(get_fish_path()):
+        messagebox.showwarning("Data Missing", f"Fish data file missing and could not be downloaded:\n{get_fish_path()}\n\nFishing related features may not work correctly.")
+    if not os.path.exists(get_autocraftdata_path()):
+        messagebox.showwarning("Data Missing", f"Auto Craft data file missing and could not be downloaded:\n{get_autocraftdata_path()}\n\nAuto craft related features may not work correctly.")
 
-    if settings.get("check_update", True):
-        logger.write_log("Checking for updates...")
-        try:
-            api_url = "https://api.github.com/repos/bazthedev/SolsScope/releases/latest"
-            response = requests.get(api_url, timeout=5)
-            response.raise_for_status()
-            release_data = response.json()
-            latest_version_str = release_data.get("tag_name") or release_data.get("name") 
-            if not latest_version_str:
-                logger.write_log("Could not determine latest version from GitHub API response.")
-            else:
-                if latest_version_str.startswith('v'):
-                    latest_version_str = latest_version_str[1:]
+    apply_roblox_fastflags(logger.write_log)
 
-                if parse_version(latest_version_str) > parse_version(LOCALVERSION):
-                    logger.write_log(f"New version found: {latest_version_str}")
-                    DOWNLOADS_DIR = Path.home() / "Downloads"
-                    zip_filename = f"SolsScope_{latest_version_str}.zip"
-                    zip_filepath = DOWNLOADS_DIR / zip_filename
-                    extract_dirname = f"SolsScope_{latest_version_str}"
-                    extract_path = DOWNLOADS_DIR / extract_dirname
+    try:
+        create_stats()
+        init_stats()
+    except Exception as e:
+        print(f"Unknown exception whilst creating stats: {e}")
 
-                    do_install = settings.get("auto_install_update", False)
-                    if not do_install:
-                        do_install = messagebox.askyesno("Update Found", f"A new version ({latest_version_str}) is available. Download and extract to Downloads folder?")
-
-                    if do_install:
-                        logger.write_log(f"Downloading v{latest_version_str}...")
-
-                        asset_url = None
-                        for asset in release_data.get("assets", []):
-
-                            asset_name = asset.get("name", "")
-                            if asset_name.lower().endswith('.zip') and latest_version_str in asset_name:
-                                asset_url = asset.get("browser_download_url")
-                                break
-                        if not asset_url:
-                            logger.write_log(f"Error: Could not find download URL for '{latest_version_str}' zip in latest release.")
-                            messagebox.showerror("Update Error", f"Could not find the download link for version {latest_version_str}.")
-                        else:
-                            try:
-
-                                update_resp = requests.get(asset_url, timeout=120) 
-                                update_resp.raise_for_status()
-                                with open(zip_filepath, "wb") as p:
-                                    p.write(update_resp.content)
-                                logger.write_log(f"Downloaded v{latest_version_str} to {zip_filepath}")
-
-                                logger.write_log(f"Extracting v{latest_version_str}...")
-                                with zipfile.ZipFile(zip_filepath, "r") as newverzip:
-                                    newverzip.extractall(extract_path)
-                                logger.write_log(f"Extracted to {extract_path}")
-
-                                os.remove(zip_filepath)
-                                logger.write_log("Update complete. Please close this version and run the new one from your Downloads folder.")
-                                messagebox.showinfo("Update Complete", f"Version {latest_version_str} downloaded and extracted to:\n{extract_path}\n\nPlease close this program and run the new version.")
-                                return False 
-
-                            except requests.RequestException as download_e:
-                                logger.write_log(f"Error downloading update: {download_e}")
-                                messagebox.showerror("Update Download Error", f"Failed to download the update: {download_e}")
-                            except zipfile.BadZipFile:
-                                logger.write_log("Error: Downloaded update file is not a valid zip.")
-                                messagebox.showerror("Update Error", "Downloaded update file is corrupted.")
-                            except OSError as install_e:
-                                logger.write_log(f"Error extracting/saving update: {install_e}")
-                                messagebox.showerror("Update Install Error", f"Failed to extract/save the update: {install_e}")
-                            except Exception as install_e:
-                                logger.write_log(f"Unexpected error installing update: {install_e}")
-                                messagebox.showerror("Update Install Error", f"An unexpected error occurred during update: {install_e}")
-                else:
-                    logger.write_log("You are running the latest version.")
-
-        except requests.RequestException as e:
-            logger.write_log(f"Failed to check for updates (Network Error): {e}")
-        except json.JSONDecodeError:
-            logger.write_log("Failed to check for updates (Invalid response from GitHub API).")
-        except Exception as e:
-            logger.write_log(f"An unexpected error occurred during update check: {e}")
+    print(f"Setting up SolsScope v{LOCALVERSION}")
 
     logger.write_log("Detecting screen resolution and calculating coordinates...")
     primary_monitor = None
@@ -423,8 +458,8 @@ def run_initial_setup(logger):
 
                 if 'scale_w' not in COORDS: COORDS['scale_w'] = 1.0
                 if 'scale_h' not in COORDS: COORDS['scale_h'] = 1.0
-                if 'scr_wid' not in COORDS: COORDS['scr_wid'] = 1920
-                if 'scr_hei' not in COORDS: COORDS['scr_hei'] = 1080
+                if 'scr_wid' not in COORDS: COORDS['scr_wid'] = 2560
+                if 'scr_hei' not in COORDS: COORDS['scr_hei'] = 1440
         else:
             logger.write_log("No monitors detected. Cannot calculate coordinates. Exiting.")
             messagebox.showerror("Monitor Error", "Could not detect any monitors. Cannot calculate coordinates.")
@@ -469,6 +504,7 @@ if __name__ == '__main__':
         logger.write_log("This is a prerelease version!")
 
     try:
+        root.destroy()
         app = QApplication(sys.argv)
         main_window = MainWindow() 
 
@@ -493,7 +529,7 @@ if __name__ == '__main__':
             msgBox = QMessageBox()
             msgBox.setIcon(QMessageBox.Icon.Critical)
             msgBox.setWindowTitle("Fatal GUI Error")
-            msgBox.setText(f"An unhandled error occurred:\n{e}\n\nPlease check the log file for details:\n{os.path.join(MACROPATH, 'solscope.log')}")
+            msgBox.setText(f"An unhandled error occurred:\n{e}\n\nPlease check the log file for details:\n{os.path.join(MACROPATH, 'solsscope.log')}")
             msgBox.exec()
         except Exception:
             print(f"FATAL ERROR: {e}\n{traceback.format_exc()}") 

@@ -1,7 +1,7 @@
 """
 SolsScope/Baz's Macro
 Created by Baz and Cresqnt
-v1.2.5
+v2.0.0
 Support server: https://discord.gg/6cuCu6ymkX
 """
 
@@ -15,22 +15,35 @@ from packaging.version import parse as parse_version
 import re
 import pyautogui
 import time
+import datetime
+from roblox_utils import get_latest_hovertext, get_active_log_directory
 
 class Plugin:
     DEFAULTSETTINGS = {
         "enabled": True,
         "clipping_keycombo" : "alt+right",
-        "clipping_rarity" : 99999999
+        "clipping_rarity" : 99999999,
+        "output_folder" : os.path.join(os.path.expandvars(r"%localappdata%\SolsScope"), "plugins", "rec"),
+        "wait_after_end" : 10
     }
 
-    DISPLAYSETTINGS = ["enabled", "clipping_keycombo", "clipping_rarity"]
+    DISPLAYSETTINGS = ["enabled", "clipping_keycombo", "clipping_rarity", "output_folder", "wait_after_end"]
+
+    TOOLTIPS = {
+        "enabled" : "Enable the plugin.",
+        "clipping_keycombo" : "The key combo to activate your clipping software's clip feature.",
+        "clipping_rarity" : "The minimum rarity of the aura rolled for it to be clipped.",
+        "output_folder" : "The folder that a GLITCHED/DREAMSPACE recording goes to.",
+        "wait_after_end" : "How many seconds to wait after biome ends to stop recording."
+    }
     
     def __init__(self, macro):
         self.name = "Clipping"
-        self.version = "1.0.1"
-        self.author = "bazthedev"
-        self.requires = "1.2.5"
-        self.autocraft_compatible = False
+        self.version = "1.0.2"
+        self.authors = ["bazthedev"]
+        self.requires = "2.0.0"
+        self.requirements = ["pygetwindow"]
+        self.autocraft_compatible = True
         self.macro = macro
         
         self.MACROPATH = os.path.expandvars(r"%localappdata%\SolsScope")
@@ -42,9 +55,15 @@ class Plugin:
         self.config = self.load_or_create_config()
         self.entries = {}
 
+
+
         self.LOG_FILE_PATH = self.MACROPATH + "\\solsscope.log"
         self.AURA_REGEX = re.compile(r"\[\s*(?P<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\s*-\s*INFO\s*\]\s*New aura detected:\s*(?P<name>.+)")
-        self.BIOME_REGEX = re.compile(r"Biome change detected: (\w+) -> (?P<biome>\w+)")
+        self.BIOME_REGEX = re.compile(
+            r"\[\s*(?P<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\s*-\s*INFO\s*\]\s*Biome change detected:\s*(?P<old_biome>[\w\s]+?)\s*->\s*(?P<new_biome>[\w\s]+)"
+        )
+
+        self.recorder = None
         
         macro.logger.write_log(f"[{self.name}] Plugin initialized (v{self.version})")
 
@@ -89,11 +108,18 @@ class Plugin:
         }
         
         # Create widgets using plugin's isolated config
-        create_widgets(settings_to_display, parent_layout, self.entries)
+        create_widgets(settings_to_display, parent_layout, self.entries, self.TOOLTIPS)
         
+        label_text = f"{self.name} v{self.version} by"
+        for author in self.authors:
+            if self.authors.index(author) == len(self.authors) - 1:
+                label_text += f" {author}."
+            else:
+                label_text += f" {author},"
+
         info_label = QLabel(
-            f"<i>{self.name} v{self.version} by {self.author}</i>"
-        )
+            f"<i>{label_text}</i>"
+        )   
         info_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         parent_layout.addWidget(info_label)
 
@@ -180,13 +206,22 @@ class Plugin:
                 pyautogui.hotkey(*combo)
                 time.sleep(0.1)
 
-    def run(self, stop_event, sniped_event):
+    def get_roblox_window_pos(self):
+        import pygetwindow as gw
+        windows = gw.getWindowsWithTitle("Roblox")
+        for win in windows:
+            if win.width > 100 and win.height > 100:
+                return (win.left, win.top, win.width, win.height)
+        return None
+
+    def run(self, stop_event, sniped_event, pause_event):
         """
         Main plugin logic that runs in a separate thread.
         
         Args:
             stop_event (threading.Event): Set when macro is stopping
             sniped_event (threading.Event): Set when a snipe occurs
+            pause_event (threading.Event): Set when something wants to pause the macro
             
         Note:
             - This method should regularly check stop_event.is_set()
@@ -195,6 +230,9 @@ class Plugin:
             - Use self.macro.keyboard_lock for thread-safe input
         """
         try:
+            import pyscreenrec
+            self.recorder = pyscreenrec.ScreenRecorder()
+            os.makedirs(os.path.join(self.MACROPATH, "plugins", "rec"), exist_ok=True)
             self.macro.logger.write_log(f"[{self.name}] Plugin thread started.")
             
             if not self.config["enabled"]:
@@ -215,14 +253,6 @@ class Plugin:
 
                     line = line.strip()
 
-                    biome_match = self.BIOME_REGEX.search(line)
-                    
-                    if biome_match:
-                        if biome_match.group("biome").upper() == "GLITCHED" or biome_match.group("biome").upper() == "DREAMSPACE":
-                            time.sleep(5)
-                            self.execute_key_combo(combo_list)
-                            continue
-
                     block = [line]
                     for _ in range(2):
                         next_line = f.readline()
@@ -232,6 +262,38 @@ class Plugin:
                         block.append(next_line.strip())
 
                     block_text = "\n".join(block)
+
+                    biome_match = self.BIOME_REGEX.search(block_text)
+                    
+                    if biome_match:
+                        biome = biome_match.group("new_biome").upper().strip("\n")
+                        if biome == "GLITCHED" or biome == "DREAMSPACE":
+                            _time = datetime.datetime.now().strftime("%d,%m,%Y_%H,%M,%S")
+                            pos = self.get_roblox_window_pos()
+                            self.macro.logger.write_log(f"[{self.name}] Started recording biome ({biome} to folder {self.config['output_folder']} with file name {biome}_{_time}.mp4)")
+                            try:
+                                self.recorder.start_recording(f"{self.config['output_folder']}/{biome}_{_time}.mp4", fps=30, monitor={"mon" : 1, "left" : pos[0], "top" : pos[1], "width" : pos[2], "height" : pos[3]})
+                                while not stop_event.is_set():
+                                    _ = get_latest_hovertext()
+                                    if not _:
+                                        continue
+
+                                    if _ is None:
+                                        continue
+
+                                    if _.upper() != biome:
+                                        time.sleep(self.config["wait_after_end"])
+                                        break
+                                    time.sleep(0.1)
+                            except Exception as e:
+                                print(e)
+                            finally:
+                                self.recorder.stop_recording()
+                                time.sleep(1)
+                                self.macro.logger.write_log(f"[{self.name}] Stopped recording biome ({biome}).")
+                            time.sleep(5)
+                            continue
+                    
                     match = self.AURA_REGEX.search(block_text)
                     if match:
                         aura_name = match.group("name")

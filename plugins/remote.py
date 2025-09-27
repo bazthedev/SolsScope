@@ -1,7 +1,7 @@
 """
 SolsScope/Baz's Macro
 Created by Baz and Cresqnt
-v1.2.5
+v2.0.0
 Support server: https://discord.gg/6cuCu6ymkX
 """
 
@@ -14,29 +14,47 @@ from PyQt6.QtCore import Qt
 from packaging.version import parse as parse_version
 import screeninfo as si
 from pynput import keyboard
-import mousekey as mk
 import asyncio
 import discord
 from discord.ext import commands, tasks
 import time
 import pyautogui as pag
 
-from constants import WEBHOOK_ICON_URL
+from uinav import open_inventory, open_storage, close_menu, search_in_menu, load_delay
+from calibrations import get_calibrations, get_corresponding_calibration
+from utils import create_discord_file_from_path
 
 class Plugin:
     DEFAULTSETTINGS = {
         "enabled": True,
         "TOKEN": "",
+        "enabled_commands" : {
+            "stop" : True,
+            "shutdown" : True,
+            "cancel" : True,
+            "screenshot" : True,
+            "storage_screenshot" : True,
+            "inventory_screenshot" : True,
+            "purchase_item" : True,
+            "get_log" : True
+        }
     }
     
-    DISPLAYSETTINGS = ["enabled", "TOKEN"]
+    DISPLAYSETTINGS = ["enabled", "TOKEN", "enabled_commands"]
+
+    TOOLTIPS = {
+        "enabled" : "Enable this plugin.",
+        "TOKEN" : "The token for your Discord Bot.",
+        "enabled_commands" : "The commands to be enabled when the bot is running."
+    }
     
     def __init__(self, macro):
         self.name = "Remote Bot"
-        self.version = "1.0.3"
-        self.author = "bazthedev"
-        self.requires = "1.2.5"
-        self.autocraft_compatible = False
+        self.version = "1.0.4"
+        self.authors = ["bazthedev"]
+        self.requires = "2.0.0"
+        self.requirements = []
+        self.autocraft_compatible = True
         self.macro = macro
         
         self.MACROPATH = os.path.expandvars(r"%localappdata%\SolsScope")
@@ -52,25 +70,10 @@ class Plugin:
         for mon in screens:
             if mon.is_primary:
                 monitor = mon
-        self.scale_w = monitor.width / 2560
-        self.scale_h = monitor.height / 1440
 
-        self.purchase_btn_pos = ((990 * self.scale_w), (860 * self.scale_h))
-        self.quantity_btn_pos = ((910 * self.scale_w), (796 * self.scale_h))
-        self.open_merch_pos = ((876 * self.scale_w), (1256 * self.scale_h))
-        self.merch_item_pos_1_purchase = ((766 * self.scale_w), (948 * self.scale_h))
-        self.merch_item_pos_2_purchase = ((1024 * self.scale_w), (948 * self.scale_h))
-        self.merch_item_pos_3_purchase = ((1278 * self.scale_w), (948 * self.scale_h))
-        self.merch_item_pos_4_purchase = ((1512 * self.scale_w), (948 * self.scale_h))
-        self.merch_item_pos_5_purchase = ((1762 * self.scale_w), (948 * self.scale_h))
-        self.aura_button_pos = ((53 * self.scale_w), (538 * self.scale_h))
-        self.inv_button_pos = ((32 * self.scale_w), (692 * self.scale_h))
-        self.close_pos = ((1887 * self.scale_w), (399 * self.scale_h))
-        self.search_pos = ((1164 * self.scale_w), (486 * self.scale_h))
-        self.items_pos = ((1692 * self.scale_w), (440 * self.scale_h))
+        self.WEBHOOK_ICON_URL = "https://raw.githubusercontent.com/bazthedev/SolsScope/main/img/solsscope.png"
     
         self._keyboard = keyboard.Controller()
-        self.mkey = mk.MouseKey()
         
         macro.logger.write_log(f"[{self.name}] Plugin initialized (v{self.version})")
 
@@ -115,11 +118,18 @@ class Plugin:
         }
         
         # Create widgets using plugin's isolated config
-        create_widgets(settings_to_display, parent_layout, self.entries)
+        create_widgets(settings_to_display, parent_layout, self.entries, self.TOOLTIPS)
         
+        label_text = f"{self.name} v{self.version} by"
+        for author in self.authors:
+            if self.authors.index(author) == len(self.authors) - 1:
+                label_text += f" {author}."
+            else:
+                label_text += f" {author},"
+
         info_label = QLabel(
-            f"<i>{self.name} v{self.version} by {self.author}</i>"
-        )
+            f"<i>{label_text}</i>"
+        )   
         info_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         parent_layout.addWidget(info_label)
 
@@ -193,7 +203,7 @@ class Plugin:
             else:
                 original[key] = value
 
-    def run(self, stop_event, sniped_event):
+    def run(self, stop_event, sniped_event, pause_event):
         """
         Main plugin logic that runs in a separate thread.
         
@@ -221,179 +231,159 @@ class Plugin:
             asyncio.set_event_loop(asyncio.new_event_loop())
             
             client = commands.Bot(command_prefix=commands.when_mentioned, intents=None)
-            
-            @client.command()
-            @commands.is_owner()
-            async def stop(ctx):
-                await ctx.send("The macro will now be stopped.")
-                self.macro.running = False
-                emb = discord.Embed(
-                    title="Macro was stopped remotely.",
-                    colour=discord.Colour.red()
-                )
-                emb.set_footer(text=f"SolsScope Remote Bot Plugin v{self.version}", icon_url=WEBHOOK_ICON_URL)
-                self.macro.webhook.send(avatar_url=WEBHOOK_ICON_URL, embed=emb)
-                self.macro.logger.write_log("Macro was stopped remotely.")
-                self.macro.stop_event.set()
+
+            if not self.macro.settings.get("calibration"):
+                self.macro.logger.write_log("Cannot start Remote: No calibration selected.")
+                return
+
+            CLICKS = get_calibrations(self.macro.settings.get("calibration"))
+            delay = load_delay()
+
+            if self.config["enabled_commands"]["stop"]:
+                @client.command()
+                @commands.is_owner()
+                async def stop(ctx):
+                    await ctx.send("The macro will now be stopped.")
+                    self.macro.running = False
+                    emb = discord.Embed(
+                        title="Macro was stopped remotely.",
+                        colour=discord.Colour.red()
+                    )
+                    emb.set_thumbnail(url=self.WEBHOOK_ICON_URL)
+                    emb.set_footer(text=f"SolsScope Remote Bot Plugin v{self.version}", icon_url=self.WEBHOOK_ICON_URL)
+                    self.macro.webhook.send(embed=emb)
+                    self.macro.logger.write_log("Macro was stopped remotely.")
+                    self.macro.stop_event.set()
 
             @tasks.loop(seconds=0)
             async def stop_checker():
                 if self.macro.stop_event.is_set():
                     await client.close()
 
-            @client.command()
-            @commands.is_owner()
-            async def shutdown(ctx, _time : int):
-                emb = discord.Embed(
-                    title="Macro was stopped remotely.",
-                    colour=discord.Colour.red()
-                )
-                emb.set_footer(text=f"SolsScope Remote Bot Plugin v{self.version}", icon_url=WEBHOOK_ICON_URL)
-                self.macro.webhook.send(avatar_url=WEBHOOK_ICON_URL, embed=emb)
-                self.macro.logger.write_log("Macro was stopped remotely.")
-                t = round(time.time())
-                t_z = t + _time
-                await ctx.send(f"Shutting down at <t:{t_z}>")
-                os.system(f"shutdown /s /t {str(_time)}")
-                    
-            @client.command()
-            @commands.is_owner()
-            async def cancel(ctx):
-                await ctx.send("Cancelling shutdown")
-                os.system("shutdown /a")
+            if self.config["enabled_commands"]["shutdown"]:
+                @client.command()
+                @commands.is_owner()
+                async def shutdown(ctx, _time : int = 60):
+                    emb = discord.Embed(
+                        title="Macro was stopped remotely.",
+                        colour=discord.Colour.red()
+                    )
+                    emb.set_thumbnail(url=self.WEBHOOK_ICON_URL)
+                    emb.set_footer(text=f"SolsScope Remote Bot Plugin v{self.version}", icon_url=self.WEBHOOK_ICON_URL)
+                    self.macro.webhook.send(embed=emb)
+                    self.macro.logger.write_log("Macro was stopped remotely.")
+                    t = round(time.time())
+                    t_z = t + _time
+                    await ctx.send(f"Shutting down at <t:{t_z}>")
+                    os.system(f"shutdown /s /t {str(_time)}")
+            
+            if self.config["enabled_commands"]["cancel"]:
+                @client.command()
+                @commands.is_owner()
+                async def cancel(ctx):
+                    await ctx.send("Cancelling shutdown")
+                    os.system("shutdown /a")
 
-            @client.command()
-            @commands.is_owner()
-            async def scr(ctx):
-                if os.path.exists(f"{self.MACROPATH}/scr/screenshot.png"):
-                    os.remove(f"{self.MACROPATH}/scr/screenshot.png")
-                    await asyncio.sleep(0.2)
-                img = pag.screenshot(f"{self.MACROPATH}/scr/screenshot.png", allScreens=True)
-                await ctx.send(file=discord.File(f"{self.MACROPATH}/scr/screenshot.png"))
+            if self.config["enabled_commands"]["screenshot"]:
+                @client.command()
+                @commands.is_owner()
+                async def scr(ctx):
+                    if os.path.exists(f"{self.MACROPATH}/scr/screenshot.png"):
+                        os.remove(f"{self.MACROPATH}/scr/screenshot.png")
+                        await asyncio.sleep(0.2)
+                    img = pag.screenshot(f"{self.MACROPATH}/scr/screenshot.png", allScreens=True)
+                    await ctx.send(file=discord.File(f"{self.MACROPATH}/scr/screenshot.png"))
 
-            @client.command()
-            @commands.is_owner()
-            async def purchase_item(ctx, item_box : int):
-                with self.macro.keyboard_lock:
-                    if item_box == 1:
-                        self.mkey.left_click_xy_natural(self.merch_item_pos_1_purchase[0], self.merch_item_pos_1_purchase[1], print_coords=False)
-                        time.sleep(0.2)
-                        self.mkey.left_click_xy_natural(self.quantity_btn_pos[0], self.quantity_btn_pos[1], print_coords=False)
-                        time.sleep(0.2)
-                        self._keyboard.type("25")
-                        time.sleep(0.2)
-                        self.mkey.left_click_xy_natural(self.purchase_btn_pos[0], self.purchase_btn_pos[1], print_coords=False)
-                        time.sleep(0.2)
-                        await ctx.send(f"Purchased item in box {str(item_box)}")
-                    elif item_box == 2:
-                        self.mkey.left_click_xy_natural(self.merch_item_pos_2_purchase[0], self.merch_item_pos_2_purchase[1], print_coords=False)
-                        time.sleep(0.2)
-                        self.mkey.left_click_xy_natural(self.quantity_btn_pos[0], self.quantity_btn_pos[1], print_coords=False)
-                        time.sleep(0.2)
-                        self._keyboard.type("25")
-                        time.sleep(0.2)
-                        self.mkey.left_click_xy_natural(self.purchase_btn_pos[0], self.purchase_btn_pos[1], print_coords=False)
-                        time.sleep(0.2)
-                        await ctx.send(f"Purchased item in box {str(item_box)}")
-                    elif item_box == 3:
-                        self.mkey.left_click_xy_natural(self.merch_item_pos_3_purchase[0], self.merch_item_pos_3_purchase[1], print_coords=False)
-                        time.sleep(0.2)
-                        self.mkey.left_click_xy_natural(self.quantity_btn_pos[0], self.quantity_btn_pos[1])
-                        time.sleep(0.2)
-                        self._keyboard.type("25")
-                        time.sleep(0.2)
-                        self.mkey.left_click_xy_natural(self.purchase_btn_pos[0], self.purchase_btn_pos[1])
-                        time.sleep(0.2)
-                        await ctx.send(f"Purchased item in box {str(item_box)}")
-                    elif item_box == 4:
-                        self.mkey.left_click_xy_natural(self.merch_item_pos_4_purchase[0], self.merch_item_pos_4_purchase[1], print_coords=False)
-                        time.sleep(0.2)
-                        self.mkey.left_click_xy_natural(self.quantity_btn_pos[0], self.quantity_btn_pos[1])
-                        time.sleep(0.2)
-                        self._keyboard.type("25")
-                        time.sleep(0.2)
-                        self.mkey.left_click_xy_natural(self.purchase_btn_pos[0], self.purchase_btn_pos[1])
-                        time.sleep(0.2)
-                        await ctx.send(f"Purchased item in box {str(item_box)}")
-                    elif item_box == 5:
-                        self.mkey.left_click_xy_natural(self.merch_item_pos_5_purchase[0], self.merch_item_pos_5_purchase[1], print_coords=False)
-                        time.sleep(0.2)
-                        self.mkey.left_click_xy_natural(self.quantity_btn_pos[0], self.quantity_btn_pos[1])
-                        time.sleep(0.2)
-                        self._keyboard.type("25")
-                        time.sleep(0.2)
-                        self.mkey.left_click_xy_natural(self.purchase_btn_pos[0], self.purchase_btn_pos[1])
-                        time.sleep(0.2)
+            if self.config["enabled_commands"]["purchase_item"]:
+                @client.command()
+                @commands.is_owner()
+                async def purchase_item(ctx, item_box : int, amount : int):
+                    with self.macro.keyboard_lock:
+                        try:
+                            coord_key = f"merchant_slot_{item_box}"
+                            self.macro.mkey.left_click_xy_natural(CLICKS[coord_key][0], CLICKS[coord_key][1])
+                            time.sleep(delay)
+                            self.macro.mkey.left_click_xy_natural(CLICKS["merchant_amount"][0], CLICKS["merchant_amount"][1])
+                            time.sleep(delay)
+                            self.macro.keyboard_controller.type(str(amount))
+                            time.sleep(delay)
+                            self.macro.mkey.left_click_xy_natural(CLICKS["merchant_purchase"][0], CLICKS["merchant_purchase"][1])
+                            self.macro.logger.write_log(f"Manually purchased item in Box {str(item_box)}")
+                            time.sleep(3)
+                        except Exception as buy_e:
+                            self.macro.logger.write_log(f"Error during manual purchasing: {buy_e}")
                         await ctx.send(f"Purchased item in box {str(item_box)}")
 
-            @client.command()
-            @commands.is_owner()
-            async def storage_scr(ctx):
-                with self.macro.keyboard_lock:
-                    await ctx.send("Taking screenshot of Aura Storage, please wait, this will take a few seconds.")
-                    self.mkey.left_click_xy_natural(self.aura_button_pos[0], self.aura_button_pos[1])
-                    await asyncio.sleep(0.1)
-                    self.mkey.left_click_xy_natural(self.search_pos[0], self.search_pos[1])
-                    await asyncio.sleep(0.1)
-                    storimg = pag.screenshot(f"{self.MACROPATH}/scr/screenshot_storage.png")
-                    await asyncio.sleep(0.1)
-                    self.mkey.left_click_xy_natural(self.close_pos[0], self.close_pos[1])
-                    await ctx.send(file=discord.File(f"{self.MACROPATH}/scr/screenshot_storage.png"))
+            if self.config["enabled_commands"]["storage_screenshot"]:
+                @client.command()
+                @commands.is_owner()
+                async def storage_scr(ctx):
+                    screenshot_path = os.path.join(self.MACROPATH, "scr", "screenshot_storage.png")
+                    with self.macro.keyboard_lock:
+                        await ctx.send("Taking screenshot of Aura Storage, please wait, this will take a few seconds.")
+                        self.macro.mkey.left_click_xy_natural(CLICKS["open_storage"][0], CLICKS["open_storage"][1])
+                        time.sleep(delay)
+                        self.macro.mkey.left_click_xy_natural(CLICKS["search_bar"][0], CLICKS["search_bar"][1])
+                        time.sleep(delay)
+                        self.macro.keyboard_controller.press(keyboard.Key.backspace)
+                        time.sleep(0.2)
+                        self.macro.keyboard_controller.release(keyboard.Key.backspace)
+                        time.sleep(delay)
+                        pag.screenshot(screenshot_path)
+                        time.sleep(delay)
+                        self.macro.mkey.left_click_xy_natural(CLICKS["close_menu"][0], CLICKS["close_menu"][1])
+                        time.sleep(delay)
+                        await ctx.send(file=discord.File(f"{self.MACROPATH}/scr/screenshot_storage.png"))
+
+            if self.config["enabled_commands"]["get_log"]:
+                @client.command()
+                @commands.is_owner()
+                async def get_log(ctx):
+                    log_file_path = f"{self.MACROPATH}/solsscope.log"
+
+                    try:
+                        with open(log_file_path, "r", errors="ignore", encoding="utf-8") as f:
+                            lines = f.readlines()
+
+                        last_50_lines = lines[-50:] if len(lines) >= 50 else lines
+                        log_content = ''.join(last_50_lines)
+
+                        if len(log_content) > 1990:
+                            with open(f"{self.MACROPATH}/temp/upload.log", "w") as temp:
+                                temp.writelines(last_50_lines)
+                            await ctx.send("Log too long, sending as a file:", file=discord.File(f"{self.MACROPATH}/temp/upload.log"))
+                        else:
+                            await ctx.send(f"```{log_content}```")
+
+                    except FileNotFoundError:
+                        await ctx.send("Log file not found.")
+                    except Exception as e:
+                        await ctx.send(f"An error occurred: {str(e)}")
 
 
-            @client.command()
-            @commands.is_owner()
-            async def get_log(ctx):
-                log_file_path = f"{self.MACROPATH}/solsscope.log"
+            if self.config["enabled_commands"]["inventory_screenshot"]:
+                @client.command()
+                @commands.is_owner()
+                async def inv_scr(ctx):
+                    screenshot_path = os.path.join(self.MACROPATH, "scr", "screenshot_inventory.png")
+                    with self.macro.keyboard_lock:
+                        await ctx.send("Taking screenshot of Inventory, please wait, this will take a few seconds.")
+                        self.macro.mkey.left_click_xy_natural(CLICKS["open_inventory"][0], CLICKS["open_inventory"][1])
+                        time.sleep(delay)
+                        self.macro.mkey.left_click_xy_natural(CLICKS["items_btn"][0], CLICKS["items_btn"][1])
+                        time.sleep(delay)
+                        self.macro.mkey.left_click_xy_natural(CLICKS["search_bar"][0], CLICKS["search_bar"][1])
+                        time.sleep(delay)
+                        self.macro.keyboard_controller.press(keyboard.Key.backspace)
+                        time.sleep(0.2)
+                        self.macro.keyboard_controller.release(keyboard.Key.backspace)
+                        time.sleep(delay)
+                        pag.screenshot(screenshot_path)
+                        time.sleep(delay)
+                        self.macro.mkey.left_click_xy_natural(CLICKS["close_menu"][0], CLICKS["close_menu"][1])
+                        time.sleep(delay)
+                        await ctx.send(file=discord.File(f"{self.MACROPATH}/scr/screenshot_inventory.png"))
 
-                try:
-                    with open(log_file_path, "r") as f:
-                        lines = f.readlines()
-
-                    last_50_lines = lines[-50:] if len(lines) >= 50 else lines
-                    log_content = ''.join(last_50_lines)
-
-                    if len(log_content) > 1990:
-                        with open("upload.log", "w") as temp:
-                            temp.writelines(last_50_lines)
-                        await ctx.send("Log too long, sending as a file:", file=discord.File("upload.log"))
-                    else:
-                        await ctx.send(f"```{log_content}```")
-
-                except FileNotFoundError:
-                    await ctx.send("Log file not found.")
-                except Exception as e:
-                    await ctx.send(f"An error occurred: {str(e)}")
-
-
-            @client.command()
-            @commands.is_owner()
-            async def inv_scr(ctx):
-                with self.macro.keyboard_lock:
-                    await ctx.send("Taking screenshot of inventory, please wait, this will take a few seconds.")
-                    self.mkey.left_click_xy_natural(self.inv_button_pos[0], self.inv_button_pos[1])
-                    await asyncio.sleep(0.1)
-                    self.mkey.left_click_xy_natural(self.items_pos[0], self.items_pos[1])
-                    await asyncio.sleep(0.1)
-                    self.mkey.left_click_xy_natural(self.search_pos[0], self.search_pos[1])
-                    await asyncio.sleep(0.1)
-                    self.storimg = pag.screenshot(f"{self.MACROPATH}/scr/screenshot_inventory.png")
-                    await asyncio.sleep(0.1)
-                    self.mkey.left_click_xy_natural(self.close_pos[0], self.close_pos[1])
-                    await ctx.send(file=discord.File(f"{self.MACROPATH}/scr/screenshot_inventory.png"))
-
-            @client.command()
-            @commands.is_owner()
-            async def join_ps(ctx):
-                if self.macro.ps_link_code == 0:
-                    await ctx.send("Private server link code is not set.")
-                    return
-                with self.macro.keyboard_lock:
-                    await ctx.send("Rejoining private server...")
-                    self.macro.join_private_server_link(self.macro.ps_link_code)
-                    await asyncio.sleep(10)
-                    self.leave_main_menu()
-                    await ctx.send("Rejoined Private server!")
             
             @client.event
             async def on_ready():

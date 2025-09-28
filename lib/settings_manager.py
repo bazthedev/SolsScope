@@ -28,6 +28,15 @@ QUESTBOARD_PATH = os.path.join(MACROPATH, "questboard.json")
 FISHDATA_PATH = os.path.join(MACROPATH, "fish-data.json")
 AUTOCRAFT_PATH = os.path.join(MACROPATH, "autocraft.json")
 
+UPTIME_API = "https://cresqnt.com/api/solsscopeup"
+
+try:
+    riu = requests.get(UPTIME_API, timeout=10)
+    riu.raise_for_status()
+    IS_UP = riu.json().get("status", "DOWN") == "OK"
+except Exception as e:
+    IS_UP = False
+
 def get_settings_path():
     return SETTINGS_PATH
 

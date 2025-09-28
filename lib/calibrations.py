@@ -28,6 +28,15 @@ import ctypes
 
 from constants import MACROPATH
 
+UPTIME_API = "https://cresqnt.com/api/solsscopeup"
+
+try:
+    riu = requests.get(UPTIME_API, timeout=10)
+    riu.raise_for_status()
+    IS_UP = riu.json().get("status", "DOWN") == "OK"
+except Exception as e:
+    IS_UP = False
+
 DEFAULT_CALIBRATION = {
     "width" : 2560,
     "height" : 1440,
@@ -160,24 +169,30 @@ def is_process_fullscreen(process_name):
 def download_all_calibrations():
     def download_folder(url, local_dir, overwrite=True):
         os.makedirs(local_dir, exist_ok=True)
-        response = requests.get(url)
-        response.raise_for_status()
-        items = response.json()
-        
-        for item in items:
-            if item['type'] == 'file':
-                file_url = item['download_url']
-                file_path = os.path.join(local_dir, item['name'])
-                if (overwrite or not os.path.exists(file_path)) and item["name"] != "template.json":
-                    print(f"Downloading {file_path} from {item['download_url']}...")
-                    r = requests.get(file_url)
-                    r.raise_for_status()
-                    with open(file_path, 'wb') as f:
-                        f.write(r.content)
-            elif item['type'] == 'dir':
-                download_folder(item['url'], os.path.join(local_dir, item['name']))
+        try:
+            response = requests.get(url)
+            response.raise_for_status()
+            items = response.json()
+            
+            for item in items:
+                if item['type'] == 'file':
+                    file_url = item['download_url']
+                    file_path = os.path.join(local_dir, item['name'])
+                    if (overwrite or not os.path.exists(file_path)) and item["name"] != "template.json":
+                        print(f"Downloading {file_path} from {item['download_url']}...")
+                        r = requests.get(file_url)
+                        r.raise_for_status()
+                        with open(file_path, 'wb') as f:
+                            f.write(r.content)
+                elif item['type'] == 'dir':
+                    download_folder(item['url'], os.path.join(local_dir, item['name']))
+        except Exception as e:
+            print(f"Error downloading calibration: {e}")
     
-    download_folder("https://api.github.com/repos/bazthedev/SolsScope/contents/calibrations?ref=main", f"{MACROPATH}\\calibrations")
+    if IS_UP:
+        download_folder("https://api.github.com/repos/bazthedev/SolsScope/contents/calibrations?ref=main", f"{MACROPATH}\\calibrations")
+    else:
+        print("SolsScope is DOWN.")
 
 
 def get_available_calibrations() -> list[str]:

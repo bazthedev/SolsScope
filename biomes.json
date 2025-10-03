@@ -87,13 +87,15 @@
         "img_url" : "https://cdn.drawception.com/drawings/953223/dDnRqtqgrN.png",
         "enabled" : true
     },
-    "unknown" : {
+    "another realm" : {
         "colour" : "#0c43db",
         "multiplier" : 1,
         "rare" : false,
         "event" : true,
         "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/b/ba/AnotherRealmBiome.png/revision/latest",
         "enabled" : true,
-        "display_name" : "Another Realm"
+        "display_name" : "Another Realm",
+        "start_identifier" : "unknown",
+        "end_identifier" : "anotherrealm"
     }
 }

@@ -675,3 +675,81 @@ QDialog#screenRegionDialog {
 QDialog#screenRegionDialogContent {
     background: transparent; /* inherit from parent */
 }
+
+/* ============================
+   MANAGER WINDOW (Catppuccin Theme)
+   ============================ */
+
+QDialog#ManagerGUI {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                                stop:0 #313244, stop:1 #1e1e2e);
+    border: 2px solid #45475a;
+    border-radius: 12px;
+    padding: 10px;
+}
+
+/* Labels inside manager */
+QWidget#ManagerGUI QLabel {
+    color: #cdd6f4;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+/* Sidebar list */
+QWidget#ManagerGUI QListWidget {
+    background: #313244;
+    border: 1px solid #45475a;
+    border-radius: 6px;
+    color: #cdd6f4;
+    padding: 6px;
+    selection-background-color: #89b4fa;
+}
+
+QWidget#ManagerGUI QListWidget::item {
+    padding: 6px 10px;
+    border-radius: 4px;
+}
+
+QWidget#ManagerGUI QListWidget::item:selected {
+    background: #89b4fa;
+    color: #1e1e2e;
+}
+
+QWidget#ManagerGUI QListWidget::item:hover {
+    background: #45475a;
+}
+
+/* Description text box */
+QWidget#ManagerGUI QTextEdit {
+    background: #1e1e2e;
+    border: 1px solid #45475a;
+    border-radius: 6px;
+    color: #cdd6f4;
+    padding: 10px;
+    font-family: Consolas, monospace;
+    font-size: 11px;
+    selection-background-color: #89b4fa;
+}
+
+/* Buttons */
+QWidget#ManagerGUI QPushButton {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                                stop:0 #89b4fa, stop:1 #74c7ec);
+    color: #1e1e2e;
+    border: 1px solid #89b4fa;
+    border-radius: 8px;
+    padding: 8px 16px;
+    font-weight: bold;
+    font-size: 11px;
+}
+
+QWidget#ManagerGUI QPushButton:hover {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                                stop:0 #b4befe, stop:1 #89b4fa);
+    border-color: #b4befe;
+}
+
+QWidget#ManagerGUI QPushButton:pressed {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                                stop:0 #74c7ec, stop:1 #89b4fa);
+}

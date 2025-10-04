@@ -336,3 +336,73 @@ QDialog#screenRegionDialog {
 QDialog#screenRegionDialogContent {
     background: transparent; /* inherit from parent */
 }
+
+/* ============================
+   MANAGER WINDOW (Black Theme)
+   ============================ */
+
+QDialog#ManagerGUI {
+    background: #000;
+    border: 1px solid #1a1a1a;
+    border-radius: 12px;
+}
+
+/* Labels inside manager */
+QWidget#ManagerGUI QLabel {
+    color: #ddd;
+    font-size: 11px;
+    font-weight: bold;
+}
+
+/* Sidebar list */
+QWidget#ManagerGUI QListWidget {
+    background: #0a0a0a;
+    border: 1px solid #1c1c1c;
+    border-radius: 6px;
+    color: #fff;
+    padding: 4px;
+    selection-background-color: #222;
+}
+
+QWidget#ManagerGUI QListWidget::item {
+    padding: 6px;
+    border-radius: 4px;
+}
+
+QWidget#ManagerGUI QListWidget::item:selected {
+    background: #1e1e1e;
+}
+
+QWidget#ManagerGUI QListWidget::item:hover {
+    background: #2a2a2a;
+}
+
+/* Description text box */
+QWidget#ManagerGUI QTextEdit {
+    background: #0f0f0f;
+    border: 1px solid #222;
+    color: #fff;
+    border-radius: 6px;
+    padding: 8px;
+    font-family: Consolas, monospace;
+    font-size: 11px;
+}
+
+/* Buttons */
+QWidget#ManagerGUI QPushButton {
+    background: #111;
+    color: #fff;
+    border: 1px solid #2c2c2c;
+    border-radius: 8px;
+    padding: 8px 18px;
+    font-weight: bold;
+}
+
+QWidget#ManagerGUI QPushButton:hover {
+    background: #1a1a1a;
+    border-color: #3a3a3a;
+}
+
+QWidget#ManagerGUI QPushButton:pressed {
+    background: #080808;
+}

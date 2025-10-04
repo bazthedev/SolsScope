@@ -494,3 +494,55 @@ QDialog#screenRegionDialog {
 QDialog#screenRegionDialogContent {
     background: transparent;
 }
+
+/* =========================
+   Manager Window Styling
+   ========================= */
+QWidget#ManagerGUI {
+    background: qlineargradient(
+        x1: 0, y1: 0, x2: 0, y2: 1,
+        stop: 0 #2f2f2f, stop: 1 #1e1e1e
+    );
+    border: 1px solid #404040;
+    border-radius: 12px;
+    color: #ffffff;
+    padding: 8px;
+}
+
+QWidget#ManagerGUI QLabel {
+    color: #e0e0e0;
+    font-weight: bold;
+}
+
+QWidget#ManagerGUI QTextEdit {
+    background: #1a1a1a;
+    color: #dcdcdc;
+    border: 1px solid #3c3c3c;
+    border-radius: 6px;
+    padding: 6px;
+}
+
+QWidget#ManagerGUI QPushButton {
+    background: qlineargradient(
+        x1:0, y1:0, x2:0, y2:1,
+        stop:0 #3c3c3c, stop:1 #2a2a2a
+    );
+    border: 1px solid #555555;
+    border-radius: 6px;
+    color: #ffffff;
+    padding: 4px 12px;
+}
+
+QWidget#ManagerGUI QPushButton:hover {
+    background: qlineargradient(
+        x1:0, y1:0, x2:0, y2:1,
+        stop:0 #505050, stop:1 #3a3a3a
+    );
+}
+
+QWidget#ManagerGUI QListWidget {
+    background: #1f1f1f;
+    border: 1px solid #3c3c3c;
+    border-radius: 6px;
+    color: #dcdcdc;
+}

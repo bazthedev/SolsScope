@@ -1,0 +1,509 @@
+{
+  "AURA_STORAGE": {
+    "ASPECT_RATIO": 1.823,
+    "SCALE_WIDTH": 0.5,
+    "SCALE_HEIGHT": 0.55,
+    "EQUIP_BUTTON": {
+      "LEFT_OFFSET_RATIO": 0.020,
+      "TOP_OFFSET_RATIO": 0.650,
+      "HEIGHT_RATIO": 0.057,
+      "WIDTH_RATIO": 0.264
+    },
+    "FIRST_AURA": {
+      "LEFT_OFFSET_RATIO": 0.319,
+      "TOP_OFFSET_RATIO": 0.241,
+      "HEIGHT_RATIO": 0.124,
+      "WIDTH_RATIO": 0.068
+    },
+    "EXIT_BUTTON": {
+      "LEFT_OFFSET_RATIO": 0.970,
+      "TOP_OFFSET_RATIO": 0.0425,
+      "HEIGHT_RATIO": 0.0,
+      "WIDTH_RATIO": 0.0
+    },
+    "SEARCH_BAR": {
+      "LEFT_OFFSET_RATIO": 0.304,
+      "TOP_OFFSET_RATIO": 0.148,
+      "HEIGHT_RATIO": 0.048,
+      "WIDTH_RATIO": 0.690
+    }
+  },
+
+  "INVENTORY": {
+    "ASPECT_RATIO": 1.823,
+    "SCALE_WIDTH": 0.5,
+    "SCALE_HEIGHT": 0.55,
+    "USE_ITEM": {
+      "LEFT_OFFSET_RATIO": 0.1551,
+      "TOP_OFFSET_RATIO": 0.5432,
+      "WIDTH_RATIO": 0.1140,
+      "HEIGHT_RATIO": 0.0637
+    },
+    "ITEM_AMOUNT": {
+      "LEFT_OFFSET_RATIO": 0.0355,
+      "TOP_OFFSET_RATIO": 0.5432,
+      "WIDTH_RATIO": 0.1157,
+      "HEIGHT_RATIO": 0.0637
+    },
+    "ITEMS_BUTTON": {
+      "LEFT_OFFSET_RATIO": 0.6538,
+      "TOP_OFFSET_RATIO": 0.0901,
+      "WIDTH_RATIO": 0.3444,
+      "HEIGHT_RATIO": 0.0513
+    },
+    "FIRST_INV_ITEM": {
+      "LEFT_OFFSET_RATIO": 0.338628,
+      "TOP_OFFSET_RATIO": 0.283009,
+      "WIDTH_RATIO": 0.092653,
+      "HEIGHT_RATIO": 0.178143
+    }
+  },
+
+  "MENU": {
+    "ASPECT_RATIO": 1.069,
+    "SCALE_WIDTH": 0.193,
+    "SCALE_HEIGHT": 0.310,
+    "OPEN_INVENTORY": {
+      "LEFT_OFFSET_RATIO": 0.025,
+      "TOP_OFFSET_RATIO": 0.576,
+      "WIDTH_RATIO": 0.951,
+      "HEIGHT_RATIO": 0.115
+    },
+    "ROLLING": {
+      "LEFT_OFFSET_RATIO": 0.0031,
+      "TOP_OFFSET_RATIO": 0.0684,
+      "WIDTH_RATIO": 0.1883,
+      "HEIGHT_RATIO": 0.0384
+    },
+    "CUTSCENE_SKIP": {
+      "LEFT_OFFSET_RATIO": 0.3836,
+      "TOP_OFFSET_RATIO": 0.4807,
+      "WIDTH_RATIO": 0.3764,
+      "HEIGHT_RATIO": 0.0618
+    },
+    "CLOSE_SETTINGS_MENU": {
+      "LEFT_OFFSET_RATIO": 0.7542,
+      "TOP_OFFSET_RATIO": 0.0187,
+      "WIDTH_RATIO": 0.0135,
+      "HEIGHT_RATIO": 0.0253
+    }
+  },
+
+  "JESTER_EXCHANGE": {
+    "ASPECT_RATIO": 2.2,
+    "SCALE_WIDTH": 0.5,
+    "SCALE_HEIGHT": 0.55,
+    "SELL_ITEM_1": {
+      "LEFT_OFFSET_RATIO": 0.011,
+      "TOP_OFFSET_RATIO": 0.842,
+      "WIDTH_RATIO": 0.138,
+      "HEIGHT_RATIO": 0.132
+    },
+    "SELL_ITEM_2": {
+      "LEFT_OFFSET_RATIO": 0.159,
+      "TOP_OFFSET_RATIO": 0.842,
+      "WIDTH_RATIO": 0.138,
+      "HEIGHT_RATIO": 0.132
+    },
+    "EXCHANGE_BUTTON": {
+      "LEFT_OFFSET_RATIO": 0.015,
+      "TOP_OFFSET_RATIO": 0.680,
+      "WIDTH_RATIO": 0.496,
+      "HEIGHT_RATIO": 0.110
+    },
+    "AMOUNT_INPUT": {
+      "LEFT_OFFSET_RATIO": 0.015,
+      "TOP_OFFSET_RATIO": 0.599,
+      "WIDTH_RATIO": 0.397,
+      "HEIGHT_RATIO": 0.060
+    },
+    "EXIT_BUTTON": {
+      "LEFT_OFFSET_RATIO": 0.960,
+      "TOP_OFFSET_RATIO": 0.026,
+      "WIDTH_RATIO": 0.015,
+      "HEIGHT_RATIO": 0.033
+    }
+  },
+
+  "JESTER_CONFIRM": {
+    "ASPECT_RATIO": 2.402,
+    "SCALE_WIDTH": 0.17,
+    "SCALE_HEIGHT": 0.18,
+    "EXCHANGE_CONFIRM": {
+      "LEFT_OFFSET_RATIO": 0.021,
+      "TOP_OFFSET_RATIO": 0.692,
+      "WIDTH_RATIO": 0.457,
+      "HEIGHT_RATIO": 0.238
+    },
+    "SELL_CANCEL": {
+      "LEFT_OFFSET_RATIO": 0.521,
+      "TOP_OFFSET_RATIO": 0.692,
+      "WIDTH_RATIO": 0.457,
+      "HEIGHT_RATIO": 0.238
+    }
+  },
+
+  "JESTER_PURCHASE": {
+    "ASPECT_RATIO": 2.2,
+    "SCALE_WIDTH": 0.5,
+    "SCALE_HEIGHT": 0.55,
+    "ITEM_1": {
+      "LEFT_OFFSET_RATIO": 0.013,
+      "TOP_OFFSET_RATIO": 0.842,
+      "WIDTH_RATIO": 0.183,
+      "HEIGHT_RATIO": 0.132
+    },
+    "ITEM_2": {
+      "LEFT_OFFSET_RATIO": 0.211,
+      "TOP_OFFSET_RATIO": 0.842,
+      "WIDTH_RATIO": 0.183,
+      "HEIGHT_RATIO": 0.132
+    },
+    "ITEM_3": {
+      "LEFT_OFFSET_RATIO": 0.407,
+      "TOP_OFFSET_RATIO": 0.842,
+      "WIDTH_RATIO": 0.183,
+      "HEIGHT_RATIO": 0.132
+    },
+    "ITEM_4": {
+      "LEFT_OFFSET_RATIO": 0.605,
+      "TOP_OFFSET_RATIO": 0.842,
+      "WIDTH_RATIO": 0.183,
+      "HEIGHT_RATIO": 0.132
+    },
+    "ITEM_5": {
+      "LEFT_OFFSET_RATIO": 0.802,
+      "TOP_OFFSET_RATIO": 0.842,
+      "WIDTH_RATIO": 0.183,
+      "HEIGHT_RATIO": 0.132
+    },
+    "PURCHASE_BUTTON": {
+      "LEFT_OFFSET_RATIO": 0.014,
+      "TOP_OFFSET_RATIO": 0.678,
+      "WIDTH_RATIO": 0.496,
+      "HEIGHT_RATIO": 0.110
+    },
+    "AMOUNT_INPUT": {
+      "LEFT_OFFSET_RATIO": 0.014,
+      "TOP_OFFSET_RATIO": 0.675,
+      "WIDTH_RATIO": 0.397,
+      "HEIGHT_RATIO": 0.060
+    },
+    "EXIT_BUTTON": {
+      "LEFT_OFFSET_RATIO": 0.959,
+      "TOP_OFFSET_RATIO": 0.024,
+      "WIDTH_RATIO": 0.015,
+      "HEIGHT_RATIO": 0.033
+    }
+  },
+
+  "MERCHANT_DIALOG": {
+    "ASPECT_RATIO": 4.004644,
+    "SCALE_WIDTH": 0.49,
+    "SCALE_HEIGHT": 0.204545,
+    "OPEN": {
+      "LEFT_OFFSET_RATIO": 0.000000,
+      "TOP_OFFSET_RATIO": 1.092186,
+      "WIDTH_RATIO": 0.302252,
+      "HEIGHT_RATIO": 0.234795
+    },
+    "WHO": {
+      "LEFT_OFFSET_RATIO": 0.348456,
+      "TOP_OFFSET_RATIO": 1.092186,
+      "WIDTH_RATIO": 0.302252,
+      "HEIGHT_RATIO": 0.234795
+    },
+    "LEAVE": {
+      "LEFT_OFFSET_RATIO": 0.696911,
+      "TOP_OFFSET_RATIO": 1.092186,
+      "WIDTH_RATIO": 0.302252,
+      "HEIGHT_RATIO": 0.234795
+    }
+  },
+
+  "JESTER_DIALOG": {
+    "ASPECT_RATIO": 3.991654,
+    "SCALE_WIDTH": 0.499,
+    "SCALE_HEIGHT": 0.205,
+    "SCREEN_TOP_RATIO": 0.624,
+    "OPEN": {
+      "LEFT_OFFSET_RATIO": 0.000000,
+      "TOP_OFFSET_RATIO": 1.090671,
+      "WIDTH_RATIO": 0.228360,
+      "HEIGHT_RATIO": 0.236940
+    },
+    "EXCHANGE": {
+      "LEFT_OFFSET_RATIO": 0.257356,
+      "TOP_OFFSET_RATIO": 1.090671,
+      "WIDTH_RATIO": 0.228360,
+      "HEIGHT_RATIO": 0.236940
+    },
+    "WHO": {
+      "LEFT_OFFSET_RATIO": 0.514711,
+      "TOP_OFFSET_RATIO": 1.090671,
+      "WIDTH_RATIO": 0.228360,
+      "HEIGHT_RATIO": 0.236940
+    },
+    "LEAVE": {
+      "LEFT_OFFSET_RATIO": 0.772067,
+      "TOP_OFFSET_RATIO": 1.090671,
+      "WIDTH_RATIO": 0.228360,
+      "HEIGHT_RATIO": 0.236940
+    }
+  },
+
+  "MARI_DIALOG": {
+    "ASPECT_RATIO": 4.0,
+    "SCALE_WIDTH": 0.5,
+    "SCALE_HEIGHT": 0.25,
+    "SCREEN_TOP_RATIO": 0.624,
+    "OPEN": {
+      "LEFT_OFFSET_RATIO": 0.02,
+      "TOP_OFFSET_RATIO": 0.70,
+      "WIDTH_RATIO": 0.25,
+      "HEIGHT_RATIO": 0.20
+    },
+    "SKIP_DIALOG": {
+      "LEFT_OFFSET_RATIO": 0.50,
+      "TOP_OFFSET_RATIO": 0.50,
+      "WIDTH_RATIO": 0.0,
+      "HEIGHT_RATIO": 0.0
+    }
+  },
+
+  "MARI_PURCHASE": {
+    "ASPECT_RATIO": 2.2,
+    "SCALE_WIDTH": 0.5,
+    "SCALE_HEIGHT": 0.55,
+    "ITEM_1": {
+      "LEFT_OFFSET_RATIO": 0.013,
+      "TOP_OFFSET_RATIO": 0.842,
+      "WIDTH_RATIO": 0.183,
+      "HEIGHT_RATIO": 0.132
+    },
+    "ITEM_2": {
+      "LEFT_OFFSET_RATIO": 0.211,
+      "TOP_OFFSET_RATIO": 0.842,
+      "WIDTH_RATIO": 0.183,
+      "HEIGHT_RATIO": 0.132
+    },
+    "ITEM_3": {
+      "LEFT_OFFSET_RATIO": 0.407,
+      "TOP_OFFSET_RATIO": 0.842,
+      "WIDTH_RATIO": 0.183,
+      "HEIGHT_RATIO": 0.132
+    },
+    "ITEM_4": {
+      "LEFT_OFFSET_RATIO": 0.605,
+      "TOP_OFFSET_RATIO": 0.842,
+      "WIDTH_RATIO": 0.183,
+      "HEIGHT_RATIO": 0.132
+    },
+    "ITEM_5": {
+      "LEFT_OFFSET_RATIO": 0.802,
+      "TOP_OFFSET_RATIO": 0.842,
+      "WIDTH_RATIO": 0.183,
+      "HEIGHT_RATIO": 0.132
+    },
+    "PURCHASE_BUTTON": {
+      "LEFT_OFFSET_RATIO": 0.014,
+      "TOP_OFFSET_RATIO": 0.678,
+      "WIDTH_RATIO": 0.496,
+      "HEIGHT_RATIO": 0.110
+    },
+    "AMOUNT_INPUT": {
+      "LEFT_OFFSET_RATIO": 0.013514,
+      "TOP_OFFSET_RATIO": 0.593182,
+      "WIDTH_RATIO": 0.397089,
+      "HEIGHT_RATIO": 0.061364
+    },
+    "EXIT_BUTTON": {
+      "LEFT_OFFSET_RATIO": 0.959,
+      "TOP_OFFSET_RATIO": 0.024,
+      "WIDTH_RATIO": 0.015,
+      "HEIGHT_RATIO": 0.033
+    }
+  },
+
+  "MARI_CONFIRM": {
+    "ASPECT_RATIO": 2.402,
+    "SCALE_WIDTH": 0.5,
+    "SCALE_HEIGHT": 0.55,
+    "PURCHASE_CONFIRM": {
+      "LEFT_OFFSET_RATIO": 0.021,
+      "TOP_OFFSET_RATIO": 0.692,
+      "WIDTH_RATIO": 0.457,
+      "HEIGHT_RATIO": 0.238
+    },
+    "PURCHASE_CANCEL": {
+      "LEFT_OFFSET_RATIO": 0.521,
+      "TOP_OFFSET_RATIO": 0.692,
+      "WIDTH_RATIO": 0.457,
+      "HEIGHT_RATIO": 0.238
+    }
+  },
+
+  "AUTOCRAFT": {
+    "ASPECT_RATIO": 1.801498,
+    "SCALE_WIDTH": 0.501042,
+    "SCALE_HEIGHT": 0.516941,
+    "CRAFT": {
+      "LEFT_OFFSET_RATIO": 0.037422,
+      "TOP_OFFSET_RATIO": 0.529963,
+      "WIDTH_RATIO": 0.123181,
+      "HEIGHT_RATIO": 0.060861
+    },
+    "AUTO": {
+      "LEFT_OFFSET_RATIO": 0.175156,
+      "TOP_OFFSET_RATIO": 0.520599,
+      "WIDTH_RATIO": 0.123181,
+      "HEIGHT_RATIO": 0.060861
+    },
+    "SEARCH": {
+      "LEFT_OFFSET_RATIO": 0.393451,
+      "TOP_OFFSET_RATIO": 0.088015,
+      "WIDTH_RATIO": 0.600832,
+      "HEIGHT_RATIO": 0.048689
+    },
+    "FIRST_POTION": {
+      "LEFT_OFFSET_RATIO": 0.410083,
+      "TOP_OFFSET_RATIO": 0.172285,
+      "WIDTH_RATIO": 0.568087,
+      "HEIGHT_RATIO": 0.089888
+    },
+    "FIRST_AMT": {
+      "LEFT_OFFSET_RATIO": 0.207380,
+      "TOP_OFFSET_RATIO": 0.639513,
+      "WIDTH_RATIO": 0.077443,
+      "HEIGHT_RATIO": 0.044007
+    },
+    "FIRST_ADD": {
+      "LEFT_OFFSET_RATIO": 0.291580,
+      "TOP_OFFSET_RATIO": 0.639513,
+      "WIDTH_RATIO": 0.076923,
+      "HEIGHT_RATIO": 0.044007
+    },
+    "SECOND_AMT": {
+      "LEFT_OFFSET_RATIO": 0.207380,
+      "TOP_OFFSET_RATIO": 0.740637,
+      "WIDTH_RATIO": 0.077443,
+      "HEIGHT_RATIO": 0.044007
+    },
+    "SECOND_ADD": {
+      "LEFT_OFFSET_RATIO": 0.291580,
+      "TOP_OFFSET_RATIO": 0.740637,
+      "WIDTH_RATIO": 0.076923,
+      "HEIGHT_RATIO": 0.044007
+    },
+    "THIRD_AMT": {
+      "LEFT_OFFSET_RATIO": 0.207380,
+      "TOP_OFFSET_RATIO": 0.841761,
+      "WIDTH_RATIO": 0.077443,
+      "HEIGHT_RATIO": 0.044007
+    },
+    "THIRD_ADD": {
+      "LEFT_OFFSET_RATIO": 0.291580,
+      "TOP_OFFSET_RATIO": 0.841761,
+      "WIDTH_RATIO": 0.076923,
+      "HEIGHT_RATIO": 0.044007
+    },
+    "FIRST_SCROLLED_AMT": {
+      "LEFT_OFFSET_RATIO": 0.207380,
+      "TOP_OFFSET_RATIO": 0.692884,
+      "WIDTH_RATIO": 0.077443,
+      "HEIGHT_RATIO": 0.044007
+    },
+    "FIRST_SCROLLED_ADD": {
+      "LEFT_OFFSET_RATIO": 0.291580,
+      "TOP_OFFSET_RATIO": 0.692884,
+      "WIDTH_RATIO": 0.076923,
+      "HEIGHT_RATIO": 0.044007
+    },
+    "SECOND_SCROLLED_AMT": {
+      "LEFT_OFFSET_RATIO": 0.207380,
+      "TOP_OFFSET_RATIO": 0.794007,
+      "WIDTH_RATIO": 0.077443,
+      "HEIGHT_RATIO": 0.044007
+    },
+    "SECOND_SCROLLED_ADD": {
+      "LEFT_OFFSET_RATIO": 0.291580,
+      "TOP_OFFSET_RATIO": 0.794007,
+      "WIDTH_RATIO": 0.076923,
+      "HEIGHT_RATIO": 0.044007
+    },
+    "THIRD_SCROLLED_AMT": {
+      "LEFT_OFFSET_RATIO": 0.207380,
+      "TOP_OFFSET_RATIO": 0.895131,
+      "WIDTH_RATIO": 0.077443,
+      "HEIGHT_RATIO": 0.044007
+    },
+    "THIRD_SCROLLED_ADD": {
+      "LEFT_OFFSET_RATIO": 0.291580,
+      "TOP_OFFSET_RATIO": 0.895131,
+      "WIDTH_RATIO": 0.076923,
+      "HEIGHT_RATIO": 0.044007
+    },
+    "SCROLL": {
+      "LEFT_OFFSET_RATIO": 0.004678,
+      "TOP_OFFSET_RATIO": 0.620787,
+      "WIDTH_RATIO": 0.202183,
+      "HEIGHT_RATIO": 0.358614
+    }
+  },
+
+  "QUESTBOARD": {
+    "WINDOW_ANCHORS": {
+      "RIGHT": {
+        "CENTER_X_RATIO": 0.709254,
+        "CENTER_Y_RATIO": 0.500000
+      },
+      "LEFT": {
+        "CENTER_X_RATIO": 0.290746,
+        "CENTER_Y_RATIO": 0.500000
+      },
+      "EXIT": {
+        "CENTER_X_RATIO": 0.499588,
+        "CENTER_Y_RATIO": 0.870064
+      }
+    },
+    "INFO_BOX": {
+      "LEFT_OFFSET_RATIO": 0.793456,
+      "TOP_OFFSET_RATIO": 0.199719,
+      "WIDTH_RATIO": 0.187048,
+      "HEIGHT_RATIO": 0.600561
+    },
+    "ACCEPT": {
+      "LEFT_OFFSET_RATIO": 0.048833,
+      "TOP_OFFSET_RATIO": 0.905558,
+      "WIDTH_RATIO": 0.430424,
+      "HEIGHT_RATIO": 0.073529
+    },
+    "DISMISS": {
+      "LEFT_OFFSET_RATIO": 0.517718,
+      "TOP_OFFSET_RATIO": 0.905558,
+      "WIDTH_RATIO": 0.431071,
+      "HEIGHT_RATIO": 0.073529
+    }
+  },
+
+  "SIDEBAR": {
+    "LEFT_OFFSET_PX": 13,
+    "BUTTON_MIN_SIZE": 57,
+    "BUTTON_MAX_SIZE": 100,
+    "NUM_BUTTONS": 6
+  },
+
+  "COLLECTION": {
+    "ASPECT_RATIO": 0.432,
+    "SCALE_WIDTH": 0.201,
+    "SCALE_HEIGHT": 0.86,
+    "LEFT_OFFSET_PX": 37,
+    "TOP_OFFSET_PX": 105,
+    "EXIT_BUTTON": {
+      "LEFT_OFFSET_RATIO": 0.96,
+      "TOP_OFFSET_RATIO": 0.02,
+      "WIDTH_RATIO": 0.02,
+      "HEIGHT_RATIO": 0.03
+    }
+  }
+}

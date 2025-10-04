@@ -406,3 +406,30 @@ QWidget#ManagerGUI QPushButton:hover {
 QWidget#ManagerGUI QPushButton:pressed {
     background: #080808;
 }
+
+/* Package Installer - Black Theme */
+QDialog#PackageInstallerGUI {
+    background: #000;
+    border: 1px solid #1a1a1a;
+    border-radius: 12px;
+    padding: 12px;
+}
+
+QDialog#PackageInstallerGUI QLabel {
+    color: #ddd;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+QDialog#PackageInstallerGUI QProgressBar {
+    border: 1px solid #2c2c2c;
+    border-radius: 8px;
+    background: #111;
+    text-align: center;
+    color: #fff;
+}
+
+QDialog#PackageInstallerGUI QProgressBar::chunk {
+    background: #444;
+    border-radius: 8px;
+}

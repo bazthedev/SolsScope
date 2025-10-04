@@ -546,3 +546,30 @@ QWidget#ManagerGUI QListWidget {
     border-radius: 6px;
     color: #dcdcdc;
 }
+
+/* Package Installer - Default Theme */
+QDialog#PackageInstallerGUI {
+    background: #f0f0f0;
+    border: 1px solid #aaa;
+    border-radius: 10px;
+    padding: 12px;
+}
+
+QDialog#PackageInstallerGUI QLabel {
+    color: #222;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+QDialog#PackageInstallerGUI QProgressBar {
+    border: 1px solid #aaa;
+    border-radius: 6px;
+    background: #ddd;
+    text-align: center;
+    color: #222;
+}
+
+QDialog#PackageInstallerGUI QProgressBar::chunk {
+    background: #5aa0f0;
+    border-radius: 6px;
+}

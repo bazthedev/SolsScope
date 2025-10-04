@@ -753,3 +753,33 @@ QWidget#ManagerGUI QPushButton:pressed {
     background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
                                 stop:0 #74c7ec, stop:1 #89b4fa);
 }
+
+
+/* Package Installer - Catppuccin Theme */
+QDialog#PackageInstallerGUI {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                                stop:0 #313244, stop:1 #1e1e2e);
+    border: 2px solid #45475a;
+    border-radius: 12px;
+    padding: 12px;
+}
+
+QDialog#PackageInstallerGUI QLabel {
+    color: #cdd6f4;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+QDialog#PackageInstallerGUI QProgressBar {
+    border: 1px solid #45475a;
+    border-radius: 8px;
+    background: #1e1e2e;
+    text-align: center;
+    color: #cdd6f4;
+}
+
+QDialog#PackageInstallerGUI QProgressBar::chunk {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                                stop:0 #89b4fa, stop:1 #74c7ec);
+    border-radius: 8px;
+}

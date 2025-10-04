@@ -1,0 +1,22 @@
+{
+    "Remote Bot" : {
+        "name" : "Remote Bot",
+        "description" : "Control SolsScope remotely via a discord bot. Request screenshots and make the macro perform certain actions remotely.",
+        "version" : "1.0.4",
+        "authors" : ["bazthedev"],
+        "requires_version" : "2.0.0",
+        "plugin_requirements" : [],
+        "autocraft_compatible" : true,
+        "download_url" : "https://raw.githubusercontent.com/bazthedev/SolsScope/refs/heads/main/plugins/remote.py"
+    },
+    "Clipping" : {
+        "name" : "Clipping",
+        "description" : "Clip Global rolls or record full rare biomes (glitched/dreamspace) with this plugin",
+        "version" : "1.0.2",
+        "authors" : ["bazthedev"],
+        "requires_version" : "2.0.0",
+        "plugin_requirements" : ["pygetwindow"],
+        "autocraft_compatible" : true,
+        "download_url" : "https://raw.githubusercontent.com/bazthedev/SolsScope/refs/heads/main/plugins/clipping.py"
+    }
+}

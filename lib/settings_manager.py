@@ -27,15 +27,39 @@ MERCHANT_PATH = os.path.join(MACROPATH, "merchant.json")
 QUESTBOARD_PATH = os.path.join(MACROPATH, "questboard.json")
 FISHDATA_PATH = os.path.join(MACROPATH, "fish-data.json")
 AUTOCRAFT_PATH = os.path.join(MACROPATH, "autocraft.json")
+RATIOS_PATH = os.path.join(MACROPATH, "ratios.json")
+VALID_LIST_PATH = os.path.join(MACROPATH, "valid_lists.json")
 
-UPTIME_API = "https://cresqnt.com/api/solsscopeup"
+GITHUB_USERNAMES = {
+    "primary" : "bazthedev",
+    "mirror" : "ScopeDevelopment"
+}
+
+IS_SS_UP = {
+    "primary" : "DOWN",
+    "mirror" : "DOWN"
+}
 
 try:
-    riu = requests.get(UPTIME_API, timeout=10)
-    riu.raise_for_status()
-    IS_UP = riu.json().get("status", "DOWN") == "OK"
+    riu = requests.get(f"https://raw.githubusercontent.com/{GITHUB_USERNAMES.get('primary')}/SolsScope/main/requirements.txt", timeout=10)
+    if riu.status_code == 200:
+        IS_SS_UP["primary"] = "OK"
 except Exception as e:
-    IS_UP = False
+    print(f"Error: {e}")
+
+try:
+    riu = requests.get(f"https://raw.githubusercontent.com/{GITHUB_USERNAMES.get('mirror')}/SolsScope/main/requirements.txt", timeout=10)
+    if riu.status_code == 200:
+        IS_SS_UP["mirror"] = "OK"
+except Exception as e:
+    print(f"Error: {e}")
+
+if IS_SS_UP.get("primary") == "OK":
+    DOWNLOAD_URL = f"https://raw.githubusercontent.com/{GITHUB_USERNAMES.get('primary')}/SolsScope/main"
+elif IS_SS_UP.get("mirror"):
+    DOWNLOAD_URL = f"https://raw.githubusercontent.com/{GITHUB_USERNAMES.get('mirror')}/SolsScope/main"
+else:
+    DOWNLOAD_URL = f"https://raw.githubusercontent.com/{GITHUB_USERNAMES.get('primary')}/SolsScope/main"
 
 def get_settings_path():
     return SETTINGS_PATH
@@ -61,12 +85,18 @@ def get_fish_path():
 def get_autocraftdata_path():
     return AUTOCRAFT_PATH
 
+def get_ratios_path():
+    return RATIOS_PATH
+
+def get_valid_list_path():
+    return VALID_LIST_PATH
+
 def get_auras():
     logger = get_logger()
     logger.write_log("Downloading Aura List...")
     try:
 
-        dl = requests.get("https://raw.githubusercontent.com/bazthedev/SolsScope/main/auras_new.json", timeout=5)
+        dl = requests.get(f"{DOWNLOAD_URL}/auras_new.json", timeout=5)
         dl.raise_for_status() 
         with open(AURAS_PATH, "wb") as f:
             f.write(dl.content)
@@ -84,7 +114,7 @@ def get_biomes():
     logger = get_logger()
     logger.write_log("Downloading Biome List...")
     try:
-        dl = requests.get("https://raw.githubusercontent.com/bazthedev/SolsScope/main/biomes.json", timeout=5)
+        dl = requests.get(f"{DOWNLOAD_URL}/biomes.json", timeout=5)
         dl.raise_for_status()
         with open(BIOMES_PATH, "wb") as f:
             f.write(dl.content)
@@ -102,7 +132,7 @@ def get_merchant():
     logger = get_logger()
     logger.write_log("Downloading Merchant List...")
     try:
-        dl = requests.get("https://raw.githubusercontent.com/bazthedev/SolsScope/main/merchant.json", timeout=5)
+        dl = requests.get(f"{DOWNLOAD_URL}/merchant.json", timeout=5)
         dl.raise_for_status()
         with open(MERCHANT_PATH, "wb") as f:
             f.write(dl.content)
@@ -120,7 +150,7 @@ def get_questboard():
     logger = get_logger()
     logger.write_log("Downloading Quest Board List...")
     try:
-        dl = requests.get("https://raw.githubusercontent.com/bazthedev/SolsScope/main/questboard.json", timeout=5)
+        dl = requests.get(f"{DOWNLOAD_URL}/questboard.json", timeout=5)
         dl.raise_for_status()
         with open(QUESTBOARD_PATH, "wb") as f:
             f.write(dl.content)
@@ -156,7 +186,7 @@ def get_autocraft_data():
     logger = get_logger()
     logger.write_log("Downloading Auto Craft Data...")
     try:
-        dl = requests.get("https://raw.githubusercontent.com/bazthedev/SolsScope/main/autocraft.json", timeout=5)
+        dl = requests.get(f"{DOWNLOAD_URL}/autocraft.json", timeout=5)
         dl.raise_for_status()
         with open(AUTOCRAFT_PATH, "wb") as f:
             f.write(dl.content)
@@ -168,6 +198,42 @@ def get_autocraft_data():
         logger.write_log(f"Failed to download Auto Craft Data: {e}")
     except OSError as e:
         logger.write_log(f"Failed to save Auto Craft Data: {e}")
+    return False
+
+def get_ratios():
+    logger = get_logger()
+    logger.write_log("Downloading Ratios...")
+    try:
+        dl = requests.get(f"{DOWNLOAD_URL}/ratios.json", timeout=5)
+        dl.raise_for_status()
+        with open(RATIOS_PATH, "wb") as f:
+            f.write(dl.content)
+        logger.write_log("Downloaded Ratios successfully.")
+        return True
+    except requests.exceptions.Timeout:
+        logger.write_log("Failed to download Ratios: Request timed out.")
+    except requests.exceptions.RequestException as e:
+        logger.write_log(f"Failed to download Ratios: {e}")
+    except OSError as e:
+        logger.write_log(f"Failed to save Ratios: {e}")
+    return False
+
+def get_valid_list():
+    logger = get_logger()
+    logger.write_log("Downloading valid list...")
+    try:
+        dl = requests.get(f"{DOWNLOAD_URL}/valid_lists.json", timeout=5)
+        dl.raise_for_status()
+        with open(VALID_LIST_PATH, "wb") as f:
+            f.write(dl.content)
+        logger.write_log("Downloaded valid list successfully.")
+        return True
+    except requests.exceptions.Timeout:
+        logger.write_log("Failed to download valid list: Request timed out.")
+    except requests.exceptions.RequestException as e:
+        logger.write_log(f"Failed to download valid list: {e}")
+    except OSError as e:
+        logger.write_log(f"Failed to save valid list: {e}")
     return False
 
 def load_settings():

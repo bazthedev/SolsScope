@@ -18,7 +18,7 @@ import time
 import subprocess
 import mousekey as mk 
 
-from constants import MS_RBLX_LOG_DIR, RBLX_PLAYER_LOG_DIR, PLACE_ID, COORDS, MACROPATH, LOCALVERSION
+from constants import MS_RBLX_LOG_DIR, RBLX_PLAYER_LOG_DIR, PLACE_ID, COORDS, MACROPATH, LOCALVERSION, USERDATA
 from utils import get_logger, exists_procs_by_name, get_process_by_name, match_rblx_hwnd_to_pid
 from uinav import load_delay, load_keybind
 from pynput import keyboard 
@@ -575,6 +575,7 @@ class PlayerLogger:
         self.player_log_data = []
         self.to_send = queue.Queue()
         self._stop_event = threading.Event()
+        self.ignore_userdata = USERDATA
 
         self.worker_thread = threading.Thread(target=self._process_queue, daemon=True)
         self.worker_thread.start()
@@ -597,7 +598,7 @@ class PlayerLogger:
         self.to_send.put((embed, content))
 
     def init_player_logs(self, biome):
-        file_name = f"{biome}_{datetime.now().strftime('%H-%M-%S')}.log"
+        file_name = f"{biome}_{datetime.now().strftime('%H-%M-%S')}_{datetime.now().strftime('%d-%m-%Y')}.log"
         os.makedirs(f"{MACROPATH}/player_logs", exist_ok=True)
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         header = (
@@ -615,13 +616,12 @@ class PlayerLogger:
 
     def send_player_msg(self, event, joined):
         ts = event.get("timestamp")
-        ts_str = datetime.fromtimestamp(ts).strftime("%H:%M:%S")
         title = f"Player Joined: {event.get('username', 'Unknown')}" if joined else f"Player Left: {event.get('username', 'Unknown')}"
         emb_rgb = hex2rgb(self.get_biome_colour(self.biome.lower()))
         
         _emb = discord.Embed(
             title=title,
-            description=f"The user **{event.get('username', 'Unknown')}** (**{event.get('player_id', 'Unknown')}**) {'joined' if joined else 'left'} at time {ts_str}",
+            description=f"The user **{event.get('username', 'Unknown')}** (**{event.get('player_id', 'Unknown')}**) {'joined' if joined else 'left'} at <t:{str(int(ts))}>",
             colour=discord.Colour.from_rgb(*emb_rgb),
             url=f"https://www.roblox.com/users/{event.get('player_id', 'Unknown')}/profile"
         )
@@ -637,14 +637,17 @@ class PlayerLogger:
             return
 
         ts_str = datetime.fromtimestamp(ts).strftime("%H:%M:%S")
-        self.player_log_data.append(event)
-        msg = (
-            f"Player {'Joined' if joined else 'Left'} Server: {event.get('username', 'Unknown')}, "
-            f"ID: {event.get('player_id', 'Unknown')} at time {ts_str}"
-        )
-        self.send_player_msg(event, joined)
-        self.pylogger.write_log(msg)
-        self.log_player(log_file_name, msg)
+        if self.ignore_userdata.get("userId") != event.get("player_id", "Unknown"):
+            self.player_log_data.append(event)
+            msg = (
+                f"Player {'Joined' if joined else 'Left'} Server: {event.get('username', 'Unknown')}, "
+                f"ID: {event.get('player_id', 'Unknown')} at time {ts_str}"
+            )
+            self.send_player_msg(event, joined)
+            self.pylogger.write_log(msg)
+            self.log_player(log_file_name, msg)
+        else:
+            self.log_player(log_file_name, f"Owner {self.ignore_userdata.get('username')} {'joined' if joined else 'left'} the server.")
 
     def get_user_headshot_from_id(self, userid: str) -> str:
         try:
@@ -718,6 +721,20 @@ class PlayerLogger:
             observer.stop()
 
         observer.join()
+        self.check_logs(log_file_name)
+
+    def check_logs(self, log_file):
+        should_remove = False
+        with open(f"{MACROPATH}/player_logs/{log_file}", "r") as f:
+            if len(f.readlines()) <= 3:
+                should_remove = True
+        
+        if should_remove:
+            try:
+                os.remove(f"{MACROPATH}/player_logs/{log_file}")
+                self.pylogger.write_log(f"Removed log file {log_file} as nobody joined/left")
+            except Exception as e:
+                self.pylogger.write_log(f"Failed to delete log file: {e}")
 
     def get_biome_colour(self, biome):
         with open(f"{MACROPATH}/biomes.json", "r") as f:
@@ -774,11 +791,11 @@ class PlayerLogger:
                 total_duration += current_time - join_ts
                 in_server = True
 
-            formatted_join = datetime.fromtimestamp(first_join).strftime("%H:%M:%S") if first_join else "Unknown"
+            formatted_join = f"<t:{str(int(first_join))}>" if first_join else "Unknown"
             if in_server:
                 formatted_leave = "Still in server"
             else:
-                formatted_leave = datetime.fromtimestamp(last_leave).strftime("%H:%M:%S") if last_leave else "Unknown"
+                formatted_leave = f"<t:{str(int(first_join))}>" if last_leave else "Unknown"
 
             duration_fmt = datetime.utcfromtimestamp(total_duration).strftime("%H:%M:%S")
 

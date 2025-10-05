@@ -147,6 +147,7 @@ class PackageInstallerGUI(QDialog):
             Qt.WindowType.CustomizeWindowHint |
             Qt.WindowType.WindowTitleHint
         )
+        self.setObjectName("PackageInstallerGUI")
         if os.path.exists(os.path.join(MACROPATH, "icon.ico")):
             self.setWindowIcon(QIcon(os.path.join(MACROPATH, "icon.ico")))
         layout = QVBoxLayout()

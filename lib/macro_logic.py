@@ -17,11 +17,9 @@ import pyautogui as pag
 import json 
 import threading 
 from datetime import datetime
-import discord 
-import re
-from PIL import ImageGrab
-from gc import collect
+import discord
 from itertools import cycle
+import difflib 
 
 try:
     import cv2
@@ -42,18 +40,17 @@ except ImportError:
 
 from pynput import keyboard
 from pynput import mouse
+import requests
 
 from constants import (
-    MACROPATH, WEBHOOK_ICON_URL, MARI_ITEMS, JESTER_ITEMS,
-    POSSIBLE_MERCHANTS, COORDS, LOCALVERSION, JESTER_SELL_ITEMS,
-    ACCEPTED_QUESTBOARD, QUESTBOARD_RARITY_COLOURS, PATH_DIR, ALL_QB, DONOTACCEPT_QB,
-    COMPLETION_COLOURS, COORDS_PERCENT1610, COORDS_PERCENT43
+    MACROPATH, MARI_ITEMS, JESTER_ITEMS, LOCALVERSION, JESTER_SELL_ITEMS,
+    ACCEPTED_QUESTBOARD, QUESTBOARD_RARITY_COLOURS, USERDATA
 )
 from utils import (
     get_logger, create_discord_file_from_path, hex2rgb, fuzzy_match,
     fuzzy_match_merchant, exists_procs_by_name, validate_pslink, fuzzy_match_auto_sell,
     fuzzy_match_qb, rgb2hex, right_click_drag, left_click_drag, resolve_full_aura_name,
-    get_coords_percent, convert_boxes, detect_add_potions, check_tab_menu_open,
+    get_coords_percent, convert_boxes, check_tab_menu_open,
     get_autocraft_path, _type
 )
 from roblox_utils import (
@@ -67,15 +64,7 @@ from roblox_utils import (
 from discord_utils import forward_webhook_msg, create_autocraft_embed
 from settings_manager import get_auras_path, get_biomes_path, get_merchant_path, get_questboard_path, get_fish_path
 
-from uinav import (
-    open_inventory, open_storage, close_menu, collection_align,
-    close_check, search_in_menu, select_item, open_mari, open_jester_shop,
-    buy_item, jester_exchange_first, jester_exchange_second, change_rolling_cutscene,
-    search_for_potion_in_cauldron, press_craft_button, press_auto_button,
-    accept_quest, dismiss_quest, next_quest, exit_quest, search_for_aura, equip_selected_aura,
-    add_amount_to_potion, close_cauldron, TGIFRIDAY, merchant_skip_dialogue, open_jester_ex,
-    load_keybind, load_delay
-)
+from uinav import load_delay
 
 import mousenav
 
@@ -83,7 +72,54 @@ from mmint import run_macro
 
 from stats import increment_stat, load_stats
 
-from calibrations import validate_calibrations, validate_regions, get_calibrations, get_regions
+import pyautoscope
+
+GITHUB_USERNAMES = {
+    "primary" : "bazthedev",
+    "mirror" : "ScopeDevelopment"
+}
+
+IS_SS_UP = {
+    "primary" : "DOWN",
+    "mirror" : "DOWN"
+}
+
+try:
+    riu = requests.get(f"https://raw.githubusercontent.com/{GITHUB_USERNAMES.get('primary')}/SolsScope/main/requirements.txt", timeout=10)
+    if riu.status_code == 200:
+        IS_SS_UP["primary"] = "OK"
+except Exception as e:
+    print(f"Error: {e}")
+
+try:
+    riu = requests.get(f"https://raw.githubusercontent.com/{GITHUB_USERNAMES.get('mirror')}/SolsScope/main/requirements.txt", timeout=10)
+    if riu.status_code == 200:
+        IS_SS_UP["mirror"] = "OK"
+except Exception as e:
+    print(f"Error: {e}")
+
+if IS_SS_UP["primary"] == "OK":
+    try:
+        ffd = requests.get(f"https://raw.githubusercontent.com/{GITHUB_USERNAMES.get('primary')}/SolsScope/refs/heads/main/fastflag_status.json")
+        ffd.raise_for_status()
+        is_enabled = ffd.json()
+        FAST_FLAGS_DISABLED = not is_enabled["enabled"]
+    except Exception as e:
+        print(f"Error: {e}")
+        FAST_FLAGS_DISABLED = True
+elif IS_SS_UP["mirror"] == "OK":
+    try:
+        ffd = requests.get(f"https://raw.githubusercontent.com/{GITHUB_USERNAMES.get('mirror')}/SolsScope/refs/heads/main/fastflag_status.json")
+        ffd.raise_for_status()
+        is_enabled = ffd.json()
+        FAST_FLAGS_DISABLED = not is_enabled["enabled"]
+    except Exception as e:
+        print(f"Error: {e}")
+        FAST_FLAGS_DISABLED = True
+else:
+    FAST_FLAGS_DISABLED = True
+
+print(f"Fastflags are enabled: {not FAST_FLAGS_DISABLED}")
 
 def use_item(item_name: str, amount: int, _close_menu: bool, mkey, kb, settings: dict, reader, ms):
     logger = get_logger()
@@ -91,35 +127,27 @@ def use_item(item_name: str, amount: int, _close_menu: bool, mkey, kb, settings:
 
 
     delay = load_delay()
+    
+    pyautoscope.refresh_clients()
+    client = pyautoscope.return_clients()[0]
 
-    if not settings.get("calibration"):
-        logger.write_log("A calibration has not been selected.")
-        return
-    
-    CLICKS = get_calibrations(settings.get("calibration"))
-    
-    if not validate_calibrations(settings.get("calibration"), ["open_inventory", "items_btn", "search_bar", "first_inv_item", "item_amount", "use_item", "close_menu"]):
-        logger.write_log("Could not verify all calibrations.")
-        return
-
-    
     try:
-        mkey.left_click_xy_natural(CLICKS["open_inventory"][0], CLICKS["open_inventory"][1])
+        pyautoscope.click_button(mkey, "open_inventory", client, delay)
         time.sleep(delay)
-        mkey.left_click_xy_natural(CLICKS["items_btn"][0], CLICKS["items_btn"][1])
+        pyautoscope.click_button(mkey, "items_btn", client, delay)
         time.sleep(delay)
-        mkey.left_click_xy_natural(CLICKS["search_bar"][0], CLICKS["search_bar"][1])
+        pyautoscope.click_button(mkey, "search_bar", client, delay)
         time.sleep(delay)
         _type(kb, settings.get("typing_jitter", 0.2), settings.get("typing_delay", 0.2), settings.get("typing_hold", 0.2), item_name)
         time.sleep(delay)
-        mkey.move_to_natural(CLICKS["first_inv_item"][0], CLICKS["first_inv_item"][1])
+        pyautoscope.move_to_button(mkey, "first_inv_item", client, delay)
         time.sleep(delay)
         ms.scroll(0, 30); time.sleep(delay)
         ms.scroll(0, 30); time.sleep(delay)
         ms.scroll(0, 30); time.sleep(delay)
-        mkey.left_click_xy_natural(CLICKS["first_inv_item"][0], CLICKS["first_inv_item"][1])
+        pyautoscope.click_button(mkey, "first_inv_item", client, delay)
         time.sleep(delay)
-        mkey.left_click_xy_natural(CLICKS["item_amount"][0], CLICKS["item_amount"][1])
+        pyautoscope.click_button(mkey, "item_amount", client, delay)
         time.sleep(delay)
         kb.press(keyboard.Key.ctrl)
         kb.press("a")
@@ -133,15 +161,24 @@ def use_item(item_name: str, amount: int, _close_menu: bool, mkey, kb, settings:
         time.sleep(0.05)
         kb.release(keyboard.Key.enter)
         time.sleep(1)
-        mkey.left_click_xy_natural(CLICKS["use_item"][0], CLICKS["use_item"][1])
-        time.sleep(delay)
-        mkey.left_click_xy_natural(CLICKS["close_menu"][0], CLICKS["close_menu"][1])
+        if settings.get("secure_item_usage", False):
+            first_inv_item = pyautoscope.get_first_inventory_item(client, reader).get("first_inv_item")
+            similarity = difflib.SequenceMatcher(None, first_inv_item.lower(), item_name.lower()).ratio()
+            if similarity >= 0.85:
+                pyautoscope.click_button(mkey, "use_item", client, delay)
+                time.sleep(delay)
+            else:
+                get_logger().write_log(f"Could not determine item: {first_inv_item} compared against {item_name} (score: {str(similarity)})")
+        else:
+            pyautoscope.click_button(mkey, "use_item", client, delay)
+            time.sleep(delay)
+        pyautoscope.click_button(mkey, "close_menu", client, delay)
         time.sleep(delay)
     except Exception as e:
         logger.write_log(f"Error whilst using item: {e}")
         try:
             time.sleep(delay)
-            mkey.left_click_xy_natural(CLICKS["close_menu"][0], CLICKS["close_menu"][1])
+            pyautoscope.click_button(mkey, "close_menu", client, delay)
             time.sleep(delay)
         except Exception as close_e:
             logger.write_log(f"Error trying to close menu after item use error: {close_e}")
@@ -159,17 +196,10 @@ def equip_aura(aura_name, unequip, mkey, kb, settings: dict, ignore_next_detecti
         return
     
     delay = load_delay()
+    
+    pyautoscope.refresh_clients()
+    client = pyautoscope.return_clients()[0]
 
-    if not settings.get("calibration"):
-        logger.write_log("A calibration has not been selected.")
-        return
-    
-    CLICKS = get_calibrations(settings.get("calibration"))
-    
-    if not validate_calibrations(settings.get("calibration"), ["open_storage", "first_aura_position", "search_bar", "equip_aura", "close_menu"]):
-        logger.write_log("Could not verify all calibrations.")
-        return
-    
     full_aura_name = resolve_full_aura_name(aura_name, auras)
     _ = None
     
@@ -192,9 +222,9 @@ def equip_aura(aura_name, unequip, mkey, kb, settings: dict, ignore_next_detecti
 
     with ignore_lock:
         try:
-            mkey.left_click_xy_natural(CLICKS["open_storage"][0], CLICKS["open_storage"][1])
+            pyautoscope.click_button(mkey, "aura_storage", client, delay)
             time.sleep(delay)
-            mkey.left_click_xy_natural(CLICKS["search_bar"][0], CLICKS["search_bar"][1])
+            pyautoscope.click_button(mkey, "search_bar", client, delay)
             time.sleep(delay)
             kb.press(keyboard.Key.backspace)
             time.sleep(0.2)
@@ -202,21 +232,21 @@ def equip_aura(aura_name, unequip, mkey, kb, settings: dict, ignore_next_detecti
             time.sleep(delay)
             _type(kb, settings.get("typing_jitter", 0.2), settings.get("typing_delay", 0.2), settings.get("typing_hold", 0.2), aura_name)
             time.sleep(delay)
-            mkey.move_to_natural(CLICKS["first_aura_position"][0], CLICKS["first_aura_position"][1])
+            pyautoscope.move_to_button(mkey, "first_aura_position", client, delay)
             time.sleep(delay)
             ms.scroll(0, 30); time.sleep(delay)
             ms.scroll(0, 30); time.sleep(delay)
             ms.scroll(0, 30); time.sleep(delay)
-            mkey.left_click_xy_natural(CLICKS["first_aura_position"][0], CLICKS["first_aura_position"][1])
+            pyautoscope.click_button(mkey, "first_aura_position", client, delay)
             time.sleep(delay)
-            mkey.left_click_xy_natural(CLICKS["equip_aura"][0], CLICKS["equip_aura"][1])
+            pyautoscope.click_button(mkey, "equip_aura", client, delay)
             time.sleep(delay)
-            mkey.left_click_xy_natural(CLICKS["close_menu"][0], CLICKS["close_menu"][1])
+            pyautoscope.click_button(mkey, "close_menu", client, delay)
         except Exception as e:
             logger.write_log(f"Unable to equip aura: {e}")
             try:
                 time.sleep(delay)
-                mkey.left_click_xy_natural(CLICKS["close_menu"][0], CLICKS["close_menu"][1])
+                pyautoscope.click_button(mkey, "close_menu", client, delay)
                 time.sleep(delay)
             except Exception as close_e:
                 logger.write_log(f"Error whilst closing menu: {close_e}")
@@ -417,7 +447,7 @@ def aura_detection(settings: dict, webhook, stop_event: threading.Event, keyboar
 
     logger.write_log("Aura Detection thread stopped.")
 
-def biome_detection(settings: dict, webhook, stop_event: threading.Event, sniped_event: threading.Event, mkey, kb, keyboard_lock, pause_event : threading.Event, gui):
+def biome_detection(settings: dict, webhook, stop_event: threading.Event, sniped_event: threading.Event, mkey, kb, keyboard_lock, pause_event : threading.Event, gui, reader, ms):
     logger = get_logger()
     logger.write_log("Biome Detection thread started.")
     
@@ -452,6 +482,23 @@ def biome_detection(settings: dict, webhook, stop_event: threading.Event, sniped
 
     rare_biomes = [biome for biome, data in biomes.items() if data.get("rare")]
 
+    start_biomes = {}
+
+    for biome, data in biomes.items():
+        if data.get("start_identifier"):
+            start_biomes[data.get("start_identifier")] = biome
+        else:
+            start_biomes[biome] = biome
+
+    end_biomes = {}
+
+    for biome, data in biomes.items():
+        if data.get("end_identifier"):
+            end_biomes[data.get("end_identifier")] = biome
+        else:
+            end_biomes[biome] = biome
+
+
     while not stop_event.is_set():
 
         if pause_event.is_set():
@@ -474,11 +521,11 @@ def biome_detection(settings: dict, webhook, stop_event: threading.Event, sniped
             logger.write_log(f"Biome change detected: {previous_biome} -> {current_biome}")
             rnow = datetime.now()
 
-            if previous_biome_key and previous_biome_key != "normal" and previous_biome_key in biomes and settings.get("biomes", {}).get(previous_biome_key, False):
+            if previous_biome_key and previous_biome_key != "normal" and previous_biome_key in end_biomes and settings.get("biomes", {}).get(previous_biome_key, False):
 
                 end_event.set()
                 
-                prev_biome_data = biomes[previous_biome_key]
+                prev_biome_data = biomes[end_biomes[previous_biome_key]]
                 emb_color_hex = prev_biome_data.get("colour", "#808080")
                 emb_rgb = hex2rgb(emb_color_hex)
                 emb = discord.Embed(
@@ -499,10 +546,10 @@ def biome_detection(settings: dict, webhook, stop_event: threading.Event, sniped
 
             previous_biome = current_biome
 
-            if current_biome_key != "normal" and current_biome_key in biomes:
+            if current_biome_key != "normal" and current_biome_key in start_biomes:
                 if settings.get("biomes", {}).get(current_biome_key, False):
 
-                    new_biome_data = biomes[current_biome_key]
+                    new_biome_data = biomes[start_biomes[current_biome_key]]
                     is_event = new_biome_data.get("event", False)
                     emb_color_hex = new_biome_data.get("colour", "#808080")
                     emb_rgb = hex2rgb(emb_color_hex)
@@ -543,6 +590,8 @@ def biome_detection(settings: dict, webhook, stop_event: threading.Event, sniped
                         logger.write_log(f"Sent notification for biome start: {current_biome}")
                     except Exception as wh_e:
                         logger.write_log(f"Error sending biome started webhook: {wh_e}")
+                    if new_biome_data.get("rare", False):
+                        auto_pop(current_biome, settings, stop_event, keyboard_lock, mkey, kb, reader, ms)
                 else:
                     logger.write_log(f"Biome {current_biome} started, but notifications are disabled for it in settings.")
 
@@ -558,10 +607,6 @@ def biome_detection(settings: dict, webhook, stop_event: threading.Event, sniped
 def portable_crack(settings: dict, stop_event: threading.Event, sniped_event: threading.Event, mkey, kb, keyboard_lock, pause_event, reader, ms):
 
     logger = get_logger()
-    
-    if not settings.get("calibration"):
-        logger.write_log("No calibration is selected.")
-        return
 
     afk_in_limbo = settings.get("mode", "Normal") == "Limbo"
     is_idle_mode = settings.get("mode", "Normal") == "IDLE"
@@ -575,6 +620,7 @@ def portable_crack(settings: dict, stop_event: threading.Event, sniped_event: th
                 continue
 
             wait_interval = 600
+            
             with keyboard_lock:
                 time.sleep(5)
                 logger.write_log("Teleporting to limbo...")
@@ -593,9 +639,7 @@ def keep_alive(settings: dict, stop_event: threading.Event, sniped_event: thread
         return
     logger.write_log("Keep Alive (Anti-AFK) thread started.")
 
-    if not settings.get("calibration"):
-        logger.write_log("No calibratoin is selected.")
-        return
+    delay = load_delay()
 
     while not stop_event.is_set():
 
@@ -610,22 +654,23 @@ def keep_alive(settings: dict, stop_event: threading.Event, sniped_event: thread
             break
 
         if sniped_event.is_set():
-            break
+            break        
 
         with keyboard_lock:
+            pyautoscope.refresh_clients()
+            client = pyautoscope.return_clients()[0]
             try:
                 logger.write_log("Keep Alive: Performing anti-AFK action (close check).")
-                if not validate_calibrations(settings.get("calibration"), ["close_menu"]):
-                    mkey.left_click_xy_natural(get_calibrations(settings.get("calibration"))["close_menu"][0], get_calibrations(settings.get("calibration"))["close_menu"][1])
-                else:
-                    kb.press(keyboard.Key.space)
-                    time.sleep(0.02)
-                    kb.release(keyboard.Key.space)
-                    time.sleep(0.02)
-                    kb.press(keyboard.Key.space)
-                    time.sleep(0.02)
-                    kb.release(keyboard.Key.space)
-                    time.sleep(0.02)
+                pyautoscope.click_button(mkey, "close_menu", client, delay)
+                time.sleep(0.2)
+                kb.press(keyboard.Key.space)
+                time.sleep(0.2)
+                kb.release(keyboard.Key.space)
+                time.sleep(0.2)
+                kb.press(keyboard.Key.space)
+                time.sleep(0.2)
+                kb.release(keyboard.Key.space)
+                time.sleep(0.2)
             except Exception as e:
                 logger.write_log(f"Error during Keep Alive action: {e}")
 
@@ -639,7 +684,6 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
         logger.write_log("Merchant Detection cannot start: Missing dependencies (cv2/easyocr).")
         return
     
-
     _check_config_items = False
     for item in settings.get("auto_purchase_items_mari").keys():
         if settings.get("auto_purchase_items_mari", {}).get(item, {}).get("Purchase", False):
@@ -670,32 +714,6 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
         logger.write_log(f"Error loading merchant data: {e}. Merchant detection stopped.")
         return
 
-    required_coords = [
-        "jester_open", "jester_exchange", "merchant_amount", "merchant_purchase",
-        "merchant_slot_1", "merchant_slot_2", "merchant_slot_3", "merchant_slot_4",
-        "merchant_slot_5", "merchant_close", "jester_auto_ex_first", "jester_auto_ex_second",
-        "merchant_skip_dialog", "jester_exchange_confirm"
-    ]
-
-    required_regions = [
-        "merchant_name", "merchant_boxes", "jester_auto_ex_first"
-    ]
-
-    if not settings.get("calibration"):
-        logger.write_log("Cannot start Merchant Detection: No calibration selected.")
-        return
-    
-    if not validate_calibrations(settings.get("calibration"), required_coords):
-        logger.write_log("Cannot start Merchant Detection: Calibration is invalid.")
-        return
-    
-    if not validate_regions(settings.get("calibration"), required_regions):
-        logger.write_log("Could not start Merchant Detection: Calibration is invalid.")
-        return
-    
-    CLICKS = get_calibrations(settings.get("calibration"))
-    REGIONS = get_regions(settings.get("calibration"))
-
     delay = load_delay()
 
     ps_link_valid = validate_pslink(settings.get("private_server_link", ""))
@@ -715,350 +733,31 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
     has_abyssal = settings.get("has_abyssal_hunter", False)
     afk_in_limbo = settings.get("mode", "Normal") == "Limbo"
     is_idle_mode = settings.get("mode", "Normal") == "IDLE"
-
-    md_type = settings.get("merchant_detection_type", "Legacy")
-
-    if (is_autocraft or is_idle_mode) and md_type == "Legacy":
-        logger.write_log("Merchant Detection cannot be started in this mode whilst it is using Legacy Detection.")
-        return
     
     screenshot_path = os.path.join(MACROPATH, "scr", "screenshot_merchant.png")
     ex_screenshot_path = os.path.join(MACROPATH, "scr", "screenshot_exchange.png")
+
+    previous_merchant = (None, time.time())
+    mari_items = [item for item, data in settings.get("auto_purchase_items_mari", {}).items() if data.get("Purchase")]
+    jester_items = [item for item, data in settings.get("auto_purchase_items_jester", {}).items() if data.get("Purchase")]
+
+    if is_idle_mode and FAST_FLAGS_DISABLED:
+        logger.write_log("Merchant Detection cannot be started in Legacy mode with IDLE mode on.")
+        return
     
-    if md_type == "Legacy":
+    if is_idle_mode:
+        logger.write_log("SolsScope will only detect merchants whilst in IDLE mode and will not purchase/sell to them.")
+
+    if not settings.get("do_not_walk_to_stella", True) and is_autocraft:
+        logger.write_log("Merchant Detection cannot be started with Do Not Walk to Stella enabled.")
+        return
+    
+    if not FAST_FLAGS_DISABLED:
+
+        logger.write_log("Merchant Detection starting in Logs mode.")
 
         while not stop_event.is_set():
-
-            if pause_event.is_set():
-                time.sleep(2)
-                continue
-
-            wait_interval = before_check_interval
-            logger.write_log(f"Merchant Detection: Waiting for {wait_interval} seconds...")
-            if stop_event.wait(timeout=wait_interval):
-                break
-
-            logger.write_log("Merchant Detection: Merchant Check Scheduled")
-            detected_merchant_name = None
-            detected_items = {}
-            
-            with keyboard_lock: 
-
-
-                try:
-                    logger.write_log("Merchant Detection: Using Merchant Teleport item...")
-                    use_item("Merchant Teleport", 1, True, mkey, kb, settings, reader, ms) 
-                    time.sleep(settings.get("global_wait_time", 0.2) + 0.5) 
-
-                    logger.write_log("Merchant Detection: Attempting interaction (E key)...")
-                    kb.press('e')
-                    time.sleep(0.2)
-                    kb.release('e')
-                    time.sleep(0.2)
-                    mkey.left_click_xy_natural(CLICKS["merchant_skip_dialog"][0], CLICKS["merchant_skip_dialog"][1])
-                    time.sleep(2)
-                    mkey.left_click_xy_natural(CLICKS["merchant_skip_dialog"][0], CLICKS["merchant_skip_dialog"][1])
-                    time.sleep(2)
-
-                    logger.write_log("Merchant Detection: Taking screenshot...")
-                    pag.screenshot(screenshot_path)
-                    time.sleep(0.2)
-
-                    logger.write_log("Merchant Detection: Processing screenshot with OCR...")
-                    image = cv2.imread(screenshot_path)
-                    if image is None:
-                        logger.write_log("Merchant Detection Error: Failed to read screenshot file.")
-                        continue
-
-                    x1, y1, x2, y2 = REGIONS["merchant_name"]
-                    merchant_crop = image[y1:y2, x1:x2]
-                    
-                    ocr_results = reader.readtext(merchant_crop, detail=0)
-                    ocr_merchant_raw = " ".join(ocr_results).strip()
-
-                    ocr_merchant_clean = re.sub(r"[^a-zA-Z']", "", ocr_merchant_raw).lower()
-                    detected_merchant_name = fuzzy_match_merchant(ocr_merchant_clean, POSSIBLE_MERCHANTS)
-
-                    if not detected_merchant_name:
-                        logger.write_log(f"Merchant Detection: Could not identify merchant from OCR ('{ocr_merchant_raw}'). Skipping.")
-                        continue
-
-                    merchant_short_name = detected_merchant_name.split("'")[0] 
-                    logger.write_log(f"Merchant Detected: {merchant_short_name} (Raw OCR: '{ocr_merchant_raw}')")
-                    rnow = datetime.now()
-
-                    logger.write_log("Merchant Detection: Opening Shop...")
-                    time.sleep(delay)
-                    mkey.left_click_xy_natural(CLICKS["jester_open"][0], CLICKS["jester_open"][1])
-                    time.sleep(3)
-
-                    del image
-
-                    pag.screenshot(screenshot_path)
-
-                    image = cv2.imread(screenshot_path)
-                    if image is None:
-                        logger.write_log("Merchant Detection Error: Failed to read screenshot file.")
-                        continue
-
-                    file_to_send = create_discord_file_from_path(screenshot_path, filename="merchant.png")
-                    ping_content = ""
-                    if merchant_short_name == "Mari":
-                        emb_color = discord.Colour.from_rgb(255, 255, 255)
-                        thumbnail_url = "https://static.wikia.nocookie.net/sol-rng/images/3/37/MARI_HIGH_QUALITYY.png/revision/latest"
-                        if settings.get("ping_mari", False) and settings.get("mari_ping_id", 0) != 0:
-                            ping_content += f"<@&{settings['mari_ping_id']}>"
-                    elif merchant_short_name == "Jester":
-                        emb_color = discord.Colour.from_rgb(176, 49, 255)
-                        thumbnail_url = "https://static.wikia.nocookie.net/sol-rng/images/d/db/Headshot_of_Jester.png/revision/latest"
-                        if settings.get("ping_jester", False) and settings.get("jester_ping_id", 0) != 0:
-                            ping_content += f"<@&{settings['jester_ping_id']}>"
-                    else:
-                        emb_color = discord.Colour.default()
-                        thumbnail_url = None
-
-                    emb = discord.Embed(
-                        title=f"{merchant_short_name} Spawned!",
-                        description=f"A **{merchant_short_name}** has been detected.\n**Time:** <t:{str(int(time.time()))}>\nDetection Method: **{md_type}**",
-                        colour=emb_color
-                    )
-                    if thumbnail_url: emb.set_thumbnail(url=thumbnail_url)
-                    if file_to_send: emb.set_image(url="attachment://merchant.png")
-                    if ps_link_valid: emb.add_field(name="Server Invite", value=settings['private_server_link'], inline=False)
-
-                    emb.set_footer(text=f"SolsScope v{LOCALVERSION}")
-
-                    logger.write_log("Merchant Detection: Detecting items...")
-                    item_list = MARI_ITEMS if merchant_short_name == "Mari" else JESTER_ITEMS
-                    item_ocr_results = []
-                    for box_name, (x1, y1, x2, y2) in REGIONS["merchant_boxes"].items():
-                        if x1 >= image.shape[1] or y1 >= image.shape[0] or x2 <= x1 or y2 <= y1:
-                            logger.write_log(f"Warning: Invalid coordinates for {box_name}. Skipping OCR.")
-                            continue
-
-                        cropped = image[y1:y2, x1:x2]
-
-                        ocr_results = reader.readtext(cropped, detail=0)
-                        ocr_raw = " ".join(ocr_results).strip().replace('\n', ' ')
-
-                        matched = fuzzy_match(ocr_raw, item_list, threshold=0.5)
-                        logger.write_log(f" > {box_name}: OCR='{ocr_raw}', Match='{matched}'")
-
-                        detected_items[box_name] = matched
-                        item_ocr_results.append(f"**{box_name}:** `{matched}` (Raw: `{ocr_raw}`)")
-                    emb.add_field(name="Detected Items", value="\n".join(item_ocr_results) if item_ocr_results else "None", inline=False)
-
-                    if not (settings.get("mention", False) and settings.get("mention_id", 0) != 0) and settings.get(f"{merchant_short_name.lower()}_ping_id", 0) != 0:
-                        ping_content = f"<@{settings['mention_id']}>{ping_content}"
-
-                    try:
-                        webhook.send(content=ping_content.strip(), embed=emb, file=file_to_send)
-                        forward_webhook_msg(
-                            primary_webhook_url=webhook.url,
-                            secondary_urls=settings.get("SECONDARY_WEBHOOK_URLS", []),
-                            content=ping_content.strip(), embed=emb, file=file_to_send
-                        )
-                    except Exception as wh_e:
-                        logger.write_log(f"Error sending merchant detection webhook: {wh_e}")
-
-                    purchase_settings = settings.get("auto_purchase_items_mari" if merchant_short_name == "Mari" else "auto_purchase_items_jester", {})
-                    items_to_buy = {box_name: item_name for box_name, item_name in detected_items.items() if purchase_settings.get(item_name, {"Purchase" : False}).get("Purchase", False)}
-
-                    if items_to_buy:
-                        logger.write_log(f"Merchant Detection: Attempting to auto-purchase items: {list(items_to_buy.values())}")
-                        for box_name, item_name in items_to_buy.items():
-                            try:
-                                coord_key = f"merchant_slot_{box_name[-1]}"
-                                mkey.left_click_xy_natural(CLICKS[coord_key][0], CLICKS[coord_key][1])
-                                time.sleep(delay)
-                                mkey.left_click_xy_natural(CLICKS["merchant_amount"][0], CLICKS["merchant_amount"][1])
-                                time.sleep(delay)
-                                kb.type(str(purchase_settings.get(item_name).get("amount", 1)))
-                                time.sleep(delay)
-                                mkey.left_click_xy_natural(CLICKS["merchant_purchase"][0], CLICKS["merchant_purchase"][1])
-                                logger.write_log(f"Auto-purchased: {item_name}")
-                                time.sleep(3)
-
-                                try:
-                                    purch_emb = discord.Embed(
-                                        title=f"Auto-Purchased from {merchant_short_name}",
-                                        description=f"Item: **{item_name}**\nAmount: **{str(purchase_settings.get(item_name).get('amount', 1))}**",
-                                        colour=emb_color
-                                    )
-                                    purch_emb.set_footer(text=f"SolsScope v{LOCALVERSION}")
-                                    if merchants.get(merchant_short_name.lower()).get("items").get(item_name.lower()).get("item_image_url"): purch_emb.set_thumbnail(url=merchants.get(merchant_short_name.lower()).get("items").get(item_name.lower()).get("item_image_url"))
-                                    webhook.send(embed=purch_emb)
-                                    forward_webhook_msg(
-                                        primary_webhook_url=webhook.url,
-                                        secondary_urls=settings.get("SECONDARY_WEBHOOK_URLS", []),
-                                        embed=purch_emb
-                                    )
-                                except Exception as purch_wh_e:
-                                    logger.write_log(f"Error sending purchase confirmation webhook: {purch_wh_e}")
-                            except Exception as buy_e:
-                                logger.write_log(f"Error auto-purchasing {item_name}: {buy_e}")
-
-                    if auto_sell and merchant_short_name == "Jester":
-                        time.sleep(0.2)
-                        mkey.left_click_xy_natural(CLICKS["merchant_close"][0], CLICKS["merchant_close"][1])
-                        time.sleep(delay)
-                        kb.press('e')
-                        time.sleep(0.2)
-                        kb.release('e')
-                        mkey.left_click_xy_natural(CLICKS["merchant_skip_dialog"][0], CLICKS["merchant_skip_dialog"][1])
-                        time.sleep(3)
-                        mkey.left_click_xy_natural(CLICKS["merchant_skip_dialog"][0], CLICKS["merchant_skip_dialog"][1])
-                        time.sleep(3)
-                        mkey.left_click_xy_natural(CLICKS["jester_exchange"][0], CLICKS["jester_exchange"][1])
-                        time.sleep(3)
-                        while not stop_event.is_set():
-                            pag.screenshot(ex_screenshot_path)
-                            time.sleep(0.2)
-                            logger.write_log("Merchant Detection: Processing screenshot with OCR...")
-                            image = cv2.imread(ex_screenshot_path)
-                            if image is None:
-                                logger.write_log("Merchant Detection Error: Failed to read screenshot file.")
-                                continue
-                            x1, y1, x2, y2 = REGIONS["jester_auto_ex_first"]
-                            exchange_crop = image[y1:y2, x1:x2]
-                            ocr_results = reader.readtext(exchange_crop, detail=0)
-                            ocr_ex_item_raw = " ".join(ocr_results).strip().replace('\n', ' ')
-                            ocr_ex_item_clean = re.sub(r"[^a-zA-Z']", "", ocr_ex_item_raw).lower()
-
-                            detected_item_name = fuzzy_match_auto_sell(ocr_ex_item_clean, JESTER_SELL_ITEMS)
-
-                            logger.write_log(f"Item: {detected_item_name} || OCR: {ocr_ex_item_raw}")
-
-                            if detected_item_name == "Void Coin":
-                                logger.write_log("Void Coin detected in first slot, skipping to second slot.")
-                                _break_second = False
-                                while detected_item_name in JESTER_ITEMS and not stop_event.is_set():
-                                    logger.write_log("Auto-Sell: Taking screenshot")
-                                    pag.screenshot(ex_screenshot_path)
-                                    time.sleep(0.2)
-                                    logger.write_log("Auto-Sell: Processing screenshot with OCR...")
-                                    image = cv2.imread(ex_screenshot_path)
-                                    if image is None:
-                                        logger.write_log("Auto-Sell Error: Failed to read screenshot file.")
-                                        continue
-                                    x1, y1, x2, y2 = REGIONS["jester_auto_ex_second"]
-                                    exchange_crop = image[y1:y2, x1:x2]
-                                    ocr_results = reader.readtext(exchange_crop, detail=0)
-                                    ocr_ex_item_raw = " ".join(ocr_results).strip().replace('\n', ' ')
-                                    ocr_ex_item_clean = re.sub(r"[^a-zA-Z']", "", ocr_ex_item_raw).lower()
-
-                                    detected_item_name = fuzzy_match_auto_sell(ocr_ex_item_clean, JESTER_SELL_ITEMS)
-                                    debug_path = os.path.join(f"{MACROPATH}/debug", f"dbg_{str(int(time.time()))}.png")
-                                    cv2.imwrite(debug_path, exchange_crop)
-                                    if detected_item_name == "Void Coin":
-                                        _break_second = True
-                                        logger.write_log("Auto-Sell: Void coin detected in second slot, stopping job.")
-                                        break
-                                    elif detected_item_name in JESTER_SELL_ITEMS and settings.get("items_to_sell", {}).get(detected_item_name, False):
-                                        logger.write_log(f"Auto-Sell: {detected_item_name} was detected")
-                                        time.sleep(delay)
-                                        mkey.left_click_xy_natural(CLICKS["jester_auto_ex_second"][0], CLICKS["jester_auto_ex_second"][1])
-                                        time.sleep(delay)
-                                        mkey.left_click_xy_natural(CLICKS["merchant_amount"][0], CLICKS["merchant_amount"][1])
-                                        time.sleep(delay)
-                                        kb.type(str(settings.get("amount_of_item_to_sell", 1)))
-                                        time.sleep(delay)
-                                        mkey.left_click_xy_natural(CLICKS["merchant_purchase"][0], CLICKS["merchant_purchase"][1])
-                                        time.sleep(delay)
-                                        mkey.left_click_xy_natural(CLICKS["jester_exchange_confirm"][0], CLICKS["jester_exchange_confirm"][1])
-                                        time.sleep(4.5)
-                                        sell_emb = discord.Embed(
-                                            title=f"Auto-Sold to {merchant_short_name}",
-                                            description=f"Item: **{detected_item_name}**\nAmount: **{str(settings.get('amount_of_item_to_sell', 1))}**\nMaximum Profit: **{str(settings.get('amount_of_item_to_sell', 1) * merchants.get(merchant_short_name.lower()).get('exchange').get(detected_item_name.lower()).get('price'))}P",
-                                            colour=emb_color
-                                        )
-                                        sell_emb.set_footer(text=f"SolsScope v{LOCALVERSION}")
-                                        if merchants.get(merchant_short_name.lower()).get("exchange").get(detected_item_name.lower()).get("item_image_url"): sell_emb.set_thumbnail(url=merchants.get(merchant_short_name.lower()).get("exchange").get(detected_item_name.lower()).get("item_image_url"))
-                                        webhook.send(embed=sell_emb)
-                                        forward_webhook_msg(
-                                            primary_webhook_url=webhook.url,
-                                            secondary_urls=settings.get("SECONDARY_WEBHOOK_URLS", []),
-                                            embed=sell_emb
-                                        )
-                                    else:
-                                        logger.write_log(f"Auto-Sell: No item was detected (OCR results: {ocr_results})")
-                                        logger.write_log("Auto-Sell: No items were found in the second box or unsure if Void Coin was not detected, ending auto sell job.")
-                                        _break_second = True
-                                        break
-                                    time.sleep(1)
-                                if _break_second:
-                                    break
-                            elif detected_item_name in JESTER_SELL_ITEMS and settings.get("items_to_get", {}).get(detected_item_name, False):
-                                logger.write_log(f"Auto-Sell: {detected_item_name} was detected")
-                                time.sleep(delay)
-                                mkey.left_click_xy_natural(CLICKS["jester_auto_ex_first"][0], CLICKS["jester_auto_ex_first"][1])
-                                time.sleep(delay)
-                                mkey.left_click_xy_natural(CLICKS["merchant_amount"][0], CLICKS["merchant_amount"][1])
-                                time.sleep(delay)
-                                kb.type(str(settings.get("amount_of_item_to_sell", 1)))
-                                time.sleep(delay)
-                                mkey.left_click_xy_natural(CLICKS["merchant_purchase"][0], CLICKS["merchant_purchase"][1])
-                                time.sleep(delay)
-                                mkey.left_click_xy_natural(CLICKS["jester_exchange_confirm"][0], CLICKS["jester_exchange_confirm"][1])
-                                time.sleep(4.5)
-                                sell_emb = discord.Embed(
-                                    title=f"Auto-Sold to {merchant_short_name}",
-                                    description=f"Item: **{detected_item_name}**\nAmount: **{str(settings.get('amount_of_item_to_sell', 1))}**\nMaximum Profit: **{str(settings.get('amount_of_item_to_sell', 1) * merchants.get(merchant_short_name.lower()).get('exchange').get(detected_item_name.lower()).get('price'))}P**",
-                                    colour=emb_color
-                                )
-                                sell_emb.set_footer(text=f"SolsScope v{LOCALVERSION}")
-                                if merchants.get(merchant_short_name.lower()).get("exchange").get(detected_item_name.lower()).get("item_image_url"): sell_emb.set_thumbnail(url=merchants.get(merchant_short_name.lower()).get("exchange").get(detected_item_name.lower()).get("item_image_url"))
-                                webhook.send(embed=sell_emb)
-                                forward_webhook_msg(
-                                    primary_webhook_url=webhook.url,
-                                    secondary_urls=settings.get("SECONDARY_WEBHOOK_URLS", []),
-                                    embed=sell_emb
-                                )
-                            else:
-                                logger.write_log(f"Auto-Sell: No item was detected (OCR results: {ocr_results})")
-                                logger.write_log("Auto-Sell: No item was found or unsure if Void Coin was not detected, ending auto sell job.")
-                                break
-                            time.sleep(1)
-
-                        mkey.left_click_xy_natural(CLICKS["merchant_close"][0], CLICKS["merchant_close"][1])
-                        time.sleep(0.5)
-                        reset_character()
-                        time.sleep(3)
-
-                    if afk_in_limbo and not is_idle_mode:
-                        logger.write_log("Teleporting back to limbo...")
-                        use_item("Portable Crack", 1, True, mkey, kb, settings, reader, ms)
-                        time.sleep(0.5)
-
-                    if stop_event.wait(timeout=cooldown_interval):
-                        break
-
-                except Exception as e:
-                    logger.write_log(f"Error in Merchant Detection loop: {e}")
-                    import traceback
-                    logger.write_log(traceback.format_exc()) 
-
-                    try:
-                        mkey.left_click_xy_natural(CLICKS["merchant_close"][0], CLICKS["merchant_close"][1])
-                    except Exception:
-                        pass
-
-                    if afk_in_limbo and not is_idle_mode:
-                        logger.write_log("Teleporting back to limbo...")
-                        use_item("Portable Crack", 1, True, mkey, kb, settings, reader, ms)
-                        time.sleep(0.5)
-
-    elif md_type == "Logs":
-
-        previous_merchant = (None, time.time())
-        mari_items = [item for item, data in settings.get("auto_purchase_items_mari", {}).items() if data.get("Purchase")]
-        jester_items = [item for item, data in settings.get("auto_purchase_items_jester", {}).items() if data.get("Purchase")]
-
-        if is_idle_mode:
-            logger.write_log("SolsScope will only detect merchants whilst in IDLE mode and will not purchase/sell to them.")
-
-        while not stop_event.is_set():
-            
+        
             if pause_event.is_set():
                 time.sleep(2)
                 continue
@@ -1072,10 +771,13 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
 
                         if (auto_sell or len(mari_items) > 0 or len(jester_items) > 0) and not is_idle_mode:
 
-                            detected_merchant_name = None
+                            detected_merchant_name = merchant_spawn[0]
                             detected_items = {}
-                                
+                                                            
                             with keyboard_lock:
+
+                                pyautoscope.refresh_clients()
+                                client = pyautoscope.return_clients()[0]
 
                                 try:
                                     logger.write_log("Merchant Detection: Using Merchant Teleport item...")
@@ -1086,45 +788,16 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
                                     kb.press('e')
                                     time.sleep(0.2)
                                     kb.release('e')
-                                    time.sleep(0.2)
-                                    mkey.left_click_xy_natural(CLICKS["merchant_skip_dialog"][0], CLICKS["merchant_skip_dialog"][1])
-                                    time.sleep(2)
-                                    mkey.left_click_xy_natural(CLICKS["merchant_skip_dialog"][0], CLICKS["merchant_skip_dialog"][1])
-                                    time.sleep(2)
-
-                                    logger.write_log("Merchant Detection: Taking screenshot...")
-                                    pag.screenshot(screenshot_path)
-                                    time.sleep(0.2)
-
-                                    logger.write_log("Merchant Detection: Processing screenshot with OCR...")
-                                    image = cv2.imread(screenshot_path)
-                                    if image is None:
-                                        logger.write_log("Merchant Detection Error: Failed to read screenshot file.")
-                                        continue
-
-                                    x1, y1, x2, y2 = REGIONS["merchant_name"]
-                                    merchant_crop = image[y1:y2, x1:x2]
-                                    
-                                    ocr_results = reader.readtext(merchant_crop, detail=0)
-                                    ocr_merchant_raw = " ".join(ocr_results).strip()
-
-                                    ocr_merchant_clean = re.sub(r"[^a-zA-Z']", "", ocr_merchant_raw).lower()
-                                    detected_merchant_name = fuzzy_match_merchant(ocr_merchant_clean, POSSIBLE_MERCHANTS)
-
-                                    if not detected_merchant_name:
-                                        logger.write_log(f"Merchant Detection: Could not identify merchant from OCR ('{ocr_merchant_raw}'). Skipping.")
-                                        continue
+                                    time.sleep(8)
 
                                     merchant_short_name = detected_merchant_name.split("'")[0] 
-                                    logger.write_log(f"Merchant Detected: {merchant_short_name} (Raw OCR: '{ocr_merchant_raw}')")
+                                    logger.write_log(f"Merchant Detected: {merchant_short_name}")
                                     rnow = datetime.now()
 
                                     logger.write_log("Merchant Detection: Opening Shop...")
                                     time.sleep(delay)
-                                    mkey.left_click_xy_natural(CLICKS["jester_open"][0], CLICKS["jester_open"][1])
+                                    pyautoscope.click_button(mkey, "jester_open", client, delay)
                                     time.sleep(3)
-
-                                    del image
 
                                     pag.screenshot(screenshot_path)
 
@@ -1151,7 +824,7 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
 
                                     emb = discord.Embed(
                                         title=f"{merchant_short_name} Spawned!",
-                                        description=f"A **{merchant_short_name}** has been detected.\n**Time:** <t:{str(int(time.time()))}>\nDetection Method: **{md_type}**",
+                                        description=f"A **{merchant_short_name}** has been detected.\n**Time:** <t:{str(int(time.time()))}>\nDetection via **Logs**",
                                         colour=emb_color
                                     )
                                     if thumbnail_url: emb.set_thumbnail(url=thumbnail_url)
@@ -1163,21 +836,17 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
                                     logger.write_log("Merchant Detection: Detecting items...")
                                     item_list = MARI_ITEMS if merchant_short_name == "Mari" else JESTER_ITEMS
                                     item_ocr_results = []
-                                    for box_name, (x1, y1, x2, y2) in REGIONS["merchant_boxes"].items():
-                                        if x1 >= image.shape[1] or y1 >= image.shape[0] or x2 <= x1 or y2 <= y1:
-                                            logger.write_log(f"Warning: Invalid coordinates for {box_name}. Skipping OCR.")
-                                            continue
 
-                                        cropped = image[y1:y2, x1:x2]
+                                    box_detection = pyautoscope.get_merchant_shop(client, reader)
+                                    for box_name in box_detection:
 
-                                        ocr_results = reader.readtext(cropped, detail=0)
-                                        ocr_raw = " ".join(ocr_results).strip().replace('\n', ' ')
+                                        detection = box_detection[box_name]
 
-                                        matched = fuzzy_match(ocr_raw, item_list, threshold=0.5)
-                                        logger.write_log(f" > {box_name}: OCR='{ocr_raw}', Match='{matched}'")
+                                        logger.write_log(f" > {box_name.replace('item', 'Box ')}: '{detection}'")
 
-                                        detected_items[box_name] = matched
-                                        item_ocr_results.append(f"**{box_name}:** `{matched}` (Raw: `{ocr_raw}`)")
+                                        detected_items[box_name.replace("item", "Box ")] = detection
+                                        item_ocr_results.append(f"**{box_name.replace('item', 'Box ')}:** `{detection}`")
+
                                     emb.add_field(name="Detected Items", value="\n".join(item_ocr_results) if item_ocr_results else "None", inline=False)
 
                                     if not (settings.get("mention", False) and settings.get("mention_id", 0) != 0) and settings.get(f"{merchant_short_name.lower()}_ping_id", 0) != 0:
@@ -1201,14 +870,21 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
                                         for box_name, item_name in items_to_buy.items():
                                             try:
                                                 coord_key = f"merchant_slot_{box_name[-1]}"
-                                                mkey.left_click_xy_natural(CLICKS[coord_key][0], CLICKS[coord_key][1])
+                                                pyautoscope.click_button(mkey, coord_key, client, delay)
                                                 time.sleep(delay)
-                                                mkey.left_click_xy_natural(CLICKS["merchant_amount"][0], CLICKS["merchant_amount"][1])
+                                                pyautoscope.click_button(mkey, "merchant_amount", client, delay)
                                                 time.sleep(delay)
                                                 kb.type(str(purchase_settings.get(item_name).get("amount", 1)))
                                                 time.sleep(delay)
-                                                mkey.left_click_xy_natural(CLICKS["merchant_purchase"][0], CLICKS["merchant_purchase"][1])
+                                                pyautoscope.click_button(mkey, "merchant_purchase", client, delay)
                                                 logger.write_log(f"Auto-purchased: {item_name}")
+                                                time.sleep(4)
+                                                box_detection = pyautoscope.get_merchant_shop(client, reader)
+                                                for box in box_detection:
+                                                    if box_detection[box] in ["[invalid]", "[error]"]:
+                                                        logger.write_log("Did not have enough to buy item, waiting for long ahh jester dialog.")
+                                                        time.sleep(10)
+                                                        break
                                                 time.sleep(3)
 
                                                 try:
@@ -1230,55 +906,32 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
                                             except Exception as buy_e:
                                                 logger.write_log(f"Error auto-purchasing {item_name}: {buy_e}")
 
+                                    pyautoscope.click_button(mkey, "merchant_close", client, delay)
+
                                     if auto_sell and merchant_short_name == "Jester":
-                                        time.sleep(0.2)
-                                        mkey.left_click_xy_natural(CLICKS["merchant_close"][0], CLICKS["merchant_close"][1])
-                                        time.sleep(0.2)
+                                        time.sleep(3)
                                         kb.press('e')
                                         time.sleep(0.2)
                                         kb.release('e')
-                                        mkey.left_click_xy_natural(CLICKS["merchant_skip_dialog"][0], CLICKS["merchant_skip_dialog"][1])
-                                        time.sleep(3)
-                                        mkey.left_click_xy_natural(CLICKS["merchant_skip_dialog"][0], CLICKS["merchant_skip_dialog"][1])
-                                        time.sleep(3)
-                                        mkey.left_click_xy_natural(CLICKS["jester_exchange"][0], CLICKS["jester_exchange"][1])
-                                        time.sleep(3)
+                                        time.sleep(8)
+                                        pyautoscope.click_button(mkey, "jester_exchange", client, delay)
+                                        time.sleep(7)
                                         while not stop_event.is_set():
-                                            pag.screenshot(ex_screenshot_path)
-                                            time.sleep(0.2)
-                                            logger.write_log("Merchant Detection: Processing screenshot with OCR...")
-                                            image = cv2.imread(ex_screenshot_path)
-                                            if image is None:
-                                                logger.write_log("Merchant Detection Error: Failed to read screenshot file.")
-                                                continue
 
-                                            x1, y1, x2, y2 = REGIONS["jester_auto_ex_first"]
-                                            exchange_crop = image[y1:y2, x1:x2]
-                                            ocr_results = reader.readtext(exchange_crop, detail=0)
-                                            ocr_ex_item_raw = " ".join(ocr_results).strip().replace('\n', ' ')
-                                            ocr_ex_item_clean = re.sub(r"[^a-zA-Z']", "", ocr_ex_item_raw).lower()
+                                            logger.write_log("Detecting item...")
 
-                                            detected_item_name = fuzzy_match_auto_sell(ocr_ex_item_clean, JESTER_SELL_ITEMS)
-                                            logger.write_log(f"Item: {detected_item_name} || OCR: {ocr_ex_item_raw}")
+                                            detected_item_name = pyautoscope.get_jester_exchange(client, reader).get("sell_item_1")
+
+                                            logger.write_log(f"Item: {detected_item_name}")
+
                                             if detected_item_name == "Void Coin":
                                                 logger.write_log("Void Coin detected in first slot, skipping to second slot.")
                                                 _break_second = False
                                                 while detected_item_name in JESTER_ITEMS and not stop_event.is_set():
-                                                    logger.write_log("Auto-Sell: Taking screenshot")
-                                                    pag.screenshot(ex_screenshot_path)
-                                                    time.sleep(0.2)
-                                                    logger.write_log("Auto-Sell: Processing screenshot with OCR...")
-                                                    image = cv2.imread(ex_screenshot_path)
-                                                    if image is None:
-                                                        logger.write_log("Auto-Sell Error: Failed to read screenshot file.")
-                                                        continue
-                                                    x1, y1, x2, y2 = REGIONS["jester_auto_ex_second"]
-                                                    exchange_crop = image[y1:y2, x1:x2]
-                                                    ocr_results = reader.readtext(exchange_crop, detail=0)
-                                                    ocr_ex_item_raw = " ".join(ocr_results).strip().replace('\n', ' ')
-                                                    ocr_ex_item_clean = re.sub(r"[^a-zA-Z']", "", ocr_ex_item_raw).lower()
+                                                    logger.write_log("Detecting item...")
 
-                                                    detected_item_name = fuzzy_match_auto_sell(ocr_ex_item_clean, JESTER_SELL_ITEMS)
+                                                    detected_item_name = pyautoscope.get_jester_exchange(client, reader).get("sell_item_2")
+
                                                     if detected_item_name == "Void Coin":
                                                         _break_second = True
                                                         logger.write_log("Auto-Sell: Void coin detected in second slot, stopping job.")
@@ -1286,15 +939,15 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
                                                     elif detected_item_name in JESTER_SELL_ITEMS and settings.get("items_to_sell", {}).get(detected_item_name, False):
                                                         logger.write_log(f"Auto-Sell: {detected_item_name} was detected")
                                                         time.sleep(delay)
-                                                        mkey.left_click_xy_natural(CLICKS["jester_auto_ex_second"][0], CLICKS["jester_auto_ex_second"][1])
+                                                        pyautoscope.click_button(mkey, "jester_auto_ex_second", client, delay)
                                                         time.sleep(delay)
-                                                        mkey.left_click_xy_natural(CLICKS["merchant_amount"][0], CLICKS["merchant_amount"][1])
+                                                        pyautoscope.click_button(mkey, "merchant_amount", client, delay)
                                                         time.sleep(delay)
                                                         kb.type(str(settings.get("amount_of_item_to_sell", 1)))
                                                         time.sleep(delay)
-                                                        mkey.left_click_xy_natural(CLICKS["merchant_purchase"][0], CLICKS["merchant_purchase"][1])
+                                                        pyautoscope.click_button(mkey, "merchant_purchase", client, delay)
                                                         time.sleep(delay)
-                                                        mkey.left_click_xy_natural(CLICKS["jester_exchange_confirm"][0], CLICKS["jester_exchange_confirm"][1])
+                                                        pyautoscope.click_button(mkey, "jester_exchange_confirm", client, delay)
                                                         time.sleep(4.5)
                                                         sell_emb = discord.Embed(
                                                             title=f"Auto-Sold to {merchant_short_name}",
@@ -1310,6 +963,7 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
                                                             embed=sell_emb
                                                         )
                                                     else:
+                                                        logger.write_log(f"Auto-Sell: No item was detected (OCR results: {detected_item_name})")
                                                         logger.write_log("Auto-Sell: No items were found in the second box or unsure if Void Coin was not detected, ending auto sell job.")
                                                         _break_second = True
                                                         break
@@ -1319,15 +973,15 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
                                             elif detected_item_name in JESTER_SELL_ITEMS and settings.get("items_to_get", {}).get(detected_item_name, False):
                                                 logger.write_log(f"Auto-Sell: {detected_item_name} was detected")
                                                 time.sleep(delay)
-                                                mkey.left_click_xy_natural(CLICKS["jester_auto_ex_first"][0], CLICKS["jester_auto_ex_first"][1])
+                                                pyautoscope.click_button(mkey, "jester_auto_ex_first", client, delay)
                                                 time.sleep(delay)
-                                                mkey.left_click_xy_natural(CLICKS["merchant_amount"][0], CLICKS["merchant_amount"][1])
+                                                pyautoscope.click_button(mkey, "merchant_amount", client, delay)
                                                 time.sleep(delay)
                                                 kb.type(str(settings.get("amount_of_item_to_sell", 1)))
                                                 time.sleep(delay)
-                                                mkey.left_click_xy_natural(CLICKS["merchant_purchase"][0], CLICKS["merchant_purchase"][1])
+                                                pyautoscope.click_button(mkey, "merchant_purchase", client, delay)
                                                 time.sleep(delay)
-                                                mkey.left_click_xy_natural(CLICKS["jester_exchange_confirm"][0], CLICKS["jester_exchange_confirm"][1])
+                                                pyautoscope.click_button(mkey, "jester_exchange_confirm", client, delay)
                                                 time.sleep(4.5)
                                                 sell_emb = discord.Embed(
                                                     title=f"Auto-Sold to {merchant_short_name}",
@@ -1343,11 +997,12 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
                                                     embed=sell_emb
                                                 )
                                             else:
+                                                logger.write_log(f"Auto-Sell: No item was detected (OCR results: {detected_item_name})")
                                                 logger.write_log("Auto-Sell: No item was found or unsure if Void Coin was not detected, ending auto sell job.")
                                                 break
                                             time.sleep(1)
 
-                                        mkey.left_click_xy_natural(CLICKS["merchant_close"][0], CLICKS["merchant_close"][1])
+                                        pyautoscope.click_button(mkey, "merchant_close", client, delay)
                                         time.sleep(0.5)
                                         reset_character()
                                         time.sleep(3)
@@ -1366,7 +1021,7 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
                                     logger.write_log(traceback.format_exc()) 
 
                                     try:
-                                        mkey.left_click_xy_natural(CLICKS["merchant_close"][0], CLICKS["merchant_close"][1])
+                                        pyautoscope.click_button(mkey, "merchant_close", client, delay)
                                     except Exception:
                                         pass
 
@@ -1374,7 +1029,7 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
                                         logger.write_log("Teleporting back to limbo...")
                                         use_item("Portable Crack", 1, True, mkey, kb, settings, reader, ms)
                                         time.sleep(0.5)
-                        
+                            
                         else:
                             ping_content = ""
                             if merchant_spawn[0] == "Mari":
@@ -1393,7 +1048,7 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
 
                             emb = discord.Embed(
                                 title=f"{merchant_spawn[0]} Spawned!",
-                                description=f"A **{merchant_spawn[0]}** has been detected.\n**Time:** <t:{str(int(merchant_spawn[1]))}>\nDetection Method: **{md_type}**",
+                                description=f"A **{merchant_spawn[0]}** has been detected.\n**Time:** <t:{str(int(merchant_spawn[1]))}>\nDetection via **Logs**",
                                 colour=emb_color
                             )
                             if thumbnail_url: emb.set_thumbnail(url=thumbnail_url)
@@ -1407,9 +1062,291 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
                                 embed=emb,
                                 content=ping_content
                             )
-
     else:
-        logger.write_log(f"Unknown Merchant Detection Type: {md_type}")
+
+        logger.write_log("Merchant Detection starting in Legacy mode.")
+        
+        while not stop_event.is_set():
+            if pause_event.is_set():
+                time.sleep(2)
+                continue
+
+            wait_interval = before_check_interval
+            logger.write_log(f"Merchant Detection: Waiting for {wait_interval} seconds...")
+            if stop_event.wait(timeout=wait_interval):
+                break
+
+            logger.write_log("Merchant Detection: Merchant Check Scheduled")
+            detected_merchant_name = None
+            detected_items = {}
+
+            with keyboard_lock: 
+
+                pyautoscope.refresh_clients()
+                client = pyautoscope.return_clients()[0]
+
+                try:
+                    logger.write_log("Merchant Detection: Using Merchant Teleport item...")
+                    use_item("Merchant Teleport", 1, True, mkey, kb, settings, reader, ms) 
+                    time.sleep(settings.get("global_wait_time", 0.2) + 0.5) 
+
+                    logger.write_log("Merchant Detection: Attempting interaction (E key)...")
+                    kb.press('e')
+                    time.sleep(0.2)
+                    kb.release('e')
+                    time.sleep(7)
+
+                    logger.write_log("Merchant Detection: Detecting Merchant name...")
+
+                    detected_merchant_name = pyautoscope.get_merchant_name(client, reader).get("merchant_name", "[invalid]")
+
+                    if detected_merchant_name in ["[invalid]", "[error]"] or not detected_merchant_name:
+                        logger.write_log(f"Merchant Detection: Could not identify merchant from OCR. Skipping.")
+                        continue
+
+                    merchant_short_name = detected_merchant_name.split("'")[0] 
+                    logger.write_log(f"Merchant Detected: {merchant_short_name}")
+                    rnow = datetime.now()
+
+                    logger.write_log("Merchant Detection: Opening Shop...")
+                    time.sleep(delay)
+                    pyautoscope.click_button(mkey, "jester_open", client)
+                    time.sleep(3)
+
+                    pag.screenshot(screenshot_path)
+
+                    image = cv2.imread(screenshot_path)
+                    if image is None:
+                        logger.write_log("Merchant Detection Error: Failed to read screenshot file.")
+                        continue
+
+                    file_to_send = create_discord_file_from_path(screenshot_path, filename="merchant.png")
+                    ping_content = ""
+                    if merchant_short_name == "Mari":
+                        emb_color = discord.Colour.from_rgb(255, 255, 255)
+                        thumbnail_url = "https://static.wikia.nocookie.net/sol-rng/images/3/37/MARI_HIGH_QUALITYY.png/revision/latest"
+                        if settings.get("ping_mari", False) and settings.get("mari_ping_id", 0) != 0:
+                            ping_content += f"<@&{settings['mari_ping_id']}>"
+                    elif merchant_short_name == "Jester":
+                        emb_color = discord.Colour.from_rgb(176, 49, 255)
+                        thumbnail_url = "https://static.wikia.nocookie.net/sol-rng/images/d/db/Headshot_of_Jester.png/revision/latest"
+                        if settings.get("ping_jester", False) and settings.get("jester_ping_id", 0) != 0:
+                            ping_content += f"<@&{settings['jester_ping_id']}>"
+                    else:
+                        emb_color = discord.Colour.default()
+                        thumbnail_url = None
+
+                    emb = discord.Embed(
+                        title=f"{merchant_short_name} Spawned!",
+                        description=f"A **{merchant_short_name}** has been detected.\n**Time:** <t:{str(int(time.time()))}>\nDetection Method: **Legacy**",
+                        colour=emb_color
+                    )
+                    if thumbnail_url: emb.set_thumbnail(url=thumbnail_url)
+                    if file_to_send: emb.set_image(url="attachment://merchant.png")
+                    if ps_link_valid: emb.add_field(name="Server Invite", value=settings['private_server_link'], inline=False)
+
+                    emb.set_footer(text=f"SolsScope v{LOCALVERSION}")
+
+                    logger.write_log("Merchant Detection: Detecting items...")
+                    item_list = MARI_ITEMS if merchant_short_name == "Mari" else JESTER_ITEMS
+                    item_ocr_results = []
+                    
+                    box_detection = pyautoscope.get_merchant_shop(client, reader)
+                    for box_name in box_detection:
+
+                        detection = box_detection[box_name]
+
+                        logger.write_log(f" > {box_name.replace('item', 'Box ')}: '{detection}'")
+
+                        detected_items[box_name.replace("item", "Box ")] = detection
+                        item_ocr_results.append(f"**{box_name.replace('item', 'Box ')}:** `{detection}`")
+
+                    emb.add_field(name="Detected Items", value="\n".join(item_ocr_results) if item_ocr_results else "None", inline=False)
+
+                    if not (settings.get("mention", False) and settings.get("mention_id", 0) != 0) and settings.get(f"{merchant_short_name.lower()}_ping_id", 0) != 0:
+                        ping_content = f"<@{settings['mention_id']}>{ping_content}"
+
+                    try:
+                        webhook.send(content=ping_content.strip(), embed=emb, file=file_to_send)
+                        forward_webhook_msg(
+                            primary_webhook_url=webhook.url,
+                            secondary_urls=settings.get("SECONDARY_WEBHOOK_URLS", []),
+                            content=ping_content.strip(), embed=emb, file=file_to_send
+                        )
+                    except Exception as wh_e:
+                        logger.write_log(f"Error sending merchant detection webhook: {wh_e}")
+
+                    purchase_settings = settings.get("auto_purchase_items_mari" if merchant_short_name == "Mari" else "auto_purchase_items_jester", {})
+                    items_to_buy = {box_name: item_name for box_name, item_name in detected_items.items() if purchase_settings.get(item_name, {"Purchase" : False}).get("Purchase", False)}
+
+                    if items_to_buy:
+                        logger.write_log(f"Merchant Detection: Attempting to auto-purchase items: {list(items_to_buy.values())}")
+                        for box_name, item_name in items_to_buy.items():
+                            try:
+                                coord_key = f"merchant_slot_{box_name[-1]}"
+                                pyautoscope.click_button(mkey, coord_key, client, delay)
+                                time.sleep(delay)
+                                pyautoscope.click_button(mkey, "merchant_amount", client, delay)
+                                time.sleep(delay)
+                                kb.type(str(purchase_settings.get(item_name).get("amount", 1)))
+                                time.sleep(delay)
+                                pyautoscope.click_button(mkey, "merchant_purchase", client, delay)
+                                logger.write_log(f"Auto-purchased: {item_name}")
+                                time.sleep(4)
+                                box_detection = pyautoscope.get_merchant_shop(client, reader)
+                                for box in box_detection:
+                                    if box_detection[box] in ["[invalid]", "[error]"]:
+                                        if detected_merchant_name.lower() == "jester":
+                                            logger.write_log("Did not have enough to buy item, waiting for long ahh jester dialog.")
+                                            time.sleep(10)
+                                            break
+                                        else:
+                                            logger.write_log("Did not have enough to buy item, waiting for Mari dialog")
+                                            time.sleep(5)
+                                            break
+
+                                try:
+                                    purch_emb = discord.Embed(
+                                        title=f"Auto-Purchased from {merchant_short_name}",
+                                        description=f"Item: **{item_name}**\nAmount: **{str(purchase_settings.get(item_name).get('amount', 1))}**",
+                                        colour=emb_color
+                                    )
+                                    purch_emb.set_footer(text=f"SolsScope v{LOCALVERSION}")
+                                    if merchants.get(merchant_short_name.lower()).get("items").get(item_name.lower()).get("item_image_url"): purch_emb.set_thumbnail(url=merchants.get(merchant_short_name.lower()).get("items").get(item_name.lower()).get("item_image_url"))
+                                    webhook.send(embed=purch_emb)
+                                    forward_webhook_msg(
+                                        primary_webhook_url=webhook.url,
+                                        secondary_urls=settings.get("SECONDARY_WEBHOOK_URLS", []),
+                                        embed=purch_emb
+                                    )
+                                except Exception as purch_wh_e:
+                                    logger.write_log(f"Error sending purchase confirmation webhook: {purch_wh_e}")
+                            except Exception as buy_e:
+                                logger.write_log(f"Error auto-purchasing {item_name}: {buy_e}")
+
+                    pyautoscope.click_button(mkey, "merchant_close", client, delay)
+
+                    if auto_sell and merchant_short_name == "Jester":
+                        time.sleep(3)
+                        kb.press('e')
+                        time.sleep(0.2)
+                        kb.release('e')
+                        time.sleep(8)
+                        pyautoscope.click_button(mkey, "jester_exchange", client, delay)
+                        time.sleep(7)
+                        while not stop_event.is_set():
+
+                            logger.write_log("Detecting item...")
+
+                            detected_item_name = pyautoscope.get_jester_exchange(client, reader).get("sell_item_1")
+
+                            logger.write_log(f"Item: {detected_item_name}")
+
+                            if detected_item_name == "Void Coin":
+                                logger.write_log("Void Coin detected in first slot, skipping to second slot.")
+                                _break_second = False
+                                while detected_item_name in JESTER_ITEMS and not stop_event.is_set():
+                                    logger.write_log("Detecting item...")
+
+                                    detected_item_name = pyautoscope.get_jester_exchange(client, reader).get("sell_item_2")
+
+                                    if detected_item_name == "Void Coin":
+                                        _break_second = True
+                                        logger.write_log("Auto-Sell: Void coin detected in second slot, stopping job.")
+                                        break
+                                    elif detected_item_name in JESTER_SELL_ITEMS and settings.get("items_to_sell", {}).get(detected_item_name, False):
+                                        logger.write_log(f"Auto-Sell: {detected_item_name} was detected")
+                                        time.sleep(delay)
+                                        pyautoscope.click_button(mkey, "jester_auto_ex_second", client, delay)
+                                        time.sleep(delay)
+                                        pyautoscope.click_button(mkey, "merchant_amount", client, delay)
+                                        time.sleep(delay)
+                                        kb.type(str(settings.get("amount_of_item_to_sell", 1)))
+                                        time.sleep(delay)
+                                        pyautoscope.click_button(mkey, "merchant_purchase", client, delay)
+                                        time.sleep(delay)
+                                        pyautoscope.click_button(mkey, "jester_exchange_confirm", client, delay)
+                                        time.sleep(4.5)
+                                        sell_emb = discord.Embed(
+                                            title=f"Auto-Sold to {merchant_short_name}",
+                                            description=f"Item: **{detected_item_name}**\nAmount: **{str(settings.get('amount_of_item_to_sell', 1))}**\nMaximum Profit: **{str(settings.get('amount_of_item_to_sell', 1) * merchants.get(merchant_short_name.lower()).get('exchange').get(detected_item_name.lower()).get('price'))}P",
+                                            colour=emb_color
+                                        )
+                                        sell_emb.set_footer(text=f"SolsScope v{LOCALVERSION}")
+                                        if merchants.get(merchant_short_name.lower()).get("exchange").get(detected_item_name.lower()).get("item_image_url"): sell_emb.set_thumbnail(url=merchants.get(merchant_short_name.lower()).get("exchange").get(detected_item_name.lower()).get("item_image_url"))
+                                        webhook.send(embed=sell_emb)
+                                        forward_webhook_msg(
+                                            primary_webhook_url=webhook.url,
+                                            secondary_urls=settings.get("SECONDARY_WEBHOOK_URLS", []),
+                                            embed=sell_emb
+                                        )
+                                    else:
+                                        logger.write_log(f"Auto-Sell: No item was detected (OCR results: {detected_item_name})")
+                                        logger.write_log("Auto-Sell: No items were found in the second box or unsure if Void Coin was not detected, ending auto sell job.")
+                                        _break_second = True
+                                        break
+                                    time.sleep(1)
+                                if _break_second:
+                                    break
+                            elif detected_item_name in JESTER_SELL_ITEMS and settings.get("items_to_get", {}).get(detected_item_name, False):
+                                logger.write_log(f"Auto-Sell: {detected_item_name} was detected")
+                                time.sleep(delay)
+                                pyautoscope.click_button(mkey, "jester_auto_ex_first", client, delay)
+                                time.sleep(delay)
+                                pyautoscope.click_button(mkey, "merchant_amount", client, delay)
+                                time.sleep(delay)
+                                kb.type(str(settings.get("amount_of_item_to_sell", 1)))
+                                time.sleep(delay)
+                                pyautoscope.click_button(mkey, "merchant_purchase", client, delay)
+                                time.sleep(delay)
+                                pyautoscope.click_button(mkey, "jester_exchange_confirm", client, delay)
+                                time.sleep(4.5)
+                                sell_emb = discord.Embed(
+                                    title=f"Auto-Sold to {merchant_short_name}",
+                                    description=f"Item: **{detected_item_name}**\nAmount: **{str(settings.get('amount_of_item_to_sell', 1))}**\nMaximum Profit: **{str(settings.get('amount_of_item_to_sell', 1) * merchants.get(merchant_short_name.lower()).get('exchange').get(detected_item_name.lower()).get('price'))}P**",
+                                    colour=emb_color
+                                )
+                                sell_emb.set_footer(text=f"SolsScope v{LOCALVERSION}")
+                                if merchants.get(merchant_short_name.lower()).get("exchange").get(detected_item_name.lower()).get("item_image_url"): sell_emb.set_thumbnail(url=merchants.get(merchant_short_name.lower()).get("exchange").get(detected_item_name.lower()).get("item_image_url"))
+                                webhook.send(embed=sell_emb)
+                                forward_webhook_msg(
+                                    primary_webhook_url=webhook.url,
+                                    secondary_urls=settings.get("SECONDARY_WEBHOOK_URLS", []),
+                                    embed=sell_emb
+                                )
+                            else:
+                                logger.write_log(f"Auto-Sell: No item was detected (OCR results: {detected_item_name})")
+                                logger.write_log("Auto-Sell: No item was found or unsure if Void Coin was not detected, ending auto sell job.")
+                                break
+                            time.sleep(1)
+
+                        pyautoscope.click_button(mkey, "merchant_close", client, delay)
+                        time.sleep(0.5)
+                        reset_character()
+                        time.sleep(3)
+
+                    if afk_in_limbo and not is_idle_mode:
+                        logger.write_log("Teleporting back to limbo...")
+                        use_item("Portable Crack", 1, True, mkey, kb, settings, reader, ms)
+                        time.sleep(0.5)
+
+                    if stop_event.wait(timeout=cooldown_interval):
+                        break
+
+                except Exception as e:
+                    logger.write_log(f"Error in Merchant Detection loop: {e}")
+                    import traceback
+                    logger.write_log(traceback.format_exc()) 
+
+                    try:
+                        pyautoscope.click_button(mkey, "merchant_close", client, delay)
+                    except Exception:
+                        pass
+
+                    if afk_in_limbo and not is_idle_mode:
+                        logger.write_log("Teleporting back to limbo...")
+                        use_item("Portable Crack", 1, True, mkey, kb, settings, reader, ms)
+                        time.sleep(0.5)
             
 
     logger.write_log("Merchant Detection thread stopped.")
@@ -1472,25 +1409,10 @@ def auto_craft(webhook, settings: dict, stop_event: threading.Event, sniped_even
 
     send_item_crafted_notification = settings.get("send_item_crafted_notification", True)
 
-    if not settings.get("calibration"):
-        logger.write_log("Cannot start Auto Craft: No calibration selected.")
-        return
-    
-    if not validate_calibrations(settings.get("calibration"), ["autocraft_craft", "autocraft_auto", "autocraft_search", "autocraft_first_potion", "autocraft_first_add", "autocraft_first_amt", "autocraft_second_add", "autocraft_second_amt", "autocraft_third_add", "autocraft_third_amt", "autocraft_first_scrolled_add", "autocraft_first_scrolled_amt", "autocraft_second_scrolled_add", "autocraft_second_scrolled_amt", "autocraft_third_scrolled_add", "autocraft_third_scrolled_amt", "autocraft_scroll"]):
-        logger.write_log("Cannot start Auto Craft: Calibration is invalid.")
-        return
-    
-    if not validate_regions(settings.get("calibration"), ["autocraft_top_add", "autocraft_scrolled_bottom_add"]):
-        logger.write_log("Could not start Auto Craft: Calibration is invalid.")
-        return
-
-    
-    CLICKS = get_calibrations(settings.get("calibration"))
-    REGIONS = get_regions(settings.get("calibration"))
-
     delay = load_delay()
 
     def _search(potion_name : str):
+        
         kb.press("f")
         time.sleep(0.2)
         kb.release("f")
@@ -1499,18 +1421,18 @@ def auto_craft(webhook, settings: dict, stop_event: threading.Event, sniped_even
         time.sleep(0.2)
         kb.release("f")
         time.sleep(delay)
-        mkey.left_click_xy_natural(CLICKS["autocraft_search"][0], CLICKS["autocraft_search"][1])
-        time.sleep(delay)
-        mkey.left_click_xy_natural(CLICKS["autocraft_first_potion"][0], CLICKS["autocraft_first_potion"][1])
+        pyautoscope.move_to_button(mkey, "autocraft_first_potion", client, delay)
         time.sleep(delay)
         ms.scroll(0, 30); time.sleep(delay)
         ms.scroll(0, 30); time.sleep(delay)
         ms.scroll(0, 30); time.sleep(delay)
-        mkey.left_click_xy_natural(CLICKS["autocraft_search"][0], CLICKS["autocraft_search"][1])
+        pyautoscope.click_button(mkey, "autocraft_first_potion", client, delay)
+        time.sleep(delay)
+        pyautoscope.click_button(mkey, "autocraft_search", client, delay)
         time.sleep(delay)
         _type(kb, settings.get("typing_jitter", 0.2), settings.get("typing_delay", 0.2), settings.get("typing_hold", 0.2), potion_name)
         time.sleep(delay)
-        mkey.left_click_xy_natural(CLICKS["autocraft_first_potion"][0], CLICKS["autocraft_first_potion"][1])
+        pyautoscope.click_button(mkey, "autocraft_first_potion", client, delay)
         time.sleep(delay)
 
 
@@ -1518,9 +1440,13 @@ def auto_craft(webhook, settings: dict, stop_event: threading.Event, sniped_even
 
         if pause_event.is_set():
             time.sleep(2)
-            continue
+            continue        
 
         with keyboard_lock:
+
+
+            pyautoscope.refresh_clients()
+            client = pyautoscope.return_clients()[0]
 
             try:
                 wait_time = settings.get("global_wait_time", 0.2)
@@ -1529,1108 +1455,1134 @@ def auto_craft(webhook, settings: dict, stop_event: threading.Event, sniped_even
                     
                     _search("Jewelry")
 
-                    mkey.move_to_natural(CLICKS["autocraft_scroll"][0], CLICKS["autocraft_scroll"][1])
-                    time.sleep(delay)
-                    ms.scroll(0, 30); time.sleep(delay)
-                    ms.scroll(0, 30); time.sleep(delay)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_first_amt"][0], CLICKS["autocraft_first_amt"][1])
-                    time.sleep(0.2)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_first_amt"][0], CLICKS["autocraft_first_amt"][1])
-                    time.sleep(delay)
-                    _type(kb, settings.get("typing_jitter", 0.2), settings.get("typing_delay", 0.2), settings.get("typing_hold", 0.2), "20")
-                    time.sleep(delay)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_first_add"][0], CLICKS["autocraft_first_add"][1])
+                    if pyautoscope.get_first_crafting_potion(client, reader).get("first_crafting_potion", "[error]") not in ["[error]", "[invalid]"] or settings.get("ignore_autocraft_safety_check", False):
 
-                    if send_item_crafted_notification:
+                        pyautoscope.move_to_button(mkey, "autocraft_scroll", client, delay)
+                        time.sleep(delay)
+                        ms.scroll(0, 30); time.sleep(delay)
+                        ms.scroll(0, 30); time.sleep(delay)
+                        pyautoscope.click_button(mkey, "autocraft_first_amt", client, delay)
+                        time.sleep(0.2)
+                        pyautoscope.click_button(mkey, "autocraft_first_amt", client, delay)
+                        time.sleep(delay)
+                        _type(kb, settings.get("typing_jitter", 0.2), settings.get("typing_delay", 0.2), settings.get("typing_hold", 0.2), "20")
+                        time.sleep(delay)
+                        pyautoscope.click_button(mkey, "autocraft_first_add", client, delay)
 
-                        _ = detect_add_potions(False, reader, REGIONS)
+                        if send_item_crafted_notification:
 
-                        if _:
-                            _prev_jewel = True
-                        else:
-                            _prev_jewel = False
+                            _ = pyautoscope.get_potion_add_check(client, reader, False).get("first_add_button", "[invalid]") != "Add"
 
-                    mkey.left_click_xy_natural(CLICKS["autocraft_craft"][0], CLICKS["autocraft_craft"][1])
+                            if _:
+                                _prev_jewel = True
+                            else:
+                                _prev_jewel = False
 
-                    if send_item_crafted_notification:
-                        _jewel_isfull = False
+                        pyautoscope.click_button(mkey, "autocraft_craft", client, delay)
 
-                        _ = detect_add_potions(False, reader, REGIONS)
-
-                        if _:
-                            _jewel_isfull = True
-                        else:
+                        if send_item_crafted_notification:
                             _jewel_isfull = False
 
-                        if _prev_jewel != _jewel_isfull:
-                            potions_crafted += 1
-                            emb = create_autocraft_embed("Jewelry Potion")
-                            if emb:
-                                try:
-                                    webhook.send(embed=emb)
-                                    forward_webhook_msg(
-                                        primary_webhook_url=webhook.url,
-                                        secondary_urls=settings.get("SECONDARY_WEBHOOK_URLS", []),
-                                        embed=emb
-                                    )
-                                except Exception as wh_e:
-                                    logger.write_log(f"Error sending potion crafted webhook: {wh_e}")
+                            _ = pyautoscope.get_potion_add_check(client, reader, False).get("first_add_button", "[invalid]") != "Add"
 
-                        _prev_jewel = _jewel_isfull
+                            if _:
+                                _jewel_isfull = True
+                            else:
+                                _jewel_isfull = False
 
-                    if job == "Jewelry Potion":
-                        mkey.left_click_xy_natural(CLICKS["autocraft_auto"][0], CLICKS["autocraft_auto"][1])
-                    time.sleep(1)
+                            if _prev_jewel != _jewel_isfull:
+                                potions_crafted += 1
+                                emb = create_autocraft_embed("Jewelry Potion")
+                                if emb:
+                                    try:
+                                        webhook.send(embed=emb)
+                                        forward_webhook_msg(
+                                            primary_webhook_url=webhook.url,
+                                            secondary_urls=settings.get("SECONDARY_WEBHOOK_URLS", []),
+                                            embed=emb
+                                        )
+                                    except Exception as wh_e:
+                                        logger.write_log(f"Error sending potion crafted webhook: {wh_e}")
+
+                            _prev_jewel = _jewel_isfull
+
+                        if job == "Jewelry Potion":
+                            pyautoscope.click_button(mkey, "autocraft_auto", client, delay)
+                        time.sleep(1)
 
                 if settings["auto_craft_item"].get("Zombie Potion", False):
                     _search("Zombie")
 
-                    mkey.move_to_natural(CLICKS["autocraft_scroll"][0], CLICKS["autocraft_scroll"][1])
-                    time.sleep(delay)
-                    ms.scroll(0, 30); time.sleep(delay)
-                    ms.scroll(0, 30); time.sleep(delay)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_first_amt"][0], CLICKS["autocraft_first_amt"][1])
-                    time.sleep(0.2)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_first_amt"][0], CLICKS["autocraft_first_amt"][1])
-                    time.sleep(delay)
-                    _type(kb, settings.get("typing_jitter", 0.2), settings.get("typing_delay", 0.2), settings.get("typing_hold", 0.2), "10")
-                    time.sleep(delay)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_first_add"][0], CLICKS["autocraft_first_add"][1])
-                    time.sleep(delay)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_second_add"][0], CLICKS["autocraft_second_add"][1])
+                    if pyautoscope.get_first_crafting_potion(client, reader).get("first_crafting_potion", "[error]") not in ["[error]", "[invalid]"] or settings.get("ignore_autocraft_safety_check", False):
 
-                    if send_item_crafted_notification:
+                        pyautoscope.move_to_button(mkey, "autocraft_scroll", client, delay)
+                        time.sleep(delay)
+                        ms.scroll(0, 30); time.sleep(delay)
+                        ms.scroll(0, 30); time.sleep(delay)
+                        pyautoscope.click_button(mkey, "autocraft_first_amt", client, delay)
+                        time.sleep(0.2)
+                        pyautoscope.click_button(mkey, "autocraft_first_amt", client, delay)
+                        time.sleep(delay)
+                        _type(kb, settings.get("typing_jitter", 0.2), settings.get("typing_delay", 0.2), settings.get("typing_hold", 0.2), "10")
+                        time.sleep(delay)
+                        pyautoscope.click_button(mkey, "autocraft_first_add", client, delay)
+                        time.sleep(delay)
+                        pyautoscope.click_button(mkey, "autocraft_second_add", client, delay)
 
-                        _ = detect_add_potions(False, reader, REGIONS)
+                        if send_item_crafted_notification:
 
-                        if _:
-                            _prev_zomb = True
-                        else:
-                            _prev_zomb = False
+                            _ = pyautoscope.get_potion_add_check(client, reader, False).get("first_add_button", "[invalid]") != "Add"
 
-                    mkey.left_click_xy_natural(CLICKS["autocraft_craft"][0], CLICKS["autocraft_craft"][1])
+                            if _:
+                                _prev_zomb = True
+                            else:
+                                _prev_zomb = False
 
-                    if send_item_crafted_notification:
-                        _zomb_isfull = False
+                        pyautoscope.click_button(mkey, "autocraft_craft", client, delay)
 
-                        _ = detect_add_potions(False, reader, REGIONS)
-
-                        if _:
-                            _zomb_isfull = True
-                        else:
+                        if send_item_crafted_notification:
                             _zomb_isfull = False
 
-                        if _prev_zomb != _zomb_isfull:
-                            potions_crafted += 1
-                            emb = create_autocraft_embed("Zombie Potion")
-                            if emb:
-                                try:
-                                    webhook.send(embed=emb)
-                                    forward_webhook_msg(
-                                        primary_webhook_url=webhook.url,
-                                        secondary_urls=settings.get("SECONDARY_WEBHOOK_URLS", []),
-                                        embed=emb
-                                    )
-                                except Exception as wh_e:
-                                    logger.write_log(f"Error sending potion crafted webhook: {wh_e}")
+                            _ = pyautoscope.get_potion_add_check(client, reader, False).get("first_add_button", "[invalid]") != "Add"
 
-                        _prev_zomb = _zomb_isfull
+                            if _:
+                                _zomb_isfull = True
+                            else:
+                                _zomb_isfull = False
 
-                    if job == "Zombie Potion":
-                        mkey.left_click_xy_natural(CLICKS["autocraft_auto"][0], CLICKS["autocraft_auto"][1])
-                    time.sleep(1)
+                            if _prev_zomb != _zomb_isfull:
+                                potions_crafted += 1
+                                emb = create_autocraft_embed("Zombie Potion")
+                                if emb:
+                                    try:
+                                        webhook.send(embed=emb)
+                                        forward_webhook_msg(
+                                            primary_webhook_url=webhook.url,
+                                            secondary_urls=settings.get("SECONDARY_WEBHOOK_URLS", []),
+                                            embed=emb
+                                        )
+                                    except Exception as wh_e:
+                                        logger.write_log(f"Error sending potion crafted webhook: {wh_e}")
+
+                            _prev_zomb = _zomb_isfull
+
+                        if job == "Zombie Potion":
+                            pyautoscope.click_button(mkey, "autocraft_auto", client, delay)
+                        time.sleep(1)
 
                 if settings["auto_craft_item"].get("Rage Potion", False):
                     _search("Rage")
 
-                    mkey.move_to_natural(CLICKS["autocraft_scroll"][0], CLICKS["autocraft_scroll"][1])
-                    time.sleep(delay)
-                    ms.scroll(0, 30); time.sleep(delay)
-                    ms.scroll(0, 30); time.sleep(delay)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_first_amt"][0], CLICKS["autocraft_first_amt"][1])
-                    time.sleep(0.2)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_first_amt"][0], CLICKS["autocraft_first_amt"][1])
-                    time.sleep(delay)
-                    _type(kb, settings.get("typing_jitter", 0.2), settings.get("typing_delay", 0.2), settings.get("typing_hold", 0.2), "10")
-                    time.sleep(delay)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_first_add"][0], CLICKS["autocraft_first_add"][1])
+                    if pyautoscope.get_first_crafting_potion(client, reader).get("first_crafting_potion", "[error]") not in ["[error]", "[invalid]"] or settings.get("ignore_autocraft_safety_check", False):
 
-                    if send_item_crafted_notification:
+                        pyautoscope.move_to_button(mkey, "autocraft_scroll", client, delay)
+                        time.sleep(delay)
+                        ms.scroll(0, 30); time.sleep(delay)
+                        ms.scroll(0, 30); time.sleep(delay)
+                        pyautoscope.click_button(mkey, "autocraft_first_amt", client, delay)
+                        time.sleep(0.2)
+                        pyautoscope.click_button(mkey, "autocraft_first_amt", client, delay)
+                        time.sleep(delay)
+                        _type(kb, settings.get("typing_jitter", 0.2), settings.get("typing_delay", 0.2), settings.get("typing_hold", 0.2), "10")
+                        time.sleep(delay)
+                        pyautoscope.click_button(mkey, "autocraft_first_add", client, delay)
 
-                        _ = detect_add_potions(False, reader, REGIONS)
+                        if send_item_crafted_notification:
 
-                        if _:
-                            _prev_rage = True
-                        else:
-                            _prev_rage = False
+                            _ = pyautoscope.get_potion_add_check(client, reader, False).get("first_add_button", "[invalid]") != "Add"
 
-                    mkey.left_click_xy_natural(CLICKS["autocraft_craft"][0], CLICKS["autocraft_craft"][1])
+                            if _:
+                                _prev_rage = True
+                            else:
+                                _prev_rage = False
 
-                    if send_item_crafted_notification:
-                        _rage_isfull = False
+                        pyautoscope.click_button(mkey, "autocraft_craft", client, delay)
 
-                        _ = detect_add_potions(False, reader, REGIONS)
-
-                        if _:
-                            _rage_isfull = True
-                        else:
+                        if send_item_crafted_notification:
                             _rage_isfull = False
 
-                        if _prev_rage != _rage_isfull:
-                            potions_crafted += 1
-                            emb = create_autocraft_embed("Rage Potion")
-                            if emb:
-                                try:
-                                    webhook.send(embed=emb)
-                                    forward_webhook_msg(
-                                        primary_webhook_url=webhook.url,
-                                        secondary_urls=settings.get("SECONDARY_WEBHOOK_URLS", []),
-                                        embed=emb
-                                    )
-                                except Exception as wh_e:
-                                    logger.write_log(f"Error sending potion crafted webhook: {wh_e}")
+                            _ = pyautoscope.get_potion_add_check(client, reader, False).get("first_add_button", "[invalid]") != "Add"
 
-                        _prev_rage = _rage_isfull
+                            if _:
+                                _rage_isfull = True
+                            else:
+                                _rage_isfull = False
 
-                    if job == "Rage Potion":
-                        mkey.left_click_xy_natural(CLICKS["autocraft_auto"][0], CLICKS["autocraft_auto"][1])
-                    time.sleep(1)
+                            if _prev_rage != _rage_isfull:
+                                potions_crafted += 1
+                                emb = create_autocraft_embed("Rage Potion")
+                                if emb:
+                                    try:
+                                        webhook.send(embed=emb)
+                                        forward_webhook_msg(
+                                            primary_webhook_url=webhook.url,
+                                            secondary_urls=settings.get("SECONDARY_WEBHOOK_URLS", []),
+                                            embed=emb
+                                        )
+                                    except Exception as wh_e:
+                                        logger.write_log(f"Error sending potion crafted webhook: {wh_e}")
+
+                            _prev_rage = _rage_isfull
+
+                        if job == "Rage Potion":
+                            pyautoscope.click_button(mkey, "autocraft_auto", client, delay)
+                        time.sleep(1)
 
                 if settings["auto_craft_item"].get("Diver Potion", False):
                     _search("Diver")
 
-                    mkey.move_to_natural(CLICKS["autocraft_scroll"][0], CLICKS["autocraft_scroll"][1])
-                    time.sleep(delay)
-                    ms.scroll(0, 30); time.sleep(delay)
-                    ms.scroll(0, 30); time.sleep(delay)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_first_amt"][0], CLICKS["autocraft_first_amt"][1])
-                    time.sleep(0.2)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_first_amt"][0], CLICKS["autocraft_first_amt"][1])
-                    time.sleep(delay)
-                    _type(kb, settings.get("typing_jitter", 0.2), settings.get("typing_delay", 0.2), settings.get("typing_hold", 0.2), "20")
-                    time.sleep(delay)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_first_add"][0], CLICKS["autocraft_first_add"][1])
-                    time.sleep(delay)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_second_add"][0], CLICKS["autocraft_second_add"][1])
+                    if pyautoscope.get_first_crafting_potion(client, reader).get("first_crafting_potion", "[error]") not in ["[error]", "[invalid]"] or settings.get("ignore_autocraft_safety_check", False):
 
-                    if send_item_crafted_notification:
+                        pyautoscope.move_to_button(mkey, "autocraft_scroll", client, delay)
+                        time.sleep(delay)
+                        ms.scroll(0, 30); time.sleep(delay)
+                        ms.scroll(0, 30); time.sleep(delay)
+                        pyautoscope.click_button(mkey, "autocraft_first_amt", client, delay)
+                        time.sleep(0.2)
+                        pyautoscope.click_button(mkey, "autocraft_first_amt", client, delay)
+                        time.sleep(delay)
+                        _type(kb, settings.get("typing_jitter", 0.2), settings.get("typing_delay", 0.2), settings.get("typing_hold", 0.2), "20")
+                        time.sleep(delay)
+                        pyautoscope.click_button(mkey, "autocraft_first_add", client, delay)
+                        time.sleep(delay)
+                        pyautoscope.click_button(mkey, "autocraft_second_add", client, delay)
 
-                        _ = detect_add_potions(False, reader, REGIONS)
+                        if send_item_crafted_notification:
 
-                        if _:
-                            _prev_dive = True
-                        else:
-                            _prev_dive = False
+                            _ = pyautoscope.get_potion_add_check(client, reader, False).get("first_add_button", "[invalid]") != "Add"
 
-                    mkey.left_click_xy_natural(CLICKS["autocraft_craft"][0], CLICKS["autocraft_craft"][1])
+                            if _:
+                                _prev_dive = True
+                            else:
+                                _prev_dive = False
 
-                    if send_item_crafted_notification:
-                        _diver_isfull = False
+                        pyautoscope.click_button(mkey, "autocraft_craft", client, delay)
 
-                        _ = detect_add_potions(False, reader, REGIONS)
-
-                        if _:
-                            _diver_isfull = True
-                        else:
+                        if send_item_crafted_notification:
                             _diver_isfull = False
 
-                        if _prev_dive != _diver_isfull:
-                            potions_crafted += 1
-                            emb = create_autocraft_embed("Diver Potion")
-                            if emb:
-                                try:
-                                    webhook.send(embed=emb)
-                                    forward_webhook_msg(
-                                        primary_webhook_url=webhook.url,
-                                        secondary_urls=settings.get("SECONDARY_WEBHOOK_URLS", []),
-                                        embed=emb
-                                    )
-                                except Exception as wh_e:
-                                    logger.write_log(f"Error sending potion crafted webhook: {wh_e}")
+                            _ = pyautoscope.get_potion_add_check(client, reader, False).get("first_add_button", "[invalid]") != "Add"
 
-                        _prev_dive = _diver_isfull
+                            if _:
+                                _diver_isfull = True
+                            else:
+                                _diver_isfull = False
 
-                    if job == "Diver Potion":
-                        mkey.left_click_xy_natural(CLICKS["autocraft_auto"][0], CLICKS["autocraft_auto"][1])
-                    time.sleep(1)
+                            if _prev_dive != _diver_isfull:
+                                potions_crafted += 1
+                                emb = create_autocraft_embed("Diver Potion")
+                                if emb:
+                                    try:
+                                        webhook.send(embed=emb)
+                                        forward_webhook_msg(
+                                            primary_webhook_url=webhook.url,
+                                            secondary_urls=settings.get("SECONDARY_WEBHOOK_URLS", []),
+                                            embed=emb
+                                        )
+                                    except Exception as wh_e:
+                                        logger.write_log(f"Error sending potion crafted webhook: {wh_e}")
+
+                            _prev_dive = _diver_isfull
+
+                        if job == "Diver Potion":
+                            pyautoscope.click_button(mkey, "autocraft_auto", client, delay)
+                        time.sleep(1)
 
                 if settings["auto_craft_item"].get("Potion of Bound", False):
                     _search("Bound")
+                    if pyautoscope.get_first_crafting_potion(client, reader).get("first_crafting_potion", "[error]") not in ["[error]", "[invalid]"] or settings.get("ignore_autocraft_safety_check", False):
 
-                    mkey.move_to_natural(CLICKS["autocraft_scroll"][0], CLICKS["autocraft_scroll"][1])
-                    time.sleep(delay)
-                    ms.scroll(0, 30); time.sleep(delay)
-                    ms.scroll(0, 30); time.sleep(delay)
-                    time.sleep(delay)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_first_add"][0], CLICKS["autocraft_first_add"][1])
-                    time.sleep(delay)
-                    mkey.move_to_natural(CLICKS["autocraft_scroll"][0], CLICKS["autocraft_scroll"][1])
-                    time.sleep(delay)
-                    ms.scroll(0, 30); time.sleep(delay)
-                    ms.scroll(0, 30); time.sleep(delay)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_second_amt"][0], CLICKS["autocraft_second_amt"][1])
-                    time.sleep(0.2)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_second_amt"][0], CLICKS["autocraft_second_amt"][1])
-                    time.sleep(delay)
-                    _type(kb, settings.get("typing_jitter", 0.2), settings.get("typing_delay", 0.2), settings.get("typing_hold", 0.2), "3")
-                    time.sleep(delay)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_second_add"][0], CLICKS["autocraft_second_add"][1])
-                    time.sleep(delay)
-                    mkey.move_to_natural(CLICKS["autocraft_scroll"][0], CLICKS["autocraft_scroll"][1])
-                    time.sleep(delay)
-                    ms.scroll(0, 30); time.sleep(delay)
-                    ms.scroll(0, 30); time.sleep(delay)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_third_amt"][0], CLICKS["autocraft_third_amt"][1])
-                    time.sleep(0.2)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_third_amt"][0], CLICKS["autocraft_third_amt"][1])
-                    time.sleep(delay)
-                    _type(kb, settings.get("typing_jitter", 0.2), settings.get("typing_delay", 0.2), settings.get("typing_hold", 0.2), "10")
-                    time.sleep(delay)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_third_add"][0], CLICKS["autocraft_third_add"][1])
-                    time.sleep(delay)
-                    ms.scroll(0, -30); time.sleep(delay)
-                    ms.scroll(0, -30); time.sleep(delay)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_third_scrolled_amt"][0], CLICKS["autocraft_third_scrolled_amt"][1])
-                    time.sleep(0.2)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_third_scrolled_amt"][0], CLICKS["autocraft_third_scrolled_amt"][1])
-                    time.sleep(delay)
-                    _type(kb, settings.get("typing_jitter", 0.2), settings.get("typing_delay", 0.2), settings.get("typing_hold", 0.2), "100")
-                    time.sleep(delay)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_third_scrolled_add"][0], CLICKS["autocraft_third_scrolled_add"][1])
-                    
-
-
-                    if send_item_crafted_notification:
+                        pyautoscope.move_to_button(mkey, "autocraft_scroll", client, delay)
+                        time.sleep(delay)
+                        ms.scroll(0, 30); time.sleep(delay)
+                        ms.scroll(0, 30); time.sleep(delay)
+                        time.sleep(delay)
+                        pyautoscope.click_button(mkey, "autocraft_first_add", client, delay)
+                        time.sleep(delay)
+                        pyautoscope.move_to_button(mkey, "autocraft_scroll", client, delay)
+                        time.sleep(delay)
+                        ms.scroll(0, 30); time.sleep(delay)
+                        ms.scroll(0, 30); time.sleep(delay)
+                        pyautoscope.click_button(mkey, "autocraft_second_amt", client, delay)
                         time.sleep(0.2)
-                        mkey.move_to_natural(CLICKS["autocraft_scroll"][0], CLICKS["autocraft_scroll"][1])
+                        pyautoscope.click_button(mkey, "autocraft_second_amt", client, delay)
+                        time.sleep(delay)
+                        _type(kb, settings.get("typing_jitter", 0.2), settings.get("typing_delay", 0.2), settings.get("typing_hold", 0.2), "3")
+                        time.sleep(delay)
+                        pyautoscope.click_button(mkey, "autocraft_second_add", client, delay)
+                        time.sleep(delay)
+                        pyautoscope.move_to_button(mkey, "autocraft_scroll", client, delay)
+                        time.sleep(delay)
+                        ms.scroll(0, 30); time.sleep(delay)
+                        ms.scroll(0, 30); time.sleep(delay)
+                        pyautoscope.click_button(mkey, "autocraft_third_amt", client, delay)
                         time.sleep(0.2)
-                        ms.scroll(0, -30); time.sleep(0.2)
-                        ms.scroll(0, -30); time.sleep(0.2)
+                        pyautoscope.click_button(mkey, "autocraft_third_amt", client, delay)
+                        time.sleep(delay)
+                        _type(kb, settings.get("typing_jitter", 0.2), settings.get("typing_delay", 0.2), settings.get("typing_hold", 0.2), "10")
+                        time.sleep(delay)
+                        pyautoscope.click_button(mkey, "autocraft_third_add", client, delay)
+                        time.sleep(delay)
+                        ms.scroll(0, -30); time.sleep(delay)
+                        ms.scroll(0, -30); time.sleep(delay)
+                        pyautoscope.click_button(mkey, "autocraft_third_scrolled_amt", client, delay)
+                        time.sleep(0.2)
+                        pyautoscope.click_button(mkey, "autocraft_third_scrolled_amt", client, delay)
+                        time.sleep(delay)
+                        _type(kb, settings.get("typing_jitter", 0.2), settings.get("typing_delay", 0.2), settings.get("typing_hold", 0.2), "100")
+                        time.sleep(delay)
+                        pyautoscope.click_button(mkey, "autocraft_third_scrolled_add", client, delay)
+                        
 
-                        _s = detect_add_potions(True, reader, REGIONS)
 
-                        if _s:
-                            _prev_bound = True
-                        else:
-                            _prev_bound = False
+                        if send_item_crafted_notification:
+                            time.sleep(0.2)
+                            pyautoscope.move_to_button(mkey, "autocraft_scroll", client, delay)
+                            time.sleep(0.2)
+                            ms.scroll(0, -30); time.sleep(0.2)
+                            ms.scroll(0, -30); time.sleep(0.2)
 
-                    mkey.left_click_xy_natural(CLICKS["autocraft_craft"][0], CLICKS["autocraft_craft"][1])
+                            _s = pyautoscope.get_potion_add_check(client, reader, True).get("first_add_button", "[invalid]")!= "Add"
 
-                    if send_item_crafted_notification:
-                        _bound_isfull = False
+                            if _s:
+                                _prev_bound = True
+                            else:
+                                _prev_bound = False
 
-                        _s = detect_add_potions(True, reader, REGIONS)
+                        pyautoscope.click_button(mkey, "autocraft_craft", client, delay)
 
-                        if _s:
-                            _bound_isfull = True
-                        else:
+                        if send_item_crafted_notification:
                             _bound_isfull = False
 
-                        if _prev_bound != _bound_isfull:
-                            potions_crafted += 1
-                            emb = create_autocraft_embed("Potion of Bound")
-                            if emb:
-                                try:
-                                    webhook.send(embed=emb)
-                                    forward_webhook_msg(
-                                        primary_webhook_url=webhook.url,
-                                        secondary_urls=settings.get("SECONDARY_WEBHOOK_URLS", []),
-                                        embed=emb
-                                    )
-                                except Exception as wh_e:
-                                    logger.write_log(f"Error sending potion crafted webhook: {wh_e}")
+                            _s = pyautoscope.get_potion_add_check(client, reader, True).get("first_add_button", "[invalid]")!= "Add"
 
-                        _prev_bound = _bound_isfull
-                    
-                    time.sleep(0.2)
-                    mkey.move_to_natural(CLICKS["autocraft_scroll"][0], CLICKS["autocraft_scroll"][1])
-                    time.sleep(0.2)
-                    ms.scroll(0, 30); time.sleep(0.2)
-                    ms.scroll(0, 30); time.sleep(0.2)
+                            if _s:
+                                _bound_isfull = True
+                            else:
+                                _bound_isfull = False
 
-                    if job == "Potion of Bound":
-                        mkey.left_click_xy_natural(CLICKS["autocraft_auto"][0], CLICKS["autocraft_auto"][1])
-                    time.sleep(1)
+                            if _prev_bound != _bound_isfull:
+                                potions_crafted += 1
+                                emb = create_autocraft_embed("Potion of Bound")
+                                if emb:
+                                    try:
+                                        webhook.send(embed=emb)
+                                        forward_webhook_msg(
+                                            primary_webhook_url=webhook.url,
+                                            secondary_urls=settings.get("SECONDARY_WEBHOOK_URLS", []),
+                                            embed=emb
+                                        )
+                                    except Exception as wh_e:
+                                        logger.write_log(f"Error sending potion crafted webhook: {wh_e}")
+
+                            _prev_bound = _bound_isfull
+                        
+                        time.sleep(0.2)
+                        pyautoscope.move_to_button(mkey, "autocraft_scroll", client, delay)
+                        time.sleep(0.2)
+                        ms.scroll(0, 30); time.sleep(0.2)
+                        ms.scroll(0, 30); time.sleep(0.2)
+
+                        if job == "Potion of Bound":
+                            pyautoscope.click_button(mkey, "autocraft_auto", client, delay)
+                        time.sleep(1)
 
                 if settings["auto_craft_item"].get("Heavenly Potion", False):
                     _search("Heavenly")
 
-                    mkey.move_to_natural(CLICKS["autocraft_scroll"][0], CLICKS["autocraft_scroll"][1])
-                    time.sleep(delay)
-                    ms.scroll(0, 30); time.sleep(delay)
-                    ms.scroll(0, 30); time.sleep(delay)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_first_amt"][0], CLICKS["autocraft_first_amt"][1])
-                    time.sleep(0.2)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_first_amt"][0], CLICKS["autocraft_first_amt"][1])
-                    time.sleep(delay)
-                    _type(kb, settings.get("typing_jitter", 0.2), settings.get("typing_delay", 0.2), settings.get("typing_hold", 0.2), "250")
-                    time.sleep(delay)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_first_add"][0], CLICKS["autocraft_first_add"][1])
-                    time.sleep(delay)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_second_add"][0], CLICKS["autocraft_second_add"][1])
-                    time.sleep(delay)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_second_add"][0], CLICKS["autocraft_second_add"][1])
-                    time.sleep(delay)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_third_add"][0], CLICKS["autocraft_third_add"][1])
+                    if pyautoscope.get_first_crafting_potion(client, reader).get("first_crafting_potion", "[error]") not in ["[error]", "[invalid]"] or settings.get("ignore_autocraft_safety_check", False):
 
-                    mkey.move_to_natural(CLICKS["autocraft_scroll"][0], CLICKS["autocraft_scroll"][1])
-                    time.sleep(delay)
-                    ms.scroll(0, -30); time.sleep(delay)
-                    ms.scroll(0, -30); time.sleep(delay)
-                    time.sleep(delay)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_second_scrolled_add"][0], CLICKS["autocraft_second_scrolled_add"][1])
-                    time.sleep(delay)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_second_scrolled_add"][0], CLICKS["autocraft_second_scrolled_add"][1])
+                        pyautoscope.move_to_button(mkey, "autocraft_scroll", client, delay)
+                        time.sleep(delay)
+                        ms.scroll(0, 30); time.sleep(delay)
+                        ms.scroll(0, 30); time.sleep(delay)
+                        pyautoscope.click_button(mkey, "autocraft_first_amt", client, delay)
+                        time.sleep(0.2)
+                        pyautoscope.click_button(mkey, "autocraft_first_amt", client, delay)
+                        time.sleep(delay)
+                        _type(kb, settings.get("typing_jitter", 0.2), settings.get("typing_delay", 0.2), settings.get("typing_hold", 0.2), "250")
+                        time.sleep(delay)
+                        pyautoscope.click_button(mkey, "autocraft_first_add", client, delay)
+                        time.sleep(delay)
+                        pyautoscope.click_button(mkey, "autocraft_second_add", client, delay)
+                        time.sleep(delay)
+                        pyautoscope.click_button(mkey, "autocraft_second_add", client, delay)
+                        time.sleep(delay)
+                        pyautoscope.click_button(mkey, "autocraft_third_add", client, delay)
 
-                    mkey.left_click_xy_natural(CLICKS["autocraft_third_scrolled_amt"][0], CLICKS["autocraft_third_scrolled_amt"][1])
-                    time.sleep(0.2)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_third_scrolled_amt"][0], CLICKS["autocraft_third_scrolled_amt"][1])
-                    time.sleep(delay)
-                    _type(kb, settings.get("typing_jitter", 0.2), settings.get("typing_delay", 0.2), settings.get("typing_hold", 0.2), "5")
-                    time.sleep(delay)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_third_scrolled_add"][0], CLICKS["autocraft_third_scrolled_add"][1])
+                        pyautoscope.move_to_button(mkey, "autocraft_scroll", client, delay)
+                        time.sleep(delay)
+                        ms.scroll(0, -30); time.sleep(delay)
+                        ms.scroll(0, -30); time.sleep(delay)
+                        time.sleep(delay)
+                        pyautoscope.click_button(mkey, "autocraft_second_scrolled_amt", client, delay)
+                        time.sleep(delay)
+                        pyautoscope.click_button(mkey, "autocraft_second_scrolled_amt", client, delay)
 
-                    if send_item_crafted_notification:
+                        pyautoscope.click_button(mkey, "autocraft_third_scrolled_amt", client, delay)
+                        time.sleep(0.2)
+                        pyautoscope.click_button(mkey, "autocraft_third_scrolled_amt", client, delay)
+                        time.sleep(delay)
+                        _type(kb, settings.get("typing_jitter", 0.2), settings.get("typing_delay", 0.2), settings.get("typing_hold", 0.2), "5")
+                        time.sleep(delay)
+                        pyautoscope.click_button(mkey, "autocraft_third_scrolled_add", client, delay)
 
-                        _ = detect_add_potions(False, reader, REGIONS)
+                        if send_item_crafted_notification:
 
-                        if _:
-                            _prev_heaven = True
-                        else:
-                            _prev_heaven = False
+                            _ = pyautoscope.get_potion_add_check(client, reader, False).get("first_add_button", "[invalid]") != "Add"
 
-                    mkey.left_click_xy_natural(CLICKS["autocraft_craft"][0], CLICKS["autocraft_craft"][1])
+                            if _:
+                                _prev_heaven = True
+                            else:
+                                _prev_heaven = False
 
-                    if send_item_crafted_notification:
-                        _heaven_isfull = False
+                        pyautoscope.click_button(mkey, "autocraft_craft", client, delay)
 
-                        _ = detect_add_potions(False, reader, REGIONS)
-
-                        if _:
-                            _heaven_isfull = True
-                        else:
+                        if send_item_crafted_notification:
                             _heaven_isfull = False
 
-                        if _prev_heaven != _heaven_isfull:
-                            potions_crafted += 1
-                            emb = create_autocraft_embed("Heavenly Potion")
-                            if emb:
-                                try:
-                                    webhook.send(embed=emb)
-                                    forward_webhook_msg(
-                                        primary_webhook_url=webhook.url,
-                                        secondary_urls=settings.get("SECONDARY_WEBHOOK_URLS", []),
-                                        embed=emb
-                                    )
-                                except Exception as wh_e:
-                                    logger.write_log(f"Error sending potion crafted webhook: {wh_e}")
+                            _ = pyautoscope.get_potion_add_check(client, reader, False).get("first_add_button", "[invalid]") != "Add"
 
-                        _prev_heaven = _heaven_isfull
+                            if _:
+                                _heaven_isfull = True
+                            else:
+                                _heaven_isfull = False
 
-                    if job == "Heavenly Potion":
-                        mkey.left_click_xy_natural(CLICKS["autocraft_auto"][0], CLICKS["autocraft_auto"][1])
-                    time.sleep(1)
+                            if _prev_heaven != _heaven_isfull:
+                                potions_crafted += 1
+                                emb = create_autocraft_embed("Heavenly Potion")
+                                if emb:
+                                    try:
+                                        webhook.send(embed=emb)
+                                        forward_webhook_msg(
+                                            primary_webhook_url=webhook.url,
+                                            secondary_urls=settings.get("SECONDARY_WEBHOOK_URLS", []),
+                                            embed=emb
+                                        )
+                                    except Exception as wh_e:
+                                        logger.write_log(f"Error sending potion crafted webhook: {wh_e}")
+
+                            _prev_heaven = _heaven_isfull
+
+                        if job == "Heavenly Potion":
+                            pyautoscope.click_button(mkey, "autocraft_auto", client, delay)
+                        time.sleep(1)
 
                 if settings["auto_craft_item"].get("Godly Potion (Zeus)", False):
                     _search("Zeus")
 
-                    mkey.move_to_natural(CLICKS["autocraft_scroll"][0], CLICKS["autocraft_scroll"][1])
-                    time.sleep(delay)
-                    ms.scroll(0, 30); time.sleep(delay)
-                    ms.scroll(0, 30); time.sleep(delay)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_first_amt"][0], CLICKS["autocraft_first_amt"][1])
-                    time.sleep(0.2)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_first_amt"][0], CLICKS["autocraft_first_amt"][1])
-                    time.sleep(delay)
-                    _type(kb, settings.get("typing_jitter", 0.2), settings.get("typing_delay", 0.2), settings.get("typing_hold", 0.2), "50")
-                    time.sleep(delay)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_first_add"][0], CLICKS["autocraft_first_add"][1])
-                    time.sleep(delay)
+                    if pyautoscope.get_first_crafting_potion(client, reader).get("first_crafting_potion", "[error]") not in ["[error]", "[invalid]"] or settings.get("ignore_autocraft_safety_check", False):
+                        pyautoscope.move_to_button(mkey, "autocraft_scroll", client, delay)
+                        time.sleep(delay)
+                        ms.scroll(0, 30); time.sleep(delay)
+                        ms.scroll(0, 30); time.sleep(delay)
+                        pyautoscope.click_button(mkey, "autocraft_first_amt", client, delay)
+                        time.sleep(0.2)
+                        pyautoscope.click_button(mkey, "autocraft_first_amt", client, delay)
+                        time.sleep(delay)
+                        _type(kb, settings.get("typing_jitter", 0.2), settings.get("typing_delay", 0.2), settings.get("typing_hold", 0.2), "50")
+                        time.sleep(delay)
+                        pyautoscope.click_button(mkey, "autocraft_first_add", client, delay)
+                        time.sleep(delay)
 
-                    mkey.left_click_xy_natural(CLICKS["autocraft_second_amt"][0], CLICKS["autocraft_second_amt"][1])
-                    time.sleep(0.2)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_second_amt"][0], CLICKS["autocraft_second_amt"][1])
-                    time.sleep(delay)
-                    _type(kb, settings.get("typing_jitter", 0.2), settings.get("typing_delay", 0.2), settings.get("typing_hold", 0.2), "25")
-                    time.sleep(delay)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_second_add"][0], CLICKS["autocraft_second_add"][1])
-                    time.sleep(delay)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_third_add"][0], CLICKS["autocraft_third_add"][1])
-                    time.sleep(delay)
-                    ms.scroll(0, -30); time.sleep(delay)
-                    ms.scroll(0, -30); time.sleep(delay)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_second_scrolled_add"][0], CLICKS["autocraft_second_scrolled_add"][1])
-                    time.sleep(delay)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_third_scrolled_amt"][0], CLICKS["autocraft_third_scrolled_amt"][1])
-                    time.sleep(0.2)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_third_scrolled_amt"][0], CLICKS["autocraft_third_scrolled_amt"][1])
-                    time.sleep(delay)
-                    _type(kb, settings.get("typing_jitter", 0.2), settings.get("typing_delay", 0.2), settings.get("typing_hold", 0.2), "15")
-                    time.sleep(delay)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_third_scrolled_add"][0], CLICKS["autocraft_third_scrolled_add"][1])
-                    time.sleep(delay)
-                    ms.scroll(0, 30); time.sleep(delay)
-                    ms.scroll(0, 30); time.sleep(delay)
-                    
+                        pyautoscope.click_button(mkey, "autocraft_second_amt", client, delay)
+                        time.sleep(0.2)
+                        pyautoscope.click_button(mkey, "autocraft_second_amt", client, delay)
+                        time.sleep(delay)
+                        _type(kb, settings.get("typing_jitter", 0.2), settings.get("typing_delay", 0.2), settings.get("typing_hold", 0.2), "25")
+                        time.sleep(delay)
+                        pyautoscope.click_button(mkey, "autocraft_second_add", client, delay)
+                        time.sleep(delay)
+                        pyautoscope.click_button(mkey, "autocraft_third_add", client, delay)
+                        time.sleep(delay)
+                        ms.scroll(0, -30); time.sleep(delay)
+                        ms.scroll(0, -30); time.sleep(delay)
+                        pyautoscope.click_button(mkey, "autocraft_second_scrolled_amt", client, delay)
+                        time.sleep(delay)
+                        pyautoscope.click_button(mkey, "autocraft_third_scrolled_amt", client, delay)
+                        time.sleep(0.2)
+                        pyautoscope.click_button(mkey, "autocraft_third_scrolled_amt", client, delay)
+                        time.sleep(delay)
+                        _type(kb, settings.get("typing_jitter", 0.2), settings.get("typing_delay", 0.2), settings.get("typing_hold", 0.2), "15")
+                        time.sleep(delay)
+                        pyautoscope.click_button(mkey, "autocraft_third_scrolled_add", client, delay)
+                        time.sleep(delay)
+                        ms.scroll(0, 30); time.sleep(delay)
+                        ms.scroll(0, 30); time.sleep(delay)
+                        
 
-                    if send_item_crafted_notification:
+                        if send_item_crafted_notification:
 
-                        _ = detect_add_potions(False, reader, REGIONS)
+                            _ = pyautoscope.get_potion_add_check(client, reader, False).get("first_add_button", "[invalid]") != "Add"
 
-                        if _:
-                            _prev_zeus = True
-                        else:
-                            _prev_zeus = False
+                            if _:
+                                _prev_zeus = True
+                            else:
+                                _prev_zeus = False
 
-                    mkey.left_click_xy_natural(CLICKS["autocraft_craft"][0], CLICKS["autocraft_craft"][1])
+                        pyautoscope.click_button(mkey, "autocraft_craft", client, delay)
 
-                    if send_item_crafted_notification:
-                        _zeus_isfull = False
-
-                        _ = detect_add_potions(False, reader, REGIONS)
-
-                        if _:
-                            _zeus_isfull = True
-                        else:
+                        if send_item_crafted_notification:
                             _zeus_isfull = False
 
-                        if _prev_zeus != _zeus_isfull:
-                            potions_crafted += 1
-                            emb = create_autocraft_embed("Godly Potion (Zeus)")
-                            if emb:
-                                try:
-                                    webhook.send(embed=emb)
-                                    forward_webhook_msg(
-                                        primary_webhook_url=webhook.url,
-                                        secondary_urls=settings.get("SECONDARY_WEBHOOK_URLS", []),
-                                        embed=emb
-                                    )
-                                except Exception as wh_e:
-                                    logger.write_log(f"Error sending potion crafted webhook: {wh_e}")
+                            _ = pyautoscope.get_potion_add_check(client, reader, False).get("first_add_button", "[invalid]") != "Add"
 
-                        _prev_zeus = _zeus_isfull
+                            if _:
+                                _zeus_isfull = True
+                            else:
+                                _zeus_isfull = False
 
-                    if job == "Godly Potion (Zeus)":
-                        mkey.left_click_xy_natural(CLICKS["autocraft_auto"][0], CLICKS["autocraft_auto"][1])
-                    time.sleep(1)
+                            if _prev_zeus != _zeus_isfull:
+                                potions_crafted += 1
+                                emb = create_autocraft_embed("Godly Potion (Zeus)")
+                                if emb:
+                                    try:
+                                        webhook.send(embed=emb)
+                                        forward_webhook_msg(
+                                            primary_webhook_url=webhook.url,
+                                            secondary_urls=settings.get("SECONDARY_WEBHOOK_URLS", []),
+                                            embed=emb
+                                        )
+                                    except Exception as wh_e:
+                                        logger.write_log(f"Error sending potion crafted webhook: {wh_e}")
+
+                            _prev_zeus = _zeus_isfull
+
+                        if job == "Godly Potion (Zeus)":
+                            pyautoscope.click_button(mkey, "autocraft_auto", client, delay)
+                        time.sleep(1)
 
                 if settings["auto_craft_item"].get("Godly Potion (Poseidon)", False):
                     _search("Poseidon")
 
-                    mkey.move_to_natural(CLICKS["autocraft_scroll"][0], CLICKS["autocraft_scroll"][1])
-                    time.sleep(delay)
-                    ms.scroll(0, 30); time.sleep(delay)
-                    ms.scroll(0, 30); time.sleep(delay)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_first_amt"][0], CLICKS["autocraft_first_amt"][1])
-                    time.sleep(0.2)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_first_amt"][0], CLICKS["autocraft_first_amt"][1])
-                    time.sleep(delay)
-                    _type(kb, settings.get("typing_jitter", 0.2), settings.get("typing_delay", 0.2), settings.get("typing_hold", 0.2), "50")
-                    time.sleep(delay)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_first_add"][0], CLICKS["autocraft_first_add"][1])
-                    time.sleep(delay)
-                    mkey.move_to_natural(CLICKS["autocraft_scroll"][0], CLICKS["autocraft_scroll"][1])
-                    time.sleep(delay)
-                    ms.scroll(0, 30); time.sleep(delay)
-                    ms.scroll(0, 30); time.sleep(delay)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_second_add"][0], CLICKS["autocraft_second_add"][1])
-                    time.sleep(delay)
-                    mkey.move_to_natural(CLICKS["autocraft_scroll"][0], CLICKS["autocraft_scroll"][1])
-                    time.sleep(delay)
-                    ms.scroll(0, 30); time.sleep(delay)
-                    ms.scroll(0, 30); time.sleep(delay)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_third_add"][0], CLICKS["autocraft_third_add"][1])
-                    time.sleep(delay)
-                    ms.scroll(0, -30); time.sleep(delay)
-                    ms.scroll(0, -30); time.sleep(delay)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_third_scrolled_add"][0], CLICKS["autocraft_third_scrolled_add"][1])
+                    if pyautoscope.get_first_crafting_potion(client, reader).get("first_crafting_potion", "[error]") not in ["[error]", "[invalid]"] or settings.get("ignore_autocraft_safety_check", False):
 
-                    ms.scroll(0, 30); time.sleep(delay)
-                    ms.scroll(0, 30); time.sleep(delay)
+                        pyautoscope.move_to_button(mkey, "autocraft_scroll", client, delay)
+                        time.sleep(delay)
+                        ms.scroll(0, 30); time.sleep(delay)
+                        ms.scroll(0, 30); time.sleep(delay)
+                        pyautoscope.click_button(mkey, "autocraft_first_amt", client, delay)
+                        time.sleep(0.2)
+                        pyautoscope.click_button(mkey, "autocraft_first_amt", client, delay)
+                        time.sleep(delay)
+                        _type(kb, settings.get("typing_jitter", 0.2), settings.get("typing_delay", 0.2), settings.get("typing_hold", 0.2), "50")
+                        time.sleep(delay)
+                        pyautoscope.click_button(mkey, "autocraft_first_add", client, delay)
+                        time.sleep(delay)
+                        pyautoscope.move_to_button(mkey, "autocraft_scroll", client, delay)
+                        time.sleep(delay)
+                        ms.scroll(0, 30); time.sleep(delay)
+                        ms.scroll(0, 30); time.sleep(delay)
+                        pyautoscope.click_button(mkey, "autocraft_second_add", client, delay)
+                        time.sleep(delay)
+                        pyautoscope.move_to_button(mkey, "autocraft_scroll", client, delay)
+                        time.sleep(delay)
+                        ms.scroll(0, 30); time.sleep(delay)
+                        ms.scroll(0, 30); time.sleep(delay)
+                        pyautoscope.click_button(mkey, "autocraft_third_add", client, delay)
+                        time.sleep(delay)
+                        ms.scroll(0, -30); time.sleep(delay)
+                        ms.scroll(0, -30); time.sleep(delay)
+                        pyautoscope.click_button(mkey, "autocraft_third_scrolled_add", client, delay)
 
-                    if send_item_crafted_notification:
+                        ms.scroll(0, 30); time.sleep(delay)
+                        ms.scroll(0, 30); time.sleep(delay)
 
-                        _ = detect_add_potions(False, reader, REGIONS)
+                        if send_item_crafted_notification:
 
-                        if _:
-                            _prev_poseidon = True
-                        else:
-                            _prev_poseidon = False
+                            _ = pyautoscope.get_potion_add_check(client, reader, False).get("first_add_button", "[invalid]") != "Add"
 
-                    mkey.left_click_xy_natural(CLICKS["autocraft_craft"][0], CLICKS["autocraft_craft"][1])
+                            if _:
+                                _prev_poseidon = True
+                            else:
+                                _prev_poseidon = False
 
-                    if send_item_crafted_notification:
-                        _poseidon_isfull = False
+                        pyautoscope.click_button(mkey, "autocraft_craft", client, delay)
 
-                        _ = detect_add_potions(False, reader, REGIONS)
-
-                        if _:
-                            _poseidon_isfull = True
-                        else:
+                        if send_item_crafted_notification:
                             _poseidon_isfull = False
 
-                        if _prev_poseidon != _poseidon_isfull:
-                            potions_crafted += 1
-                            emb = create_autocraft_embed("Godly Potion (Poseidon)")
-                            if emb:
-                                try:
-                                    webhook.send(embed=emb)
-                                    forward_webhook_msg(
-                                        primary_webhook_url=webhook.url,
-                                        secondary_urls=settings.get("SECONDARY_WEBHOOK_URLS", []),
-                                        embed=emb
-                                    )
-                                except Exception as wh_e:
-                                    logger.write_log(f"Error sending potion crafted webhook: {wh_e}")
+                            _ = pyautoscope.get_potion_add_check(client, reader, False).get("first_add_button", "[invalid]") != "Add"
 
-                        _prev_poseidon = _poseidon_isfull
+                            if _:
+                                _poseidon_isfull = True
+                            else:
+                                _poseidon_isfull = False
 
-                    if job == "Godly Potion (Poseidon)":
-                        mkey.left_click_xy_natural(CLICKS["autocraft_auto"][0], CLICKS["autocraft_auto"][1])
-                    time.sleep(1)
+                            if _prev_poseidon != _poseidon_isfull:
+                                potions_crafted += 1
+                                emb = create_autocraft_embed("Godly Potion (Poseidon)")
+                                if emb:
+                                    try:
+                                        webhook.send(embed=emb)
+                                        forward_webhook_msg(
+                                            primary_webhook_url=webhook.url,
+                                            secondary_urls=settings.get("SECONDARY_WEBHOOK_URLS", []),
+                                            embed=emb
+                                        )
+                                    except Exception as wh_e:
+                                        logger.write_log(f"Error sending potion crafted webhook: {wh_e}")
+
+                            _prev_poseidon = _poseidon_isfull
+
+                        if job == "Godly Potion (Poseidon)":
+                            pyautoscope.click_button(mkey, "autocraft_auto", client, delay)
+                        time.sleep(1)
 
                 if settings["auto_craft_item"].get("Godly Potion (Hades)", False):
                     _search("Hades")
+                    
+                    if pyautoscope.get_first_crafting_potion(client, reader).get("first_crafting_potion", "[error]") not in ["[error]", "[invalid]"] or settings.get("ignore_autocraft_safety_check", False):
 
-                    mkey.move_to_natural(CLICKS["autocraft_scroll"][0], CLICKS["autocraft_scroll"][1])
-                    time.sleep(delay)
-                    ms.scroll(0, 30); time.sleep(delay)
-                    ms.scroll(0, 30); time.sleep(delay)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_first_amt"][0], CLICKS["autocraft_first_amt"][1])
-                    time.sleep(0.2)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_first_amt"][0], CLICKS["autocraft_first_amt"][1])
-                    time.sleep(delay)
-                    _type(kb, settings.get("typing_jitter", 0.2), settings.get("typing_delay", 0.2), settings.get("typing_hold", 0.2), "50")
-                    time.sleep(delay)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_first_add"][0], CLICKS["autocraft_first_add"][1])
-                    time.sleep(delay)
-                    mkey.move_to_natural(CLICKS["autocraft_scroll"][0], CLICKS["autocraft_scroll"][1])
-                    time.sleep(delay)
-                    ms.scroll(0, 30); time.sleep(delay)
-                    ms.scroll(0, 30); time.sleep(delay)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_second_add"][0], CLICKS["autocraft_second_add"][1])
+                        pyautoscope.move_to_button(mkey, "autocraft_scroll", client, delay)
+                        time.sleep(delay)
+                        ms.scroll(0, 30); time.sleep(delay)
+                        ms.scroll(0, 30); time.sleep(delay)
+                        pyautoscope.click_button(mkey, "autocraft_first_amt", client, delay)
+                        time.sleep(0.2)
+                        pyautoscope.click_button(mkey, "autocraft_first_amt", client, delay)
+                        time.sleep(delay)
+                        _type(kb, settings.get("typing_jitter", 0.2), settings.get("typing_delay", 0.2), settings.get("typing_hold", 0.2), "50")
+                        time.sleep(delay)
+                        pyautoscope.click_button(mkey, "autocraft_first_add", client, delay)
+                        time.sleep(delay)
+                        pyautoscope.move_to_button(mkey, "autocraft_scroll", client, delay)
+                        time.sleep(delay)
+                        ms.scroll(0, 30); time.sleep(delay)
+                        ms.scroll(0, 30); time.sleep(delay)
+                        pyautoscope.click_button(mkey, "autocraft_second_add", client, delay)
 
-                    if send_item_crafted_notification:
+                        if send_item_crafted_notification:
 
-                        _ = detect_add_potions(False, reader, REGIONS)
+                            _ = pyautoscope.get_potion_add_check(client, reader, False).get("first_add_button", "[invalid]") != "Add"
 
-                        if _:
-                            _prev_hades = True
-                        else:
-                            _prev_hades = False
+                            if _:
+                                _prev_hades = True
+                            else:
+                                _prev_hades = False
 
-                    mkey.left_click_xy_natural(CLICKS["autocraft_craft"][0], CLICKS["autocraft_craft"][1])
+                        pyautoscope.click_button(mkey, "autocraft_craft", client, delay)
 
-                    if send_item_crafted_notification:
-                        _hades_isfull = False
-
-                        _ = detect_add_potions(False, reader, REGIONS)
-
-                        if _:
-                            _hades_isfull = True
-                        else:
+                        if send_item_crafted_notification:
                             _hades_isfull = False
 
-                        if _prev_hades != _hades_isfull:
-                            potions_crafted += 1
-                            emb = create_autocraft_embed("Godly Potion (Hades)")
-                            if emb:
-                                try:
-                                    webhook.send(embed=emb)
-                                    forward_webhook_msg(
-                                        primary_webhook_url=webhook.url,
-                                        secondary_urls=settings.get("SECONDARY_WEBHOOK_URLS", []),
-                                        embed=emb
-                                    )
-                                except Exception as wh_e:
-                                    logger.write_log(f"Error sending potion crafted webhook: {wh_e}")
+                            _ = pyautoscope.get_potion_add_check(client, reader, False).get("first_add_button", "[invalid]") != "Add"
 
-                        _prev_hades = _hades_isfull
+                            if _:
+                                _hades_isfull = True
+                            else:
+                                _hades_isfull = False
 
-                    if job == "Godly Potion (Hades)":
-                        mkey.left_click_xy_natural(CLICKS["autocraft_auto"][0], CLICKS["autocraft_auto"][1])
-                    time.sleep(1)
+                            if _prev_hades != _hades_isfull:
+                                potions_crafted += 1
+                                emb = create_autocraft_embed("Godly Potion (Hades)")
+                                if emb:
+                                    try:
+                                        webhook.send(embed=emb)
+                                        forward_webhook_msg(
+                                            primary_webhook_url=webhook.url,
+                                            secondary_urls=settings.get("SECONDARY_WEBHOOK_URLS", []),
+                                            embed=emb
+                                        )
+                                    except Exception as wh_e:
+                                        logger.write_log(f"Error sending potion crafted webhook: {wh_e}")
+
+                            _prev_hades = _hades_isfull
+
+                        if job == "Godly Potion (Hades)":
+                            pyautoscope.click_button(mkey, "autocraft_auto", client, delay)
+                        time.sleep(1)
 
                 if settings["auto_craft_item"].get("Warp Potion", False):
                     _search("Warp")
 
-                    mkey.move_to_natural(CLICKS["autocraft_scroll"][0], CLICKS["autocraft_scroll"][1])
-                    time.sleep(delay)
-                    ms.scroll(0, 30); time.sleep(delay)
-                    ms.scroll(0, 30); time.sleep(delay)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_first_add"][0], CLICKS["autocraft_first_add"][1])
-                    time.sleep(delay)
+                    if pyautoscope.get_first_crafting_potion(client, reader).get("first_crafting_potion", "[error]") not in ["[error]", "[invalid]"] or settings.get("ignore_autocraft_safety_check", False):
 
-                    mkey.move_to_natural(CLICKS["autocraft_scroll"][0], CLICKS["autocraft_scroll"][1])
-                    time.sleep(delay)
-                    ms.scroll(0, 30); time.sleep(delay)
-                    ms.scroll(0, 30); time.sleep(delay)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_second_amt"][0], CLICKS["autocraft_second_amt"][1])
-                    time.sleep(0.2)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_second_amt"][0], CLICKS["autocraft_second_amt"][1])
-                    time.sleep(delay)
-                    _type(kb, settings.get("typing_jitter", 0.2), settings.get("typing_delay", 0.2), settings.get("typing_hold", 0.2), "5")
-                    time.sleep(delay)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_second_add"][0], CLICKS["autocraft_second_add"][1])
-                    time.sleep(delay)
+                        pyautoscope.move_to_button(mkey, "autocraft_scroll", client, delay)
+                        time.sleep(delay)
+                        ms.scroll(0, 30); time.sleep(delay)
+                        ms.scroll(0, 30); time.sleep(delay)
+                        pyautoscope.click_button(mkey, "autocraft_first_add", client, delay)
+                        time.sleep(delay)
 
-                    mkey.left_click_xy_natural(CLICKS["autocraft_third_amt"][0], CLICKS["autocraft_third_amt"][1])
-                    time.sleep(0.2)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_third_amt"][0], CLICKS["autocraft_third_amt"][1])
-                    time.sleep(delay)
-                    _type(kb, settings.get("typing_jitter", 0.2), settings.get("typing_delay", 0.2), settings.get("typing_hold", 0.2), "7")
-                    time.sleep(delay)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_third_add"][0], CLICKS["autocraft_third_add"][1])
-                    time.sleep(delay)
-
-                    ms.scroll(0, -30); time.sleep(delay)
-                    ms.scroll(0, -30); time.sleep(delay)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_first_scrolled_amt"][0], CLICKS["autocraft_first_scrolled_amt"][1])
-                    time.sleep(0.2)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_first_scrolled_amt"][0], CLICKS["autocraft_first_scrolled_amt"][1])
-                    time.sleep(delay)
-                    _type(kb, settings.get("typing_jitter", 0.2), settings.get("typing_delay", 0.2), settings.get("typing_hold", 0.2), "100")
-                    time.sleep(delay)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_first_scrolled_add"][0], CLICKS["autocraft_first_scrolled_add"][1])
-
-                    ms.scroll(0, -30); time.sleep(delay)
-                    ms.scroll(0, -30); time.sleep(delay)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_second_scrolled_amt"][0], CLICKS["autocraft_second_scrolled_amt"][1])
-                    time.sleep(0.2)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_second_scrolled_amt"][0], CLICKS["autocraft_second_scrolled_amt"][1])
-                    time.sleep(delay)
-                    _type(kb, settings.get("typing_jitter", 0.2), settings.get("typing_delay", 0.2), settings.get("typing_hold", 0.2), "200")
-                    time.sleep(delay)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_second_scrolled_add"][0], CLICKS["autocraft_second_scrolled_add"][1])
-
-                    ms.scroll(0, -30); time.sleep(delay)
-                    ms.scroll(0, -30); time.sleep(delay)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_third_scrolled_amt"][0], CLICKS["autocraft_third_scrolled_amt"][1])
-                    time.sleep(0.2)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_third_scrolled_amt"][0], CLICKS["autocraft_third_scrolled_amt"][1])
-                    time.sleep(delay)
-                    _type(kb, settings.get("typing_jitter", 0.2), settings.get("typing_delay", 0.2), settings.get("typing_hold", 0.2), "1000")
-                    time.sleep(delay)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_third_scrolled_add"][0], CLICKS["autocraft_third_scrolled_add"][1])
-
-                    if send_item_crafted_notification:                        
+                        pyautoscope.move_to_button(mkey, "autocraft_scroll", client, delay)
+                        time.sleep(delay)
+                        ms.scroll(0, 30); time.sleep(delay)
+                        ms.scroll(0, 30); time.sleep(delay)
+                        pyautoscope.click_button(mkey, "autocraft_second_amt", client, delay)
                         time.sleep(0.2)
-                        mkey.move_to_natural(CLICKS["autocraft_scroll"][0], CLICKS["autocraft_scroll"][1])
+                        pyautoscope.click_button(mkey, "autocraft_second_amt", client, delay)
+                        time.sleep(delay)
+                        _type(kb, settings.get("typing_jitter", 0.2), settings.get("typing_delay", 0.2), settings.get("typing_hold", 0.2), "5")
+                        time.sleep(delay)
+                        pyautoscope.click_button(mkey, "autocraft_second_add", client, delay)
+                        time.sleep(delay)
+
+                        pyautoscope.click_button(mkey, "autocraft_third_amt", client, delay)
                         time.sleep(0.2)
-                        ms.scroll(0, -30); time.sleep(0.2)
-                        ms.scroll(0, -30); time.sleep(0.2)
+                        pyautoscope.click_button(mkey, "autocraft_third_amt", client, delay)
+                        time.sleep(delay)
+                        _type(kb, settings.get("typing_jitter", 0.2), settings.get("typing_delay", 0.2), settings.get("typing_hold", 0.2), "7")
+                        time.sleep(delay)
+                        pyautoscope.click_button(mkey, "autocraft_third_add", client, delay)
+                        time.sleep(delay)
 
-                        _s = detect_add_potions(True, reader, REGIONS)
+                        ms.scroll(0, -30); time.sleep(delay)
+                        ms.scroll(0, -30); time.sleep(delay)
+                        pyautoscope.click_button(mkey, "autocraft_first_scrolled_amt", client, delay)
+                        time.sleep(0.2)
+                        pyautoscope.click_button(mkey, "autocraft_first_scrolled_amt", client, delay)
+                        time.sleep(delay)
+                        _type(kb, settings.get("typing_jitter", 0.2), settings.get("typing_delay", 0.2), settings.get("typing_hold", 0.2), "100")
+                        time.sleep(delay)
+                        pyautoscope.click_button(mkey, "autocraft_first_scrolled_add", client, delay)
 
-                        if _s:
-                            _prev_warp = True
-                        else:
-                            _prev_warp = False
+                        ms.scroll(0, -30); time.sleep(delay)
+                        ms.scroll(0, -30); time.sleep(delay)
+                        pyautoscope.click_button(mkey, "autocraft_second_scrolled_add", client, delay)
+                        time.sleep(0.2)
+                        pyautoscope.click_button(mkey, "autocraft_second_scrolled_add", client, delay)
+                        time.sleep(delay)
+                        _type(kb, settings.get("typing_jitter", 0.2), settings.get("typing_delay", 0.2), settings.get("typing_hold", 0.2), "200")
+                        time.sleep(delay)
+                        pyautoscope.click_button(mkey, "autocraft_second_scrolled_amt", client, delay)
 
-                    mkey.left_click_xy_natural(CLICKS["autocraft_craft"][0], CLICKS["autocraft_craft"][1])
+                        ms.scroll(0, -30); time.sleep(delay)
+                        ms.scroll(0, -30); time.sleep(delay)
+                        pyautoscope.click_button(mkey, "autocraft_third_scrolled_amt", client, delay)
+                        time.sleep(0.2)
+                        pyautoscope.click_button(mkey, "autocraft_third_scrolled_amt", client, delay)
+                        time.sleep(delay)
+                        _type(kb, settings.get("typing_jitter", 0.2), settings.get("typing_delay", 0.2), settings.get("typing_hold", 0.2), "1000")
+                        time.sleep(delay)
+                        pyautoscope.click_button(mkey, "autocraft_third_scrolled_add", client, delay)
 
-                    if send_item_crafted_notification:
-                        _warp_isfull = False
+                        if send_item_crafted_notification:                        
+                            time.sleep(0.2)
+                            pyautoscope.move_to_button(mkey, "autocraft_scroll", client, delay)
+                            time.sleep(0.2)
+                            ms.scroll(0, -30); time.sleep(0.2)
+                            ms.scroll(0, -30); time.sleep(0.2)
 
-                        _s = detect_add_potions(True, reader, REGIONS)
+                            _s = pyautoscope.get_potion_add_check(client, reader, True).get("first_add_button", "[invalid]")!= "Add"
 
-                        if _s:
-                            _warp_isfull = True
-                        else:
+                            if _s:
+                                _prev_warp = True
+                            else:
+                                _prev_warp = False
+
+                        pyautoscope.click_button(mkey, "autocraft_craft", client, delay)
+
+                        if send_item_crafted_notification:
                             _warp_isfull = False
 
-                        if _prev_warp != _warp_isfull:
-                            potions_crafted += 1
-                            emb = create_autocraft_embed("Warp Potion")
-                            if emb:
-                                try:
-                                    webhook.send(embed=emb)
-                                    forward_webhook_msg(
-                                        primary_webhook_url=webhook.url,
-                                        secondary_urls=settings.get("SECONDARY_WEBHOOK_URLS", []),
-                                        embed=emb
-                                    )
-                                except Exception as wh_e:
-                                    logger.write_log(f"Error sending potion crafted webhook: {wh_e}")
+                            _s = pyautoscope.get_potion_add_check(client, reader, True).get("first_add_button", "[invalid]")!= "Add"
 
-                        _prev_warp = _warp_isfull
-                    
-                    time.sleep(0.2)
-                    mkey.move_to_natural(CLICKS["autocraft_scroll"][0], CLICKS["autocraft_scroll"][1])
-                    time.sleep(0.2)
-                    ms.scroll(0, 30); time.sleep(0.2)
-                    ms.scroll(0, 30); time.sleep(0.2)
+                            if _s:
+                                _warp_isfull = True
+                            else:
+                                _warp_isfull = False
 
-                    if job == "Warp Potion":
-                        mkey.left_click_xy_natural(CLICKS["autocraft_auto"][0], CLICKS["autocraft_auto"][1])
-                    time.sleep(1)
+                            if _prev_warp != _warp_isfull:
+                                potions_crafted += 1
+                                emb = create_autocraft_embed("Warp Potion")
+                                if emb:
+                                    try:
+                                        webhook.send(embed=emb)
+                                        forward_webhook_msg(
+                                            primary_webhook_url=webhook.url,
+                                            secondary_urls=settings.get("SECONDARY_WEBHOOK_URLS", []),
+                                            embed=emb
+                                        )
+                                    except Exception as wh_e:
+                                        logger.write_log(f"Error sending potion crafted webhook: {wh_e}")
+
+                            _prev_warp = _warp_isfull
+                        
+                        time.sleep(0.2)
+                        pyautoscope.move_to_button(mkey, "autocraft_scroll", client, delay)
+                        time.sleep(0.2)
+                        ms.scroll(0, 30); time.sleep(0.2)
+                        ms.scroll(0, 30); time.sleep(0.2)
+
+                        if job == "Warp Potion":
+                            pyautoscope.click_button(mkey, "autocraft_auto", client, delay)
+                        time.sleep(1)
 
                 if settings["auto_craft_item"].get("Godlike Potion", False):
                     _search("Godlike")
+                    
+                    if pyautoscope.get_first_crafting_potion(client, reader).get("first_crafting_potion", "[error]") not in ["[error]", "[invalid]"] or settings.get("ignore_autocraft_safety_check", False):
 
-                    mkey.move_to_natural(CLICKS["autocraft_scroll"][0], CLICKS["autocraft_scroll"][1])
-                    time.sleep(delay)
-                    ms.scroll(0, 30); time.sleep(delay)
-                    ms.scroll(0, 30); time.sleep(delay)
-                    time.sleep(delay)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_first_add"][0], CLICKS["autocraft_first_add"][1])
-                    time.sleep(delay)
-                    mkey.move_to_natural(CLICKS["autocraft_scroll"][0], CLICKS["autocraft_scroll"][1])
-                    time.sleep(delay)
-                    ms.scroll(0, 30); time.sleep(delay)
-                    ms.scroll(0, 30); time.sleep(delay)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_second_add"][0], CLICKS["autocraft_second_add"][1])
-                    time.sleep(delay)
-                    mkey.move_to_natural(CLICKS["autocraft_scroll"][0], CLICKS["autocraft_scroll"][1])
-                    time.sleep(delay)
-                    ms.scroll(0, 30); time.sleep(delay)
-                    ms.scroll(0, 30); time.sleep(delay)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_third_add"][0], CLICKS["autocraft_third_add"][1])
-                    time.sleep(delay)
-                    ms.scroll(0, -30); time.sleep(delay)
-                    ms.scroll(0, -30); time.sleep(delay)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_third_scrolled_amt"][0], CLICKS["autocraft_third_scrolled_amt"][1])
-                    time.sleep(0.2)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_third_scrolled_amt"][0], CLICKS["autocraft_third_scrolled_amt"][1])
-                    time.sleep(delay)
-                    _type(kb, settings.get("typing_jitter", 0.2), settings.get("typing_delay", 0.2), settings.get("typing_hold", 0.2), "600")
-                    time.sleep(delay)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_third_scrolled_add"][0], CLICKS["autocraft_third_scrolled_add"][1])
-
-                    if send_item_crafted_notification:                        
+                        pyautoscope.move_to_button(mkey, "autocraft_scroll", client, delay)
+                        time.sleep(delay)
+                        ms.scroll(0, 30); time.sleep(delay)
+                        ms.scroll(0, 30); time.sleep(delay)
+                        time.sleep(delay)
+                        pyautoscope.click_button(mkey, "autocraft_first_add", client, delay)
+                        time.sleep(delay)
+                        pyautoscope.move_to_button(mkey, "autocraft_scroll", client, delay)
+                        time.sleep(delay)
+                        ms.scroll(0, 30); time.sleep(delay)
+                        ms.scroll(0, 30); time.sleep(delay)
+                        pyautoscope.click_button(mkey, "autocraft_second_add", client, delay)
+                        time.sleep(delay)
+                        pyautoscope.move_to_button(mkey, "autocraft_scroll", client, delay)
+                        time.sleep(delay)
+                        ms.scroll(0, 30); time.sleep(delay)
+                        ms.scroll(0, 30); time.sleep(delay)
+                        pyautoscope.click_button(mkey, "autocraft_third_add", client, delay)
+                        time.sleep(delay)
+                        ms.scroll(0, -30); time.sleep(delay)
+                        ms.scroll(0, -30); time.sleep(delay)
+                        pyautoscope.click_button(mkey, "autocraft_third_scrolled_amt", client, delay)
                         time.sleep(0.2)
-                        mkey.move_to_natural(CLICKS["autocraft_scroll"][0], CLICKS["autocraft_scroll"][1])
-                        time.sleep(0.2)
-                        ms.scroll(0, -30); time.sleep(0.2)
-                        ms.scroll(0, -30); time.sleep(0.2)
+                        pyautoscope.click_button(mkey, "autocraft_third_scrolled_amt", client, delay)
+                        time.sleep(delay)
+                        _type(kb, settings.get("typing_jitter", 0.2), settings.get("typing_delay", 0.2), settings.get("typing_hold", 0.2), "600")
+                        time.sleep(delay)
+                        pyautoscope.click_button(mkey, "autocraft_third_scrolled_add", client, delay)
 
-                        _s = detect_add_potions(True, reader, REGIONS)
+                        if send_item_crafted_notification:                        
+                            time.sleep(0.2)
+                            pyautoscope.move_to_button(mkey, "autocraft_scroll", client, delay)
+                            time.sleep(0.2)
+                            ms.scroll(0, -30); time.sleep(0.2)
+                            ms.scroll(0, -30); time.sleep(0.2)
 
-                        if _s:
-                            _prev_godlike = True
-                        else:
-                            _prev_godlike = False
+                            _s = pyautoscope.get_potion_add_check(client, reader, True).get("first_add_button", "[invalid]")!= "Add"
 
-                    mkey.left_click_xy_natural(CLICKS["autocraft_craft"][0], CLICKS["autocraft_craft"][1])
+                            if _s:
+                                _prev_godlike = True
+                            else:
+                                _prev_godlike = False
 
-                    if send_item_crafted_notification:
-                        _godlike_isfull = False
+                        pyautoscope.click_button(mkey, "autocraft_craft", client, delay)
 
-                        _s = detect_add_potions(True, reader, REGIONS)
-
-                        if _s:
-                            _godlike_isfull = True
-                        else:
+                        if send_item_crafted_notification:
                             _godlike_isfull = False
 
-                        if _prev_godlike != _godlike_isfull:
-                            potions_crafted += 1
-                            emb = create_autocraft_embed("Godlike Potion")
-                            if emb:
-                                try:
-                                    webhook.send(embed=emb)
-                                    forward_webhook_msg(
-                                        primary_webhook_url=webhook.url,
-                                        secondary_urls=settings.get("SECONDARY_WEBHOOK_URLS", []),
-                                        embed=emb
-                                    )
-                                except Exception as wh_e:
-                                    logger.write_log(f"Error sending potion crafted webhook: {wh_e}")
+                            _s = pyautoscope.get_potion_add_check(client, reader, True).get("first_add_button", "[invalid]")!= "Add"
 
-                        _prev_godlike = _godlike_isfull
-                    
-                    time.sleep(0.2)
-                    mkey.move_to_natural(CLICKS["autocraft_scroll"][0], CLICKS["autocraft_scroll"][1])
-                    time.sleep(0.2)
-                    ms.scroll(0, 30); time.sleep(0.2)
-                    ms.scroll(0, 30); time.sleep(0.2)
+                            if _s:
+                                _godlike_isfull = True
+                            else:
+                                _godlike_isfull = False
+
+                            if _prev_godlike != _godlike_isfull:
+                                potions_crafted += 1
+                                emb = create_autocraft_embed("Godlike Potion")
+                                if emb:
+                                    try:
+                                        webhook.send(embed=emb)
+                                        forward_webhook_msg(
+                                            primary_webhook_url=webhook.url,
+                                            secondary_urls=settings.get("SECONDARY_WEBHOOK_URLS", []),
+                                            embed=emb
+                                        )
+                                    except Exception as wh_e:
+                                        logger.write_log(f"Error sending potion crafted webhook: {wh_e}")
+
+                            _prev_godlike = _godlike_isfull
+                        
+                        time.sleep(0.2)
+                        pyautoscope.move_to_button(mkey, "autocraft_scroll", client, delay)
+                        time.sleep(0.2)
+                        ms.scroll(0, 30); time.sleep(0.2)
+                        ms.scroll(0, 30); time.sleep(0.2)
 
                 if settings["auto_craft_item"].get("Forbidden Potion I", False):
                     _search("Forbidden Potion I")
 
-                    mkey.move_to_natural(CLICKS["autocraft_scroll"][0], CLICKS["autocraft_scroll"][1])
-                    time.sleep(delay)
-                    ms.scroll(0, 30); time.sleep(delay)
-                    ms.scroll(0, 30); time.sleep(delay)
-                    time.sleep(delay)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_first_add"][0], CLICKS["autocraft_first_add"][1])
-                    time.sleep(delay)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_first_add"][0], CLICKS["autocraft_first_add"][1])
-                    time.sleep(delay)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_second_add"][0], CLICKS["autocraft_second_add"][1])
-                    time.sleep(delay)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_third_add"][0], CLICKS["autocraft_third_add"][1])
+                    if pyautoscope.get_first_crafting_potion(client, reader).get("first_crafting_potion", "[error]") not in ["[error]", "[invalid]"] or settings.get("ignore_autocraft_safety_check", False):
+                        pyautoscope.move_to_button(mkey, "autocraft_scroll", client, delay)
+                        time.sleep(delay)
+                        ms.scroll(0, 30); time.sleep(delay)
+                        ms.scroll(0, 30); time.sleep(delay)
+                        time.sleep(delay)
+                        pyautoscope.click_button(mkey, "autocraft_first_add", client, delay)
+                        time.sleep(delay)
+                        pyautoscope.click_button(mkey, "autocraft_first_add", client, delay)
+                        time.sleep(delay)
+                        pyautoscope.click_button(mkey, "autocraft_second_add", client, delay)
+                        time.sleep(delay)
+                        pyautoscope.click_button(mkey, "autocraft_third_add", client, delay)
 
-                    if send_item_crafted_notification:
+                        if send_item_crafted_notification:
 
-                        _ = detect_add_potions(False, reader, REGIONS)
+                            _ = pyautoscope.get_potion_add_check(client, reader, False).get("first_add_button", "[invalid]") != "Add"
 
-                        if _:
-                            _prev_f1 = True
-                        else:
-                            _prev_f1 = False
+                            if _:
+                                _prev_f1 = True
+                            else:
+                                _prev_f1 = False
 
-                    mkey.left_click_xy_natural(CLICKS["autocraft_craft"][0], CLICKS["autocraft_craft"][1])
+                        pyautoscope.click_button(mkey, "autocraft_craft", client, delay)
 
-                    if send_item_crafted_notification:
-                        _f1_isfull = False
-
-                        _ = detect_add_potions(False, reader, REGIONS)
-
-                        if _:
-                            _f1_isfull = True
-                        else:
+                        if send_item_crafted_notification:
                             _f1_isfull = False
 
-                        if _prev_f1 != _f1_isfull:
-                            potions_crafted += 1
-                            emb = create_autocraft_embed("Forbidden Potion I")
-                            if emb:
-                                try:
-                                    webhook.send(embed=emb)
-                                    forward_webhook_msg(
-                                        primary_webhook_url=webhook.url,
-                                        secondary_urls=settings.get("SECONDARY_WEBHOOK_URLS", []),
-                                        embed=emb
-                                    )
-                                except Exception as wh_e:
-                                    logger.write_log(f"Error sending potion crafted webhook: {wh_e}")
+                            _ = pyautoscope.get_potion_add_check(client, reader, False).get("first_add_button", "[invalid]") != "Add"
 
-                        _prev_f1 = _f1_isfull
+                            if _:
+                                _f1_isfull = True
+                            else:
+                                _f1_isfull = False
+
+                            if _prev_f1 != _f1_isfull:
+                                potions_crafted += 1
+                                emb = create_autocraft_embed("Forbidden Potion I")
+                                if emb:
+                                    try:
+                                        webhook.send(embed=emb)
+                                        forward_webhook_msg(
+                                            primary_webhook_url=webhook.url,
+                                            secondary_urls=settings.get("SECONDARY_WEBHOOK_URLS", []),
+                                            embed=emb
+                                        )
+                                    except Exception as wh_e:
+                                        logger.write_log(f"Error sending potion crafted webhook: {wh_e}")
+
+                            _prev_f1 = _f1_isfull
                 
                 if settings["auto_craft_item"].get("Forbidden Potion II", False):
                     _search("Forbidden Potion II")
 
-                    mkey.move_to_natural(CLICKS["autocraft_scroll"][0], CLICKS["autocraft_scroll"][1])
-                    time.sleep(delay)
-                    ms.scroll(0, 30); time.sleep(delay)
-                    ms.scroll(0, 30); time.sleep(delay)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_first_amt"][0], CLICKS["autocraft_first_amt"][1])
-                    time.sleep(0.2)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_first_amt"][0], CLICKS["autocraft_first_amt"][1])
-                    time.sleep(delay)
-                    _type(kb, settings.get("typing_jitter", 0.2), settings.get("typing_delay", 0.2), settings.get("typing_hold", 0.2), "20")
-                    time.sleep(delay)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_first_add"][0], CLICKS["autocraft_first_add"][1])
-                    time.sleep(delay)
-                    mkey.move_to_natural(CLICKS["autocraft_scroll"][0], CLICKS["autocraft_scroll"][1])
-                    time.sleep(delay)
-                    ms.scroll(0, 30); time.sleep(delay)
-                    ms.scroll(0, 30); time.sleep(delay)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_second_amt"][0], CLICKS["autocraft_second_amt"][1])
-                    time.sleep(0.2)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_second_amt"][0], CLICKS["autocraft_second_amt"][1])
-                    time.sleep(delay)
-                    _type(kb, settings.get("typing_jitter", 0.2), settings.get("typing_delay", 0.2), settings.get("typing_hold", 0.2), "10")
-                    time.sleep(delay)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_second_add"][0], CLICKS["autocraft_second_add"][1])
-                    time.sleep(delay)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_third_add"][0], CLICKS["autocraft_third_add"][1])
+                    if pyautoscope.get_first_crafting_potion(client, reader).get("first_crafting_potion", "[error]") not in ["[error]", "[invalid]"] or settings.get("ignore_autocraft_safety_check", False):
 
-                    if send_item_crafted_notification:
+                        pyautoscope.move_to_button(mkey, "autocraft_scroll", client, delay)
+                        time.sleep(delay)
+                        ms.scroll(0, 30); time.sleep(delay)
+                        ms.scroll(0, 30); time.sleep(delay)
+                        pyautoscope.click_button(mkey, "autocraft_first_amt", client, delay)
+                        time.sleep(0.2)
+                        pyautoscope.click_button(mkey, "autocraft_first_amt", client, delay)
+                        time.sleep(delay)
+                        _type(kb, settings.get("typing_jitter", 0.2), settings.get("typing_delay", 0.2), settings.get("typing_hold", 0.2), "20")
+                        time.sleep(delay)
+                        pyautoscope.click_button(mkey, "autocraft_first_add", client, delay)
+                        time.sleep(delay)
+                        pyautoscope.move_to_button(mkey, "autocraft_scroll", client, delay)
+                        time.sleep(delay)
+                        ms.scroll(0, 30); time.sleep(delay)
+                        ms.scroll(0, 30); time.sleep(delay)
+                        pyautoscope.click_button(mkey, "autocraft_second_amt", client, delay)
+                        time.sleep(0.2)
+                        pyautoscope.click_button(mkey, "autocraft_second_amt", client, delay)
+                        time.sleep(delay)
+                        _type(kb, settings.get("typing_jitter", 0.2), settings.get("typing_delay", 0.2), settings.get("typing_hold", 0.2), "10")
+                        time.sleep(delay)
+                        pyautoscope.click_button(mkey, "autocraft_second_add", client, delay)
+                        time.sleep(delay)
+                        pyautoscope.click_button(mkey, "autocraft_third_add", client, delay)
 
-                        _ = detect_add_potions(False, reader, REGIONS)
+                        if send_item_crafted_notification:
 
-                        if _:
-                            _prev_f2 = True
-                        else:
-                            _prev_f2 = False
+                            _ = pyautoscope.get_potion_add_check(client, reader, False).get("first_add_button", "[invalid]") != "Add"
 
-                    mkey.left_click_xy_natural(CLICKS["autocraft_craft"][0], CLICKS["autocraft_craft"][1])
+                            if _:
+                                _prev_f2 = True
+                            else:
+                                _prev_f2 = False
 
-                    if send_item_crafted_notification:
-                        _f2_isfull = False
+                        pyautoscope.click_button(mkey, "autocraft_craft", client, delay)
 
-                        _ = detect_add_potions(False, reader, REGIONS)
-
-                        if _:
-                            _f2_isfull = True
-                        else:
+                        if send_item_crafted_notification:
                             _f2_isfull = False
 
-                        if _prev_f2 != _f2_isfull:
-                            potions_crafted += 1
-                            emb = create_autocraft_embed("Forbidden Potion II")
-                            if emb:
-                                try:
-                                    webhook.send(embed=emb)
-                                    forward_webhook_msg(
-                                        primary_webhook_url=webhook.url,
-                                        secondary_urls=settings.get("SECONDARY_WEBHOOK_URLS", []),
-                                        embed=emb
-                                    )
-                                except Exception as wh_e:
-                                    logger.write_log(f"Error sending potion crafted webhook: {wh_e}")
+                            _ = pyautoscope.get_potion_add_check(client, reader, False).get("first_add_button", "[invalid]") != "Add"
 
-                        _prev_f2 = _f2_isfull
+                            if _:
+                                _f2_isfull = True
+                            else:
+                                _f2_isfull = False
+
+                            if _prev_f2 != _f2_isfull:
+                                potions_crafted += 1
+                                emb = create_autocraft_embed("Forbidden Potion II")
+                                if emb:
+                                    try:
+                                        webhook.send(embed=emb)
+                                        forward_webhook_msg(
+                                            primary_webhook_url=webhook.url,
+                                            secondary_urls=settings.get("SECONDARY_WEBHOOK_URLS", []),
+                                            embed=emb
+                                        )
+                                    except Exception as wh_e:
+                                        logger.write_log(f"Error sending potion crafted webhook: {wh_e}")
+
+                            _prev_f2 = _f2_isfull
 
                 if settings["auto_craft_item"].get("Forbidden Potion III", False):
                     _search("Forbidden Potion III")
 
-                    mkey.move_to_natural(CLICKS["autocraft_scroll"][0], CLICKS["autocraft_scroll"][1])
-                    time.sleep(delay)
-                    ms.scroll(0, 30); time.sleep(delay)
-                    ms.scroll(0, 30); time.sleep(delay)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_first_amt"][0], CLICKS["autocraft_first_amt"][1])
-                    time.sleep(0.2)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_first_amt"][0], CLICKS["autocraft_first_amt"][1])
-                    time.sleep(delay)
-                    _type(kb, settings.get("typing_jitter", 0.2), settings.get("typing_delay", 0.2), settings.get("typing_hold", 0.2), "100")
-                    time.sleep(delay)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_first_add"][0], CLICKS["autocraft_first_add"][1])
-                    time.sleep(delay)
-                    mkey.move_to_natural(CLICKS["autocraft_scroll"][0], CLICKS["autocraft_scroll"][1])
-                    time.sleep(delay)
-                    ms.scroll(0, 30); time.sleep(delay)
-                    ms.scroll(0, 30); time.sleep(delay)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_second_amt"][0], CLICKS["autocraft_second_amt"][1])
-                    time.sleep(0.2)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_second_amt"][0], CLICKS["autocraft_second_amt"][1])
-                    time.sleep(delay)
-                    _type(kb, settings.get("typing_jitter", 0.2), settings.get("typing_delay", 0.2), settings.get("typing_hold", 0.2), "65")
-                    time.sleep(delay)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_second_add"][0], CLICKS["autocraft_second_add"][1])
-                    time.sleep(delay)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_third_add"][0], CLICKS["autocraft_third_add"][1])
-                    
-                    if send_item_crafted_notification:
+                    if pyautoscope.get_first_crafting_potion(client, reader).get("first_crafting_potion", "[error]") not in ["[error]", "[invalid]"] or settings.get("ignore_autocraft_safety_check", False):
+                        pyautoscope.move_to_button(mkey, "autocraft_scroll", client, delay)
+                        time.sleep(delay)
+                        ms.scroll(0, 30); time.sleep(delay)
+                        ms.scroll(0, 30); time.sleep(delay)
+                        pyautoscope.click_button(mkey, "autocraft_first_amt", client, delay)
+                        time.sleep(0.2)
+                        pyautoscope.click_button(mkey, "autocraft_first_amt", client, delay)
+                        time.sleep(delay)
+                        _type(kb, settings.get("typing_jitter", 0.2), settings.get("typing_delay", 0.2), settings.get("typing_hold", 0.2), "100")
+                        time.sleep(delay)
+                        pyautoscope.click_button(mkey, "autocraft_first_add", client, delay)
+                        time.sleep(delay)
+                        pyautoscope.move_to_button(mkey, "autocraft_scroll", client, delay)
+                        time.sleep(delay)
+                        ms.scroll(0, 30); time.sleep(delay)
+                        ms.scroll(0, 30); time.sleep(delay)
+                        pyautoscope.click_button(mkey, "autocraft_second_amt", client, delay)
+                        time.sleep(0.2)
+                        pyautoscope.click_button(mkey, "autocraft_second_amt", client, delay)
+                        time.sleep(delay)
+                        _type(kb, settings.get("typing_jitter", 0.2), settings.get("typing_delay", 0.2), settings.get("typing_hold", 0.2), "65")
+                        time.sleep(delay)
+                        pyautoscope.click_button(mkey, "autocraft_second_add", client, delay)
+                        time.sleep(delay)
+                        pyautoscope.click_button(mkey, "autocraft_third_add", client, delay)
+                        
+                        if send_item_crafted_notification:
 
-                        _ = detect_add_potions(False, reader, REGIONS)
+                            _ = pyautoscope.get_potion_add_check(client, reader, False).get("first_add_button", "[invalid]") != "Add"
 
-                        if _:
-                            _prev_f3 = True
-                        else:
-                            _prev_f3 = False
+                            if _:
+                                _prev_f3 = True
+                            else:
+                                _prev_f3 = False
 
-                    mkey.left_click_xy_natural(CLICKS["autocraft_craft"][0], CLICKS["autocraft_craft"][1])
+                        pyautoscope.click_button(mkey, "autocraft_craft", client, delay)
 
-                    if send_item_crafted_notification:
-                        _f3_isfull = False
-
-                        _ = detect_add_potions(False, reader, REGIONS)
-
-                        if _:
-                            _f3_isfull = True
-                        else:
+                        if send_item_crafted_notification:
                             _f3_isfull = False
 
-                        if _prev_f3 != _f3_isfull:
-                            potions_crafted += 1
-                            emb = create_autocraft_embed("Forbidden Potion III")
-                            if emb:
-                                try:
-                                    webhook.send(embed=emb)
-                                    forward_webhook_msg(
-                                        primary_webhook_url=webhook.url,
-                                        secondary_urls=settings.get("SECONDARY_WEBHOOK_URLS", []),
-                                        embed=emb
-                                    )
-                                except Exception as wh_e:
-                                    logger.write_log(f"Error sending potion crafted webhook: {wh_e}")
+                            _ = pyautoscope.get_potion_add_check(client, reader, False).get("first_add_button", "[invalid]") != "Add"
 
-                        _prev_f3 = _f3_isfull
+                            if _:
+                                _f3_isfull = True
+                            else:
+                                _f3_isfull = False
+
+                            if _prev_f3 != _f3_isfull:
+                                potions_crafted += 1
+                                emb = create_autocraft_embed("Forbidden Potion III")
+                                if emb:
+                                    try:
+                                        webhook.send(embed=emb)
+                                        forward_webhook_msg(
+                                            primary_webhook_url=webhook.url,
+                                            secondary_urls=settings.get("SECONDARY_WEBHOOK_URLS", []),
+                                            embed=emb
+                                        )
+                                    except Exception as wh_e:
+                                        logger.write_log(f"Error sending potion crafted webhook: {wh_e}")
+
+                            _prev_f3 = _f3_isfull
                 
                 if settings["auto_craft_item"].get("Void Heart", False):
                     _search("Void")
 
-                    mkey.move_to_natural(CLICKS["autocraft_scroll"][0], CLICKS["autocraft_scroll"][1])
-                    time.sleep(delay)
-                    ms.scroll(0, 30); time.sleep(delay)
-                    ms.scroll(0, 30); time.sleep(delay)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_first_amt"][0], CLICKS["autocraft_first_amt"][1])
-                    time.sleep(0.2)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_first_amt"][0], CLICKS["autocraft_first_amt"][1])
-                    time.sleep(delay)
-                    _type(kb, settings.get("typing_jitter", 0.2), settings.get("typing_delay", 0.2), settings.get("typing_hold", 0.2), "50")
-                    time.sleep(delay)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_first_add"][0], CLICKS["autocraft_first_add"][1])
-                    time.sleep(delay)
-                    mkey.move_to_natural(CLICKS["autocraft_scroll"][0], CLICKS["autocraft_scroll"][1])
-                    time.sleep(delay)
-                    ms.scroll(0, 30); time.sleep(delay)
-                    ms.scroll(0, 30); time.sleep(delay)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_second_amt"][0], CLICKS["autocraft_second_amt"][1])
-                    time.sleep(0.2)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_second_amt"][0], CLICKS["autocraft_second_amt"][1])
-                    time.sleep(delay)
-                    _type(kb, settings.get("typing_jitter", 0.2), settings.get("typing_delay", 0.2), settings.get("typing_hold", 0.2), "5")
-                    time.sleep(delay)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_second_add"][0], CLICKS["autocraft_second_add"][1])
-                    time.sleep(delay)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_third_add"][0], CLICKS["autocraft_third_add"][1])
-                    time.sleep(delay)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_third_add"][0], CLICKS["autocraft_third_add"][1])
-                    time.sleep(delay)
-                    ms.scroll(0, -30); time.sleep(delay)
-                    ms.scroll(0, -30); time.sleep(delay)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_second_scrolled_amt"][0], CLICKS["autocraft_second_scrolled_amt"][1])
-                    time.sleep(0.2)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_second_scrolled_amt"][0], CLICKS["autocraft_second_scrolled_amt"][1])
-                    time.sleep(delay)
-                    _type(kb, settings.get("typing_jitter", 0.2), settings.get("typing_delay", 0.2), settings.get("typing_hold", 0.2), "10")
-                    time.sleep(delay)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_second_scrolled_add"][0], CLICKS["autocraft_second_scrolled_add"][1])
+                    if pyautoscope.get_first_crafting_potion(client, reader).get("first_crafting_potion", "[error]") not in ["[error]", "[invalid]"] or settings.get("ignore_autocraft_safety_check", False):
 
-                    ms.scroll(0, -30); time.sleep(delay)
-                    ms.scroll(0, -30); time.sleep(delay)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_third_scrolled_amt"][0], CLICKS["autocraft_third_scrolled_amt"][1])
-                    time.sleep(0.2)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_third_scrolled_amt"][0], CLICKS["autocraft_third_scrolled_amt"][1])
-                    time.sleep(delay)
-                    _type(kb, settings.get("typing_jitter", 0.2), settings.get("typing_delay", 0.2), settings.get("typing_hold", 0.2), "10")
-                    time.sleep(delay)
-                    mkey.left_click_xy_natural(CLICKS["autocraft_third_scrolled_add"][0], CLICKS["autocraft_third_scrolled_add"][1])
+                        pyautoscope.move_to_button(mkey, "autocraft_scroll", client, delay)
+                        time.sleep(delay)
+                        ms.scroll(0, 30); time.sleep(delay)
+                        ms.scroll(0, 30); time.sleep(delay)
+                        pyautoscope.click_button(mkey, "autocraft_first_amt", client, delay)
+                        time.sleep(0.2)
+                        pyautoscope.click_button(mkey, "autocraft_first_amt", client, delay)
+                        time.sleep(delay)
+                        _type(kb, settings.get("typing_jitter", 0.2), settings.get("typing_delay", 0.2), settings.get("typing_hold", 0.2), "50")
+                        time.sleep(delay)
+                        pyautoscope.click_button(mkey, "autocraft_first_add", client, delay)
+                        time.sleep(delay)
+                        pyautoscope.move_to_button(mkey, "autocraft_scroll", client, delay)
+                        time.sleep(delay)
+                        ms.scroll(0, 30); time.sleep(delay)
+                        ms.scroll(0, 30); time.sleep(delay)
+                        pyautoscope.click_button(mkey, "autocraft_second_amt", client, delay)
+                        time.sleep(0.2)
+                        pyautoscope.click_button(mkey, "autocraft_second_amt", client, delay)
+                        time.sleep(delay)
+                        _type(kb, settings.get("typing_jitter", 0.2), settings.get("typing_delay", 0.2), settings.get("typing_hold", 0.2), "5")
+                        time.sleep(delay)
+                        pyautoscope.click_button(mkey, "autocraft_second_add", client, delay)
+                        time.sleep(delay)
+                        pyautoscope.click_button(mkey, "autocraft_third_add", client, delay)
+                        time.sleep(delay)
+                        pyautoscope.click_button(mkey, "autocraft_third_add", client, delay)
+                        time.sleep(delay)
+                        ms.scroll(0, -30); time.sleep(delay)
+                        ms.scroll(0, -30); time.sleep(delay)
+                        pyautoscope.click_button(mkey, "autocraft_second_scrolled_add", client, delay)
+                        time.sleep(0.2)
+                        pyautoscope.click_button(mkey, "autocraft_second_scrolled_add", client, delay)
+                        time.sleep(delay)
+                        _type(kb, settings.get("typing_jitter", 0.2), settings.get("typing_delay", 0.2), settings.get("typing_hold", 0.2), "10")
+                        time.sleep(delay)
+                        pyautoscope.click_button(mkey, "autocraft_second_scrolled_amt", client, delay)
 
-                    mkey.move_to_natural(CLICKS["autocraft_scroll"][0], CLICKS["autocraft_scroll"][1])
-                    time.sleep(delay)
-                    ms.scroll(0, -30); time.sleep(delay)
-                    ms.scroll(0, -30); time.sleep(delay)
+                        ms.scroll(0, -30); time.sleep(delay)
+                        ms.scroll(0, -30); time.sleep(delay)
+                        pyautoscope.click_button(mkey, "autocraft_third_scrolled_amt", client, delay)
+                        time.sleep(0.2)
+                        pyautoscope.click_button(mkey, "autocraft_third_scrolled_amt", client, delay)
+                        time.sleep(delay)
+                        _type(kb, settings.get("typing_jitter", 0.2), settings.get("typing_delay", 0.2), settings.get("typing_hold", 0.2), "10")
+                        time.sleep(delay)
+                        pyautoscope.click_button(mkey, "autocraft_third_scrolled_add", client, delay)
 
-                    if send_item_crafted_notification:
+                        pyautoscope.move_to_button(mkey, "autocraft_scroll", client, delay)
+                        time.sleep(delay)
+                        ms.scroll(0, -30); time.sleep(delay)
+                        ms.scroll(0, -30); time.sleep(delay)
 
-                        _ = detect_add_potions(False, reader, REGIONS)
+                        if send_item_crafted_notification:
 
-                        if _:
-                            _prev_void = True
-                        else:
-                            _prev_void = False
+                            _ = pyautoscope.get_potion_add_check(client, reader, False).get("first_add_button", "[invalid]") != "Add"
 
-                    mkey.left_click_xy_natural(CLICKS["autocraft_craft"][0], CLICKS["autocraft_craft"][1])
+                            if _:
+                                _prev_void = True
+                            else:
+                                _prev_void = False
 
-                    if send_item_crafted_notification:
-                        _void_isfull = False
+                        pyautoscope.click_button(mkey, "autocraft_craft", client, delay)
 
-                        _ = detect_add_potions(False, reader, REGIONS)
-
-                        if _:
-                            _void_isfull = True
-                        else:
+                        if send_item_crafted_notification:
                             _void_isfull = False
 
-                        if _prev_void != _void_isfull:
-                            potions_crafted += 1
-                            emb = create_autocraft_embed("Void Heart")
-                            if emb:
-                                try:
-                                    webhook.send(embed=emb)
-                                    forward_webhook_msg(
-                                        primary_webhook_url=webhook.url,
-                                        secondary_urls=settings.get("SECONDARY_WEBHOOK_URLS", []),
-                                        embed=emb
-                                    )
-                                except Exception as wh_e:
-                                    logger.write_log(f"Error sending potion crafted webhook: {wh_e}")
+                            _ = pyautoscope.get_potion_add_check(client, reader, False).get("first_add_button", "[invalid]") != "Add"
 
-                        _prev_void = _void_isfull
+                            if _:
+                                _void_isfull = True
+                            else:
+                                _void_isfull = False
 
-                    mkey.move_to_natural(CLICKS["autocraft_scroll"][0], CLICKS["autocraft_scroll"][1])
-                    time.sleep(delay)
-                    ms.scroll(0, 30); time.sleep(delay)
-                    ms.scroll(0, 30); time.sleep(delay)
+                            if _prev_void != _void_isfull:
+                                potions_crafted += 1
+                                emb = create_autocraft_embed("Void Heart")
+                                if emb:
+                                    try:
+                                        webhook.send(embed=emb)
+                                        forward_webhook_msg(
+                                            primary_webhook_url=webhook.url,
+                                            secondary_urls=settings.get("SECONDARY_WEBHOOK_URLS", []),
+                                            embed=emb
+                                        )
+                                    except Exception as wh_e:
+                                        logger.write_log(f"Error sending potion crafted webhook: {wh_e}")
 
-                    if job == "Void Heart":
-                        mkey.left_click_xy_natural(CLICKS["autocraft_auto"][0], CLICKS["autocraft_auto"][1])
-                    time.sleep(1)
+                            _prev_void = _void_isfull
+
+                        pyautoscope.move_to_button(mkey, "autocraft_scroll", client, delay)
+                        time.sleep(delay)
+                        ms.scroll(0, 30); time.sleep(delay)
+                        ms.scroll(0, 30); time.sleep(delay)
+
+                        if job == "Void Heart":
+                            pyautoscope.click_button(mkey, "autocraft_auto", client, delay)
+                        time.sleep(1)
 
                 time.sleep(1)
                 kb.press('f')
@@ -2638,10 +2590,10 @@ def auto_craft(webhook, settings: dict, stop_event: threading.Event, sniped_even
                 kb.release('f')
                 time.sleep(1)
                 
-                mkey.left_click_xy_natural(CLICKS["close_menu"][0], CLICKS["close_menu"][1])
+                pyautoscope.click_button(mkey, "close_menu", client, delay)
 
                 time.sleep(1)
-                mkey.move_to_natural(CLICKS["autocraft_scroll"][0], CLICKS["autocraft_scroll"][1])
+                pyautoscope.move_to_button(mkey, "autocraft_scroll", client, delay)
                 time.sleep(0.2)
                 ms.scroll(0, -30); time.sleep(0.2)
                 ms.scroll(0, -30); time.sleep(0.2)
@@ -2658,10 +2610,10 @@ def auto_craft(webhook, settings: dict, stop_event: threading.Event, sniped_even
                 kb.release('f')
                 time.sleep(1)
                 
-                mkey.left_click_xy_natural(CLICKS["close_menu"][0], CLICKS["close_menu"][1])
+                pyautoscope.click_button(mkey, "close_menu", client, delay)
 
                 time.sleep(1)
-                mkey.move_to_natural(CLICKS["autocraft_scroll"][0], CLICKS["autocraft_scroll"][1])
+                pyautoscope.move_to_button(mkey, "autocraft_scroll", client, delay)
                 time.sleep(0.2)
                 ms.scroll(0, -30); time.sleep(0.2)
                 ms.scroll(0, -30); time.sleep(0.2)
@@ -2689,7 +2641,7 @@ def auto_br(settings: dict, stop_event: threading.Event, sniped_event: threading
 
         if pause_event.is_set():
             time.sleep(2)
-            continue
+            continue        
 
         logger.write_log("Auto BR: Using Biome Randomizer...")
         with keyboard_lock:
@@ -2730,15 +2682,6 @@ def inventory_screenshot(settings: dict, webhook, stop_event: threading.Event, s
         return
     logger.write_log("Periodic Inventory Screenshot thread started.")
 
-    if not settings.get("calibration"):
-        logger.write_log("A calibration has not been selected.")
-        return
-    
-    if not validate_calibrations(settings.get("calibration"), ["open_inventory", "items_btn", "search_bar", "close_menu"]):
-        logger.write_log("Could not verify all calibrations.")
-        return
-    
-    CLICKS = get_calibrations(settings.get("calibration"))
     delay = load_delay()
 
     while not stop_event.is_set():
@@ -2750,18 +2693,23 @@ def inventory_screenshot(settings: dict, webhook, stop_event: threading.Event, s
         logger.write_log("Taking inventory screenshot...")
         screenshot_path = os.path.join(MACROPATH, "scr", "screenshot_inventory.png")
         file_to_send = None
+        
+        
         with keyboard_lock:
 
-            mkey.left_click_xy_natural(CLICKS["open_inventory"][0], CLICKS["open_inventory"][1])
+            pyautoscope.refresh_clients()
+            client = pyautoscope.return_clients()[0]
+
+            pyautoscope.click_button(mkey, "open_inventory", client, delay)
             time.sleep(delay)
-            mkey.left_click_xy_natural(CLICKS["items_btn"][0], CLICKS["items_btn"][1])
+            pyautoscope.click_button(mkey, "items_btn", client, delay)
             time.sleep(delay)
-            mkey.left_click_xy_natural(CLICKS["search_bar"][0], CLICKS["search_bar"][1])
+            pyautoscope.click_button(mkey, "search_bar", client, delay)
             time.sleep(delay)
             pag.screenshot(screenshot_path)
             file_to_send = create_discord_file_from_path(screenshot_path, filename="inventory.png")
             time.sleep(delay)
-            mkey.left_click_xy_natural(CLICKS["close_menu"][0], CLICKS["close_menu"][1])
+            pyautoscope.click_button(mkey, "close_menu", client, delay)
             time.sleep(delay)
 
         if file_to_send:
@@ -2791,15 +2739,6 @@ def storage_screenshot(settings: dict, webhook, stop_event: threading.Event, sni
         return
     logger.write_log("Periodic Aura Storage Screenshot thread started.")
 
-    if not settings.get("calibration"):
-        logger.write_log("A calibration has not been selected.")
-        return
-    
-    if not validate_calibrations(settings.get("calibration"), ["open_storage", "search_bar", "close_menu"]):
-        logger.write_log("Could not verify all calibrations.")
-        return
-    
-    CLICKS = get_calibrations(settings.get("calibration"))
     delay = load_delay()
 
     while not stop_event.is_set():
@@ -2812,10 +2751,13 @@ def storage_screenshot(settings: dict, webhook, stop_event: threading.Event, sni
         screenshot_path = os.path.join(MACROPATH, "scr", "screenshot_storage.png")
         file_to_send = None
         with keyboard_lock:
+
+            pyautoscope.refresh_clients()
+            client = pyautoscope.return_clients()[0]
             
-            mkey.left_click_xy_natural(CLICKS["open_storage"][0], CLICKS["open_storage"][1])
+            pyautoscope.click_button(mkey, "aura_storage", client, delay)
             time.sleep(delay)
-            mkey.left_click_xy_natural(CLICKS["search_bar"][0], CLICKS["search_bar"][1])
+            pyautoscope.click_button(mkey, "search_bar", client, delay)
             time.sleep(delay)
             kb.press(keyboard.Key.backspace)
             time.sleep(0.2)
@@ -2824,7 +2766,7 @@ def storage_screenshot(settings: dict, webhook, stop_event: threading.Event, sni
             pag.screenshot(screenshot_path)
             file_to_send = create_discord_file_from_path(screenshot_path, filename="storage.png")
             time.sleep(delay)
-            mkey.left_click_xy_natural(CLICKS["close_menu"][0], CLICKS["close_menu"][1])
+            pyautoscope.click_button(mkey, "close_menu", client, delay)
             time.sleep(delay)
 
         if file_to_send:
@@ -2982,17 +2924,12 @@ def do_obby(settings: dict, webhook, stop_event: threading.Event, sniped_event: 
         logger.write_log("Obby thread not started due to missing paths.")
         return
     
-    if not settings.get("calibration"):
-        logger.write_log("A calibration has not been selected.")
-        return
-    
-    if not validate_calibrations(settings.get("calibration"), ["questboard_right", "questboard_left", "questboard_exit", "questboard_dismiss", "questboard_accept", "close_menu"]):
-        logger.write_log("Could not verify all calibrations.")
-        return
-    
-    CLICKS = get_calibrations(settings.get("calibration"))
     delay = load_delay()
     VIP_STATUS = settings.get("vip_status", "No VIP")
+
+    if not settings.get("do_not_walk_to_stella", True) and is_autocraft:
+        logger.write_log("Obby cannot be started with Do Not Walk to Stella enabled.")
+        return
 
     while not stop_event.is_set():
 
@@ -3002,14 +2939,17 @@ def do_obby(settings: dict, webhook, stop_event: threading.Event, sniped_event: 
 
         with keyboard_lock:
 
+            pyautoscope.refresh_clients()
+            client = pyautoscope.return_clients()[0]
+
             try:
                 reset_character()
                 time.sleep(1)
                 reset_character()
                 time.sleep(1)
-                mkey.left_click_xy_natural(CLICKS["collection"][0], CLICKS["collection"][1])
+                pyautoscope.click_button(mkey, "collection", client, delay)
                 time.sleep(1)
-                mkey.left_click_xy_natural(CLICKS["exit_collection"][0], CLICKS["exit_collection"][1])
+                pyautoscope.click_button(mkey, "exit_collection", client, delay)
                 time.sleep(1)
             except Exception as e:
                 logger.write_log(f"Error during obby alignment: {e}")
@@ -3042,9 +2982,9 @@ def do_obby(settings: dict, webhook, stop_event: threading.Event, sniped_event: 
                 time.sleep(1)
                 reset_character()
                 time.sleep(1)
-                mkey.left_click_xy_natural(CLICKS["collection"][0], CLICKS["collection"][1])
+                pyautoscope.click_button(mkey, "collection", client, delay)
                 time.sleep(1)
-                mkey.left_click_xy_natural(CLICKS["exit_collection"][0], CLICKS["exit_collection"][1])
+                pyautoscope.click_button(mkey, "exit_collection", client, delay)
                 time.sleep(1)
             except Exception as e:
                 logger.write_log(f"Error during obby alignment: {e}")
@@ -3131,43 +3071,35 @@ def auto_questboard(settings: dict, webhook, stop_event: threading.Event, sniped
         logger.write_log(f"Error loading tracked quests: {e}. Auto Quest Board stopped.")
         return
     
-    if not settings.get("calibration"):
-        logger.write_log("A calibration has not been selected.")
-        return
-    
-    if not validate_calibrations(settings.get("calibration"), ["collection", "exit_collection", "close_menu"]):
-        logger.write_log("Could not verify all calibrations.")
-        return
-    
-    if not validate_regions(settings.get("calibration"), ["questboard_quest_region"]):
-        logger.write_log("Could not start auto questboard: Calibration is invalid.")
-        return
-    
-    CLICKS = get_calibrations(settings.get("calibration"))
-    REGIONS = get_regions(settings.get("calibration"))
     delay = load_delay()
 
     VIP_STATUS = settings.get("vip_status", "No VIP")
     afk_in_limbo = settings.get("mode", "Normal") == "Limbo"
     is_idle_mode = settings.get("mode", "Normal") == "IDLE"
-    
+    ac_mode = settings.get("mode", "Normal") == "Auto Craft"
+
+    if not settings.get("do_not_walk_to_stella", True) and ac_mode:
+        logger.write_log("Auto Questboard cannot be started with Do Not Walk to Stella enabled.")
+        return
+
     while not stop_event.is_set():
 
         if pause_event.is_set():
             time.sleep(2)
             continue
 
-
         wait_interval = 3600
         time.sleep(2)
         with keyboard_lock:
+            pyautoscope.refresh_clients()
+            client = pyautoscope.return_clients()[0]
             reset_character()
             time.sleep(1)
             reset_character()
             time.sleep(1)
-            mkey.left_click_xy_natural(CLICKS["collection"][0], CLICKS["collection"][1])
+            pyautoscope.click_button(mkey, "collection", client, delay)
             time.sleep(1)
-            mkey.left_click_xy_natural(CLICKS["exit_collection"][0], CLICKS["exit_collection"][1])
+            pyautoscope.click_button(mkey, "exit_collection", client, delay)
             time.sleep(1)
             equip_aura("Abyssal", True, mkey, kb, settings, ignore_next_detection, ignore_lock, reader, ms)
             time.sleep(1)
@@ -3201,25 +3133,12 @@ def auto_questboard(settings: dict, webhook, stop_event: threading.Event, sniped
             time.sleep(1)
 
             for i in range(5):
-                pag.screenshot(screenshot_path)            
 
-                image = cv2.imread(screenshot_path)
-                if image is None:
-                    logger.write_log("Auto Quest Board Error: Failed to read screenshot file.")
-                    continue
-                
-                x1, y1, x2, y2 = REGIONS["questboard_quest_region"]
+                detected_quest = pyautoscope.get_questboard_header(client, reader).get("questboard_header")
 
-                quest_title_crop = image[y1:y2, x1:x2]
-                ocr_results = reader.readtext(quest_title_crop, detail=0)
-                ocr_quest_raw = " ".join(ocr_results).strip()
-
-                ocr_quest_clean = re.sub(r"[^a-zA-Z']", "", ocr_quest_raw).lower()
-                detected_quest = fuzzy_match_qb(ocr_quest_clean, ALL_QB)
-
-                if not detected_quest:
-                    logger.write_log(f"Auto Quest Board: Could not identify quest from OCR ('{ocr_quest_raw}'). Dismissing.") 
-                    mkey.left_click_xy_natural(CLICKS["questboard_dismiss"][0], CLICKS["questboard_dismiss"][1])
+                if detected_quest in ["invalid", "[error]"]:
+                    logger.write_log(f"Auto Quest Board: Could not identify quest from OCR ('{detected_quest}'). Dismissing.") 
+                    pyautoscope.click_button(mkey, "questboard_dismiss", client, delay)
                     time.sleep(1)
                 else:
                     logger.write_log(f"Auto Quest Board: Detected Quest ('{detected_quest}')")
@@ -3230,12 +3149,12 @@ def auto_questboard(settings: dict, webhook, stop_event: threading.Event, sniped
 
                         if not quest_data:
                             logger.write_log(f"Auto Quest Board: Could not find data for quest ('{detected_quest}'). Skipping")
-                            mkey.left_click_xy_natural(CLICKS["questboard_dismiss"][0], CLICKS["questboard_dismiss"][1])
+                            pyautoscope.click_button(mkey, "questboard_dismiss", client, delay)
                             time.sleep(1)
                         else:
                             if settings.get("quests_to_accept", {}).get(detected_quest, False) and detected_quest not in tracked_quests.get("quest_board", []) and len(tracked_quests.get("quest_board", [])) <= 3:
                                 logger.write_log(f"Auto Quest Board: Accepted Quest ('{detected_quest}')")
-                                mkey.left_click_xy_natural(CLICKS["questboard_accept"][0], CLICKS["questboard_accept"][1])
+                                pyautoscope.click_button(mkey, "questboard_accept", client, delay)
                                 time.sleep(0.2)
                                 tracked_quests["quest_board"].append(detected_quest)
                                 previous_quest = detected_quest
@@ -3270,39 +3189,25 @@ def auto_questboard(settings: dict, webhook, stop_event: threading.Event, sniped
                                     secondary_urls=settings.get("SECONDARY_WEBHOOK_URLS", []),
                                     embed=emb
                                 )
-                                mkey.left_click_xy_natural(CLICKS["questboard_right"][0], CLICKS["questboard_right"][1])
+                                pyautoscope.click_button(mkey, "questboard_right", client, delay)
                                 time.sleep(0.2)
                             elif detected_quest in tracked_quests.get("quest_board", []):
                                 if previous_quest == detected_quest:
                                     logger.write_log("Quest already accepted and same as previous quest, therefore no more quests.")
                                     break
                                 logger.write_log("Quest already accepted, attempting to claim.")
-                                mkey.left_click_xy_natural(CLICKS["questboard_accept"][0], CLICKS["questboard_accept"][1])
+                                pyautoscope.click_button(mkey, "questboard_accept", client, delay)
                                 time.sleep(0.2)
                                 previous_quest = detected_quest
 
                                 time.sleep(2)
 
-                                pag.screenshot(screenshot_path)            
-
-                                image = cv2.imread(screenshot_path)
-                                if image is None:
-                                    logger.write_log("Auto Quest Board Error: Failed to read screenshot file.")
-                                    continue
-                                
-                                x1, y1, x2, y2 = REGIONS["questboard_quest_region"]
-
-                                quest_title_crop = image[y1:y2, x1:x2]
-                                ocr_results = reader.readtext(quest_title_crop, detail=0)
-                                ocr_quest_raw = " ".join(ocr_results).strip()
-
-                                ocr_quest_clean = re.sub(r"[^a-zA-Z']", "", ocr_quest_raw).lower()
-                                detected_quest = fuzzy_match_qb(ocr_quest_clean, ALL_QB)
+                                detected_quest = pyautoscope.get_questboard_header(client, reader).get("questboard_header")
                                 
                                 if previous_quest == detected_quest:
                                     logger.write_log("Quest is not yet completed, moving to next quest.")
                                     time.sleep(3)
-                                    mkey.left_click_xy_natural(CLICKS["questboard_right"][0], CLICKS["questboard_right"][1])
+                                    pyautoscope.click_button(mkey, "questboard_right", client, delay)
                                     time.sleep(0.2)
                                 else:
                                     logger.write_log("Quest was completed, removing from tracked quests.")
@@ -3340,17 +3245,17 @@ def auto_questboard(settings: dict, webhook, stop_event: threading.Event, sniped
                                     )
                             else:
                                 logger.write_log(f"Auto Quest Board: Quest ('{detected_quest}') is set to be dismissed.")
-                                mkey.left_click_xy_natural(CLICKS["questboard_dismiss"][0], CLICKS["questboard_dismiss"][1])
+                                pyautoscope.click_button(mkey, "questboard_dismiss", client, delay)
                                 time.sleep(1)
                                 previous_quest = detected_quest
                     else:
                         logger.write_log(f"Auto Quest Board: Quest ('{detected_quest}') is not supported yet, dismissing.")
-                        mkey.left_click_xy_natural(CLICKS["questboard_dismiss"][0], CLICKS["questboard_dismiss"][1])
+                        pyautoscope.click_button(mkey, "questboard_dismiss", client, delay)
                         time.sleep(1)
                         previous_quest = detected_quest
                     time.sleep(3)
 
-            mkey.left_click_xy_natural(CLICKS["questboard_exit"][0], CLICKS["questboard_exit"][1])
+            pyautoscope.click_button(mkey, "questboard_exit", client, delay)
             time.sleep(1)
             time.sleep(3)
             reset_character()
@@ -3373,43 +3278,37 @@ def auto_pop(biome: str, settings: dict, stop_event: threading.Event, keyboard_l
     logger.write_log(f"Auto Pop sequence initiated for biome: {biome}")
     biome_lower = biome.lower()
 
-    if not settings.get("calibration"):
-        logger.write_log("A calibration has not been selected.")
-        return
-    
-    if not validate_calibrations(settings.get("calibration"), ["collection", "exit_collection", "close_menu"]):
-        logger.write_log("Could not verify all calibrations.")
-        return
-    
-    CLICKS = get_calibrations(settings.get("calibration"))
-
     if biome_lower == "glitched" and settings.get("pop_in_glitch", False):
         pop_settings = settings.get("auto_use_items_in_glitch", {})
     elif biome_lower == "dreamspace" and settings.get("pop_in_dreamspace", False):
         pop_settings = settings.get("auto_use_items_in_dreamspace", {})
     else:
-        logger.write_log(f"Auto Pop not configured or enabled for biome '{biome}'. Stopping sequence.")
+        logger.write_log(f"Auto Pop not configured/required/enabled for biome '{biome}'. Stopping sequence.")
         return
+
+    delay = 0.2
 
     if settings.get("change_cutscene_on_pop", True):
         logger.write_log("Auto Pop: Changing cutscene settings...")
         with keyboard_lock:
+            pyautoscope.refresh_clients()
+            client = pyautoscope.return_clients()[0]
             try:
-                mkey.left_click_xy_natural(CLICKS["menu"][0], CLICKS["menu"][1])
+                pyautoscope.click_button(mkey, "menu_button", client, delay)
                 time.sleep(1)
-                mkey.left_click_xy_natural(CLICKS["settings"][0], CLICKS["settings"][1])
+                pyautoscope.click_button(mkey, "settings", client, delay)
                 time.sleep(1)
-                mkey.left_click_xy_natural(CLICKS["rolling"][0], CLICKS["rolling"][1])
+                pyautoscope.click_button(mkey, "rolling", client, delay)
                 time.sleep(1)
-                mkey.left_click_xy_natural(CLICKS["cutscene_skip"][0], CLICKS["cutscene_skip"][1])
+                pyautoscope.click_button(mkey, "cutscene_skip", client, delay)
                 time.sleep(1)
                 _type(kb, settings.get("typing_jitter", 0.2), settings.get("typing_delay", 0.2), settings.get("typing_hold", 0.2), "9999999999")
-                mkey.left_click_xy_natural(CLICKS["close_menu"][0], CLICKS["close_menu"][1])
+                pyautoscope.click_button(mkey, "close_settings_menu", client, delay)
                 time.sleep(1)                
             except Exception as cs_e:
                 logger.write_log(f"Error changing cutscene settings: {cs_e}")
 
-                try: mkey.left_click_xy_natural(CLICKS["close_menu"][0], CLICKS["close_menu"][1])
+                try: pyautoscope.click_button(mkey, "close_settings_menu", client, delay)
                 except: pass
 
     item_keys = list(pop_settings.keys()) 
@@ -3464,23 +3363,18 @@ def eden_detection(settings: dict, webhook, stop_event: threading.Event, keyboar
 
     previous_spawn = 0
 
-    if not settings.get("calibration"):
-        logger.write_log("A calibration has not been selected.")
-        return
-    
-    if not validate_calibrations(settings.get("calibration"), ["collection", "exit_collection", "close_menu"]):
-        logger.write_log("Could not verify all calibrations.")
-        return
-    
-    CLICKS = get_calibrations(settings.get("calibration"))
     delay = load_delay()
     VIP_STATUS = settings.get("vip_status", "No VIP")
+
+    if FAST_FLAGS_DISABLED:
+        logger.write_log("The debug/trace fast flag is currently disabled by Roblox. This feature cannot be used for now.")
+        return
     
     while not stop_event.is_set():
         
         if pause_event.is_set():
             time.sleep(2)
-            continue
+            continue        
 
         try:
 
@@ -3508,14 +3402,17 @@ def eden_detection(settings: dict, webhook, stop_event: threading.Event, keyboar
                     logger.write_log(f"Error sending biome ended webhook: {wh_e}")
                 
                 with keyboard_lock:
+                    
+                    pyautoscope.refresh_clients()
+                    client = pyautoscope.return_clients()[0]                    
 
                     time.sleep(5)
                     logger.write_log("Teleporting to limbo...")
                     use_item("Portable Crack", 1, True, mkey, kb, settings, reader, ms)
                     time.sleep(1)
-                    mkey.left_click_xy_natural(CLICKS["collection"][0], CLICKS["collection"][1])
+                    pyautoscope.click_button(mkey, "collection", client, delay)
                     time.sleep(1)
-                    mkey.left_click_xy_natural(CLICKS["exit_collection"][0], CLICKS["exit_collection"][1])
+                    pyautoscope.click_button(mkey, "exit_collection", client, delay)
                     time.sleep(1)
 
                     if VIP_STATUS in ["VIP", "VIP+"]:

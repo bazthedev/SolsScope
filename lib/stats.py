@@ -48,14 +48,32 @@ def init_stats():
                     "amount" : 0,
                     "colour" : _[stat]["colour"]
                 }
-                
-            
 
         save_stats(stats)
         
         return True
-    
-    return False
+    else:
+        _ = load_all_biomes()
+        for biome in _:
+            if biome not in stats:
+                stats[biome] = {
+                    "amount" : 0,
+                    "colour" : _[biome]["colour"]
+                }
+        
+        save_stats(stats)
+
+        todel = []
+        for stat in stats:
+            if stat not in _:
+                todel.append(stat)
+
+        for stat in todel:
+            del stats[stat]
+
+        save_stats(stats)
+        
+        return True
     
 def increment_stat(stat):
 

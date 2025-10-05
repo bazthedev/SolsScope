@@ -18,7 +18,7 @@ import time
 import subprocess
 import mousekey as mk 
 
-from constants import MS_RBLX_LOG_DIR, RBLX_PLAYER_LOG_DIR, PLACE_ID, COORDS, MACROPATH, LOCALVERSION
+from constants import MS_RBLX_LOG_DIR, RBLX_PLAYER_LOG_DIR, PLACE_ID, COORDS, MACROPATH, LOCALVERSION, USERDATA
 from utils import get_logger, exists_procs_by_name, get_process_by_name, match_rblx_hwnd_to_pid
 from uinav import load_delay, load_keybind
 from pynput import keyboard 
@@ -498,20 +498,20 @@ def get_roblox_window_bbox():
     windows = gw.getWindowsWithTitle("Roblox")
     for win in windows:
         if win.width > 100 and win.height > 100:
-            return (win.left, win.top, win.width, win.height)
+            return (win.left, win.top, win.left + win.width, win.top + win.height)
     return None
 
 def extract_server_code(url: str):
     """Extracts the server link/share code from a URL."""
 
     link_pattern = re.compile(
-        f"https://www.roblox.com/games/{PLACE_ID}/*\\?privateServerLinkCode="
+        f"https://www\\.roblox\\.com/games/{PLACE_ID}[^?]*\\?privateServerLinkCode=([^&]+)"
     )
     link_pattern_2 = re.compile(r"https://.*&type=Server")
 
     if link_match := link_pattern.search(url):
         try:
-            code = link_match.group(0).split("LinkCode=")[-1]
+            code = link_match.group(1)
             return code, 1
         except IndexError:
             return None, None
@@ -575,6 +575,7 @@ class PlayerLogger:
         self.player_log_data = []
         self.to_send = queue.Queue()
         self._stop_event = threading.Event()
+        self.ignore_userdata = USERDATA
 
         self.worker_thread = threading.Thread(target=self._process_queue, daemon=True)
         self.worker_thread.start()
@@ -584,7 +585,7 @@ class PlayerLogger:
             try:
                 embed, content = self.to_send.get(timeout=0.5)
                 self.send_embed(embed, content)
-                time.sleep(3)
+                time.sleep(5)
                 self.to_send.task_done()
             except queue.Empty:
                 continue
@@ -597,7 +598,7 @@ class PlayerLogger:
         self.to_send.put((embed, content))
 
     def init_player_logs(self, biome):
-        file_name = f"{biome}_{datetime.now().strftime('%H-%M-%S')}.log"
+        file_name = f"{biome}_{datetime.now().strftime('%H-%M-%S')}_{datetime.now().strftime('%d-%m-%Y')}.log"
         os.makedirs(f"{MACROPATH}/player_logs", exist_ok=True)
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         header = (
@@ -615,13 +616,12 @@ class PlayerLogger:
 
     def send_player_msg(self, event, joined):
         ts = event.get("timestamp")
-        ts_str = datetime.fromtimestamp(ts).strftime("%H:%M:%S")
         title = f"Player Joined: {event.get('username', 'Unknown')}" if joined else f"Player Left: {event.get('username', 'Unknown')}"
         emb_rgb = hex2rgb(self.get_biome_colour(self.biome.lower()))
         
         _emb = discord.Embed(
             title=title,
-            description=f"The user **{event.get('username', 'Unknown')}** (**{event.get('player_id', 'Unknown')}**) {'joined' if joined else 'left'} at time {ts_str}",
+            description=f"The user **{event.get('username', 'Unknown')}** (**{event.get('player_id', 'Unknown')}**) {'joined' if joined else 'left'} at <t:{str(int(ts))}>",
             colour=discord.Colour.from_rgb(*emb_rgb),
             url=f"https://www.roblox.com/users/{event.get('player_id', 'Unknown')}/profile"
         )
@@ -637,14 +637,17 @@ class PlayerLogger:
             return
 
         ts_str = datetime.fromtimestamp(ts).strftime("%H:%M:%S")
-        self.player_log_data.append(event)
-        msg = (
-            f"Player {'Joined' if joined else 'Left'} Server: {event.get('username', 'Unknown')}, "
-            f"ID: {event.get('player_id', 'Unknown')} at time {ts_str}"
-        )
-        self.send_player_msg(event, joined)
-        self.pylogger.write_log(msg)
-        self.log_player(log_file_name, msg)
+        if self.ignore_userdata.get("userId") != event.get("player_id", "Unknown"):
+            self.player_log_data.append(event)
+            msg = (
+                f"Player {'Joined' if joined else 'Left'} Server: {event.get('username', 'Unknown')}, "
+                f"ID: {event.get('player_id', 'Unknown')} at time {ts_str}"
+            )
+            self.send_player_msg(event, joined)
+            self.pylogger.write_log(msg)
+            self.log_player(log_file_name, msg)
+        else:
+            self.log_player(log_file_name, f"Owner {self.ignore_userdata.get('username')} {'joined' if joined else 'left'} the server.")
 
     def get_user_headshot_from_id(self, userid: str) -> str:
         try:
@@ -718,6 +721,20 @@ class PlayerLogger:
             observer.stop()
 
         observer.join()
+        self.check_logs(log_file_name)
+
+    def check_logs(self, log_file):
+        should_remove = False
+        with open(f"{MACROPATH}/player_logs/{log_file}", "r") as f:
+            if len(f.readlines()) <= 3:
+                should_remove = True
+        
+        if should_remove:
+            try:
+                os.remove(f"{MACROPATH}/player_logs/{log_file}")
+                self.pylogger.write_log(f"Removed log file {log_file} as nobody joined/left")
+            except Exception as e:
+                self.pylogger.write_log(f"Failed to delete log file: {e}")
 
     def get_biome_colour(self, biome):
         with open(f"{MACROPATH}/biomes.json", "r") as f:
@@ -774,11 +791,11 @@ class PlayerLogger:
                 total_duration += current_time - join_ts
                 in_server = True
 
-            formatted_join = datetime.fromtimestamp(first_join).strftime("%H:%M:%S") if first_join else "Unknown"
+            formatted_join = f"<t:{str(int(first_join))}>" if first_join else "Unknown"
             if in_server:
                 formatted_leave = "Still in server"
             else:
-                formatted_leave = datetime.fromtimestamp(last_leave).strftime("%H:%M:%S") if last_leave else "Unknown"
+                formatted_leave = f"<t:{str(int(first_join))}>" if last_leave else "Unknown"
 
             duration_fmt = datetime.utcfromtimestamp(total_duration).strftime("%H:%M:%S")
 
@@ -808,3 +825,42 @@ class PlayerLogger:
             self.pylogger.write_log("Sent player log report.")
         except Exception as e:
             self.pylogger.write_log(f"Error sending report to webhook: {e}")
+
+
+def get_username(log_path):
+    """
+    Parses Roblox log to extract username, userId, and displayName.
+    Returns a dict: {"username": ..., "userId": ..., "displayName": ...} or None if not found.
+    """
+    if not os.path.exists(log_path):
+        print(f"Debug: Log path does not exist: {log_path}")
+        return None
+
+    try:
+        with open(log_path, "r", encoding="utf-8", errors="ignore") as f:
+            content = f.read(1048576)
+
+        match = re.search(
+            r'Application did receive notification, type\(DID_LOG_IN,[^\)]*\), data\((\{.*?\})\)',
+            content,
+            re.DOTALL
+        )
+        if match:
+            json_str = match.group(1)
+            try:
+                data = json.loads(json_str)
+                username = data.get("username")
+                user_id = data.get("userId")
+                display_name = data.get("displayName")
+                print(f"Debug: Extracted username={username}, userId={user_id}, displayName={display_name}")
+                return {"username": username, "userId": user_id, "displayName": display_name}
+            except json.JSONDecodeError:
+                print(f"Error: Failed to parse JSON from log: {json_str}")
+                return None
+        else:
+            print(f"Debug: DID_LOG_IN pattern not found in {log_path}")
+            return None
+
+    except Exception as e:
+        print(f"Error reading log {log_path}: {e}")
+        return None

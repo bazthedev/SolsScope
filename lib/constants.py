@@ -27,11 +27,14 @@ PYTHON_EXE = os.path.join(MACROPATH, "py", "python.exe")
 ASSETDIR = os.path.join(MACROPATH, "assets")
 CALIBDIR = os.path.join(MACROPATH, "calibrations.json")
 
+USERDATA = {}
+
+PREFERRED_CLIENT = {}
+
 DEFAULTSETTINGS = {
     "WEBHOOK_URL": "",
     "__version__": LOCALVERSION,
     "use_roblox_player": True,
-    "global_wait_time": 0.2,
     "skip_aura_download": False,
     "mention": True,
     "mention_id": 0,
@@ -195,14 +198,17 @@ DEFAULTSETTINGS = {
     "send_item_crafted_notification" : True,
     "delay" : 0.05,
     "vip_status" : "No VIP",
-    "merchant_detection_type" : "Legacy",
+    #"merchant_detection_type" : "Legacy",
     "interaction_type" : "Mouse",
     "enable_player_logger" : True,
-    "calibration" : "",
+    #"calibration" : "",
     #"watch_ad_for_autocraft" : False,
     "typing_delay" : 0.2,
     "typing_hold" : 0.2,
-    "typing_jitter" : 0.1
+    "typing_jitter" : 0.1,
+    "secure_item_usage" : False,
+    "ignore_autocraft_safety_check" : False,
+    "ignore_fastflags_disabled_check" : False
 }
 
 VALIDSETTINGSKEYS = list(DEFAULTSETTINGS.keys())
@@ -210,7 +216,6 @@ VALIDSETTINGSKEYS = list(DEFAULTSETTINGS.keys())
 TOOLTIPS = {
     "WEBHOOK_URL": "The URL that the macro posts notifications to.",
     "use_roblox_player": "Force the Roblox Player logs to be used even if Microsoft Store version is running.",
-    "global_wait_time": "The time (in seconds) between some actions.",
     "skip_aura_download": "Skip downloading the auras information (recommended if slow startup). This will mean you cannot detect new auras if they are released.",
     "mention": "Mention you when detecting something.",
     "mention_id": "ID of the user to mention. If this needs to be a role, then use & before the ID.",
@@ -256,7 +261,7 @@ TOOLTIPS = {
     "use_reset_aura" : "Equip the reset aura when a new aura is rolled.",
     "use_alternate_uinav" : "Use the alternate paths for UI navigation. Enable this if pressing the left arrow with UI nav on takes you to the storage button.",
     "themes" : "List of themes that are available to be applied.",
-    #"vok_taran" : "Types \"vok taran\" in the chat every 30 minutes to spawn a Sand Storm biome.",
+    "vok_taran" : "Types \"vok taran\" in the chat every 30 minutes to spawn a Sand Storm biome.",
     "enable_ui_nav_key" : "The key needed to be pressed to enable UI Navigation.",
     "skip_autocraft_download" : "Skip downloading the Auto Craft Data.",
     "send_item_crafted_notification" : "Send a notification whenever an item is crafted during Auto Craft. This may cause the program to take longer per potion.",
@@ -265,21 +270,24 @@ TOOLTIPS = {
     "interaction_type" : "Choose how you want the Macro to perform actions in the game.",
     "enable_player_logger" : "Enable the player logger for biomes other than glitched/dreamspace.",
     "calibration" : "How the macro runs based on your screen size.",
-    #"watch_ad_for_autocraft" : "Watch the add every hour to get increased rates.",
+    "watch_ad_for_autocraft" : "Watch the add every hour to get increased rates.",
     "typing_delay" : "How long typing waits between each character.",
     "typing_hold" : "How long typing holds a key for (max about 0.3-0.5)",
-    "typing_jitter" : "Random amount added to delay to act human."
+    "typing_jitter" : "Random amount added to delay to act human.",
+    "secure_item_usage" : "Will perform a check to see if the item that is about to be used matches the item detected (slows down macro + not recommended for small screens).",
+    "ignore_autocraft_safety_check" : "Do not check that a potion was clicked before trying to add items to the autocraft.",
+    "ignore_fastflags_disabled_check" : "Ignore the Macro checking if the required fast flags were enabled (if you are using a bypass to use FFs, then check this box)"
 }
 
 DONOTDISPLAY = ["__version__", "current_theme"]
 NOTRECOMMENDED = []
 
-GENERAL_KEYS = ["WEBHOOK_URL", "private_server_link", "mode", "themes", "SECONDARY_WEBHOOK_URLS", "failsafe_key", "use_roblox_player", "global_wait_time", "mention", "mention_id"]
+GENERAL_KEYS = ["WEBHOOK_URL", "private_server_link", "mode", "themes", "SECONDARY_WEBHOOK_URLS", "failsafe_key", "use_roblox_player", "mention", "mention_id"]
 AURAS_KEYS = ["minimum_roll", "minimum_ping", "use_reset_aura", "reset_aura", "take_screenshot_on_detection"]
 BIOMES_KEYS = ["auto_biome_randomizer", "auto_strange_controller", "enable_player_logger", "pop_in_glitch", "pop_in_dreamspace"]
 SNIPER_KEYS = ["sniper_enabled", "sniper_toggles", "DISCORD_TOKEN", "sniper_logs", "scan_channels"]
 
-ACTIONS_KEYS = ["calibration", "merchant_detection", "merchant_detection_type", "auto_sell_to_jester", "do_obby", "vip_status", "notify_obby_completion", "has_abyssal_hunter"]
+ACTIONS_KEYS = ["merchant_detection", "auto_sell_to_jester", "secure_item_usage", "do_obby", "vip_status", "notify_obby_completion", "has_abyssal_hunter"]
 
 MARI_MERCHANT_KEYS = ["ping_mari", "mari_ping_id", "auto_purchase_items_mari"]
 JESTER_MERCHANT_KEYS = ["ping_jester", "jester_ping_id", "auto_purchase_items_jester", "amount_of_item_to_sell", "items_to_sell"]
@@ -293,13 +301,12 @@ DREAMSPACE_ITEMS_KEYS = ["auto_use_items_in_dreamspace"]
 LIMBO_KEYS = ["disable_eden_detection_in_limbo", "do_not_interact_with_eden"]
 
 MERCHANT_KEYS = ["merchant_detection", "ping_mari", "mari_ping_id", "auto_purchase_items_mari", "ping_jester", "jester_ping_id", "auto_purchase_items_jester", "auto_sell_to_jester", "amount_of_item_to_sell", "items_to_sell"]
-AUTOCRAFT_KEYS = ["auto_craft_item", "send_item_crafted_notification", "skip_auto_mode_warning", "do_not_walk_to_stella"]
+AUTOCRAFT_KEYS = ["auto_craft_item", "ignore_autocraft_safety_check", "send_item_crafted_notification", "skip_auto_mode_warning", "do_not_walk_to_stella"]
 PATH_KEYS = ["do_obby", "notify_obby_completion", "has_abyssal_hunter"]
 QUEST_KEYS = ["enable_auto_quest_board", "quests_to_accept"]
 SKIP_DLS_KEYS = ["skip_aura_download", "skip_biome_download", "skip_merchant_download", "skip_questboard_download", "skip_autocraft_download"]
-MACRO_OVERRIDES = ["disable_aura_detection", "disable_biome_detection", "disable_autokick_prevention"]
+MACRO_OVERRIDES = ["disable_aura_detection", "disable_biome_detection", "disable_autokick_prevention", "ignore_fastflags_disabled_check"]
 OTHER_KEYS = ["periodic_screenshots", "take_screenshot_on_detection", "disconnect_prevention", "always_on_top", "check_update", "auto_install_update"]
-
 
 
 STARTUP_MSGS = [
@@ -490,35 +497,44 @@ COMPLETION_COLOURS = [
 ]
 
 ALL_QB = [
+    "Player Hunt #1",
+    "Player Hunt #2",
+    "Player Hunt #3",
     "Basic Hunt",
     "Epic Hunt",
     "Unique Hunt",
     "Legendary Hunt",
     "Mythic Hunt",
-    "Finding a person",
-    "Meditation I",
-    "Meditation II",
-    "Delivery III",
-    "Delivery I",
-    "Delivery II",
-    "Delivery IV",
-    "Delivery V",
-    "Player Hunt #1",
-    "Player Hunt #2",
-    "Player Hunt #3",
     "Windy Breakthrough",
     "Snowy Breakthrough",
     "Rainy Breakthrough",
     "SandStorm Breakthrough",
     "Hell Breakthrough",
     "Starfall Breakthrough",
+    "Null Breakthrough",
     "Corruption Breakthrough",
-    "Null Breakthrough"
-    "Resonance",
+    "Finding a person",
     "A symbol of luck #1",
     "A symbol of luck #2",
-    "Fish",
-    "Minnow"
+    "Resonance of Wind",
+    "Resonance of Sea",
+    "Resonance of Frost",
+    "Resonance of Sand",
+    "Resonance of Flame",
+    "Resonance of Star",
+    "Resonance of Darkness",
+    "Resonance of Corruption",
+    "Meditation I",
+    "Meditation II",
+    "Delivery I",
+    "Delivery II",
+    "Delivery III",
+    "Delivery IV",
+    "Delivery V",
+    "Minnow Rookie",
+    "Catch 5 Common Fish",
+    "Catch 5 Uncommon Fish",
+    "Legendary Fisher"
 ]
 
 ACCEPTED_QUESTBOARD = [
@@ -527,34 +543,42 @@ ACCEPTED_QUESTBOARD = [
     "Unique Hunt",
     "Legendary Hunt",
     "Mythic Hunt",
-    "Finding a person",
-    "Meditation I",
-    "Meditation II",
     "Windy Breakthrough",
     "Snowy Breakthrough",
     "Rainy Breakthrough",
     "SandStorm Breakthrough",
     "Hell Breakthrough",
     "Starfall Breakthrough",
+    "Null Breakthrough",
     "Corruption Breakthrough",
-    "Null Breakthrough"
+    "Finding a person",
+    "Meditation I",
+    "Meditation II",
 ]
 
 DONOTACCEPT_QB = [
+    "Player Hunt #1",
+    "Player Hunt #2",
+    "Player Hunt #3",
+    "A symbol of luck #1",
+    "A symbol of luck #2",
+    "Resonance of Wind",
+    "Resonance of Sea",
+    "Resonance of Frost",
+    "Resonance of Sand",
+    "Resonance of Flame",
+    "Resonance of Star",
+    "Resonance of Darkness",
+    "Resonance of Corruption",
     "Delivery I",
     "Delivery II",
     "Delivery III",
     "Delivery IV",
     "Delivery V",
-    "Player Hunt #1",
-    "Player Hunt #2",
-    "Player Hunt #3",
-    "Resonance",
-    "A symbol of luck #1",
-    "A symbol of luck #2",
-    "Catch"
-    "Fish",
-    "Minnow"
+    "Minnow Rookie",
+    "Catch 5 Common Fish",
+    "Catch 5 Uncommon Fish",
+    "Legendary Fisher"
 ]
 
 QUESTBOARD_RARITY_COLOURS = [
@@ -566,3 +590,63 @@ QUESTBOARD_RARITY_COLOURS = [
 ]
 
 DONOTACCEPTRESET = ["aquatic", "exotic", "undead", "jazz", "bounded", "celestial", "kyuawthuite", "arcane", "virtual", "twilight", "starscourge", "sailor", "stormal", "chromatic", "matrix", "overture", "ruins", "astral", "cosmos"]
+
+
+ALL_INV_ITEMS = [
+    "Void Coin",
+    "Lucky Penny",
+    "Gear Basing",
+    "Gear A",
+    "Gear B",
+    "Stella's Star",
+    "Stella's Candle",
+    "Random Potion Sack",
+    "Strange Controller",
+    "Biome Randomizer",
+    "Rainbow Syrup",
+    "Hwachae",
+    "Merchant Teleporter",
+    "Merchant Tracker",
+    "Pumpkin",
+    "Pump King's Head",
+    "Empty Bottle",
+    "Wind Essence",
+    "Icicle",
+    "Rainy Bottle",
+    "Eternal Flame",
+    "Piece of Star",
+    "Curruptaine",
+    "NULL?",
+    "Hour Glass",
+    "Rune of Wind",
+    "Rune of Frost",
+    "Rune of Rainstorm",
+    "Rune of Dust",
+    "Rune of Hell",
+    "Rune of Galaxy",
+    "Rune of Corruption",
+    "Rune of Nothing",
+    "Rune of Everything",
+    "Fortune Potion I",
+    "Fortune Potion II",
+    "Fortune Potion III",
+    "Haste Potion I",
+    "Haste Potion II",
+    "Haste Potion III",
+    "Transcendent Potion",
+    "Void Heart",
+    "Potion of Bound",
+    "Heavenly Potion",
+    "Rage Potion",
+    "Diver Potion",
+    "Jewelry Potion",
+    "Zombie Potion",
+    "Godly Potion (Zeus)",
+    "Godly Potion (Poseidon)",
+    "Godly Potion (Hades)",
+    "Godlike Potion",
+    "Warp Potion",
+    "Forbidden Potion I",
+    "Forbidden Potion II",
+    "Forbidden Potion III"
+]

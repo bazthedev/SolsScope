@@ -70,9 +70,11 @@ def get_pip():
         get_pip_path = os.path.join(MACROPATH, "temp", "get-pip.py")
         download_file(get_pip_url, get_pip_path)
         subprocess.check_call([
-            PYTHON_EXE,
-            get_pip_path
-        ])
+                PYTHON_EXE,
+                get_pip_path
+            ],
+            creationflags=subprocess.CREATE_NO_WINDOW
+        )
         os.remove(get_pip_path)
         return True
     except subprocess.CalledProcessError as e:
@@ -83,10 +85,12 @@ def get_pip():
 def pip_install_target(package):
     try:
         subprocess.check_call([
-            PYTHON_EXE, "-m", "pip",
-            "install", "--upgrade", "--no-cache-dir",
-            "--no-warn-script-location", package
-        ])
+                PYTHON_EXE, "-m", "pip",
+                "install", "--upgrade", "--no-cache-dir",
+                "--no-warn-script-location", package
+            ],
+            creationflags=subprocess.CREATE_NO_WINDOW
+        )
         INSTALLED[package.lower()] = "installed"
         save_lockfile()
         return True
@@ -143,6 +147,7 @@ class PackageInstallerGUI(QDialog):
             Qt.WindowType.CustomizeWindowHint |
             Qt.WindowType.WindowTitleHint
         )
+        self.setObjectName("PackageInstallerGUI")
         if os.path.exists(os.path.join(MACROPATH, "icon.ico")):
             self.setWindowIcon(QIcon(os.path.join(MACROPATH, "icon.ico")))
         layout = QVBoxLayout()

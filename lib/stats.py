@@ -19,13 +19,10 @@ from settings_manager import get_biomes_path
 def create_stats():
     if not os.path.exists(f"{MACROPATH}\\stats.json"):
         try:
-            f = open(f"{MACROPATH}\\stats.json", "w")
-            f.write("{}")
-            f.close()
+            with open(f"{MACROPATH}\\stats.json", "w") as f:
+                f.write("{}")
         except Exception as e:
             print(f"Failed to create stats: {e}")
-        finally:
-            f.close()
 
 def load_stats():
     with open(f"{MACROPATH}/stats.json", "r", encoding="utf-8") as f:
@@ -51,14 +48,32 @@ def init_stats():
                     "amount" : 0,
                     "colour" : _[stat]["colour"]
                 }
-                
-            
 
         save_stats(stats)
         
         return True
-    
-    return False
+    else:
+        _ = load_all_biomes()
+        for biome in _:
+            if biome not in stats:
+                stats[biome] = {
+                    "amount" : 0,
+                    "colour" : _[biome]["colour"]
+                }
+        
+        save_stats(stats)
+
+        todel = []
+        for stat in stats:
+            if stat not in _:
+                todel.append(stat)
+
+        for stat in todel:
+            del stats[stat]
+
+        save_stats(stats)
+        
+        return True
     
 def increment_stat(stat):
 

@@ -20,6 +20,7 @@ import glob
 import importlib.util
 from packaging.version import parse as parse_version
 import random
+import requests
 
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QFormLayout, QGroupBox,
@@ -38,7 +39,7 @@ from constants import (
     ACTIONS_KEYS, MARI_MERCHANT_KEYS, JESTER_MERCHANT_KEYS, AUTOCRAFT_ITEM_KEYS,
     BIOME_CONFIG_KEYS, GLITCHED_ITEMS_KEYS, DREAMSPACE_ITEMS_KEYS,
     DONOTDISPLAY, LIMBO_KEYS, DONOTACCEPTRESET, TOOLTIPS, SKIP_DLS_KEYS,
-    MACRO_OVERRIDES, ACTIONS_CONFIG
+    MACRO_OVERRIDES, ACTIONS_CONFIG, USERDATA
 )
 from utils import (
     get_logger, set_global_logger, Logger, format_key, 
@@ -63,11 +64,13 @@ from macro_logic import (
 
 from uinav import TGIFRIDAY
 
-from stats import load_stats
+from stats import load_stats, load_all_biomes
 
 from packager import PackageInstallerGUI
 
 from calibrations import get_available_calibrations, CalibrationEditor, download_all_calibrations, get_best_calibration, get_screen_info
+
+import pyautoscope
 
 try:
     from PIL import Image
@@ -86,6 +89,8 @@ from pynput import keyboard, mouse
 import mousekey as mk
 
 import discord
+
+from manager import ManagerGUI
 
 class PyQtLogSignal(QObject):
     log_signal = pyqtSignal(str)
@@ -252,6 +257,8 @@ class MainWindow(QMainWindow):
 
         self.logger.write_log("GUI setup complete (PyQt).")
 
+        self.logger.write_log(f"Detected username: {USERDATA.get('username')}")
+
     def generate_easter_eggs(self):
         ee = {}
         if random.randint(1, 1000) == 1:
@@ -279,16 +286,19 @@ class MainWindow(QMainWindow):
             else:
                 self.calibrations_dropdown.setCurrentText(get_best_calibration(screen_info["width"], screen_info["height"], screen_info["scale"], screen_info["windowed"]))
 
-    def apply_theme_button(self):
+    def apply_theme_button(self, path = None):
         self.logger.write_log("Presenting user with theme file dialog prompt.")
         default_dir = os.path.join(MACROPATH, "theme")
 
-        file_path, _ = QFileDialog.getOpenFileName(
-            self,
-            "Select Theme File",
-            default_dir,
-            "SolsScope Theme Files (*.ssthm)"
-        )
+        if not path:
+            file_path, _ = QFileDialog.getOpenFileName(
+                self,
+                "Select Theme File",
+                default_dir,
+                "SolsScope Theme Files (*.ssthm)"
+            )
+        else:
+            file_path = path
 
         if not file_path:
             self.logger.write_log("No theme selected.")
@@ -304,14 +314,6 @@ class MainWindow(QMainWindow):
             theme_name = filename.split(".")[0].capitalize()
 
             os.makedirs(dest_dir, exist_ok=True)
-
-            if os.path.exists(dest_path):
-                reply = QMessageBox.question(self, "Theme Exists",
-                                             f"Theme '{filename}' already exists. Overwrite?",
-                                             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-                                             QMessageBox.StandardButton.No)
-                if reply == QMessageBox.StandardButton.No:
-                    return
 
             try:
                 shutil.copy(file_path, dest_path)
@@ -336,7 +338,8 @@ class MainWindow(QMainWindow):
         self.refresh_theme_dropdown()
         self.logger.write_log(f"Applied theme {theme_name}.")
 
-        QMessageBox.information(self, "Theme Applied", f"The theme {theme_name} has been applied.")
+        if not path:
+            QMessageBox.information(self, "Theme Applied", f"The theme {theme_name} has been applied.")
 
     def setup_custom_styling(self):
         """Apply custom theme styling to the application"""
@@ -1101,6 +1104,8 @@ class MainWindow(QMainWindow):
             label = QLabel(formatted_key + ":")
             if tooltip_text:
                 label.setToolTip(tooltip_text)
+            else:
+                label.setToolTip("No tooltip for this.")
 
             if key == "calibration":
                 h_layout = QHBoxLayout()
@@ -1227,6 +1232,8 @@ class MainWindow(QMainWindow):
                 group_layout.setContentsMargins(10, 15, 10, 10)
                 if tooltip_text:
                     group_box.setToolTip(tooltip_text)
+                else:
+                    group_box.setToolTip("No tooltip for this.")
                 form_layout.addRow(group_box) 
                 entry_dict[key] = {}
                 self.create_widgets(value, group_layout, entry_dict[key])
@@ -1271,6 +1278,8 @@ class MainWindow(QMainWindow):
             label = QLabel(formatted_key + ":")
             if tooltip_text:
                 label.setToolTip(tooltip_text)
+            else:
+                label.setToolTip("No tooltip for this.")
 
             if isinstance(value, dict):
                 group_box = QGroupBox(formatted_key) 
@@ -1279,6 +1288,8 @@ class MainWindow(QMainWindow):
                 group_layout.setContentsMargins(10, 15, 10, 10)
                 if tooltip_text:
                     group_box.setToolTip(tooltip_text)
+                else:
+                    group_box.setToolTip("No tooltip for this.")
                 form_layout.addRow(group_box) 
                 entry_dict[key] = {}
                 self.create_widgets(value, group_layout, entry_dict[key])
@@ -1412,12 +1423,6 @@ class MainWindow(QMainWindow):
         layout.addWidget(button_frame)
 
     def add_other_tab_extras(self, layout):
-        """Adds Plugin install button to the Other tab layout."""
-        install_btn = QPushButton("Install Plugin...")
-        install_btn.clicked.connect(self.install_plugin) 
-        install_btn.setSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Fixed)
-        layout.addWidget(install_btn)
-        layout.addSpacing(10)
 
         button_frame = QFrame()
         button_layout = QVBoxLayout(button_frame)
@@ -1555,6 +1560,8 @@ class MainWindow(QMainWindow):
 
         self.biome_stat_labels = {}
 
+        biomes = load_all_biomes()
+
         for biome_name, biome_data in load_stats().items():
             stat_row = QHBoxLayout()
 
@@ -1562,8 +1569,13 @@ class MainWindow(QMainWindow):
             color_label.setFixedSize(12, 12)
             color_label.setStyleSheet(f"background-color: {biome_data['colour']}; border: 1px solid black;")
             stat_row.addWidget(color_label)
-
-            count_label = QLabel(f"{biome_name.upper()}: {biome_data['amount']}")
+            if biomes.get(biome_name):
+                if biomes.get(biome_name).get("display_name"):
+                    count_label = QLabel(f"{biomes.get(biome_name).get("display_name").upper()}: {biome_data['amount']}")
+                else:
+                    count_label = QLabel(f"{biome_name.upper()}: {biome_data['amount']}")
+            else:
+                count_label = QLabel(f"{biome_name.upper()}: {biome_data['amount']}")
             count_label.setStyleSheet("font-size: 11px; margin-left: 5px;")
             stat_row.addWidget(count_label)
 
@@ -1817,8 +1829,8 @@ class MainWindow(QMainWindow):
         button_layout.addStretch(1) 
 
         if tab_name.lower() == "other":
-            theme_button = QPushButton("Install a theme")
-            theme_button.clicked.connect(self.apply_theme_button)
+            theme_button = QPushButton("Open Extras")
+            theme_button.clicked.connect(self.start_downloader)
             button_layout.addWidget(theme_button)
         else:
             save_button = QPushButton("Save Settings")
@@ -1858,6 +1870,62 @@ class MainWindow(QMainWindow):
         with open(get_settings_path(), "w", encoding="utf-8") as f:
             json.dump(self.settings, f, indent=4)
             self.logger.write_log("Updated config to decide redownload.")
+
+    def start_downloader(self):
+        try:
+            pd_req = requests.get("https://raw.githubusercontent.com/bazthedev/SolsScope/refs/heads/main/plugins/plugin_index.json", timeout=10)
+            plugin_data = pd_req.json()
+        except Exception as e:
+            plugin_data = {
+                "Remote Bot": {
+                    "name": "Remote Bot",
+                    "description": "Control SolsScope remotely via a discord bot.",
+                    "version": "1.0.4",
+                    "authors": ["bazthedev"],
+                    "requires_version": "2.0.0",
+                    "plugin_requirements": [],
+                    "download_url": "https://raw.githubusercontent.com/bazthedev/SolsScope/refs/heads/main/plugins/remote.py"
+                },
+                "Clipping": {
+                    "name": "Clipping",
+                    "description": "Clip Global rolls or record rare biomes.",
+                    "version": "1.0.2",
+                    "authors": ["bazthedev"],
+                    "requires_version": "2.0.0",
+                    "plugin_requirements": ["pygetwindow"],
+                    "download_url": "https://raw.githubusercontent.com/bazthedev/SolsScope/refs/heads/main/plugins/clipping.py"
+                }
+            }
+
+        try:
+            th_req = requests.get("https://raw.githubusercontent.com/bazthedev/SolsScope/refs/heads/main/theme/theme_index.json", timeout=10)
+            theme_data = th_req.json()
+        except Exception as e:
+            theme_data = {
+                "Remote Bot": {
+                    "name": "Remote Bot",
+                    "description": "Control SolsScope remotely via a discord bot.",
+                    "version": "1.0.4",
+                    "authors": ["bazthedev"],
+                    "requires_version": "2.0.0",
+                    "plugin_requirements": [],
+                    "download_url": "https://raw.githubusercontent.com/bazthedev/SolsScope/refs/heads/main/plugins/remote.py"
+                },
+                "Clipping": {
+                    "name": "Clipping",
+                    "description": "Clip Global rolls or record rare biomes.",
+                    "version": "1.0.2",
+                    "authors": ["bazthedev"],
+                    "requires_version": "2.0.0",
+                    "plugin_requirements": ["pygetwindow"],
+                    "download_url": "https://raw.githubusercontent.com/bazthedev/SolsScope/refs/heads/main/plugins/clipping.py"
+                }
+            }
+
+        self.manager_window = ManagerGUI(self, plugin_data, theme_data)
+        self.manager_window.setModal(True)
+        self.manager_window.exec()
+
 
     def create_logs_tab(self):
         logs_tab = QWidget()
@@ -2101,6 +2169,7 @@ class MainWindow(QMainWindow):
         devs = [
             ("Baz", {"image": "baz.png", "role": "Lead Developer"}),
             ("cresqnt", {"image": "cresqnt.png", "role": "Lead Developer"}),
+            ("Meklows", {"image": "meklows.jpg", "role" : "Developer"}),
             ("ManasAarohi", {"image": "manasaarohi.png", "role": "Lead Path Developer"}),
             ("Cyclate", {"image": "cyclate.png", "role": "Developer"})
         ]
@@ -2139,13 +2208,20 @@ class MainWindow(QMainWindow):
         left_acks = [
             "AllanQute (_justalin) - Path inspiration",
             "dolphSol - Creative inspiration",
-            "Mr. Void - Helping to create the logic for the new auto craft",
+            "Mr. Void - Helping with the logic for the new auto craft",
+            "ethan03228 - Helping create calibrations",
+            "gemz0649 - Helping create calibrations",
+            "senatorarmstrong4017 - Helping create calibrations",
+            "square.ow - Helping create calibrations"
         ]
         
         right_acks = [
             "vex (vexthecoder) - Feature ideas", 
             "Doors_Daisukiman - Testing help",
-            "C (criticize) - For helping Scope to get to where it is today"
+            "C (criticize) - For helping Scope to get to where it is today",
+            "gummyballer - Helping create calibrations",
+            "honzahomecoming - Helping create calibrations",
+            "im_a_cro - Helping create calibrations"
         ]
 
         for ack_list in [left_acks, right_acks]:
@@ -2678,7 +2754,7 @@ class MainWindow(QMainWindow):
 
             QMessageBox.critical(self, "Invalid Webhook", f"The primary Webhook URL is invalid or initialization failed:\n{e}")
             self.logger.write_log(f"Macro start failed: Invalid Webhook URL or adapter issue ({e}).", level="ERROR")
-            return 
+            #return 
 
         use_player = self.settings.get("use_roblox_player", True)
         global TGIFRIDAY
@@ -2702,6 +2778,7 @@ class MainWindow(QMainWindow):
         self.ignore_next_detection.clear()
         self.threads = []
         self.logger.write_log("Starting Macro Threads in 5 seconds...")
+        pyautoscope.refresh_clients()
 
         is_autocraft_mode = self.settings.get("mode", "Normal") == "Auto Craft"
         is_idle_mode = self.settings.get("mode", "Normal") == "IDLE"
@@ -2715,6 +2792,10 @@ class MainWindow(QMainWindow):
         except ValueError as e: 
              self.running = False 
              return
+        
+        if self.settings.get("ignore_fastflags_disabled_check", False):
+            import macro_logic
+            macro_logic.FAST_FLAGS_DISABLED = False
 
         for name, target_info in thread_targets.items():
             if target_info:
@@ -2762,9 +2843,9 @@ class MainWindow(QMainWindow):
         if is_idle_mode:
             self.logger.write_log("Starting in IDLE Mode.")
             targets = {
-                "Aura Detection": (aura_detection, [self.settings, self.webhook, self.stop_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.ignore_lock, self.ignore_next_detection, self.pause_event, self.reader]) if not self.settings.get("disable_aura_detection") else None,
-                "Biome Detection": (biome_detection, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.mkey, self.keyboard_controller, self.keyboard_lock, self.pause_event, self]) if not self.settings.get("disable_biome_detection") else None,
-                "Merchant Detection": (merchant_detection, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.ignore_lock, self.ignore_next_detection, self.reader, self.pause_event]) if self.settings.get("merchant_detection") and MERCHANT_DETECTION_POSSIBLE else None,
+                "Aura Detection": (aura_detection, [self.settings, self.webhook, self.stop_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.ignore_lock, self.ignore_next_detection, self.pause_event, self.reader, self.mouse_controller]) if not self.settings.get("disable_aura_detection") else None,
+                "Biome Detection": (biome_detection, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.mkey, self.keyboard_controller, self.keyboard_lock, self.pause_event, self, self.reader, self.mouse_controller]) if not self.settings.get("disable_biome_detection") else None,
+                "Merchant Detection": (merchant_detection, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.ignore_lock, self.ignore_next_detection, self.reader, self.pause_event, self.mouse_controller]) if self.settings.get("merchant_detection") else None,
             }
         elif is_autocraft_mode:
             self.logger.write_log("Starting in Auto Craft Mode.")
@@ -2779,62 +2860,62 @@ class MainWindow(QMainWindow):
 
             targets = {
                 "Auto Craft Logic": (auto_craft, [self.webhook, self.settings, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.mouse_controller, self.ignore_lock, self.ignore_next_detection, self.reader, self.pause_event, self.items_crafted]),
-                "Aura Detection": (aura_detection, [self.settings, self.webhook, self.stop_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.ignore_lock, self.ignore_next_detection, self.pause_event, self.reader]) if not self.settings.get("disable_aura_detection") else None,
-                "Biome Detection": (biome_detection, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.mkey, self.keyboard_controller, self.keyboard_lock, self.pause_event, self]) if not self.settings.get("disable_biome_detection") else None,
+                "Aura Detection": (aura_detection, [self.settings, self.webhook, self.stop_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.ignore_lock, self.ignore_next_detection, self.pause_event, self.reader, self.mouse_controller]) if not self.settings.get("disable_aura_detection") else None,
+                "Biome Detection": (biome_detection, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.mkey, self.keyboard_controller, self.keyboard_lock, self.pause_event, self, self.reader, self.mouse_controller]) if not self.settings.get("disable_biome_detection") else None,
                 "Keep Alive": (keep_alive, [self.settings, self.stop_event, self.sniped_event, self.keyboard_lock,  self.keyboard_controller, self.pause_event, self.mkey]) if not self.settings.get("disable_autokick_prevention") else None,
                 "Disconnect Prevention": (disconnect_prevention, [self.settings, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.pause_event]) if self.settings.get("disconnect_prevention") else None,
-                "Merchant Detection": (merchant_detection, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.ignore_lock, self.ignore_next_detection, self.reader, self.pause_event]) if (self.settings.get("merchant_detection") or self.settings.get("auto_sell_to_jester")) and MERCHANT_DETECTION_POSSIBLE else None,
-                "Auto Strange Controller": (auto_sc, [self.settings, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.pause_event, self.reader]) if self.settings.get("auto_strange_controller") else None,
-                "Auto Biome Randomizer": (auto_br, [self.settings, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.pause_event, self.reader]) if self.settings.get("auto_biome_randomizer") else None,
+                "Merchant Detection": (merchant_detection, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.ignore_lock, self.ignore_next_detection, self.reader, self.pause_event, self.mouse_controller]) if (self.settings.get("merchant_detection") or self.settings.get("auto_sell_to_jester")) and MERCHANT_DETECTION_POSSIBLE else None,
+                "Auto Strange Controller": (auto_sc, [self.settings, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.pause_event, self.reader, self.mouse_controller]) if self.settings.get("auto_strange_controller") else None,
+                "Auto Biome Randomizer": (auto_br, [self.settings, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.pause_event, self.reader, self.mouse_controller]) if self.settings.get("auto_biome_randomizer") else None,
                 "Inventory Screenshots": (inventory_screenshot, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.pause_event, self.reader]) if self.settings.get("periodic_screenshots", {}).get("inventory") else None,
                 "Storage Screenshots": (storage_screenshot, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.pause_event, self.reader]) if self.settings.get("periodic_screenshots", {}).get("storage") else None,
-                "Obby": (do_obby, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.ignore_lock, self.ignore_next_detection, self.pause_event, self.reader]) if self.settings.get("do_obby") and not self.settings.get("do_not_walk_to_stella", False) else None,
+                "Obby": (do_obby, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.ignore_lock, self.ignore_next_detection, self.pause_event, self.reader, self.mouse_controller]) if self.settings.get("do_obby") and not self.settings.get("do_not_walk_to_stella", False) else None,
                 "Auto Quest Board": (auto_questboard, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.mouse_controller, self.ignore_lock, self.ignore_next_detection, self.pause_event, self.reader,]) if self.settings.get("enable_auto_quest_board") else None,
                 #"vok taran": (vok_taran, [self.settings, self.webhook, self.stop_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.pause_event]) if self.settings.get("vok_taran") else None,
             }
         elif is_limbo_mode:
             self.logger.write_log("Starting in Limbo Mode.")
             targets = {
-                "Aura Detection": (aura_detection, [self.settings, self.webhook, self.stop_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.ignore_lock, self.ignore_next_detection, self.pause_event, self.reader]) if not self.settings.get("disable_aura_detection") else None,
+                "Aura Detection": (aura_detection, [self.settings, self.webhook, self.stop_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.ignore_lock, self.ignore_next_detection, self.pause_event, self.reader, self.mouse_controller]) if not self.settings.get("disable_aura_detection") else None,
                 "Eden Detection": (eden_detection, [self.settings, self.webhook, self.stop_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.mouse_controller, self.pause_event, self.reader]) if not self.settings.get("disable_eden_detection_in_limbo") else None,
-                "Biome Detection": (biome_detection, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.mkey, self.keyboard_controller, self.keyboard_lock, self.pause_event, self]) if not self.settings.get("disable_biome_detection") else None,
+                "Biome Detection": (biome_detection, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.mkey, self.keyboard_controller, self.keyboard_lock, self.pause_event, self, self.reader, self.mouse_controller]) if not self.settings.get("disable_biome_detection") else None,
                 "Keep Alive": (keep_alive, [self.settings, self.stop_event, self.sniped_event, self.keyboard_lock, self.keyboard_controller, self.pause_event, self.mkey]) if not self.settings.get("disable_autokick_prevention") else None,
                 "Disconnect Prevention": (disconnect_prevention, [self.settings, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.pause_event]) if self.settings.get("disconnect_prevention") else None,
-                "Merchant Detection": (merchant_detection, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.ignore_lock, self.ignore_next_detection, self.reader, self.pause_event]) if (self.settings.get("merchant_detection") or self.settings.get("auto_sell_to_jester")) and MERCHANT_DETECTION_POSSIBLE else None,
-                "Auto Strange Controller": (auto_sc, [self.settings, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.pause_event, self.reader]) if self.settings.get("auto_strange_controller") else None,
-                "Auto Biome Randomizer": (auto_br, [self.settings, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.pause_event, self.reader]) if self.settings.get("auto_biome_randomizer") else None,
+                "Merchant Detection": (merchant_detection, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.ignore_lock, self.ignore_next_detection, self.reader, self.pause_event, self.mouse_controller]) if (self.settings.get("merchant_detection") or self.settings.get("auto_sell_to_jester")) and MERCHANT_DETECTION_POSSIBLE else None,
+                "Auto Strange Controller": (auto_sc, [self.settings, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.pause_event, self.reader, self.mouse_controller]) if self.settings.get("auto_strange_controller") else None,
+                "Auto Biome Randomizer": (auto_br, [self.settings, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.pause_event, self.reader, self.mouse_controller]) if self.settings.get("auto_biome_randomizer") else None,
                 "Inventory Screenshots": (inventory_screenshot, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.pause_event, self.reader]) if self.settings.get("periodic_screenshots", {}).get("inventory") else None,
                 "Storage Screenshots": (storage_screenshot, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.pause_event, self.reader]) if self.settings.get("periodic_screenshots", {}).get("storage") else None,
-                "Obby": (do_obby, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.ignore_lock, self.ignore_next_detection, self.pause_event, self.reader]) if self.settings.get("do_obby") else None,
-                "Portable Crack": (portable_crack, [self.settings, self.stop_event, self.sniped_event, self.mkey, self.keyboard_controller, self.keyboard_lock, self.pause_event, self.reader]) if is_limbo_mode and not is_idle_mode else None,
+                "Obby": (do_obby, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.ignore_lock, self.ignore_next_detection, self.pause_event, self.reader, self.mouse_controller]) if self.settings.get("do_obby") else None,
+                "Portable Crack": (portable_crack, [self.settings, self.stop_event, self.sniped_event, self.mkey, self.keyboard_controller, self.keyboard_lock, self.pause_event, self.reader, self.mouse_controller]) if is_limbo_mode and not is_idle_mode else None,
                 "Auto Quest Board": (auto_questboard, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.mouse_controller, self.ignore_lock, self.ignore_next_detection, self.pause_event, self.reader,]) if self.settings.get("enable_auto_quest_board") else None,
             }
         elif is_fishing_mode:
             self.logger.write_log("Starting in Fishing Mode.")
             targets = {
-                "Aura Detection": (aura_detection, [self.settings, self.webhook, self.stop_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.ignore_lock, self.ignore_next_detection, self.pause_event, self.reader]) if not self.settings.get("disable_aura_detection") else None,
-                "Biome Detection": (biome_detection, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.mkey, self.keyboard_controller, self.keyboard_lock, self.pause_event, self]) if not self.settings.get("disable_biome_detection") else None,
+                "Aura Detection": (aura_detection, [self.settings, self.webhook, self.stop_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.ignore_lock, self.ignore_next_detection, self.pause_event, self.reader, self.mouse_controller]) if not self.settings.get("disable_aura_detection") else None,
+                "Biome Detection": (biome_detection, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.mkey, self.keyboard_controller, self.keyboard_lock, self.pause_event, self, self.reader, self.mouse_controller]) if not self.settings.get("disable_biome_detection") else None,
                 "Keep Alive": (keep_alive, [self.settings, self.stop_event, self.sniped_event, self.keyboard_lock, self.keyboard_controller, self.pause_event, self.mkey]) if not self.settings.get("disable_autokick_prevention") else None,
-                "Auto Strange Controller": (auto_sc, [self.settings, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.pause_event, self.reader]) if self.settings.get("auto_strange_controller") else None,
-                "Auto Biome Randomizer": (auto_br, [self.settings, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.pause_event, self.reader]) if self.settings.get("auto_biome_randomizer") else None,
+                "Auto Strange Controller": (auto_sc, [self.settings, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.pause_event, self.reader, self.mouse_controller]) if self.settings.get("auto_strange_controller") else None,
+                "Auto Biome Randomizer": (auto_br, [self.settings, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.pause_event, self.reader, self.mouse_controller]) if self.settings.get("auto_biome_randomizer") else None,
                 "Inventory Screenshots": (inventory_screenshot, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.pause_event, self.reader]) if self.settings.get("periodic_screenshots", {}).get("inventory") else None,
                 "Storage Screenshots": (storage_screenshot, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.pause_event, self.reader]) if self.settings.get("periodic_screenshots", {}).get("storage") else None,
                 #"vok taran": (vok_taran, [self.settings, self.webhook, self.stop_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.pause_event]) if self.settings.get("vok_taran") else None,
-                "Merchant Detection": (merchant_detection, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.ignore_lock, self.ignore_next_detection, self.reader, self.pause_event]) if (self.settings.get("merchant_detection") or self.settings.get("auto_sell_to_jester")) and MERCHANT_DETECTION_POSSIBLE else None,
+                "Merchant Detection": (merchant_detection, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.ignore_lock, self.ignore_next_detection, self.reader, self.pause_event, self.mouse_controller]) if (self.settings.get("merchant_detection") or self.settings.get("auto_sell_to_jester")) and MERCHANT_DETECTION_POSSIBLE else None,
             }
         else:
             self.logger.write_log("Starting in Normal Mode.")
             targets = {
-                "Aura Detection": (aura_detection, [self.settings, self.webhook, self.stop_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.ignore_lock, self.ignore_next_detection, self.pause_event, self.reader]) if not self.settings.get("disable_aura_detection") else None,
-                "Biome Detection": (biome_detection, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.mkey, self.keyboard_controller, self.keyboard_lock, self.pause_event, self]) if not self.settings.get("disable_biome_detection") else None,
+                "Aura Detection": (aura_detection, [self.settings, self.webhook, self.stop_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.ignore_lock, self.ignore_next_detection, self.pause_event, self.reader, self.mouse_controller]) if not self.settings.get("disable_aura_detection") else None,
+                "Biome Detection": (biome_detection, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.mkey, self.keyboard_controller, self.keyboard_lock, self.pause_event, self, self.reader, self.mouse_controller]) if not self.settings.get("disable_biome_detection") else None,
                 "Keep Alive": (keep_alive, [self.settings, self.stop_event, self.sniped_event, self.keyboard_lock, self.keyboard_controller, self.pause_event, self.mkey]) if not self.settings.get("disable_autokick_prevention") else None,
                 "Disconnect Prevention": (disconnect_prevention, [self.settings, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.pause_event]) if self.settings.get("disconnect_prevention") else None,
-                "Merchant Detection": (merchant_detection, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.ignore_lock, self.ignore_next_detection, self.reader, self.pause_event]) if (self.settings.get("merchant_detection") or self.settings.get("auto_sell_to_jester")) and MERCHANT_DETECTION_POSSIBLE else None,
-                "Auto Strange Controller": (auto_sc, [self.settings, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.pause_event, self.reader]) if self.settings.get("auto_strange_controller") else None,
-                "Auto Biome Randomizer": (auto_br, [self.settings, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.pause_event, self.reader]) if self.settings.get("auto_biome_randomizer") else None,
+                "Merchant Detection": (merchant_detection, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.ignore_lock, self.ignore_next_detection, self.reader, self.pause_event, self.mouse_controller]) if (self.settings.get("merchant_detection") or self.settings.get("auto_sell_to_jester")) and MERCHANT_DETECTION_POSSIBLE else None,
+                "Auto Strange Controller": (auto_sc, [self.settings, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.pause_event, self.reader, self.mouse_controller]) if self.settings.get("auto_strange_controller") else None,
+                "Auto Biome Randomizer": (auto_br, [self.settings, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.pause_event, self.reader, self.mouse_controller]) if self.settings.get("auto_biome_randomizer") else None,
                 "Inventory Screenshots": (inventory_screenshot, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.pause_event, self.reader]) if self.settings.get("periodic_screenshots", {}).get("inventory") else None,
                 "Storage Screenshots": (storage_screenshot, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.pause_event, self.reader]) if self.settings.get("periodic_screenshots", {}).get("storage") else None,
-                "Obby": (do_obby, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.ignore_lock, self.ignore_next_detection, self.pause_event, self.reader]) if self.settings.get("do_obby") else None,
+                "Obby": (do_obby, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.ignore_lock, self.ignore_next_detection, self.pause_event, self.reader, self.mouse_controller]) if self.settings.get("do_obby") else None,
                 "Auto Quest Board": (auto_questboard, [self.settings, self.webhook, self.stop_event, self.sniped_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.mouse_controller, self.ignore_lock, self.ignore_next_detection, self.pause_event, self.reader,]) if self.settings.get("enable_auto_quest_board") else None,
                 #"vok taran": (vok_taran, [self.settings, self.webhook, self.stop_event, self.keyboard_lock, self.mkey, self.keyboard_controller, self.pause_event]) if self.settings.get("vok_taran") else None,
             }
@@ -3014,8 +3095,9 @@ class MainWindow(QMainWindow):
                     plugin_authors = getattr(temp_instance, "authors", ["Unknown"])
                     plugin_requirements = getattr(temp_instance, "requirements", [])
                     required_macro_version = getattr(temp_instance, "requires", "0.0.0")
-
+                    silent = getattr(temp_instance, "silent", False)
                     plugin_autocraft_compatible = getattr(temp_instance, "autocraft_compatible", False)
+
                     del temp_instance 
                 except Exception as meta_e:
                     self.logger.write_log(f" > Error getting metadata from temporary instance of {plugin_name_from_file}: {meta_e}", level="ERROR")
@@ -3065,47 +3147,48 @@ class MainWindow(QMainWindow):
                     self.logger.write_log(f" > Error loading  config for plugin '{plugin_display_name}': {config_e}", level="WARN")
                     plugin_instance.config = {} 
 
-                self.logger.write_log(f"Creating UI tab for plugin: {plugin_display_name}")
-                plugin_tab = QWidget()
-                plugin_tab_layout = QVBoxLayout(plugin_tab)
+                if not silent:
+                    self.logger.write_log(f"Creating UI tab for plugin: {plugin_display_name}")
+                    plugin_tab = QWidget()
+                    plugin_tab_layout = QVBoxLayout(plugin_tab)
 
-                self.tab_widget.addTab(plugin_tab, plugin_display_name)
+                    self.tab_widget.addTab(plugin_tab, plugin_display_name)
 
-                self.tab_entries[plugin_display_name] = plugin_instance.entries
+                    self.tab_entries[plugin_display_name] = plugin_instance.entries
 
-                if hasattr(plugin_instance, "init_tab"):
-                    gui_tools = {
-                        "QtWidgets": __import__('PyQt6.QtWidgets'),
-                        "QtCore": __import__('PyQt6.QtCore'),
-                        "QtGui": __import__('PyQt6.QtGui'),
-                        "QLabel": QLabel, "QLineEdit": QLineEdit, "QCheckBox": QCheckBox,
-                        "QPushButton": QPushButton, "QTextEdit": QTextEdit, "QFrame": QFrame,
-                        "QListWidget": QListWidget, "QScrollArea": QScrollArea, "QGroupBox": QGroupBox,
-                        "QVBoxLayout": QVBoxLayout, "QHBoxLayout": QHBoxLayout, "QFormLayout": QFormLayout,
-                        "QSpacerItem": QSpacerItem, "QSizePolicy": QSizePolicy,
-                        "AlignmentFlag": Qt.AlignmentFlag,
-                        "logger": self.logger,
-                        "format_key": format_key,
-                        "config": plugin_instance.config,
-                        "entries": plugin_instance.entries,
-                        "parent_layout": plugin_tab_layout,
-                        "create_widgets": self.create_widgets_plugin,
-                        "create_list_widget": self.create_list_widget,
-                        "main_window": self
-                    }
-                    try:
-                        plugin_instance.init_tab(gui_tools)
-                    except Exception as tab_e:
-                        self.logger.write_log(f" > Error running init_tab for plugin '{plugin_display_name}': {tab_e}", level="ERROR")
-                        error_label = QLabel(f"Error loading plugin UI for {plugin_display_name}.\nCheck logs for details.\nIf you recently updated the macro, then the plugin may also require updating.")
-                        error_label.setStyleSheet("color: red;")
-                        plugin_tab_layout.addWidget(error_label)
+                    if hasattr(plugin_instance, "init_tab"):
+                        gui_tools = {
+                            "QtWidgets": __import__('PyQt6.QtWidgets'),
+                            "QtCore": __import__('PyQt6.QtCore'),
+                            "QtGui": __import__('PyQt6.QtGui'),
+                            "QLabel": QLabel, "QLineEdit": QLineEdit, "QCheckBox": QCheckBox,
+                            "QPushButton": QPushButton, "QTextEdit": QTextEdit, "QFrame": QFrame,
+                            "QListWidget": QListWidget, "QScrollArea": QScrollArea, "QGroupBox": QGroupBox,
+                            "QVBoxLayout": QVBoxLayout, "QHBoxLayout": QHBoxLayout, "QFormLayout": QFormLayout,
+                            "QSpacerItem": QSpacerItem, "QSizePolicy": QSizePolicy,
+                            "AlignmentFlag": Qt.AlignmentFlag,
+                            "logger": self.logger,
+                            "format_key": format_key,
+                            "config": plugin_instance.config,
+                            "entries": plugin_instance.entries,
+                            "parent_layout": plugin_tab_layout,
+                            "create_widgets": self.create_widgets_plugin,
+                            "create_list_widget": self.create_list_widget,
+                            "main_window": self
+                        }
+                        try:
+                            plugin_instance.init_tab(gui_tools)
+                        except Exception as tab_e:
+                            self.logger.write_log(f" > Error running init_tab for plugin '{plugin_display_name}': {tab_e}", level="ERROR")
+                            error_label = QLabel(f"Error loading plugin UI for {plugin_display_name}.\nCheck logs for details.\nIf you recently updated the macro, then the plugin may also require updating.")
+                            error_label.setStyleSheet("color: red;")
+                            plugin_tab_layout.addWidget(error_label)
 
-                else:
-                    default_label = QLabel("Plugin has no UI defined.")
-                    plugin_tab_layout.addWidget(default_label)
+                    else:
+                        default_label = QLabel("Plugin has no UI defined.")
+                        plugin_tab_layout.addWidget(default_label)
 
-                self.create_bottom_buttons(plugin_tab_layout, plugin_display_name)
+                    self.create_bottom_buttons(plugin_tab_layout, plugin_display_name)
 
                 self.plugins.append(plugin_instance)
                 self.plugin_file_paths[plugin_display_name] = plugin_instance.file_path
@@ -3180,14 +3263,17 @@ class MainWindow(QMainWindow):
              import traceback
              self.logger.write_log(traceback.format_exc())
 
-    def install_plugin(self):
+    def install_plugin(self, path = None):
         """Handles copying a plugin file and reloading plugins."""
-        plugin_path, _ = QFileDialog.getOpenFileName(
-            self,
-            "Select Plugin File (.py)",
-            "plugin_name.py", 
-            "Python Files (*.py)"
-        )
+        if not path:
+            plugin_path, _ = QFileDialog.getOpenFileName(
+                self,
+                "Select Plugin File (.py)",
+                "Plugin.py", 
+                "Python Files (*.py)"
+            )
+        else:
+            plugin_path = path
 
         if not plugin_path:
             return 
@@ -3199,20 +3285,13 @@ class MainWindow(QMainWindow):
 
             os.makedirs(dest_dir, exist_ok=True)
 
-            if os.path.exists(dest_path):
-                reply = QMessageBox.question(self, "Plugin Exists",
-                                             f"Plugin '{filename}' already exists. Overwrite?",
-                                             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-                                             QMessageBox.StandardButton.No)
-                if reply == QMessageBox.StandardButton.No:
-                    return
-
             shutil.copy(plugin_path, dest_path)
             self.logger.write_log(f"Plugin '{filename}' copied to plugins directory.")
 
             self.load_plugins()
 
-            QMessageBox.information(self, "Plugin Installed", f"Plugin '{filename}' installed successfully.")
+            if not path:
+                QMessageBox.information(self, "Plugin Installed", f"Plugin '{filename}' installed successfully.")
 
         except Exception as e:
             QMessageBox.critical(self, "Plugin Install Failed", f"Failed to install plugin:\n{e}")
@@ -3305,6 +3384,8 @@ class SettingsDialog(QDialog):
                 checkbox.setChecked(current_value)
                 if tooltip_text:
                     checkbox.setToolTip(tooltip_text)
+                else:
+                    checkbox.setToolTip("No tooltip for this.")
                 layout.addWidget(checkbox)
                 self.entries[key] = checkbox
                 
@@ -3318,6 +3399,8 @@ class SettingsDialog(QDialog):
                 line_edit = QLineEdit(str(current_value))
                 if tooltip_text:
                     line_edit.setToolTip(tooltip_text)
+                else:
+                    line_edit.setToolTip("No tooltip for this.")
                 layout.addWidget(label)
                 layout.addWidget(line_edit)
                 self.entries[key] = line_edit
@@ -3338,6 +3421,8 @@ class SettingsDialog(QDialog):
                         sub_checkbox.setChecked(sub_value)
                         if tooltip_text:
                             sub_checkbox.setToolTip(tooltip_text)
+                        else:
+                            sub_checkbox.setToolTip("No tooltip for this.")
                         group_layout.addWidget(sub_checkbox)
                         self.entries[key][sub_key] = sub_checkbox
                     elif isinstance(sub_value, dict):
@@ -3346,6 +3431,8 @@ class SettingsDialog(QDialog):
                         sub_group_layout = QFormLayout(sub_group)
                         if tooltip_text:
                             sub_group.setToolTip(tooltip_text)
+                        else:
+                            sub_group.setToolTip("No tooltip for this.")
                         
                         self.entries[key][sub_key] = {}
                         

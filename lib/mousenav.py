@@ -47,6 +47,8 @@ def locate_on_screen_scaled(img_path, confidence=0.7, scales=None):
     screenshot = cv2.cvtColor(np.array(screenshot), cv2.COLOR_RGB2BGR)
 
     template = cv2.imread(img_path)
+    if template is None:
+        raise FileNotFoundError(f"Could not load template image: {img_path}")
     h, w = template.shape[:2]
 
     best_match = None

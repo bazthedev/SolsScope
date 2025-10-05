@@ -449,75 +449,6 @@ def convert_boxes(percent_boxes, scr_wid, scr_hei):
         )
     return pixel_boxes
 
-
-
-def detect_add_potions(scrolled : bool, reader, REGIONS) -> list:
-
-    screenshot_path = os.path.join(MACROPATH, "scr", "screenshot_autocraft.png")
-
-    time.sleep(0.6)
-
-    pag.screenshot(screenshot_path)
-    time.sleep(0.2)
-
-    image = cv2.imread(screenshot_path)
-
-    if image is None:
-        return False
-    
-    if not scrolled:
-        x1, y1, x2, y2 = REGIONS["autocraft_top_add"]
-        add_crop = image[y1:y2, x1:x2]
-        
-        ocr_results = reader.readtext(add_crop, detail=0)
-        ocr_add_raw = " ".join(ocr_results).strip()
-
-        if ocr_add_raw:
-
-            ocr_add_clean = re.sub(r"[^a-zA-Z']", "", ocr_add_raw).lower()
-            final_text = fuzzy_match_merchant(ocr_add_clean, ["add"])
-
-            del image, add_crop, x1, y1, x2, y2, ocr_results, ocr_add_raw
-            collect()
-
-            if final_text.lower() == "add":
-                return False
-            else:
-                return True
-
-        else:
-            del image, add_crop, x1, y1, x2, y2, ocr_results, ocr_add_raw
-            collect()
-            return True
-
-    else:
-
-        x1, y1, x2, y2 = REGIONS["autocraft_scrolled_bottom_add"]
-        add_crop = image[y1:y2, x1:x2]
-        
-        ocr_results = reader.readtext(add_crop, detail=0)
-        ocr_add_raw = " ".join(ocr_results).strip()
-
-        if ocr_add_raw:
-
-            ocr_add_clean = re.sub(r"[^a-zA-Z']", "", ocr_add_raw).lower()
-            final_text = fuzzy_match_merchant(ocr_add_clean, ["add"])
-            
-            del image, add_crop, x1, y1, x2, y2, ocr_results, ocr_add_raw
-            collect()
-
-            if final_text.lower() == "add":
-                return False
-            else:
-                return True
-
-        else:
-            del image, add_crop, x1, y1, x2, y2, ocr_results, ocr_add_raw
-            collect()
-            return True
-
-
-
 def check_tab_menu_open(reader, COORDS_PERCENT, COORDS) -> bool:
 
     screenshot_path = os.path.join(MACROPATH, "scr", "screenshot_tab_menu.png")
@@ -547,10 +478,14 @@ def check_tab_menu_open(reader, COORDS_PERCENT, COORDS) -> bool:
         ocr_add_clean = re.sub(r"[^a-zA-Z']", "", ocr_add_raw).lower()
         final_text = fuzzy_match_merchant(ocr_add_clean, ["rolls"])
 
-        if final_text.lower() == "rolls":
+        if final_text and final_text.lower() == "rolls":
             del image, x1p, y1p, x2p, y2p, add_crop, x1, y1, x2, y2, ocr_results, ocr_add_raw, ocr_add_clean, final_text
             collect()
             return True
+        elif not final_text:
+            del image, x1p, y1p, x2p, y2p, add_crop, x1, y1, x2, y2, ocr_results, ocr_add_raw
+            collect()
+            return False
         
     del image, x1p, y1p, x2p, y2p, add_crop, x1, y1, x2, y2, ocr_results, ocr_add_raw
     collect()
@@ -674,7 +609,7 @@ def get_device_score():
     ram_gb = psutil.virtual_memory().total / (1024**3)
 
     score = (cores * 1.5) + (ram_gb * 0.5)
-    return 
+    return score 
     
 def _type(kb, jitter, delay, hold, text : str):
 

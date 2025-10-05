@@ -12,11 +12,13 @@ import json
 import tkinter as tk
 from tkinter import messagebox
 from webbrowser import open as wbopen
+import glob
 
 MAIN_VER = "2.0.0"
 PRERELEASE = False
-BUILTINPKGS = False
+BUILTINPKGS = True
 
+print("======== SolsScope ========")
 print(f"Launcher version: {MAIN_VER}\nPrerelease: {PRERELEASE}\nPackages Built In: {BUILTINPKGS}")
 
 WORK_DIR = os.path.expandvars(r"%localappdata%\SolsScope")
@@ -28,45 +30,95 @@ PACKAGES_DIR = os.path.expandvars(r"%localappdata%/SolsScope/py/Lib/site-package
 ASSET_DIR = os.path.expandvars(r"%localappdata%\SolsScope\assets")
 CALIBRATIONS_DIR = os.path.expandvars(r"%localappdata%\SolsScope\calibrations")
 
-LATEST_VERSION_URL = "https://api.github.com/repos/bazthedev/SolsScope/releases/latest"
-THEME_URL = "https://api.github.com/repos/bazthedev/SolsScope/contents/theme"
-VIDEO_URL = "https://raw.githubusercontent.com/bazthedev/SolsScope/refs/heads/main/video_url"
+GITHUB_USERNAMES = {
+    "primary" : "bazthedev",
+    "mirror" : "ScopeDevelopment"
+}
+
+IS_SS_UP = {
+    "primary" : "DOWN",
+    "mirror" : "DOWN"
+}
+
+try:
+    riu = requests.get(f"https://raw.githubusercontent.com/{GITHUB_USERNAMES.get('primary')}/SolsScope/main/requirements.txt", timeout=10)
+    if riu.status_code == 200:
+        IS_SS_UP["primary"] = "OK"
+except Exception as e:
+    print(f"Error: {e}")
+
+try:
+    riu = requests.get(f"https://raw.githubusercontent.com/{GITHUB_USERNAMES.get('mirror')}/SolsScope/main/requirements.txt", timeout=10)
+    if riu.status_code == 200:
+        IS_SS_UP["mirror"] = "OK"
+except Exception as e:
+    print(f"Error: {e}")
+
+print(f"Primary: {IS_SS_UP.get('primary')}")
+print(f"Mirror: {IS_SS_UP.get('mirror')}")
 
 def download_folder(url, local_dir, overwrite=True):
     os.makedirs(local_dir, exist_ok=True)
-    response = requests.get(url)
-    response.raise_for_status()
-    items = response.json()
-    
-    for item in items:
-        if item['type'] == 'file':
-            file_url = item['download_url']
-            file_path = os.path.join(local_dir, item['name'])
-            if overwrite or not os.path.exists(file_path):
-                print(f"Downloading {file_path} from {item['download_url']}...")
-                r = requests.get(file_url)
-                r.raise_for_status()
-                with open(file_path, 'wb') as f:
-                    f.write(r.content)
-        elif item['type'] == 'dir':
-            download_folder(item['url'], os.path.join(local_dir, item['name']))
+    if IS_SS_UP.get("primary") == "OK" or IS_SS_UP.get("mirror") == "OK":
+        response = requests.get(url)
+        response.raise_for_status()
+        items = response.json()
+        
+        for item in items:
+            if item['type'] == 'file':
+                file_url = item['download_url']
+                file_path = os.path.join(local_dir, item['name'])
+                if overwrite or not os.path.exists(file_path):
+                    print(f"Downloading {file_path} from {item['download_url']}...")
+                    r = requests.get(file_url)
+                    r.raise_for_status()
+                    with open(file_path, 'wb') as f:
+                        f.write(r.content)
+            elif item['type'] == 'dir':
+                download_folder(item['url'], os.path.join(local_dir, item['name']))
+    else:
+        print("SolsScope is currently DOWN.")
 
-if not PRERELEASE:
-    LIB_DOWNLOAD_URL = "https://raw.githubusercontent.com/bazthedev/SolsScope/main/lib/"
-    LIBS_API_URL = "https://api.github.com/repos/bazthedev/SolsScope/contents/lib?ref=main"
-    REQ_TXT_URL = "https://raw.githubusercontent.com/bazthedev/SolsScope/main/requirements.txt"
-else:
-    LIB_DOWNLOAD_URL = "https://raw.githubusercontent.com/bazthedev/SolsScope/Preview/lib/"
-    LIBS_API_URL = "https://api.github.com/repos/bazthedev/SolsScope/contents/lib?ref=Preview"
-    REQ_TXT_URL = "https://raw.githubusercontent.com/bazthedev/SolsScope/Preview/requirements.txt"
+if PRERELEASE:
+    LIB_DOWNLOAD_URL = f"https://raw.githubusercontent.com/{GITHUB_USERNAMES.get('primary')}/SolsScope/Preview/lib/"
+    LIBS_API_URL = f"https://api.github.com/repos/{GITHUB_USERNAMES.get('primary')}/SolsScope/contents/lib?ref=Preview"
+    REQ_TXT_URL = f"https://raw.githubusercontent.com/{GITHUB_USERNAMES.get('primary')}/SolsScope/Preview/requirements.txt"
     print("Pre-Release Version! Thank you for being a tester!")
-
-PATH_DOWNLOAD_URL = "https://raw.githubusercontent.com/bazthedev/SolsScope/refs/heads/main/path/"
-PATH_API_URL = "https://api.github.com/repos/bazthedev/SolsScope/contents/path?ref=main"
-THEME_DOWNLOAD_URL = "https://raw.githubusercontent.com/bazthedev/SolsScope/refs/heads/main/theme/"
-THEME_API_URL = "https://api.github.com/repos/bazthedev/SolsScope/contents/theme?ref=main"
-ASSETS_DOWNLOAD_URL = "https://raw.githubusercontent.com/bazthedev/SolsScope/refs/heads/main/img/assets/"
-ASSETS_API_URL = "https://api.github.com/repos/bazthedev/SolsScope/contents/img/assets?ref=main"
+    PATH_DOWNLOAD_URL = f"https://raw.githubusercontent.com/{GITHUB_USERNAMES.get('primary')}/SolsScope/refs/heads/main/path/"
+    PATH_API_URL = f"https://api.github.com/repos/{GITHUB_USERNAMES.get('primary')}/SolsScope/contents/path?ref=main"
+    THEME_DOWNLOAD_URL = f"https://raw.githubusercontent.com/{GITHUB_USERNAMES.get('primary')}/SolsScope/refs/heads/main/theme/"
+    THEME_API_URL = f"https://api.github.com/repos/{GITHUB_USERNAMES.get('primary')}/SolsScope/contents/theme?ref=main"
+    ASSETS_DOWNLOAD_URL = f"https://raw.githubusercontent.com/{GITHUB_USERNAMES.get('primary')}/SolsScope/refs/heads/main/img/assets/"
+    ASSETS_API_URL = f"https://api.github.com/repos/{GITHUB_USERNAMES.get('primary')}/SolsScope/contents/img/assets?ref=main"
+    LATEST_VERSION_URL = f"https://api.github.com/repos/{GITHUB_USERNAMES.get('primary')}/SolsScope/releases/latest"
+    THEME_URL = f"https://api.github.com/repos/{GITHUB_USERNAMES.get('primary')}/SolsScope/contents/theme"
+    VIDEO_URL = f"https://raw.githubusercontent.com/{GITHUB_USERNAMES.get('primary')}/SolsScope/refs/heads/main/video_url"
+elif IS_SS_UP.get("primary") == "OK":
+    LIB_DOWNLOAD_URL = f"https://raw.githubusercontent.com/{GITHUB_USERNAMES.get('primary')}/SolsScope/Preview/lib/"
+    LIBS_API_URL = f"https://api.github.com/repos/{GITHUB_USERNAMES.get('primary')}/SolsScope/contents/lib?ref=main"
+    REQ_TXT_URL = f"https://raw.githubusercontent.com/{GITHUB_USERNAMES.get('primary')}/SolsScope/main/requirements.txt"
+    PATH_DOWNLOAD_URL = f"https://raw.githubusercontent.com/{GITHUB_USERNAMES.get('primary')}/SolsScope/refs/heads/main/path/"
+    PATH_API_URL = f"https://api.github.com/repos/{GITHUB_USERNAMES.get('primary')}/SolsScope/contents/path?ref=main"
+    THEME_DOWNLOAD_URL = f"https://raw.githubusercontent.com/{GITHUB_USERNAMES.get('primary')}/SolsScope/refs/heads/main/theme/"
+    THEME_API_URL = f"https://api.github.com/repos/{GITHUB_USERNAMES.get('primary')}/SolsScope/contents/theme?ref=main"
+    ASSETS_DOWNLOAD_URL = f"https://raw.githubusercontent.com/{GITHUB_USERNAMES.get('primary')}/SolsScope/refs/heads/main/img/assets/"
+    ASSETS_API_URL = f"https://api.github.com/repos/{GITHUB_USERNAMES.get('primary')}/SolsScope/contents/img/assets?ref=main"
+    LATEST_VERSION_URL = f"https://api.github.com/repos/{GITHUB_USERNAMES.get('primary')}/SolsScope/releases/latest"
+    THEME_URL = f"https://api.github.com/repos/{GITHUB_USERNAMES.get('primary')}/SolsScope/contents/theme"
+    VIDEO_URL = f"https://raw.githubusercontent.com/{GITHUB_USERNAMES.get('primary')}/SolsScope/refs/heads/main/video_url"
+else:
+    LIB_DOWNLOAD_URL = f"https://raw.githubusercontent.com/{GITHUB_USERNAMES.get('mirror')}/SolsScope/main/lib/"
+    LIBS_API_URL = f"https://api.github.com/repos/{GITHUB_USERNAMES.get('mirror')}/SolsScope/contents/lib?ref=main"
+    REQ_TXT_URL = f"https://raw.githubusercontent.com/{GITHUB_USERNAMES.get('mirror')}/SolsScope/main/requirements.txt"
+    PATH_DOWNLOAD_URL = f"https://raw.githubusercontent.com/{GITHUB_USERNAMES.get('mirror')}/SolsScope/refs/heads/main/path/"
+    PATH_API_URL = f"https://api.github.com/repos/{GITHUB_USERNAMES.get('mirror')}/SolsScope/contents/path?ref=main"
+    THEME_DOWNLOAD_URL = f"https://raw.githubusercontent.com/{GITHUB_USERNAMES.get('mirror')}/SolsScope/refs/heads/main/theme/"
+    THEME_API_URL = f"https://api.github.com/repos/{GITHUB_USERNAMES.get('mirror')}/SolsScope/contents/theme?ref=main"
+    ASSETS_DOWNLOAD_URL = f"https://raw.githubusercontent.com/{GITHUB_USERNAMES.get('mirror')}/SolsScope/refs/heads/main/img/assets/"
+    ASSETS_API_URL = f"https://api.github.com/repos/{GITHUB_USERNAMES.get('mirror')}/SolsScope/contents/img/assets?ref=main"
+    LATEST_VERSION_URL = f"https://api.github.com/repos/{GITHUB_USERNAMES.get('mirror')}/SolsScope/releases/latest"
+    THEME_URL = f"https://api.github.com/repos/{GITHUB_USERNAMES.get('mirror')}/SolsScope/contents/theme"
+    VIDEO_URL = f"https://raw.githubusercontent.com/{GITHUB_USERNAMES.get('mirror')}/SolsScope/refs/heads/main/video_url"
 
 if not os.path.exists(WORK_DIR):
     os.mkdir(WORK_DIR)
@@ -120,6 +172,9 @@ try:
 except Exception as e:
     LATEST_VERSION = "2.0.0"
 
+
+UPDATE = False
+
 try:
     with open(f"{WORK_DIR}\\settings.json", "r") as s:
         _tempsettings = json.load(s)
@@ -128,8 +183,9 @@ try:
                 return tuple(map(int, v.split('.')))
             except ValueError:
                 print(f"Invalid version format: '{v}'. Returning (0,0,0).")
-                return (0, 0, 0) 
+                return (0, 0, 0)
         if parse_version(LATEST_VERSION) > parse_version(_tempsettings.get("__version__", "2.0.0")):
+            UPDATE = True
             if messagebox.askyesno("SolsScope", f"A new version ({LATEST_VERSION}) of SolsScope has been detected, would you like to download it?"):
                 print("Macro update detected, redownloading required libraries...")
                 download_folder(LIBS_API_URL, LIB_DIR)
@@ -167,7 +223,14 @@ import packager
 packager.download_python()
 
 icon_path = os.path.join(WORK_DIR, "icon.ico")
-icon_url = "https://raw.githubusercontent.com/bazthedev/SolsScope/main/icon.ico"
+if IS_SS_UP['primary'] == "OK":
+    icon_url = f"https://raw.githubusercontent.com/{GITHUB_USERNAMES.get('primary')}/SolsScope/main/icon.ico"
+elif IS_SS_UP['mirror'] == "OK":
+    icon_url = f"https://raw.githubusercontent.com/{GITHUB_USERNAMES.get('mirror')}/SolsScope/main/icon.ico"
+else:
+    icon_url = f"https://raw.githubusercontent.com/{GITHUB_USERNAMES.get('primary')}/SolsScope/main/icon.ico"
+
+
 if not os.path.exists(icon_path):
     try:
         dl = requests.get(icon_url, timeout=10)
@@ -218,7 +281,6 @@ import screeninfo as si
 import mousekey as mk
 from gui import MainWindow
 from gui import PyQtLogger
-from calibrations import download_all_calibrations, get_best_calibration, get_screen_info
 
 CORE_MODULES = [
     'discord', 'requests', 'pynput', 'mousekey', 'screeninfo',
@@ -247,16 +309,17 @@ if missing_core:
     sys.exit(1)
 
 try:
-    from constants import MACROPATH, LOCALVERSION, DEFAULTSETTINGS, COORDS
+    from constants import MACROPATH, LOCALVERSION, DEFAULTSETTINGS, COORDS, USERDATA
     from utils import calculate_coords, set_global_logger, parse_version, Logger, get_logger, apply_roblox_fastflags
     from settings_manager import (
         migrate_settings_from_legacy_location, load_settings, update_settings,
         get_auras, get_biomes, get_settings_path, get_auras_path, get_biomes_path,
         get_merchant, get_merchant_path, get_questboard_path, get_questboard,
         validate_settings, get_fish_path, get_fishdata, get_autocraftdata_path,
-        get_autocraft_data
+        get_autocraft_data, get_ratios_path, get_ratios, get_valid_list_path,
+        get_valid_list
     )
-    from roblox_utils import set_active_log_directory
+    from roblox_utils import set_active_log_directory, get_username, get_active_log_directory
     from stats import create_stats, init_stats
 except ImportError as e:
     error_message = (
@@ -294,6 +357,7 @@ def run_initial_setup(logger):
         os.makedirs(os.path.join(MACROPATH, "theme"), exist_ok=True)
         os.makedirs(os.path.join(MACROPATH, "plugins"), exist_ok=True)
         os.makedirs(os.path.join(MACROPATH, "plugins", "config"), exist_ok=True)            
+        os.makedirs(os.path.join(MACROPATH, "temp"), exist_ok=True)
         logger.write_log(f"Core directories ensured in: {MACROPATH}")
     except OSError as e:
         logger.write_log(f"Error creating directories: {e}")
@@ -303,23 +367,18 @@ def run_initial_setup(logger):
     if migrate_settings_from_legacy_location():
         logger.write_log("Settings migrated from legacy location (./settings.json).")
 
+    print("Clearing temp directory")
+    for file in os.listdir(f"{MACROPATH}/temp"):
+        try:
+            os.remove(f"{MACROPATH}/temp/{file}")
+            print(f"Delete: {MACROPATH}/temp/{file}")
+        except Exception as e:
+            print(f"Error deleting {file}: {e}")
+
     logger.write_log("Loading settings...")
     settings = load_settings()
 
     logger.write_log("Initial settings loaded and validated.")
-
-    if not os.path.exists(CALIBRATIONS_DIR):
-        os.makedirs(CALIBRATIONS_DIR, exist_ok=True)
-        download_all_calibrations()
-        screen_info = get_screen_info()
-        print(get_best_calibration(screen_info["width"], screen_info["height"], screen_info["scale"], screen_info["windowed"]))
-        settings["calibration"] = get_best_calibration(screen_info["width"], screen_info["height"], screen_info["scale"], screen_info["windowed"])
-        with open(f"{MACROPATH}/settings.json", "w") as f:
-            json.dump(settings, f, indent=4)
-        
-        print(settings["calibration"])
-        settings = load_settings()
-        print(settings["calibration"])
 
     current_settings_version = settings.get("__version__", "0.0.0")
     if parse_version(current_settings_version) != parse_version(LOCALVERSION):
@@ -402,6 +461,16 @@ def run_initial_setup(logger):
     else:
         logger.write_log("Skipping auto craft download based on settings.")
 
+    if not os.path.exists(get_ratios_path()) or UPDATE:
+        logger.write_log("Ratios file missing/needs download.")
+        if not get_ratios():
+            logger.write_log("Failed to download ratios data.")
+
+    if not os.path.exists(get_valid_list_path()) or UPDATE:
+        logger.write_log("Valid list file missing/needs download.")
+        if not get_valid_list():
+            logger.write_log("Failed to download valid list.")
+
     print("Done!")
 
     if not os.path.exists(get_auras_path()):
@@ -463,7 +532,9 @@ def run_initial_setup(logger):
         else:
             logger.write_log("No monitors detected. Cannot calculate coordinates. Exiting.")
             messagebox.showerror("Monitor Error", "Could not detect any monitors. Cannot calculate coordinates.")
-            return False 
+            return False
+        
+        
 
     except Exception as e:
         logger.write_log(f"Error during screen detection or coordinate calculation: {e}")
@@ -481,7 +552,10 @@ def run_initial_setup(logger):
         messagebox.showwarning("Failsafe Error", f"Could not enable failsafe key ({failsafe_key}):\n{e}\n\nManual termination may be required if macro freezes.")
 
     set_active_log_directory(use_ms_store_if_detected=not settings.get("use_roblox_player", True))
+    userdata = get_username(max(glob.glob(os.path.join(get_active_log_directory(), "*.log")), key=os.path.getctime))
 
+    if userdata:
+        USERDATA.update(userdata)
     logger.write_log("Initial setup complete.")
     return True
 

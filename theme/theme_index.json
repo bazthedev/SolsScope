@@ -3,18 +3,18 @@
         "name" : "Default",
         "description" : "The default theme for SolsScope.",
         "authors" : ["bazthedev"],
-        "download_url" : "https://raw.githubusercontent.com/bazthedev/SolsScope/refs/heads/main/theme/default.ssthm"
+        "download_url" : "/SolsScope/refs/heads/main/theme/default.ssthm"
     },
     "Limbo" : {
         "name" : "Limbo",
         "description" : "A Limbo theme for SolsScope.",
         "authors" : ["ManasAarohi"],
-        "download_url" : "https://raw.githubusercontent.com/bazthedev/SolsScope/refs/heads/main/theme/limbo.ssthm"
+        "download_url" : "/SolsScope/refs/heads/main/theme/limbo.ssthm"
     },
     "Catppuccin Mocha" : {
         "name" : "Catppuccin Mocha",
         "description" : "A Catppuccin Mocha theme for SolsScope.",
         "authors" : ["maxstellar"],
-        "download_url" : "https://raw.githubusercontent.com/bazthedev/SolsScope/refs/heads/main/theme/catppuccin-mocha.ssthm"
+        "download_url" : "/SolsScope/refs/heads/main/theme/catppuccin-mocha.ssthm"
     }
 }

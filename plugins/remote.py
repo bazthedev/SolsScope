@@ -20,9 +20,9 @@ from discord.ext import commands, tasks
 import time
 import pyautogui as pag
 
-from uinav import open_inventory, open_storage, close_menu, search_in_menu, load_delay
-from calibrations import get_calibrations, get_corresponding_calibration
+from uinav import load_delay
 from utils import create_discord_file_from_path
+import pyautoscope
 
 class Plugin:
     DEFAULTSETTINGS = {
@@ -232,11 +232,6 @@ class Plugin:
             
             client = commands.Bot(command_prefix=commands.when_mentioned, intents=None)
 
-            if not self.macro.settings.get("calibration"):
-                self.macro.logger.write_log("Cannot start Remote: No calibration selected.")
-                return
-
-            CLICKS = get_calibrations(self.macro.settings.get("calibration"))
             delay = load_delay()
 
             if self.config["enabled_commands"]["stop"]:
@@ -299,15 +294,17 @@ class Plugin:
                 @commands.is_owner()
                 async def purchase_item(ctx, item_box : int, amount : int):
                     with self.macro.keyboard_lock:
+                        pyautoscope.refresh_clients()
+                        client = pyautoscope.return_clients()[0]
                         try:
                             coord_key = f"merchant_slot_{item_box}"
-                            self.macro.mkey.left_click_xy_natural(CLICKS[coord_key][0], CLICKS[coord_key][1])
+                            pyautoscope.click_button(self.macro.mkey, coord_key, client)
                             time.sleep(delay)
-                            self.macro.mkey.left_click_xy_natural(CLICKS["merchant_amount"][0], CLICKS["merchant_amount"][1])
+                            pyautoscope.click_button(self.macro.mkey, "merchant_amount", client)
                             time.sleep(delay)
                             self.macro.keyboard_controller.type(str(amount))
                             time.sleep(delay)
-                            self.macro.mkey.left_click_xy_natural(CLICKS["merchant_purchase"][0], CLICKS["merchant_purchase"][1])
+                            pyautoscope.click_button(self.macro.mkey, "merchant_purchase", client)
                             self.macro.logger.write_log(f"Manually purchased item in Box {str(item_box)}")
                             time.sleep(3)
                         except Exception as buy_e:
@@ -320,10 +317,12 @@ class Plugin:
                 async def storage_scr(ctx):
                     screenshot_path = os.path.join(self.MACROPATH, "scr", "screenshot_storage.png")
                     with self.macro.keyboard_lock:
+                        pyautoscope.refresh_clients()
+                        client = pyautoscope.return_clients()[0]
                         await ctx.send("Taking screenshot of Aura Storage, please wait, this will take a few seconds.")
-                        self.macro.mkey.left_click_xy_natural(CLICKS["open_storage"][0], CLICKS["open_storage"][1])
+                        pyautoscope.click_button(self.macro.mkey, "open_storage", client)
                         time.sleep(delay)
-                        self.macro.mkey.left_click_xy_natural(CLICKS["search_bar"][0], CLICKS["search_bar"][1])
+                        pyautoscope.click_button(self.macro.mkey, "search_bar", client)
                         time.sleep(delay)
                         self.macro.keyboard_controller.press(keyboard.Key.backspace)
                         time.sleep(0.2)
@@ -331,7 +330,7 @@ class Plugin:
                         time.sleep(delay)
                         pag.screenshot(screenshot_path)
                         time.sleep(delay)
-                        self.macro.mkey.left_click_xy_natural(CLICKS["close_menu"][0], CLICKS["close_menu"][1])
+                        pyautoscope.click_button(self.macro.mkey, "close_menu", client)
                         time.sleep(delay)
                         await ctx.send(file=discord.File(f"{self.MACROPATH}/scr/screenshot_storage.png"))
 
@@ -367,12 +366,14 @@ class Plugin:
                 async def inv_scr(ctx):
                     screenshot_path = os.path.join(self.MACROPATH, "scr", "screenshot_inventory.png")
                     with self.macro.keyboard_lock:
+                        pyautoscope.refresh_clients()
+                        client = pyautoscope.return_clients()[0]
                         await ctx.send("Taking screenshot of Inventory, please wait, this will take a few seconds.")
-                        self.macro.mkey.left_click_xy_natural(CLICKS["open_inventory"][0], CLICKS["open_inventory"][1])
+                        pyautoscope.click_button(self.macro.mkey, "open_inventory", client)
                         time.sleep(delay)
-                        self.macro.mkey.left_click_xy_natural(CLICKS["items_btn"][0], CLICKS["items_btn"][1])
+                        pyautoscope.click_button(self.macro.mkey, "items_btn", client)
                         time.sleep(delay)
-                        self.macro.mkey.left_click_xy_natural(CLICKS["search_bar"][0], CLICKS["search_bar"][1])
+                        pyautoscope.click_button(self.macro.mkey, "search_bar", client)
                         time.sleep(delay)
                         self.macro.keyboard_controller.press(keyboard.Key.backspace)
                         time.sleep(0.2)
@@ -380,7 +381,7 @@ class Plugin:
                         time.sleep(delay)
                         pag.screenshot(screenshot_path)
                         time.sleep(delay)
-                        self.macro.mkey.left_click_xy_natural(CLICKS["close_menu"][0], CLICKS["close_menu"][1])
+                        pyautoscope.click_button(self.macro.mkey, "close_menu", client)
                         time.sleep(delay)
                         await ctx.send(file=discord.File(f"{self.MACROPATH}/scr/screenshot_inventory.png"))
 

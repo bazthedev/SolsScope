@@ -7,7 +7,7 @@
         "requires_version" : "2.0.0",
         "plugin_requirements" : [],
         "autocraft_compatible" : true,
-        "download_url" : "https://raw.githubusercontent.com/bazthedev/SolsScope/refs/heads/main/plugins/remote.py"
+        "download_url" : "/SolsScope/refs/heads/main/plugins/remote.py"
     },
     "Clipping" : {
         "name" : "Clipping",
@@ -17,6 +17,16 @@
         "requires_version" : "2.0.0",
         "plugin_requirements" : ["pygetwindow"],
         "autocraft_compatible" : true,
-        "download_url" : "https://raw.githubusercontent.com/bazthedev/SolsScope/refs/heads/main/plugins/clipping.py"
+        "download_url" : "/SolsScope/refs/heads/main/plugins/clipping.py"
+    },
+    "Glitch Hunt" : {
+        "name" : "Glitch Hunt",
+        "description" : "Plugin to integrate with Glitch Hunt servers.",
+        "version" : "1.0.0",
+        "authors" : ["bazthedev"],
+        "requires_version" : "2.0.0",
+        "plugin_requirements" : [],
+        "autocraft_compatible" : true,
+        "download_url" : "/SolsScope/refs/heads/main/plugins/glitch_hunt.py"
     }
 }

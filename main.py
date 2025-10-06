@@ -133,7 +133,6 @@ if not os.path.exists(ASSET_DIR):
 
 if not os.path.exists(THEME_DIR):
     os.mkdir(THEME_DIR)
-    download_folder(THEME_API_URL, THEME_DIR)
     print("All themes have been downloaded, proceeding...")
 
 if not os.path.exists(LIB_DIR):
@@ -190,7 +189,6 @@ try:
                 print("Macro update detected, redownloading required libraries...")
                 download_folder(LIBS_API_URL, LIB_DIR)
                 download_folder(PATH_API_URL, PATH_DIR)
-                download_folder(THEME_API_URL, THEME_DIR)
                 download_folder(ASSETS_API_URL, ASSET_DIR)
                 print("All required libraries were updated, proceeding...")
                 _tempsettings["__version__"] = LATEST_VERSION
@@ -202,7 +200,6 @@ try:
             print("Manual redownload/prerelease initiated download.")
             download_folder(LIBS_API_URL, LIB_DIR)
             download_folder(PATH_API_URL, PATH_DIR)
-            download_folder(THEME_API_URL, THEME_DIR)
             download_folder(ASSETS_API_URL, ASSET_DIR)
             _tempsettings["redownload_libs_on_run"] = False
             with open(f"{WORK_DIR}\\settings.json", "w", encoding="utf-8") as f:
@@ -551,11 +548,14 @@ def run_initial_setup(logger):
         logger.write_log(f"Failed to enable failsafe kill switch: {e}")
         messagebox.showwarning("Failsafe Error", f"Could not enable failsafe key ({failsafe_key}):\n{e}\n\nManual termination may be required if macro freezes.")
 
-    set_active_log_directory(use_ms_store_if_detected=not settings.get("use_roblox_player", True))
-    userdata = get_username(max(glob.glob(os.path.join(get_active_log_directory(), "*.log")), key=os.path.getctime))
+    try:
+        set_active_log_directory(use_ms_store_if_detected=not settings.get("use_roblox_player", True))
+        userdata = get_username(max(glob.glob(os.path.join(get_active_log_directory(), "*.log")), key=os.path.getctime))
 
-    if userdata:
-        USERDATA.update(userdata)
+        if userdata:
+            USERDATA.update(userdata)
+    except Exception as e:
+        return False
     logger.write_log("Initial setup complete.")
     return True
 

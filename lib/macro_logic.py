@@ -330,7 +330,7 @@ def aura_detection(settings: dict, webhook, stop_event: threading.Event, keyboar
                 logger.write_log(f"New aura detected: {current_aura}")
                 previous_aura = current_aura 
                 rnow = datetime.now()
-                current_biome = get_latest_hovertext() or "Unknown (not the aura)"
+                current_biome = get_latest_hovertext() if get_latest_hovertext() else "Unknown (not the aura)"
                 current_biome_key = current_biome.lower()
                 base_rarity_str = aura_data.get("rarity", "0")
 

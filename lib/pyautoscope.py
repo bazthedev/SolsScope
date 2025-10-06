@@ -17,8 +17,13 @@ import pyocrscope
 
 from constants import MACROPATH
 
-with open(f"{MACROPATH}/ratios.json", "r") as f:
-    ratios = json.load(f)
+
+def load_ratios():
+    try:
+        with open(f"{MACROPATH}/ratios.json", "r") as f:
+            return json.load(f)
+    except Exception as e:
+        return {}
 
 
 # =======================
@@ -145,6 +150,8 @@ Example:
 # =======================
 def calibrate_buttons(client_key: str):
     roblox_client = roblox_clients[client_key]
+
+    ratios = load_ratios()
 
     # =====================
     # AURA STORAGE: EQUIP, FIRST_AURA, SEARCH, EXIT
@@ -907,6 +914,8 @@ def move_to_button(mkey, button_name: str, client_key: str, delay: float = 0.1):
 
 def get_merchant_shop(client_key: str, reader) -> dict:
 
+    ratios = load_ratios()
+
     roblox_client = roblox_clients[client_key]
 
     if roblox_client.screen_width * ratios["MARI_PURCHASE"]["SCALE_WIDTH"] / ratios["MARI_PURCHASE"]["ASPECT_RATIO"] <= \
@@ -967,6 +976,9 @@ def get_merchant_shop(client_key: str, reader) -> dict:
     return pyocrscope.read_ocr(reader, locations)
 
 def get_first_inventory_item(client_key: str, reader) -> dict:
+    
+    ratios = load_ratios()
+
     roblox_client = roblox_clients[client_key]
 
     # Scale inventory container
@@ -993,6 +1005,9 @@ def get_first_inventory_item(client_key: str, reader) -> dict:
     return pyocrscope.read_ocr(reader, locations)
 
 def get_jester_exchange(client_key: str, reader) -> dict:
+
+    ratios = load_ratios()
+
     roblox_client = roblox_clients[client_key]
 
     # Container scaling
@@ -1031,6 +1046,9 @@ def get_jester_exchange(client_key: str, reader) -> dict:
     return pyocrscope.read_ocr(reader, locations)
 
 def get_first_crafting_potion(client_key: str, reader) -> dict:
+
+    ratios = load_ratios()
+
     roblox_client = roblox_clients[client_key]
 
     # Container scaling
@@ -1063,6 +1081,9 @@ def get_first_crafting_potion(client_key: str, reader) -> dict:
     return pyocrscope.read_ocr(reader, locations)
 
 def get_potion_add_check(client_key: str, reader, scrolled: bool = False) -> dict:
+
+    ratios = load_ratios()
+
     roblox_client = roblox_clients[client_key]
 
     # ===== container scale (unchanged) =====
@@ -1095,6 +1116,10 @@ def get_potion_add_check(client_key: str, reader, scrolled: bool = False) -> dic
 
 
 def get_questboard_header(client_key: str, reader) -> dict:
+
+    ratios = load_ratios()
+
+
     roblox_client = roblox_clients[client_key]
     QB = ratios["QUESTBOARD"]
     INFO = QB["INFO_BOX"]
@@ -1125,6 +1150,9 @@ def get_questboard_header(client_key: str, reader) -> dict:
 # MERCHANT (Mari): Read upper 35% of dialog text
 # ===============================================
 def get_merchant_name(client_key: str, reader) -> dict:
+
+    ratios = load_ratios()
+    
     roblox_client = roblox_clients[client_key]
     MD = ratios["MARI_DIALOG"]
 

@@ -306,12 +306,13 @@ def aura_detection(settings: dict, webhook, stop_event: threading.Event, keyboar
                 continue
             
             with ignore_lock:
-                if current_aura.lower() in ignore_next_detection:
-                    ignore_next_detection.remove(current_aura.lower())
-                    logger.write_log(f"Ignoring detection for aura '{current_aura}' due to recent equip.")
-                    previous_aura = current_aura
-                    time.sleep(0.5)
-                    continue
+                if current_aura:
+                    if current_aura.lower() in ignore_next_detection:
+                        ignore_next_detection.remove(current_aura.lower())
+                        logger.write_log(f"Ignoring detection for aura '{current_aura}' due to recent equip.")
+                        previous_aura = current_aura
+                        time.sleep(0.5)
+                        continue
 
             if previous_aura is None or current_aura == previous_aura:
                 previous_aura = current_aura
@@ -323,7 +324,7 @@ def aura_detection(settings: dict, webhook, stop_event: threading.Event, keyboar
                 time.sleep(1)
                 continue
             
-            aura_key = current_aura.lower()
+            aura_key = current_aura.lower() if current_aura else None
             if aura_key in auras:
                 aura_data = auras[aura_key]
                 logger.write_log(f"New aura detected: {current_aura}")

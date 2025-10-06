@@ -310,12 +310,12 @@ def aura_detection(settings: dict, webhook, stop_event: threading.Event, keyboar
                     ignore_next_detection.remove(current_aura.lower())
                     logger.write_log(f"Ignoring detection for aura '{current_aura}' due to recent equip.")
                     previous_aura = current_aura
-                    time.sleep(settings.get("global_wait_time", 0.2) + 0.5)
+                    time.sleep(0.5)
                     continue
 
             if previous_aura is None or current_aura == previous_aura:
                 previous_aura = current_aura
-                time.sleep(settings.get("global_wait_time", 0.2) + 0.5) 
+                time.sleep(0.5) 
                 continue
 
             if current_aura == "In Main Menu":
@@ -372,7 +372,7 @@ def aura_detection(settings: dict, webhook, stop_event: threading.Event, keyboar
                     emb.set_footer(text=f"SolsScope v{LOCALVERSION}")
 
                 file_to_send = None
-                if settings.get("take_screenshot_on_detection", False):
+                if settings.get("take_screenshot_on_detection", False) and not settings.get("mode", "Normal") == "IDLE":
                     screenshot_path = os.path.join(MACROPATH, "scr", "screenshot_aura.png")
                     try:
                         pag.screenshot(screenshot_path)
@@ -443,7 +443,7 @@ def aura_detection(settings: dict, webhook, stop_event: threading.Event, keyboar
             time.sleep(5)
 
         if not stop_event.is_set():
-            time.sleep(settings.get("global_wait_time", 0.2) + 0.3) 
+            time.sleep(0.5) 
 
     logger.write_log("Aura Detection thread stopped.")
 
@@ -600,7 +600,7 @@ def biome_detection(settings: dict, webhook, stop_event: threading.Event, sniped
             time.sleep(5)
 
         if not stop_event.is_set():
-            time.sleep(settings.get("global_wait_time", 0.2) + 1.0)
+            time.sleep(1.0)
 
     logger.write_log("Biome Detection thread stopped.")
 
@@ -782,7 +782,7 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
                                 try:
                                     logger.write_log("Merchant Detection: Using Merchant Teleport item...")
                                     use_item("Merchant Teleport", 1, True, mkey, kb, settings, reader, ms) 
-                                    time.sleep(settings.get("global_wait_time", 0.2) + 0.5) 
+                                    time.sleep(delay + 0.5) 
 
                                     logger.write_log("Merchant Detection: Attempting interaction (E key)...")
                                     kb.press('e')
@@ -884,6 +884,10 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
                                                     if box_detection[box] in ["[invalid]", "[error]"]:
                                                         logger.write_log("Did not have enough to buy item, waiting for long ahh jester dialog.")
                                                         time.sleep(10)
+                                                        break
+                                                    else:
+                                                        logger.write_log("Did not have enough to buy item, waiting for Mari dialog")
+                                                        time.sleep(5)
                                                         break
                                                 time.sleep(3)
 
@@ -1088,7 +1092,7 @@ def merchant_detection(settings: dict, webhook, stop_event: threading.Event, sni
                 try:
                     logger.write_log("Merchant Detection: Using Merchant Teleport item...")
                     use_item("Merchant Teleport", 1, True, mkey, kb, settings, reader, ms) 
-                    time.sleep(settings.get("global_wait_time", 0.2) + 0.5) 
+                    time.sleep(delay + 0.5) 
 
                     logger.write_log("Merchant Detection: Attempting interaction (E key)...")
                     kb.press('e')
@@ -1384,23 +1388,35 @@ def auto_craft(webhook, settings: dict, stop_event: threading.Event, sniped_even
     if not settings.get("do_not_walk_to_stella", True) and IMPORTED_ALL_PATHS:
         logger.write_log("Auto Craft: Walking To Stella's")
         with keyboard_lock:
-            if has_abyssal:
-                if equip_aura("Abyssal", False, mkey, kb, settings, ignore_next_detection, ignore_lock, reader, ms):
-                    logger.write_log("Using Abyssal Path for Stella")
-                    stella_abyssal.run_macro(stella_abyssal.macro_actions)
-                else:
-                    if VIP_STATUS in ["VIP", "VIP+"]:
-                        logger.write_log("Using VIP Path for Stella (Abyssal Equip Failed)")
-                        stella_vip.run_macro(stella_vip.macro_actions)
-                    
+            try:
+                reset_character()
+                time.sleep(1)
+                reset_character()
+                time.sleep(1)
+                pyautoscope.click_button(mkey, "collection", client, delay)
+                time.sleep(1)
+                pyautoscope.click_button(mkey, "exit_collection", client, delay)
+                time.sleep(1)
+                if has_abyssal:
+                    if equip_aura("Abyssal", False, mkey, kb, settings, ignore_next_detection, ignore_lock, reader, ms):
+                        logger.write_log("Using Abyssal Path for Stella")
+                        stella_abyssal.run_macro(stella_abyssal.macro_actions)
                     else:
-                        logger.write_log("Walking back to Stella is not supported with No VIP")
-            elif VIP_STATUS in ["VIP", "VIP+"]:
-                logger.write_log("Using VIP Path for Stella")
-                stella_vip.run_macro(stella_vip.macro_actions)
+                        if VIP_STATUS in ["VIP", "VIP+"]:
+                            logger.write_log("Using VIP Path for Stella (Abyssal Equip Failed)")
+                            stella_vip.run_macro(stella_vip.macro_actions)
+                        
+                        else:
+                            logger.write_log("Walking back to Stella is not supported with No VIP")
+                elif VIP_STATUS in ["VIP", "VIP+"]:
+                    logger.write_log("Using VIP Path for Stella")
+                    stella_vip.run_macro(stella_vip.macro_actions)
+                
+                else:
+                    logger.write_log("Walking back to Stella is not supported with No VIP")
+            except Exception as e:
+                logger.write_log(f"Error during Stella alignment: {e}")
             
-            else:
-                logger.write_log("Walking back to Stella is not supported with No VIP")
 
     else:
         logger.write_log("Ensure you are standing near the cauldron with the 'F' prompt visible.")
@@ -1449,7 +1465,6 @@ def auto_craft(webhook, settings: dict, stop_event: threading.Event, sniped_even
             client = pyautoscope.return_clients()[0]
 
             try:
-                wait_time = settings.get("global_wait_time", 0.2)
 
                 if settings["auto_craft_item"].get("Jewelry Potion", False):
                     
@@ -1506,7 +1521,7 @@ def auto_craft(webhook, settings: dict, stop_event: threading.Event, sniped_even
 
                             _prev_jewel = _jewel_isfull
 
-                        if job == "Jewelry Potion":
+                        if job == "Jewelry Potion" and len(items_to_craft) > 1:
                             pyautoscope.click_button(mkey, "autocraft_auto", client, delay)
                         time.sleep(1)
 
@@ -1566,7 +1581,7 @@ def auto_craft(webhook, settings: dict, stop_event: threading.Event, sniped_even
 
                             _prev_zomb = _zomb_isfull
 
-                        if job == "Zombie Potion":
+                        if job == "Zombie Potion" and len(items_to_craft) > 1:
                             pyautoscope.click_button(mkey, "autocraft_auto", client, delay)
                         time.sleep(1)
 
@@ -1624,7 +1639,7 @@ def auto_craft(webhook, settings: dict, stop_event: threading.Event, sniped_even
 
                             _prev_rage = _rage_isfull
 
-                        if job == "Rage Potion":
+                        if job == "Rage Potion" and len(items_to_craft) > 1:
                             pyautoscope.click_button(mkey, "autocraft_auto", client, delay)
                         time.sleep(1)
 
@@ -1684,7 +1699,7 @@ def auto_craft(webhook, settings: dict, stop_event: threading.Event, sniped_even
 
                             _prev_dive = _diver_isfull
 
-                        if job == "Diver Potion":
+                        if job == "Diver Potion" and len(items_to_craft) > 1:
                             pyautoscope.click_button(mkey, "autocraft_auto", client, delay)
                         time.sleep(1)
 
@@ -1783,7 +1798,7 @@ def auto_craft(webhook, settings: dict, stop_event: threading.Event, sniped_even
                         ms.scroll(0, 30); time.sleep(0.2)
                         ms.scroll(0, 30); time.sleep(0.2)
 
-                        if job == "Potion of Bound":
+                        if job == "Potion of Bound" and len(items_to_craft) > 1:
                             pyautoscope.click_button(mkey, "autocraft_auto", client, delay)
                         time.sleep(1)
 
@@ -1864,7 +1879,7 @@ def auto_craft(webhook, settings: dict, stop_event: threading.Event, sniped_even
 
                             _prev_heaven = _heaven_isfull
 
-                        if job == "Heavenly Potion":
+                        if job == "Heavenly Potion" and len(items_to_craft) > 1:
                             pyautoscope.click_button(mkey, "autocraft_auto", client, delay)
                         time.sleep(1)
 
@@ -1948,7 +1963,7 @@ def auto_craft(webhook, settings: dict, stop_event: threading.Event, sniped_even
 
                             _prev_zeus = _zeus_isfull
 
-                        if job == "Godly Potion (Zeus)":
+                        if job == "Godly Potion (Zeus)" and len(items_to_craft) > 1:
                             pyautoscope.click_button(mkey, "autocraft_auto", client, delay)
                         time.sleep(1)
 
@@ -2025,7 +2040,7 @@ def auto_craft(webhook, settings: dict, stop_event: threading.Event, sniped_even
 
                             _prev_poseidon = _poseidon_isfull
 
-                        if job == "Godly Potion (Poseidon)":
+                        if job == "Godly Potion (Poseidon)" and len(items_to_craft) > 1:
                             pyautoscope.click_button(mkey, "autocraft_auto", client, delay)
                         time.sleep(1)
 
@@ -2089,7 +2104,7 @@ def auto_craft(webhook, settings: dict, stop_event: threading.Event, sniped_even
 
                             _prev_hades = _hades_isfull
 
-                        if job == "Godly Potion (Hades)":
+                        if job == "Godly Potion (Hades)" and len(items_to_craft) > 1:
                             pyautoscope.click_button(mkey, "autocraft_auto", client, delay)
                         time.sleep(1)
 
@@ -2205,7 +2220,7 @@ def auto_craft(webhook, settings: dict, stop_event: threading.Event, sniped_even
                         ms.scroll(0, 30); time.sleep(0.2)
                         ms.scroll(0, 30); time.sleep(0.2)
 
-                        if job == "Warp Potion":
+                        if job == "Warp Potion" and len(items_to_craft) > 1:
                             pyautoscope.click_button(mkey, "autocraft_auto", client, delay)
                         time.sleep(1)
 
@@ -2580,7 +2595,7 @@ def auto_craft(webhook, settings: dict, stop_event: threading.Event, sniped_even
                         ms.scroll(0, 30); time.sleep(delay)
                         ms.scroll(0, 30); time.sleep(delay)
 
-                        if job == "Void Heart":
+                        if job == "Void Heart" and len(items_to_craft) > 1:
                             pyautoscope.click_button(mkey, "autocraft_auto", client, delay)
                         time.sleep(1)
 
@@ -3009,6 +3024,18 @@ def do_obby(settings: dict, webhook, stop_event: threading.Event, sniped_event: 
                 )
             
             if is_autocraft and IMPORTED_ALL_PATHS:
+                try:
+                    reset_character()
+                    time.sleep(1)
+                    reset_character()
+                    time.sleep(1)
+                    pyautoscope.click_button(mkey, "collection", client, delay)
+                    time.sleep(1)
+                    pyautoscope.click_button(mkey, "exit_collection", client, delay)
+                    time.sleep(1)
+                except Exception as e:
+                    logger.write_log(f"Error during obby alignment: {e}")
+                    continue
                 if has_abyssal:
                     if equip_aura("Abyssal", False, mkey, kb, settings, ignore_next_detection, ignore_lock, reader, ms):
                         logger.write_log("Using Abyssal Path for Stella")

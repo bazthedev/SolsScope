@@ -66,7 +66,7 @@ def forward_webhook_msg(primary_webhook_url: str, secondary_urls: list, *, file=
             logger.write_log(f"Unexpected error forwarding webhook to {webhook_url}: {e}")
 
 
-def get_webook_info(webhook_url) -> dict:    
+def get_webhook_info(webhook_url) -> dict:    
     response = requests.get(webhook_url)
     if response.status_code == 200:
         data = response.json()

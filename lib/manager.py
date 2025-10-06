@@ -34,6 +34,30 @@ def save_lockfile(data):
     with open(LOCKFILE, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2)
 
+GITHUB_USERNAMES = {
+    "primary" : "bazthedev",
+    "mirror" : "ScopeDevelopment"
+}
+
+IS_SS_UP = {
+    "primary" : "DOWN",
+    "mirror" : "DOWN"
+}
+
+try:
+    riu = requests.get(f"https://raw.githubusercontent.com/{GITHUB_USERNAMES.get('primary')}/SolsScope/main/requirements.txt", timeout=10)
+    if riu.status_code == 200:
+        IS_SS_UP["primary"] = "OK"
+except Exception as e:
+    print(f"Error: {e}")
+
+try:
+    riu = requests.get(f"https://raw.githubusercontent.com/{GITHUB_USERNAMES.get('mirror')}/SolsScope/main/requirements.txt", timeout=10)
+    if riu.status_code == 200:
+        IS_SS_UP["mirror"] = "OK"
+except Exception as e:
+    print(f"Error: {e}")
+
 class ManagerGUI(QDialog):
     def __init__(self, gui, plugin_index, theme_index):
         super().__init__()
@@ -56,10 +80,17 @@ class ManagerGUI(QDialog):
 
         layout = QVBoxLayout(self)
 
+        top_layout = QHBoxLayout()
         self.selector = QComboBox()
         self.selector.addItems(["Plugins", "Themes"])
         self.selector.currentTextChanged.connect(self.change_mode)
-        layout.addWidget(self.selector)
+        top_layout.addWidget(self.selector)
+
+        self.manual_button = QPushButton("Manual Install")
+        self.manual_button.clicked.connect(self.manual_install)
+        top_layout.addWidget(self.manual_button)
+
+        layout.addLayout(top_layout)
 
         self.main_area = QStackedWidget()
         layout.addWidget(self.main_area)
@@ -81,6 +112,13 @@ class ManagerGUI(QDialog):
     def closeEvent(self, event):
         save_lockfile(self.lock)
         event.accept()
+
+    def manual_install(self):
+
+        if self.selector.currentText().lower() == "plugins":
+            self.gui.install_plugin()
+        else:
+            self.gui.apply_theme_button()
 
 class ItemManager(QWidget):
     def __init__(self, gui, index_data, mode="Plugin", lock=None):
@@ -136,7 +174,7 @@ class ItemManager(QWidget):
         self.installed_label.setText(f"Installed Version: {self.installed.get(item['name'], 'Not Installed')}")
 
         if self.mode == "Plugin":
-            self.requires_label.setText(f"Requires Macro v{item.get('requires_version', 'N/A')}")
+            self.requires_label.setText(f"Requires SolsScope v{item.get('requires_version', 'N/A')}")
             self.requirements_label.setText(f"Plugin Requirements: {', '.join(item.get('plugin_requirements', [])) or 'None'}")
 
             if item['name'] in self.installed and self.installed[item['name']] == item.get('version'):
@@ -158,9 +196,16 @@ class ItemManager(QWidget):
                     self.install_button.setText("Install")
 
     def install_item(self):
-        key = self.sidebar.currentItem().text()
+        if self.sidebar.currentItem():
+            key = self.sidebar.currentItem().text()
+        else:
+            QMessageBox.information(self, "Error", "No plugin/theme was selected.")
+            return
         item = self.index_data[key]
-        url = item.get("download_url")
+        if IS_SS_UP["primary"]:
+            url = f"https://raw.githubusercontent.com/{GITHUB_USERNAMES.get('primary')}" + item.get("download_url")
+        else:
+            url = f"https://raw.githubusercontent.com/{GITHUB_USERNAMES.get('mirror')}" + item.get("download_url")
         try:
             r = requests.get(url)
             r.raise_for_status()
@@ -182,7 +227,11 @@ class ItemManager(QWidget):
             QMessageBox.critical(self, "Error", str(e))
 
     def uninstall_item(self):
-        key = self.sidebar.currentItem().text()
+        if self.sidebar.currentItem():
+            key = self.sidebar.currentItem().text()
+        else:
+            QMessageBox.information(self, "Error", "No plugin/theme was selected.")
+            return
         item = self.index_data[key]
         if self.mode.lower() == "plugin":
             folder = os.path.join(MACROPATH, "plugins")

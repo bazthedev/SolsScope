@@ -23,9 +23,6 @@ from constants import MACROPATH
 # Globals
 # ---------------------------------------------------------
 
-# Load validation lists from JSON
-with open(f"{MACROPATH}/valid_lists.json", "r", encoding="utf-8") as f:
-    VALID_GROUPS = json.load(f)
 
 # ---------------------------------------------------------
 # Utils
@@ -51,10 +48,17 @@ def capture_region(rect: Iterable[float]) -> np.ndarray:
 def max_channel_lum(img: np.ndarray) -> np.ndarray:
     return np.max(img, axis=2).astype("uint8")
 
+def get_valid_groups() -> list:
+    try:
+        with open(f"{MACROPATH}/valid_lists.json", "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception as e:
+        return {}
 # ---------------------------------------------------------
 # OCR + Validation
 # ---------------------------------------------------------
 def match_valid_item(text: str, group: str) -> str:
+    
     """Fuzzy match OCR text against the selected group list."""
     if not text:
         return "[invalid]"
@@ -63,7 +67,7 @@ def match_valid_item(text: str, group: str) -> str:
     if group == "validPotions":
         group = "craftingPotions"
 
-    choices = VALID_GROUPS.get(group, VALID_GROUPS["validInventoryItems"])
+    choices = get_valid_groups().get(group, get_valid_groups()["validInventoryItems"])
     match = difflib.get_close_matches(text, choices, n=1, cutoff=0.6)
     return match[0] if match else "[invalid]"
 

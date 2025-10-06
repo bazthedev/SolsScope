@@ -338,7 +338,8 @@ class MainWindow(QMainWindow):
         self.refresh_theme_dropdown()
         self.logger.write_log(f"Applied theme {theme_name}.")
 
-        #QMessageBox.information(self, "Theme Applied", f"The theme {theme_name} has been applied.")
+        if not path:
+            QMessageBox.information(self, "Theme Applied", f"The theme {theme_name} has been applied.")
 
     def setup_custom_styling(self):
         """Apply custom theme styling to the application"""
@@ -1103,6 +1104,8 @@ class MainWindow(QMainWindow):
             label = QLabel(formatted_key + ":")
             if tooltip_text:
                 label.setToolTip(tooltip_text)
+            else:
+                label.setToolTip("No tooltip for this.")
 
             if key == "calibration":
                 h_layout = QHBoxLayout()
@@ -1229,6 +1232,8 @@ class MainWindow(QMainWindow):
                 group_layout.setContentsMargins(10, 15, 10, 10)
                 if tooltip_text:
                     group_box.setToolTip(tooltip_text)
+                else:
+                    group_box.setToolTip("No tooltip for this.")
                 form_layout.addRow(group_box) 
                 entry_dict[key] = {}
                 self.create_widgets(value, group_layout, entry_dict[key])
@@ -1273,6 +1278,8 @@ class MainWindow(QMainWindow):
             label = QLabel(formatted_key + ":")
             if tooltip_text:
                 label.setToolTip(tooltip_text)
+            else:
+                label.setToolTip("No tooltip for this.")
 
             if isinstance(value, dict):
                 group_box = QGroupBox(formatted_key) 
@@ -1281,6 +1288,8 @@ class MainWindow(QMainWindow):
                 group_layout.setContentsMargins(10, 15, 10, 10)
                 if tooltip_text:
                     group_box.setToolTip(tooltip_text)
+                else:
+                    group_box.setToolTip("No tooltip for this.")
                 form_layout.addRow(group_box) 
                 entry_dict[key] = {}
                 self.create_widgets(value, group_layout, entry_dict[key])
@@ -3086,8 +3095,9 @@ class MainWindow(QMainWindow):
                     plugin_authors = getattr(temp_instance, "authors", ["Unknown"])
                     plugin_requirements = getattr(temp_instance, "requirements", [])
                     required_macro_version = getattr(temp_instance, "requires", "0.0.0")
-
+                    silent = getattr(temp_instance, "silent", False)
                     plugin_autocraft_compatible = getattr(temp_instance, "autocraft_compatible", False)
+
                     del temp_instance 
                 except Exception as meta_e:
                     self.logger.write_log(f" > Error getting metadata from temporary instance of {plugin_name_from_file}: {meta_e}", level="ERROR")
@@ -3137,47 +3147,48 @@ class MainWindow(QMainWindow):
                     self.logger.write_log(f" > Error loading  config for plugin '{plugin_display_name}': {config_e}", level="WARN")
                     plugin_instance.config = {} 
 
-                self.logger.write_log(f"Creating UI tab for plugin: {plugin_display_name}")
-                plugin_tab = QWidget()
-                plugin_tab_layout = QVBoxLayout(plugin_tab)
+                if not silent:
+                    self.logger.write_log(f"Creating UI tab for plugin: {plugin_display_name}")
+                    plugin_tab = QWidget()
+                    plugin_tab_layout = QVBoxLayout(plugin_tab)
 
-                self.tab_widget.addTab(plugin_tab, plugin_display_name)
+                    self.tab_widget.addTab(plugin_tab, plugin_display_name)
 
-                self.tab_entries[plugin_display_name] = plugin_instance.entries
+                    self.tab_entries[plugin_display_name] = plugin_instance.entries
 
-                if hasattr(plugin_instance, "init_tab"):
-                    gui_tools = {
-                        "QtWidgets": __import__('PyQt6.QtWidgets'),
-                        "QtCore": __import__('PyQt6.QtCore'),
-                        "QtGui": __import__('PyQt6.QtGui'),
-                        "QLabel": QLabel, "QLineEdit": QLineEdit, "QCheckBox": QCheckBox,
-                        "QPushButton": QPushButton, "QTextEdit": QTextEdit, "QFrame": QFrame,
-                        "QListWidget": QListWidget, "QScrollArea": QScrollArea, "QGroupBox": QGroupBox,
-                        "QVBoxLayout": QVBoxLayout, "QHBoxLayout": QHBoxLayout, "QFormLayout": QFormLayout,
-                        "QSpacerItem": QSpacerItem, "QSizePolicy": QSizePolicy,
-                        "AlignmentFlag": Qt.AlignmentFlag,
-                        "logger": self.logger,
-                        "format_key": format_key,
-                        "config": plugin_instance.config,
-                        "entries": plugin_instance.entries,
-                        "parent_layout": plugin_tab_layout,
-                        "create_widgets": self.create_widgets_plugin,
-                        "create_list_widget": self.create_list_widget,
-                        "main_window": self
-                    }
-                    try:
-                        plugin_instance.init_tab(gui_tools)
-                    except Exception as tab_e:
-                        self.logger.write_log(f" > Error running init_tab for plugin '{plugin_display_name}': {tab_e}", level="ERROR")
-                        error_label = QLabel(f"Error loading plugin UI for {plugin_display_name}.\nCheck logs for details.\nIf you recently updated the macro, then the plugin may also require updating.")
-                        error_label.setStyleSheet("color: red;")
-                        plugin_tab_layout.addWidget(error_label)
+                    if hasattr(plugin_instance, "init_tab"):
+                        gui_tools = {
+                            "QtWidgets": __import__('PyQt6.QtWidgets'),
+                            "QtCore": __import__('PyQt6.QtCore'),
+                            "QtGui": __import__('PyQt6.QtGui'),
+                            "QLabel": QLabel, "QLineEdit": QLineEdit, "QCheckBox": QCheckBox,
+                            "QPushButton": QPushButton, "QTextEdit": QTextEdit, "QFrame": QFrame,
+                            "QListWidget": QListWidget, "QScrollArea": QScrollArea, "QGroupBox": QGroupBox,
+                            "QVBoxLayout": QVBoxLayout, "QHBoxLayout": QHBoxLayout, "QFormLayout": QFormLayout,
+                            "QSpacerItem": QSpacerItem, "QSizePolicy": QSizePolicy,
+                            "AlignmentFlag": Qt.AlignmentFlag,
+                            "logger": self.logger,
+                            "format_key": format_key,
+                            "config": plugin_instance.config,
+                            "entries": plugin_instance.entries,
+                            "parent_layout": plugin_tab_layout,
+                            "create_widgets": self.create_widgets_plugin,
+                            "create_list_widget": self.create_list_widget,
+                            "main_window": self
+                        }
+                        try:
+                            plugin_instance.init_tab(gui_tools)
+                        except Exception as tab_e:
+                            self.logger.write_log(f" > Error running init_tab for plugin '{plugin_display_name}': {tab_e}", level="ERROR")
+                            error_label = QLabel(f"Error loading plugin UI for {plugin_display_name}.\nCheck logs for details.\nIf you recently updated the macro, then the plugin may also require updating.")
+                            error_label.setStyleSheet("color: red;")
+                            plugin_tab_layout.addWidget(error_label)
 
-                else:
-                    default_label = QLabel("Plugin has no UI defined.")
-                    plugin_tab_layout.addWidget(default_label)
+                    else:
+                        default_label = QLabel("Plugin has no UI defined.")
+                        plugin_tab_layout.addWidget(default_label)
 
-                self.create_bottom_buttons(plugin_tab_layout, plugin_display_name)
+                    self.create_bottom_buttons(plugin_tab_layout, plugin_display_name)
 
                 self.plugins.append(plugin_instance)
                 self.plugin_file_paths[plugin_display_name] = plugin_instance.file_path
@@ -3274,20 +3285,13 @@ class MainWindow(QMainWindow):
 
             os.makedirs(dest_dir, exist_ok=True)
 
-            """if os.path.exists(dest_path):
-                reply = QMessageBox.question(self, "Plugin Exists",
-                                             f"Plugin '{filename}' already exists. Overwrite?",
-                                             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-                                             QMessageBox.StandardButton.No)
-                if reply == QMessageBox.StandardButton.No:
-                    return"""
-
             shutil.copy(plugin_path, dest_path)
             self.logger.write_log(f"Plugin '{filename}' copied to plugins directory.")
 
             self.load_plugins()
 
-            #QMessageBox.information(self, "Plugin Installed", f"Plugin '{filename}' installed successfully.")
+            if not path:
+                QMessageBox.information(self, "Plugin Installed", f"Plugin '{filename}' installed successfully.")
 
         except Exception as e:
             QMessageBox.critical(self, "Plugin Install Failed", f"Failed to install plugin:\n{e}")
@@ -3380,6 +3384,8 @@ class SettingsDialog(QDialog):
                 checkbox.setChecked(current_value)
                 if tooltip_text:
                     checkbox.setToolTip(tooltip_text)
+                else:
+                    checkbox.setToolTip("No tooltip for this.")
                 layout.addWidget(checkbox)
                 self.entries[key] = checkbox
                 
@@ -3393,6 +3399,8 @@ class SettingsDialog(QDialog):
                 line_edit = QLineEdit(str(current_value))
                 if tooltip_text:
                     line_edit.setToolTip(tooltip_text)
+                else:
+                    line_edit.setToolTip("No tooltip for this.")
                 layout.addWidget(label)
                 layout.addWidget(line_edit)
                 self.entries[key] = line_edit
@@ -3413,6 +3421,8 @@ class SettingsDialog(QDialog):
                         sub_checkbox.setChecked(sub_value)
                         if tooltip_text:
                             sub_checkbox.setToolTip(tooltip_text)
+                        else:
+                            sub_checkbox.setToolTip("No tooltip for this.")
                         group_layout.addWidget(sub_checkbox)
                         self.entries[key][sub_key] = sub_checkbox
                     elif isinstance(sub_value, dict):
@@ -3421,6 +3431,8 @@ class SettingsDialog(QDialog):
                         sub_group_layout = QFormLayout(sub_group)
                         if tooltip_text:
                             sub_group.setToolTip(tooltip_text)
+                        else:
+                            sub_group.setToolTip("No tooltip for this.")
                         
                         self.entries[key][sub_key] = {}
                         

@@ -1125,39 +1125,50 @@ def get_questboard_header(client_key: str, reader) -> dict:
 # MERCHANT (Mari): Read upper 35% of dialog text
 # ===============================================
 def get_merchant_name(client_key: str, reader) -> dict:
-    """
-    OCR the upper 35% of the Mari/Merchant dialogue.
-    Returns: { "merchant_header35": ("matched_text", ... ) }
-    """
-    if client_key not in roblox_clients:
-        raise KeyError(f"Unknown client_key: {client_key}")
-
     roblox_client = roblox_clients[client_key]
+    MD = ratios["MARI_DIALOG"]
 
-    # ---- ratios for Mari/Merchant dialog (centered container)
-    R = ratios["MARI_DIALOG"]  # requires ASPECT_RATIO, SCALE_WIDTH, SCALE_HEIGHT
-    sw, sh = roblox_client.screen_width, roblox_client.screen_height
+    # Client geometry
     tlx, tly = roblox_client.top_left_pos
+    sw, sh   = roblox_client.screen_width, roblox_client.screen_height
 
-    # Fit-by-aspect (your standard container math)
-    if sw * R["SCALE_WIDTH"] / R["ASPECT_RATIO"] <= sh * R["SCALE_HEIGHT"]:
-        cont_w = sw * R["SCALE_WIDTH"]
-        cont_h = cont_w / R["ASPECT_RATIO"]
+    # =====================
+    # CONTAINER SIZE
+    # =====================
+    if sw * MD["SCALE_WIDTH"] / MD["ASPECT_RATIO"] <= sh * MD["SCALE_HEIGHT"]:
+        mdlg_final_w = sw * MD["SCALE_WIDTH"]
+        mdlg_final_h = sw * MD["SCALE_WIDTH"] / MD["ASPECT_RATIO"]
     else:
-        cont_h = sh * R["SCALE_HEIGHT"]
-        cont_w = cont_h * R["ASPECT_RATIO"]
+        mdlg_final_h = sh * MD["SCALE_HEIGHT"]
+        mdlg_final_w = sh * MD["SCALE_HEIGHT"] * MD["ASPECT_RATIO"]
 
-    base_x = tlx + (sw - cont_w) / 2.0
-    base_y = tly + (sh - cont_h) / 2.0
+    # =====================
+    # POSITIONING (CENTER X, SCREEN_TOP_RATIO Y)
+    # =====================
+    mdlg_base_x = tlx + (sw - mdlg_final_w) / 2
+    mdlg_base_y = tly + (sh * MD["SCREEN_TOP_RATIO"])
 
-    # --- Slice: top 35% of the dialog
-    header_left   = base_x * 0.98
-    header_width  = cont_w * 1.02
-    header_top    = base_y + cont_h * R["HEADER"]["TOP_OFFSET_RATIO"]
-    header_height = cont_h * R["HEADER"]["HEIGHT_RATIO"]
+    # =====================
+    # ABSOLUTE TLWH (ENTIRE DIALOG)
+    # =====================
+    dlg_left   = mdlg_base_x
+    dlg_top    = mdlg_base_y
+    dlg_width  = mdlg_final_w
+    dlg_height = mdlg_final_h
+
+    # =====================
+    # TOP-THIRD SLICE (EXPANDED ×2)
+    # =====================
+    top_part_left   = dlg_left * 0.98
+    top_part_top    = dlg_top
+    top_part_width  = dlg_width * 0.8
+    top_part_height = (dlg_height / 3.0)
 
     locations = {
-        "merchant_name": [header_left, header_top, header_width, header_height, "validMerchants"]
+        "merchant_name": [top_part_left, top_part_top, top_part_width, top_part_height, "validMerchants"]
     }
 
-    return pyocrscope.read_ocr(reader, locations, 4)
+    # =====================
+    # OCR CALL (UPSCALE + PAD)
+    # =====================
+    return pyocrscope.read_ocr(reader, locations, scale_up=3.0, pad=5)

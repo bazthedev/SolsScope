@@ -35,7 +35,6 @@ DEFAULTSETTINGS = {
     "WEBHOOK_URL": "",
     "__version__": LOCALVERSION,
     "use_roblox_player": True,
-    "global_wait_time": 0.2,
     "skip_aura_download": False,
     "mention": True,
     "mention_id": 0,
@@ -217,7 +216,6 @@ VALIDSETTINGSKEYS = list(DEFAULTSETTINGS.keys())
 TOOLTIPS = {
     "WEBHOOK_URL": "The URL that the macro posts notifications to.",
     "use_roblox_player": "Force the Roblox Player logs to be used even if Microsoft Store version is running.",
-    "global_wait_time": "The time (in seconds) between some actions.",
     "skip_aura_download": "Skip downloading the auras information (recommended if slow startup). This will mean you cannot detect new auras if they are released.",
     "mention": "Mention you when detecting something.",
     "mention_id": "ID of the user to mention. If this needs to be a role, then use & before the ID.",
@@ -284,7 +282,7 @@ TOOLTIPS = {
 DONOTDISPLAY = ["__version__", "current_theme"]
 NOTRECOMMENDED = []
 
-GENERAL_KEYS = ["WEBHOOK_URL", "private_server_link", "mode", "themes", "SECONDARY_WEBHOOK_URLS", "failsafe_key", "use_roblox_player", "global_wait_time", "mention", "mention_id"]
+GENERAL_KEYS = ["WEBHOOK_URL", "private_server_link", "mode", "themes", "SECONDARY_WEBHOOK_URLS", "failsafe_key", "use_roblox_player", "mention", "mention_id"]
 AURAS_KEYS = ["minimum_roll", "minimum_ping", "use_reset_aura", "reset_aura", "take_screenshot_on_detection"]
 BIOMES_KEYS = ["auto_biome_randomizer", "auto_strange_controller", "enable_player_logger", "pop_in_glitch", "pop_in_dreamspace"]
 SNIPER_KEYS = ["sniper_enabled", "sniper_toggles", "DISCORD_TOKEN", "sniper_logs", "scan_channels"]

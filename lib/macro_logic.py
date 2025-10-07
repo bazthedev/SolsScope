@@ -301,7 +301,7 @@ def aura_detection(settings: dict, webhook, stop_event: threading.Event, keyboar
         try:
             current_aura = get_latest_equipped_aura()
 
-            if current_aura is None:
+            if current_aura is None or current_aura == "":
                 time.sleep(2) 
                 continue
             
@@ -508,14 +508,14 @@ def biome_detection(settings: dict, webhook, stop_event: threading.Event, sniped
 
         try:
             current_biome = get_latest_hovertext()
-            if current_biome is None:
+            if current_biome is None or current_biome == "":
                 time.sleep(2)
                 continue
 
             current_biome_key = current_biome.lower()
             previous_biome_key = previous_biome.lower() if previous_biome else None
 
-            if previous_biome_key is None or current_biome_key == previous_biome_key:
+            if previous_biome_key is None or previous_biome_key == "" or current_biome_key == previous_biome_key:
                 previous_biome = current_biome
                 continue
 

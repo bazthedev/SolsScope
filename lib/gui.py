@@ -354,7 +354,7 @@ class MainWindow(QMainWindow):
         /* Main Container */
         #mainContainer {
             background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
-                                      stop: 0 #2b2b2b, stop: 1 #1e1e1e);
+                                        stop: 0 #2b2b2b, stop: 1 #1e1e1e);
             border-radius: 15px;
             border: 1px solid #404040;
         }
@@ -362,7 +362,7 @@ class MainWindow(QMainWindow):
         /* Title Bar */
         #titleBar {
             background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
-                                      stop: 0 #3a3a3a, stop: 1 #2b2b2b);
+                                        stop: 0 #3a3a3a, stop: 1 #2b2b2b);
             border-radius: 10px;
             border: 1px solid #505050;
             padding: 10px;
@@ -427,7 +427,7 @@ class MainWindow(QMainWindow):
 
         #customTabWidget QTabBar::tab {
             background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
-                                      stop: 0 #404040, stop: 1 #353535);
+                                        stop: 0 #404040, stop: 1 #353535);
             color: #cccccc;
             border: 1px solid #505050;
             border-bottom: none;
@@ -441,18 +441,18 @@ class MainWindow(QMainWindow):
 
         #customTabWidget QTabBar::tab:selected {
             background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
-                                      stop: 0 #0078d4, stop: 1 #005a9e);
+                                        stop: 0 #0078d4, stop: 1 #005a9e);
             color: #ffffff;
             border-color: #0078d4;
         }
 
         #customTabWidget QTabBar::tab:hover:!selected {
             background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
-                                      stop: 0 #4a4a4a, stop: 1 #3a3a3a);
+                                        stop: 0 #4a4a4a, stop: 1 #3a3a3a);
             color: #ffffff;
         }
 
-        /* fix white background on tabs */
+        /* tab background */
         QWidget#tabContentWidget {
             background: #252525;
         }
@@ -495,7 +495,7 @@ class MainWindow(QMainWindow):
             margin-top: 10px;
             padding-top: 10px;
             background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
-                                      stop: 0 #2f2f2f, stop: 1 #252525);
+                                        stop: 0 #2f2f2f, stop: 1 #252525);
         }
 
         QGroupBox::title {
@@ -563,7 +563,7 @@ class MainWindow(QMainWindow):
         /* Buttons */
         QPushButton {
             background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
-                                      stop: 0 #0078d4, stop: 1 #005a9e);
+                                        stop: 0 #0078d4, stop: 1 #005a9e);
             color: #ffffff;
             border: 1px solid #005a9e;
             border-radius: 8px;
@@ -576,13 +576,13 @@ class MainWindow(QMainWindow):
 
         QPushButton:hover {
             background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
-                                      stop: 0 #1084da, stop: 1 #0d70c4);
+                                        stop: 0 #1084da, stop: 1 #0d70c4);
             border-color: #0d70c4;
         }
 
         QPushButton:pressed {
             background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
-                                      stop: 0 #005a9e, stop: 1 #004578);
+                                        stop: 0 #005a9e, stop: 1 #004578);
         }
 
         QPushButton:disabled {
@@ -594,35 +594,35 @@ class MainWindow(QMainWindow):
         /* Special button styles */
         #startButton {
             background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
-                                      stop: 0 #27ae60, stop: 1 #1e8449);
+                                        stop: 0 #27ae60, stop: 1 #1e8449);
             border: 1px solid #1e8449;
         }
 
         #startButton:hover {
             background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
-                                      stop: 0 #2ecc71, stop: 1 #27ae60);
+                                        stop: 0 #2ecc71, stop: 1 #27ae60);
         }
 
         #stopButton {
             background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
-                                      stop: 0 #e74c3c, stop: 1 #c0392b);
+                                        stop: 0 #e74c3c, stop: 1 #c0392b);
             border: 1px solid #c0392b;
         }
 
         #stopButton:hover {
             background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
-                                      stop: 0 #ec7063, stop: 1 #e74c3c);
+                                        stop: 0 #ec7063, stop: 1 #e74c3c);
         }
 
         #donateButton {
             background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
-                                      stop: 0 #f39c12, stop: 1 #e67e22);
+                                        stop: 0 #f39c12, stop: 1 #e67e22);
             border: 1px solid #e67e22;
         }
 
         #donateButton:hover {
             background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
-                                      stop: 0 #f5b041, stop: 1 #f39c12);
+                                        stop: 0 #f5b041, stop: 1 #f39c12);
         }
 
         /* List Widgets */
@@ -676,7 +676,7 @@ class MainWindow(QMainWindow):
         /* Filter Frame */
         #filterFrame {
             background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
-                                      stop: 0 #3a3a3a, stop: 1 #2b2b2b);
+                                        stop: 0 #3a3a3a, stop: 1 #2b2b2b);
             border: 1px solid #505050;
             border-radius: 8px;
             padding: 5px;
@@ -757,14 +757,14 @@ class MainWindow(QMainWindow):
         /* Credits Tab Styling */
         #creditsContainer {
             background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
-                                      stop: 0 #2f2f2f, stop: 1 #252525);
+                                        stop: 0 #2f2f2f, stop: 1 #252525);
             border-radius: 10px;
             border: 1px solid #404040;
         }
 
         #developerCard {
             background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
-                                      stop: 0 #3a3a3a, stop: 1 #2b2b2b);
+                                        stop: 0 #3a3a3a, stop: 1 #2b2b2b);
             border: 2px solid #505050;
             border-radius: 12px;
             padding: 15px;
@@ -774,12 +774,12 @@ class MainWindow(QMainWindow):
         #developerCard:hover {
             border-color: #0078d4;
             background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
-                                      stop: 0 #404040, stop: 1 #303030);
+                                        stop: 0 #404040, stop: 1 #303030);
         }
 
         #sectionCard {
             background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
-                                      stop: 0 #353535, stop: 1 #282828);
+                                        stop: 0 #353535, stop: 1 #282828);
             border: 1px solid #505050;
             border-radius: 8px;
             padding: 12px;
@@ -788,7 +788,7 @@ class MainWindow(QMainWindow):
 
         #versionLabel {
             background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 0,
-                                      stop: 0 #0078d4, stop: 1 #005a9e);
+                                        stop: 0 #0078d4, stop: 1 #005a9e);
             color: #ffffff;
             border-radius: 15px;
             padding: 8px 16px;
@@ -798,7 +798,7 @@ class MainWindow(QMainWindow):
 
         #donateCardButton {
             background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
-                                      stop: 0 #f39c12, stop: 1 #e67e22);
+                                        stop: 0 #f39c12, stop: 1 #e67e22);
             border: 2px solid #e67e22;
             border-radius: 10px;
             color: #ffffff;
@@ -810,13 +810,13 @@ class MainWindow(QMainWindow):
 
         #donateCardButton:hover {
             background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
-                                      stop: 0 #f5b041, stop: 1 #f39c12);
+                                        stop: 0 #f5b041, stop: 1 #f39c12);
             border-color: #f39c12;
         }
 
         #donateCardButton:pressed {
             background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
-                                      stop: 0 #e67e22, stop: 1 #d68910);
+                                        stop: 0 #e67e22, stop: 1 #d68910);
         }
 
         QWidget#popoutConfigBox {
@@ -825,25 +825,6 @@ class MainWindow(QMainWindow):
 
         QDialog#popoutWindow {
             background: #252525;
-        }
-
-        /* Screen Region Dialog */
-        QDialog#screenRegionDialog {
-            background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
-                                    stop: 0 #2f2f2f, stop: 1 #252525);
-            border: 2px solid #404040;
-            border-radius: 10px;
-            padding: 15px;
-        }
-
-        QDialog#screenRegionDialog QLabel {
-            color: #ffffff;
-            font-size: 12px;
-            font-weight: bold;
-        }
-
-        QDialog#screenRegionDialog QLineEdit {
-            min-width: 100px;
         }
 
         /* Main CalibrationEditor window */
@@ -867,6 +848,84 @@ class MainWindow(QMainWindow):
             background: transparent;
         }
 
+        /* =========================
+        Manager Window Styling
+        ========================= */
+        QWidget#ManagerGUI {
+            background: qlineargradient(
+                x1: 0, y1: 0, x2: 0, y2: 1,
+                stop: 0 #2f2f2f, stop: 1 #1e1e1e
+            );
+            border: 1px solid #404040;
+            border-radius: 12px;
+            color: #ffffff;
+            padding: 8px;
+        }
+
+        QWidget#ManagerGUI QLabel {
+            color: #e0e0e0;
+            font-weight: bold;
+        }
+
+        QWidget#ManagerGUI QTextEdit {
+            background: #1a1a1a;
+            color: #dcdcdc;
+            border: 1px solid #3c3c3c;
+            border-radius: 6px;
+            padding: 6px;
+        }
+
+        QWidget#ManagerGUI QPushButton {
+            background: qlineargradient(
+                x1:0, y1:0, x2:0, y2:1,
+                stop:0 #3c3c3c, stop:1 #2a2a2a
+            );
+            border: 1px solid #555555;
+            border-radius: 6px;
+            color: #ffffff;
+            padding: 4px 12px;
+        }
+
+        QWidget#ManagerGUI QPushButton:hover {
+            background: qlineargradient(
+                x1:0, y1:0, x2:0, y2:1,
+                stop:0 #505050, stop:1 #3a3a3a
+            );
+        }
+
+        QWidget#ManagerGUI QListWidget {
+            background: #1f1f1f;
+            border: 1px solid #3c3c3c;
+            border-radius: 6px;
+            color: #dcdcdc;
+        }
+
+        /* Package Installer - Default Theme */
+        QDialog#PackageInstallerGUI {
+            background: #f0f0f0;
+            border: 1px solid #aaa;
+            border-radius: 10px;
+            padding: 12px;
+        }
+
+        QDialog#PackageInstallerGUI QLabel {
+            color: #222;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        QDialog#PackageInstallerGUI QProgressBar {
+            border: 1px solid #aaa;
+            border-radius: 6px;
+            background: #ddd;
+            text-align: center;
+            color: #222;
+        }
+
+        QDialog#PackageInstallerGUI QProgressBar::chunk {
+            background: #5aa0f0;
+            border-radius: 6px;
+        }
         """
 
         def validate_theme(theme_text: str) -> bool:

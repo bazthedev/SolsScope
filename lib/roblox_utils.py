@@ -127,10 +127,10 @@ def get_latest_hovertext():
     """Extracts the latest biome name (hoverText) from Roblox logs."""
     log_content = _get_latest_log_content(purpose="biome_detection")
     if not log_content:
-        return None
+        return ""
 
     json_pattern = re.compile(r'\{.*\}')
-    last_hover_text = None
+    last_hover_text = ""
 
     try:
         for line in reversed(log_content):
@@ -152,7 +152,7 @@ def get_latest_hovertext():
                     continue 
     except Exception as e:
         get_logger().write_log(f"Error parsing hover text from logs: {e}")
-        return None
+        return ""
 
     return last_hover_text 
 
@@ -160,7 +160,7 @@ def get_latest_equipped_aura():
     """Extracts the latest equipped aura name from Roblox logs."""
     log_content = _get_latest_log_content(purpose="aura_detection")
     if not log_content:
-        return None
+        return ""
 
     json_pattern = re.compile(r'\{.*\}')
 
@@ -189,9 +189,9 @@ def get_latest_equipped_aura():
                     continue
     except Exception as e:
          get_logger().write_log(f"Error parsing equipped aura from logs: {e}")
-         return None
+         return ""
 
-    return None
+    return ""
 
 
 def check_for_eden_spawn():

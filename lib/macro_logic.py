@@ -151,10 +151,10 @@ def use_item(item_name: str, amount: int, _close_menu: bool, mkey, kb, settings:
         time.sleep(delay)
         kb.press(keyboard.Key.ctrl)
         kb.press("a")
-        time.sleep(0.05)
+        time.sleep(0.2)
         kb.release("a")
         kb.release(keyboard.Key.ctrl)
-        time.sleep(0.05)
+        time.sleep(0.2)
         _type(kb, settings.get("typing_jitter", 0.2), settings.get("typing_delay", 0.2), settings.get("typing_hold", 0.2), str(amount))
         time.sleep(1)
         kb.press(keyboard.Key.enter)
@@ -202,19 +202,19 @@ def equip_aura(aura_name, unequip, mkey, kb, settings: dict, ignore_next_detecti
 
     full_aura_name = resolve_full_aura_name(aura_name, auras)
     _ = None
-    
 
-    while _ is None:
+    while _ is None or _ == "":
         _ = get_latest_equipped_aura()
         try:
-            if _.lower() == full_aura_name.lower():
-                if not unequip:
-                    logger.write_log(f"Aura {full_aura_name} is already equipped.")
-                    return
-            if _.lower() != full_aura_name.lower():
-                if unequip:
-                    logger.write_log(f"Aura {full_aura_name} is already unequipped.")
-                    return
+            if _ or _ != "":
+                if _.lower() == full_aura_name.lower():
+                    if not unequip:
+                        logger.write_log(f"Aura {full_aura_name} is already equipped.")
+                        return
+                if _.lower() != full_aura_name.lower():
+                    if unequip:
+                        logger.write_log(f"Aura {full_aura_name} is already unequipped.")
+                        return
         except Exception as e:
             logger.write_log(f"Error checking current equipped aura: {e}.")
 

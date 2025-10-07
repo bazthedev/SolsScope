@@ -1,7 +1,7 @@
 """
 SolsScope/Baz's Macro
 Created by Baz and Cresqnt
-v2.0.0
+v2.0.1
 Support server: https://discord.gg/8khGXqG7nA
 """
 
@@ -13,13 +13,10 @@ import tkinter as tk
 from tkinter import messagebox
 from webbrowser import open as wbopen
 import glob
-
-MAIN_VER = "2.0.0"
-PRERELEASE = False
-BUILTINPKGS = True
-
-print("======== SolsScope ========")
-print(f"Launcher version: {MAIN_VER}\nPrerelease: {PRERELEASE}\nPackages Built In: {BUILTINPKGS}")
+import shutil
+import ctypes
+import datetime
+import traceback
 
 WORK_DIR = os.path.expandvars(r"%localappdata%\SolsScope")
 THEME_DIR = os.path.expandvars(r"%localappdata%\SolsScope\theme")
@@ -29,6 +26,50 @@ LEGACY_DIR = os.path.expandvars(r"%localappdata%\Baz's Macro")
 PACKAGES_DIR = os.path.expandvars(r"%localappdata%/SolsScope/py/Lib/site-packages")
 ASSET_DIR = os.path.expandvars(r"%localappdata%\SolsScope\assets")
 CALIBRATIONS_DIR = os.path.expandvars(r"%localappdata%\SolsScope\calibrations")
+
+
+def log_uncaught_exception(exc_type, exc_value, exc_traceback):
+    """Log uncaught exceptions to a file with timestamped name."""
+    if issubclass(exc_type, KeyboardInterrupt):
+        sys.__excepthook__(exc_type, exc_value, exc_traceback)
+        return
+
+    log_dir = os.path.join(WORK_DIR, "temp")
+    os.makedirs(log_dir, exist_ok=True)
+
+    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    dump_path = os.path.join(log_dir, f"error_{timestamp}.log")
+
+    with open(dump_path, "w", encoding="utf-8") as f:
+        f.write("=== SolsScope Unhandled Exception ===\n")
+        traceback.print_exception(exc_type, exc_value, exc_traceback, file=f)
+
+    if "--debug" in sys.argv:
+        print(f"\nUnhandled exception logged to: {dump_path}")
+
+sys.excepthook = log_uncaught_exception
+
+def enable_console():
+    """Attach a console window for debugging."""
+    kernel32 = ctypes.windll.kernel32
+    if not kernel32.GetConsoleWindow():
+        kernel32.AllocConsole()
+        sys.stdout = open('CONOUT$', 'w')
+        sys.stderr = open('CONOUT$', 'w')
+        sys.stdin = open('CONIN$', 'r')
+
+MAIN_VER = "2.0.1"
+PRERELEASE = False
+BUILTINPKGS = True
+IS_EXE = True
+
+if "--debug" in sys.argv and IS_EXE:
+    enable_console()
+
+
+print("======== SolsScope ========")
+print(f"Launcher version: {MAIN_VER}\nPrerelease: {PRERELEASE}\nPackages Built In: {BUILTINPKGS}")
+
 
 GITHUB_USERNAMES = {
     "primary" : "bazthedev",
@@ -78,6 +119,21 @@ def download_folder(url, local_dir, overwrite=True):
                 download_folder(item['url'], os.path.join(local_dir, item['name']))
     else:
         print("SolsScope is currently DOWN.")
+
+
+def get_script_location():
+    if getattr(sys, 'frozen', False):
+        return os.path.dirname(sys.executable)
+    else:
+        return os.path.dirname(os.path.abspath(__file__))
+    
+def resource_path(relative_path: str) -> str:
+    """ Get absolute path to resource, works for dev and for PyInstaller exe """
+    try:
+        base_path = sys._MEIPASS
+    except AttributeError:
+        base_path = get_script_location()
+    return os.path.join(base_path, relative_path)
 
 if PRERELEASE:
     LIB_DOWNLOAD_URL = f"https://raw.githubusercontent.com/{GITHUB_USERNAMES.get('primary')}/SolsScope/Preview/lib/"
@@ -137,8 +193,17 @@ if not os.path.exists(THEME_DIR):
 
 if not os.path.exists(LIB_DIR):
     os.mkdir(LIB_DIR)
-    print("Lib folder not found, downloading libraries...")
-    download_folder(LIBS_API_URL, LIB_DIR)
+    if IS_EXE:
+        print(f"Copying lib folder contents to {LIB_DIR}")
+        try:
+            shutil.copytree(resource_path("lib/"), LIB_DIR, dirs_exist_ok=True)
+            print(f"Copied lib folder to {LIB_DIR}!")
+        except Exception as e:
+            print(f"Failed with error {e}, downloading lib dir...")
+            download_folder(LIBS_API_URL, LIB_DIR)
+    else:
+        print("Lib folder not found, downloading libraries...")
+        download_folder(LIBS_API_URL, LIB_DIR)
 
 if not os.path.exists(PATH_DIR):
     os.mkdir(PATH_DIR)
@@ -152,12 +217,13 @@ elif not os.path.isfile(f"{WORK_DIR}\\settings.json"):
     _temp = open(f"{WORK_DIR}\\settings.json", "w")
     _temp.write("{}")
     _temp.close()
-    try:
-        video = requests.get(VIDEO_URL, timeout=10)
-        video.raise_for_status()
-        wbopen(video.text)
-    except Exception as e:
-        wbopen("https://www.youtube.com/watch?v=Y12uiAbqMDc")
+    if messagebox.askyesno("SolsScope", "As this is your first time using SolsScope, would you like to watch a video guide on how to use it?"):
+        try:
+            video = requests.get(VIDEO_URL, timeout=10)
+            video.raise_for_status()
+            wbopen(video.text)
+        except Exception as e:
+            wbopen("https://www.youtube.com/watch?v=Y12uiAbqMDc")
 
 root = tk.Tk(); root.withdraw(); root.attributes('-topmost', True)
 
@@ -181,9 +247,21 @@ try:
             try:
                 return tuple(map(int, v.split('.')))
             except ValueError:
-                print(f"Invalid version format: '{v}'. Returning (0,0,0).")
-                return (0, 0, 0)
-        if parse_version(LATEST_VERSION) > parse_version(_tempsettings.get("__version__", "2.0.0")):
+                print(f"Invalid version format: '{v}'. Returning (1,0,0).")
+                return (1, 0, 0)
+        
+        if parse_version(MAIN_VER) > parse_version(_tempsettings.get("__version__", "1.0.0")):
+            UPDATE = True
+            print("Macro update detected, redownloading required libraries...")
+            download_folder(LIBS_API_URL, LIB_DIR)
+            download_folder(PATH_API_URL, PATH_DIR)
+            download_folder(ASSETS_API_URL, ASSET_DIR)
+            print("All required libraries were updated, proceeding...")
+            _tempsettings["__version__"] = MAIN_VER
+            with open(f"{WORK_DIR}\\settings.json", "w", encoding="utf-8") as f:
+                json.dump(_tempsettings, f, indent=4)
+            messagebox.showinfo("SolsScope", "If you paid for this software, then you have been scammed and should demand a refund. The only official download page for this software is https://github.com/bazthedev/SolsScope")
+        elif parse_version(LATEST_VERSION) > parse_version(_tempsettings.get("__version__", "1.0.0")):
             UPDATE = True
             if messagebox.askyesno("SolsScope", f"A new version ({LATEST_VERSION}) of SolsScope has been detected, would you like to download it?"):
                 print("Macro update detected, redownloading required libraries...")
@@ -195,7 +273,6 @@ try:
                 with open(f"{WORK_DIR}\\settings.json", "w", encoding="utf-8") as f:
                     json.dump(_tempsettings, f, indent=4)
                 messagebox.showinfo("SolsScope", "If you paid for this software, then you have been scammed and should demand a refund. The only official download page for this software is https://github.com/bazthedev/SolsScope")
-                messagebox.showinfo("SolsScope",  "SolsScope is a FULLSCREEN macro. To ensure compatibility with certain features, please use Roblox in full screen.")
         elif _tempsettings.get("redownload_libs_on_run", False) or PRERELEASE:
             print("Manual redownload/prerelease initiated download.")
             download_folder(LIBS_API_URL, LIB_DIR)
@@ -206,6 +283,7 @@ try:
                 json.dump(_tempsettings, f, indent=4)
         else:
             print("No updates were detected.")
+
 except Exception as e:
     messagebox.showerror("SolsScope", f"Error whilst downloading required libraries: {e}")
 
@@ -334,7 +412,6 @@ except Exception as e:
 
     error_message = f"An unexpected error occurred during startup: {e}"
     print(f"FATAL ERROR: {error_message}")
-    import traceback
     traceback.print_exc()
     try:
         messagebox.showerror("Fatal Startup Error", error_message)
@@ -596,7 +673,6 @@ if __name__ == '__main__':
         logger = get_logger()
 
         logger.write_log(f"[CRITICAL] --- !!! UNHANDLED FATAL GUI ERROR: {e} !!! ---")
-        import traceback
         logger.write_log(f"[CRITICAL] {traceback.format_exc()}")
         try:
 

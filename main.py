@@ -1,7 +1,7 @@
 """
 SolsScope/Baz's Macro
 Created by Baz and Cresqnt
-v2.0.1
+v2.0.2
 Support server: https://discord.gg/8khGXqG7nA
 """
 
@@ -58,7 +58,7 @@ def enable_console():
         sys.stderr = open('CONOUT$', 'w')
         sys.stdin = open('CONIN$', 'r')
 
-MAIN_VER = "2.0.1"
+MAIN_VER = "2.0.2"
 PRERELEASE = False
 BUILTINPKGS = True
 IS_EXE = True
@@ -176,8 +176,17 @@ else:
     THEME_URL = f"https://api.github.com/repos/{GITHUB_USERNAMES.get('mirror')}/SolsScope/contents/theme"
     VIDEO_URL = f"https://raw.githubusercontent.com/{GITHUB_USERNAMES.get('mirror')}/SolsScope/refs/heads/main/video_url"
 
+EXTRACTED_DATA = False
+
 if not os.path.exists(WORK_DIR):
     os.mkdir(WORK_DIR)
+    if IS_EXE:
+        try:
+            shutil.copytree(resource_path("data/"), WORK_DIR, dirs_exist_ok=True)
+            print("Successfully extracted data.")
+            EXTRACTED_DATA = True
+        except Exception as e:
+            print(f"Error occured copying data: {e}")
 
 if not os.path.exists(os.path.join(WORK_DIR, "player_logs")):
     os.mkdir(os.path.join(WORK_DIR, "player_logs"))
@@ -193,17 +202,8 @@ if not os.path.exists(THEME_DIR):
 
 if not os.path.exists(LIB_DIR):
     os.mkdir(LIB_DIR)
-    if IS_EXE:
-        print(f"Copying lib folder contents to {LIB_DIR}")
-        try:
-            shutil.copytree(resource_path("lib/"), LIB_DIR, dirs_exist_ok=True)
-            print(f"Copied lib folder to {LIB_DIR}!")
-        except Exception as e:
-            print(f"Failed with error {e}, downloading lib dir...")
-            download_folder(LIBS_API_URL, LIB_DIR)
-    else:
-        print("Lib folder not found, downloading libraries...")
-        download_folder(LIBS_API_URL, LIB_DIR)
+    print("Lib folder not found, downloading libraries...")
+    download_folder(LIBS_API_URL, LIB_DIR)
 
 if not os.path.exists(PATH_DIR):
     os.mkdir(PATH_DIR)
@@ -235,7 +235,7 @@ try:
     LATEST_VERSION = data["name"]   
     print(f"The latest version is {LATEST_VERSION}")
 except Exception as e:
-    LATEST_VERSION = "2.0.0"
+    LATEST_VERSION = "2.0.2"
 
 
 UPDATE = False
@@ -260,7 +260,7 @@ try:
             _tempsettings["__version__"] = MAIN_VER
             with open(f"{WORK_DIR}\\settings.json", "w", encoding="utf-8") as f:
                 json.dump(_tempsettings, f, indent=4)
-            messagebox.showinfo("SolsScope", "If you paid for this software, then you have been scammed and should demand a refund. The only official download page for this software is https://github.com/bazthedev/SolsScope")
+            messagebox.showinfo("SolsScope", "If you paid for this software, then you have been scammed and should demand a refund. The only official download page for this software is https://github.com/bazthedev/SolsScope and https://github.com/ScopeDevelopment/SolsScope")
         elif parse_version(LATEST_VERSION) > parse_version(_tempsettings.get("__version__", "1.0.0")):
             UPDATE = True
             if messagebox.askyesno("SolsScope", f"A new version ({LATEST_VERSION}) of SolsScope has been detected, would you like to download it?"):
@@ -272,7 +272,7 @@ try:
                 _tempsettings["__version__"] = LATEST_VERSION
                 with open(f"{WORK_DIR}\\settings.json", "w", encoding="utf-8") as f:
                     json.dump(_tempsettings, f, indent=4)
-                messagebox.showinfo("SolsScope", "If you paid for this software, then you have been scammed and should demand a refund. The only official download page for this software is https://github.com/bazthedev/SolsScope")
+                messagebox.showinfo("SolsScope", "If you paid for this software, then you have been scammed and should demand a refund. The only official download page for this software is https://github.com/bazthedev/SolsScope and https://github.com/ScopeDevelopment/SolsScope")
         elif _tempsettings.get("redownload_libs_on_run", False) or PRERELEASE:
             print("Manual redownload/prerelease initiated download.")
             download_folder(LIBS_API_URL, LIB_DIR)
@@ -632,6 +632,7 @@ def run_initial_setup(logger):
         if userdata:
             USERDATA.update(userdata)
     except Exception as e:
+        print(f"Error fetching username: {e}")
         return False
     logger.write_log("Initial setup complete.")
     return True

@@ -1,7 +1,7 @@
 """
 SolsScope/Baz's Macro
 Created by Baz and Cresqnt
-v2.0.0
+v2.0.2
 Support server: https://discord.gg/8khGXqG7nA
 """
 
@@ -10,7 +10,7 @@ import os
 sys.path.insert(1, os.path.expandvars(r"%localappdata%/SolsScope/lib"))
 
 MACROPATH = os.path.expandvars(r"%localappdata%\\SolsScope") 
-LOCALVERSION = "2.0.0"
+LOCALVERSION = "2.0.2"
 
 PLACE_ID = 15532962292
 BASE_ROBLOX_URL = f"https://www.roblox.com/games/{PLACE_ID}/"

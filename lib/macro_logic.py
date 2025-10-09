@@ -278,11 +278,11 @@ def aura_detection(settings: dict, webhook, stop_event: threading.Event, keyboar
         return
 
     try:
-         with open(get_biomes_path(), "r", encoding="utf-8") as f:
-             biomes = json.load(f)
+        with open(get_biomes_path(), "r", encoding="utf-8") as f:
+            biomes = json.load(f)
     except (FileNotFoundError, json.JSONDecodeError, OSError) as e:
-         logger.write_log(f"Error loading biomes data for aura detection: {e}. Biome-specific rarity disabled.")
-         biomes = {} 
+        logger.write_log(f"Error loading biomes data for aura detection: {e}. Biome-specific rarity disabled.")
+        biomes = {} 
 
     previous_aura = None
 
@@ -291,6 +291,22 @@ def aura_detection(settings: dict, webhook, stop_event: threading.Event, keyboar
         logger.write_log(f"Initial aura state: {previous_aura}")
     except Exception as e:
         logger.write_log(f"Error getting initial aura state: {e}")
+
+    start_biomes = {}
+
+    for biome, data in biomes.items():
+        if data.get("start_identifier"):
+            start_biomes[data.get("start_identifier")] = biome
+        else:
+            start_biomes[biome] = biome
+
+    end_biomes = {}
+
+    for biome, data in biomes.items():
+        if data.get("end_identifier"):
+            end_biomes[data.get("end_identifier")] = biome
+        else:
+            end_biomes[biome] = biome
 
     while not stop_event.is_set():
         
@@ -306,13 +322,12 @@ def aura_detection(settings: dict, webhook, stop_event: threading.Event, keyboar
                 continue
             
             with ignore_lock:
-                if current_aura:
-                    if current_aura.lower() in ignore_next_detection:
-                        ignore_next_detection.remove(current_aura.lower())
-                        logger.write_log(f"Ignoring detection for aura '{current_aura}' due to recent equip.")
-                        previous_aura = current_aura
-                        time.sleep(0.5)
-                        continue
+                if (current_aura.lower() if current_aura else "") in ignore_next_detection:
+                    ignore_next_detection.remove(current_aura.lower())
+                    logger.write_log(f"Ignoring detection for aura '{current_aura}' due to recent equip.")
+                    previous_aura = current_aura
+                    time.sleep(0.5)
+                    continue
 
             if previous_aura is None or current_aura == previous_aura:
                 previous_aura = current_aura
@@ -324,14 +339,14 @@ def aura_detection(settings: dict, webhook, stop_event: threading.Event, keyboar
                 time.sleep(1)
                 continue
             
-            aura_key = current_aura.lower() if current_aura else None
+            aura_key = current_aura.lower() if current_aura else ""
             if aura_key in auras:
                 aura_data = auras[aura_key]
                 logger.write_log(f"New aura detected: {current_aura}")
                 previous_aura = current_aura 
                 rnow = datetime.now()
-                current_biome = get_latest_hovertext() if get_latest_hovertext() else "Unknown (not the aura)"
-                current_biome_key = current_biome.lower()
+                current_biome = get_latest_hovertext() if get_latest_hovertext() else ""
+                current_biome_key = start_biomes.get(current_biome.lower(), "")
                 base_rarity_str = aura_data.get("rarity", "0")
 
                 description = f"**Rolled Aura:** {current_aura}\n"
@@ -344,7 +359,7 @@ def aura_detection(settings: dict, webhook, stop_event: threading.Event, keyboar
                          biome_multiplier = biomes[current_biome_key].get("multiplier", 1.0)
                          if biome_multiplier > 0:
                              effective_rarity = int(base_rarity / biome_multiplier)
-                             description += f"**Rarity:** 1 / {effective_rarity:,} (from {current_biome if not biomes[current_biome_key].get('display_name') else biomes[current_biome_key].get('display_name')})\n"
+                             description += f"**Rarity:** 1 / {effective_rarity:,} (from {current_biome_key if not biomes[current_biome_key].get('display_name') else biomes[current_biome_key].get('display_name')})\n"
                          else:
                              description += f"**Rarity:** 1 / {base_rarity:,} (Base)\n" 
                     else:
@@ -499,6 +514,8 @@ def biome_detection(settings: dict, webhook, stop_event: threading.Event, sniped
         else:
             end_biomes[biome] = biome
 
+    last_samekey_detected = None 
+    previous_biome = None
 
     while not stop_event.is_set():
 
@@ -508,55 +525,154 @@ def biome_detection(settings: dict, webhook, stop_event: threading.Event, sniped
 
         try:
             current_biome = get_latest_hovertext()
-            if current_biome is None or current_biome == "":
+            if current_biome is None:
                 time.sleep(2)
                 continue
 
-            current_biome_key = current_biome.lower()
-            previous_biome_key = previous_biome.lower() if previous_biome else None
+            current_biome_key = current_biome.lower() if current_biome else ""
+            previous_biome_key = previous_biome.lower() if previous_biome else ""
 
-            if previous_biome_key is None or previous_biome_key == "" or current_biome_key == previous_biome_key:
+            if (
+                current_biome_key
+                and current_biome_key in start_biomes
+                and current_biome_key in end_biomes
+                and start_biomes[current_biome_key] == end_biomes[current_biome_key]
+            ):
+                if last_samekey_detected != current_biome_key:
+                    last_samekey_detected = current_biome_key
+
+                    biome_name = start_biomes[current_biome_key]
+                    """if settings.get("biomes", {}).get(biome_name, False):
+                        same_biome_data = biomes[biome_name]
+                        emb_color_hex = same_biome_data.get("colour", "#808080")
+                        emb_rgb = hex2rgb(emb_color_hex)
+                        emb = discord.Embed(
+                            title=f"Biome Detected: {same_biome_data.get('display_name', biome_name.upper())}",
+                            description=(
+                                f"Biome **{same_biome_data.get('display_name', biome_name.upper())}** detected.\n"
+                                f"**Time:** <t:{str(int(time.time()))}>"
+                            ),
+                            colour=discord.Colour.from_rgb(*emb_rgb)
+                        )
+                        emb.set_thumbnail(url=same_biome_data.get("img_url"))
+                        try:
+                            webhook.send(embed=emb)
+                            forward_webhook_msg(
+                                primary_webhook_url=webhook.url,
+                                secondary_urls=settings.get("SECONDARY_WEBHOOK_URLS", []),
+                                embed=emb
+                            )
+                            logger.write_log(f"Sent one-time same-key biome webhook for {current_biome_key}")
+                        except Exception as wh_e:
+                            logger.write_log(f"Error sending same-key biome webhook: {wh_e}")"""
+            else:
+                if last_samekey_detected and current_biome_key != last_samekey_detected:
+                    last_samekey_detected = None
+
+            if (
+                previous_biome_key is None
+                or previous_biome_key == ""
+                or current_biome_key == previous_biome_key
+            ):
                 previous_biome = current_biome
+                time.sleep(1.0)
                 continue
 
             logger.write_log(f"Biome change detected: {previous_biome} -> {current_biome}")
             rnow = datetime.now()
 
-            if previous_biome_key and previous_biome_key != "normal" and previous_biome_key in end_biomes and settings.get("biomes", {}).get(previous_biome_key, False):
-
-                end_event.set()
-                
-                prev_biome_data = biomes[end_biomes[previous_biome_key]]
-                emb_color_hex = prev_biome_data.get("colour", "#808080")
-                emb_rgb = hex2rgb(emb_color_hex)
-                emb = discord.Embed(
-                    title=f"Biome Ended: {previous_biome if not prev_biome_data.get('display_name') else prev_biome_data.get('display_name')}",
-                    description=f"Biome **{previous_biome if not prev_biome_data.get('display_name') else prev_biome_data.get('display_name')}** has ended.\n**Time:** <t:{str(int(time.time()))}>",
-                    colour=discord.Colour.from_rgb(*emb_rgb)
+            if (
+                previous_biome_key
+                and previous_biome_key != "normal"
+                and (current_biome_key in end_biomes or previous_biome_key in start_biomes)
+                and start_biomes.get(previous_biome_key, "") == end_biomes.get(current_biome_key, "")
+                and not (
+                    previous_biome_key in start_biomes
+                    and previous_biome_key in end_biomes
+                    and start_biomes[previous_biome_key] == end_biomes[previous_biome_key]
+                    and current_biome_key == "normal"
                 )
-                emb.set_thumbnail(url=biomes.get(previous_biome.lower()).get("img_url"))
-                try:
-                    webhook.send(embed=emb)
-                    forward_webhook_msg(
-                        primary_webhook_url=webhook.url,
-                        secondary_urls=settings.get("SECONDARY_WEBHOOK_URLS", []),
-                        embed=emb
+            ):
+                if (
+                    settings.get("biomes", {}).get(end_biomes.get(current_biome_key, False), False)
+                    or settings.get("biomes", {}).get(start_biomes.get(previous_biome_key, False), False)
+                ):
+                    end_event.set()
+                    if current_biome_key in end_biomes:
+                        _key = end_biomes[current_biome_key]
+                    else:
+                        _key = end_biomes[previous_biome_key]
+                    prev_biome_data = biomes[_key]
+                    emb_color_hex = prev_biome_data.get("colour", "#808080")
+                    emb_rgb = hex2rgb(emb_color_hex)
+                    emb = discord.Embed(
+                        title=f"Biome Ended: {_key.upper() if not prev_biome_data.get('display_name') else prev_biome_data.get('display_name')}",
+                        description=f"Biome **{_key.upper() if not prev_biome_data.get('display_name') else prev_biome_data.get('display_name')}** has ended.\n**Time:** <t:{str(int(time.time()))}>",
+                        colour=discord.Colour.from_rgb(*emb_rgb)
                     )
-                except Exception as wh_e:
-                    logger.write_log(f"Error sending biome ended webhook: {wh_e}")
+                    emb.set_thumbnail(url=biomes.get(_key).get("img_url"))
+                    try:
+                        webhook.send(embed=emb)
+                        forward_webhook_msg(
+                            primary_webhook_url=webhook.url,
+                            secondary_urls=settings.get("SECONDARY_WEBHOOK_URLS", []),
+                            embed=emb
+                        )
+                    except Exception as wh_e:
+                        logger.write_log(f"Error sending biome ended webhook: {wh_e}")
+
+            elif (
+                previous_biome_key
+                and previous_biome_key in start_biomes
+                and previous_biome_key in end_biomes
+                and start_biomes[previous_biome_key] == end_biomes[previous_biome_key]
+                and current_biome_key != previous_biome_key
+            ):
+                biome_name = start_biomes[previous_biome_key]
+                if settings.get("biomes", {}).get(biome_name, False):
+                    end_event.set()
+                    biome_data = biomes[biome_name]
+                    emb_color_hex = biome_data.get("colour", "#808080")
+                    emb_rgb = hex2rgb(emb_color_hex)
+                    emb = discord.Embed(
+                        title=f"Biome Ended: {biome_data.get('display_name', biome_name.upper())}",
+                        description=(
+                            f"Biome **{biome_data.get('display_name', biome_name.upper())}** has ended.\n"
+                            f"**Time:** <t:{str(int(time.time()))}>"
+                        ),
+                        colour=discord.Colour.from_rgb(*emb_rgb)
+                    )
+                    emb.set_thumbnail(url=biome_data.get("img_url"))
+                    try:
+                        webhook.send(embed=emb)
+                        forward_webhook_msg(
+                            primary_webhook_url=webhook.url,
+                            secondary_urls=settings.get("SECONDARY_WEBHOOK_URLS", []),
+                            embed=emb
+                        )
+                        logger.write_log(f"Sent biome end notification for same-key biome: {biome_name}")
+                    except Exception as wh_e:
+                        logger.write_log(f"Error sending same-key biome end webhook: {wh_e}")
+
 
             previous_biome = current_biome
 
             if current_biome_key != "normal" and current_biome_key in start_biomes:
-                if settings.get("biomes", {}).get(current_biome_key, False):
-
+                if settings.get("biomes", {}).get(start_biomes[current_biome_key], False):
                     new_biome_data = biomes[start_biomes[current_biome_key]]
                     is_event = new_biome_data.get("event", False)
                     emb_color_hex = new_biome_data.get("colour", "#808080")
                     emb_rgb = hex2rgb(emb_color_hex)
 
-                    description = f"Biome {current_biome if not new_biome_data.get('display_name') else new_biome_data.get('display_name')} has started!\nTime: <t:{str(int(time.time()))}>"
-                    title = f"Event Biome Started: {current_biome if not new_biome_data.get('display_name') else new_biome_data.get('display_name')}" if is_event else f"Biome Started: {current_biome if not new_biome_data.get('display_name') else new_biome_data.get('display_name')}"
+                    description = (
+                        f"Biome {start_biomes[current_biome_key].upper() if not new_biome_data.get('display_name') else new_biome_data.get('display_name')} has started!\n"
+                        f"Time: <t:{str(int(time.time()))}>"
+                    )
+                    title = (
+                        f"Event Biome Started: {start_biomes[current_biome_key].upper() if not new_biome_data.get('display_name') else new_biome_data.get('display_name')}"
+                        if is_event
+                        else f"Biome Started: {current_biome if not new_biome_data.get('display_name') else new_biome_data.get('display_name')}"
+                    )
 
                     emb = discord.Embed(
                         title=title,
@@ -567,19 +683,20 @@ def biome_detection(settings: dict, webhook, stop_event: threading.Event, sniped
                         emb.add_field(name="Server Invite:", value=f"{settings.get('private_server_link')}")
 
                     if new_biome_data.get("rare", False):
-                        pl_thread = threading.Thread(target=run_logger, args=(current_biome.upper(), end_event), daemon=True)
+                        pl_thread = threading.Thread(target=run_logger, args=(start_biomes[current_biome_key].upper(), end_event), daemon=True)
                         pl_thread.start()
                         ping_content = "@everyone"
                         emb.set_footer(text=f"SolsScope v{LOCALVERSION}")
                     else:
                         ping_content = ""
                         if settings.get("enable_player_logger", True):
-                            pl_thread = threading.Thread(target=run_logger, args=(current_biome.upper(), end_event), daemon=True)
+                            pl_thread = threading.Thread(target=run_logger, args=(start_biomes[current_biome_key].upper(), end_event), daemon=True)
                             pl_thread.start()
 
-                    emb.set_thumbnail(url=biomes.get(current_biome.lower()).get("img_url"))
-                    increment_stat(current_biome.lower())
-                    gui.biomeStatChanged.emit(current_biome.lower())
+                    emb.set_thumbnail(url=biomes.get(start_biomes[current_biome_key]).get("img_url"))
+                    increment_stat(start_biomes[current_biome_key])
+                    gui.biomeStatChanged.emit(start_biomes[current_biome_key])
+
                     try:
                         webhook.send(content=ping_content, embed=emb)
                         forward_webhook_msg(
@@ -591,14 +708,13 @@ def biome_detection(settings: dict, webhook, stop_event: threading.Event, sniped
                         logger.write_log(f"Sent notification for biome start: {current_biome}")
                     except Exception as wh_e:
                         logger.write_log(f"Error sending biome started webhook: {wh_e}")
+
                     if new_biome_data.get("rare", False):
-                        auto_pop(current_biome, settings, stop_event, keyboard_lock, mkey, kb, reader, ms)
+                        auto_pop(start_biomes[current_biome_key], settings, stop_event, keyboard_lock, mkey, kb, reader, ms)
                 else:
                     logger.write_log(f"Biome {current_biome} started, but notifications are disabled for it in settings.")
-
         except Exception as e:
-            logger.write_log(f"Error in Biome Detection loop: {e}")
-            time.sleep(5)
+            logger.write_log(f"Error during biome detection loop: {e}")
 
         if not stop_event.is_set():
             time.sleep(1.0)

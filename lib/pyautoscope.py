@@ -14,6 +14,8 @@ import json
 from easyocr import Reader
 from pynput.keyboard import Key, Controller
 import pyocrscope
+import psutil
+import win32process
 
 from constants import MACROPATH
 
@@ -37,6 +39,17 @@ class ClientData:
         self.top_left_pos = win32gui.ClientToScreen(self.hwnd, (0, 0))
         self.rect = win32gui.GetClientRect(self.hwnd)
         self.button_positions = {}
+        _, self.pid = win32process.GetWindowThreadProcessId(self.hwnd)
+        self._process = None
+        self.file_handles = []
+        
+        try:
+            self._process = psutil.Process(self.pid)
+            self.file_handles = self._process.open_files()
+        except psutil.AccessDenied:
+            print(f"Access denied for PID {self.pid}")
+        except psutil.NoSuchProcess:
+            print(f"Process {self.pid} no longer exists")
 
     def focus(self):
         win32gui.SetForegroundWindow(self.hwnd)

@@ -62,8 +62,6 @@ from macro_logic import (
     vok_taran
 )
 
-from uinav import TGIFRIDAY
-
 from stats import load_stats, load_all_biomes
 
 from packager import PackageInstallerGUI
@@ -2813,11 +2811,9 @@ class MainWindow(QMainWindow):
 
             QMessageBox.critical(self, "Invalid Webhook", f"The primary Webhook URL is invalid or initialization failed:\n{e}")
             self.logger.write_log(f"Macro start failed: Invalid Webhook URL or adapter issue ({e}).", level="ERROR")
-            #return 
+            return 
 
         use_player = self.settings.get("use_roblox_player", True)
-        global TGIFRIDAY
-        TGIFRIDAY = self.settings.get("use_alternate_uinav", True)
         if OCR_AVAILABLE:
             self.reader = Reader(['en'], gpu=False)
         else:

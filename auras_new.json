@@ -284,7 +284,7 @@
     "virtual: fatal error": {
         "emb_colour": "#5b7cff",
         "rarity": "40413000",
-        "img_url": "https://static.wikia.nocookie.net/sol-rng/images/8/8e/FatalErrorCollection.png/revision/latest",
+        "img_url": "https://static.wikia.nocookie.net/sol-rng/images/e/e3/VirtualFatalErrorColl.gif/revision/latest",
         "native_biome": ""
     },
     "savior": {
@@ -552,10 +552,10 @@
         "native_biome": ""
     },
     "ruins: withered" : {
-        "emb_colour" : "#000000",
+        "emb_colour" : "#41ff83",
         "rarity" : "800000000",
-        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/a/a9/Ruins_-_witheredincollection2.png/revision/latest",
-        "native_biome" : "#41ff83"
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/3/33/WitheredCollection.gif/revision/latest",
+        "native_biome" : ""
     },
     "aegis": {
         "emb_colour": "#3151ff",
@@ -650,7 +650,7 @@
     "glock: shieldofthesky" : {
         "emb_colour" : "#000000",
         "rarity" : "170000000",
-        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/5/5f/Glock_of_the_sky_in_Collection_%28better_version%29.png/revision/latest",
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/4/40/Glockoftheskycollection.gif/revision/latest",
         "native_biome" : ""
     },
     "anubis" : {
@@ -662,7 +662,7 @@
     "blizzard" : {
         "emb_colour" : "#3f6c86",
         "rarity" : "27315000",
-        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/0/02/Screenshot_2025-04-19_103324.png/revision/latest",
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/c/cd/Blizzard_col_gif.gif/revision/latest",
         "native_biome" : "Snowy"
     },
     "jazz: orchestra" : {
@@ -674,7 +674,7 @@
     "astral: legendarium" : {
         "emb_colour" : "#fea72a",
         "rarity" : "267200000",
-        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/f/fe/Legendcollec.png/revision/latest",
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/1/1f/Zodiacollection.gif/revision/latest",
         "native_biome" : "Starfall"
     },
     "stargazer" : {
@@ -746,7 +746,7 @@
     "equinox" : {
         "emb_colour" : "#fafafa",
         "rarity" : "2500000000",
-        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/c/c2/EquinoxInCollectionView.png/revision/latest",
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/a/a7/EquinoxNewCollection.gif/revision/latest",
         "native_biome" : ""
     },
     "copper" : {
@@ -794,7 +794,7 @@
     "maelstrom" : {
         "emb_colour" : "#2c8779",
         "rarity" : "309999999",
-        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/9/97/Screenshot_2025-08-09_153047.png/revision/latest",
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/1/10/MaelstromCollection.gif/revision/latest",
         "native_biome" : "Windy"
     },
     "megaphone" : {
@@ -825,6 +825,54 @@
         "emb_colour" : "#1b4cba",
         "rarity" : "540000",
         "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/c/c9/Prowlercollet.gif/revision/latest",
-        "native_biome" : "Unknown"
+        "native_biome" : "Another Realm"
+    },
+    "shiftlock" : {
+        "emb_colour" : "#8c8887",
+        "rarity" : "3325000",
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/5/5c/ShiftlockCollection.gif/revision/latest",
+        "native_biome" : "Null"
+    },
+    "harnessed: elements" : {
+        "emb_colour" : "#e8c059",
+        "rarity" : "85000000",
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/9/9c/Harnessed-Elements-Collection.gif/revision/latest",
+        "native_biome" : ""
+    },
+    "virtual: worldwide" : {
+        "emb_colour" : "#c2c2c2",
+        "rarity" : "87500000",
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/5/5e/WorldWide_Collection.gif/revision/latest",
+        "native_biome" : ""
+    },
+    "twilight: withering grace" : {
+        "emb_colour" : "#f9fdff",
+        "rarity" : "180000000",
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/5/50/WitheringGraceCollection.gif/revision/latest",
+        "native_biome" : ""
+    },
+    "hyper-volt: ever-storm" : {
+        "emb_colour" : "#a695e9",
+        "rarity" : "225000000",
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/2/23/Hyper-Volt_-_Ever-Storm_-_Collection.gif/revision/latest",
+        "native_biome" : ""
+    },
+    "flora: evergreen" : {
+        "emb_colour" : "#499a2d",
+        "rarity" : "370073730",
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/b/b3/Flora-_Evergreen_in_collection.png/revision/latest",
+        "native_biome" : ""
+    },
+    "chillsear" : {
+        "emb_colour" : "#668fc8",
+        "rarity" : "375000000",
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/5/53/ChillsearColl.gif/revision/latest",
+        "native_biome" : "Snowy"
+    },
+    "sophyra" : {
+        "emb_colour" : "#6e54c1",
+        "rarity" : "570000000",
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/d/d6/Sophyra_Collection.gif/revision/latest",
+        "native_biome" : ""
     }
 }

@@ -1,12 +1,24 @@
 """
 SolsScope/Baz's Macro
 Created by Baz and Cresqnt
-v2.0.2
+v2.0.3
 Support server: https://discord.gg/8khGXqG7nA
 """
 
 import sys
 import os
+
+if "--help" in sys.argv:
+    help_menu = """SolsScope Help Menu
+    --debug : Add a console window to see more logs.
+    --safe-mode : Force start macro safe mode menu.
+    --no-plugins : Skip loading any plugins.
+    --no-theme : Skip loading the application theme.
+    --reinstall : If the macro is failing to run at all or keeps crashing, use this.
+    """
+    print(help_menu)
+    sys.exit(0)
+
 import requests
 import json
 import tkinter as tk
@@ -26,7 +38,6 @@ LEGACY_DIR = os.path.expandvars(r"%localappdata%\Baz's Macro")
 PACKAGES_DIR = os.path.expandvars(r"%localappdata%/SolsScope/py/Lib/site-packages")
 ASSET_DIR = os.path.expandvars(r"%localappdata%\SolsScope\assets")
 CALIBRATIONS_DIR = os.path.expandvars(r"%localappdata%\SolsScope\calibrations")
-
 
 def log_uncaught_exception(exc_type, exc_value, exc_traceback):
     """Log uncaught exceptions to a file with timestamped name."""
@@ -49,6 +60,11 @@ def log_uncaught_exception(exc_type, exc_value, exc_traceback):
 
 sys.excepthook = log_uncaught_exception
 
+MAIN_VER = "2.0.3"
+PRERELEASE = False
+BUILTINPKGS = True
+IS_EXE = True
+
 def enable_console():
     """Attach a console window for debugging."""
     kernel32 = ctypes.windll.kernel32
@@ -58,13 +74,189 @@ def enable_console():
         sys.stderr = open('CONOUT$', 'w')
         sys.stdin = open('CONIN$', 'r')
 
-MAIN_VER = "2.0.2"
-PRERELEASE = False
-BUILTINPKGS = True
-IS_EXE = True
+if "--reinstall" in sys.argv:
+
+    import random
+    import string
+
+    if IS_EXE:
+        enable_console()
+    
+    print("======== SolsScope ========")
+    print("This action is not reversible and will wipe all config data.")
+    print("To proceed, please type the letters that you see in the console below.")
+
+    captcha = ""
+    for i in range(0, 8):
+        captcha += random.choice(string.ascii_letters + string.digits + string.punctuation)
+
+    user_response = input(f"{captcha}\nType here: ")
+
+    if user_response == captcha:
+        try:
+            shutil.rmtree(WORK_DIR, True)
+            print("Deleted all data. Rerun to finish reinstalling.")
+        except Exception as e:
+            print(f"Error reinstalling: {e}")
+    else:
+        print("Response does not match.")
+    sys.exit(0)
+
 
 if "--debug" in sys.argv and IS_EXE:
     enable_console()
+
+def launch_safe_mode_gui(error_logs):
+
+    from PyQt6.QtWidgets import (
+        QApplication, QWidget, QVBoxLayout, QLabel, QListWidget, QTextEdit,
+        QPushButton, QHBoxLayout, QMessageBox
+    )
+    from PyQt6.QtCore import Qt
+    app = QApplication.instance() or QApplication(sys.argv)
+
+    win = QWidget()
+    win.setWindowTitle("SolsScope Safe Mode")
+    win.resize(700, 500)
+    layout = QVBoxLayout(win)
+
+    header = QLabel("<b>⚠️ SolsScope detected previous crash logs</b>")
+    subheader = QLabel("You can review or delete them before continuing.")
+    layout.addWidget(header)
+    layout.addWidget(subheader)
+
+    list_widget = QListWidget()
+    for log in error_logs:
+        list_widget.addItem(os.path.basename(log))
+    layout.addWidget(list_widget)
+
+    viewer = QTextEdit()
+    viewer.setReadOnly(True)
+    layout.addWidget(viewer)
+
+    def show_log():
+        selected = list_widget.currentRow()
+        if selected >= 0:
+            with open(error_logs[selected], "r", encoding="utf-8") as f:
+                viewer.setPlainText(f.read())
+
+    def delete_selected():
+        selected = list_widget.currentRow()
+        if selected < 0:
+            QMessageBox.warning(win, "SolsScope Safe Mode", "Please select a log to delete.")
+            return
+        target = error_logs[selected]
+        try:
+            os.remove(target)
+            QMessageBox.information(win, "SolsScope Safe Mode", f"Deleted {os.path.basename(target)}.")
+            list_widget.takeItem(selected)
+            viewer.clear()
+            error_logs.pop(selected)
+        except Exception as e:
+            QMessageBox.critical(win, "SolsScope Safe Mode", f"Error deleting file:\n{e}")
+
+    def delete_all():
+        reply = QMessageBox.question(
+            win, "Confirm", "Delete ALL crash logs?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+        )
+        if reply == QMessageBox.StandardButton.Yes:
+            for f in error_logs[:]:
+                try:
+                    os.remove(f)
+                    error_logs.remove(f)
+                except Exception as e:
+                    print(f"Error deleting {f}: {e}")
+            list_widget.clear()
+            viewer.clear()
+            QMessageBox.information(win, "SolsScope Safe Mode", "All logs deleted.")
+
+    def continue_launch():
+        win.close()
+
+    def exit_program():
+        sys.exit(0)
+
+    def reset_config():
+        try:
+            os.remove(f"{WORK_DIR}/settings.json")
+        except Exception as e:
+            print(f"Error resetting config: {e}")
+
+        try:
+            with open(f"{WORK_DIR}/settings.json", "w") as f:
+                f.write("{}")
+        except Exception as e:
+            print(f"Error resetting config: {e}")
+
+        QMessageBox.information(win, "SolsScope Safe Mode", "Settings were reset.")
+
+    def remove_lib_dir():
+        try:
+            shutil.rmtree(LIB_DIR, True)
+            QMessageBox.information(win, "SolsScope Safe Mode", "Deleted lib folder")
+        except Exception as e:
+            print(f"Error deleting lib folder: {e}")
+
+    def reset_app_data():
+        try:
+            shutil.rmtree(WORK_DIR, True)
+            QMessageBox.information(win, "SolsScope Safe Mode", "Cleared all app data")
+        except Exception as e:
+            print(f"Error deleting app data: {e}")
+
+
+    list_widget.currentRowChanged.connect(show_log)
+
+    btn_layout = QHBoxLayout()
+    btn_delete = QPushButton("Delete Selected Logs")
+    btn_delete_all = QPushButton("Delete All Logs")
+    btn_reset_config = QPushButton("Reset Configuration")
+    btn_remove_lib_dir = QPushButton("Remove lib folder")
+    btn_reset_application_data = QPushButton("Reset Application Data")
+    btn_continue = QPushButton("Continue Launch")
+    btn_exit = QPushButton("Exit")
+
+    btn_delete.clicked.connect(delete_selected)
+    btn_delete_all.clicked.connect(delete_all)
+    btn_reset_config.clicked.connect(reset_config)
+    btn_remove_lib_dir.clicked.connect(remove_lib_dir)
+    btn_reset_application_data.clicked.connect(reset_app_data)
+    btn_continue.clicked.connect(continue_launch)
+    btn_exit.clicked.connect(exit_program)
+
+    for btn in [btn_delete, btn_delete_all, btn_reset_config, btn_remove_lib_dir, btn_continue, btn_exit]:
+        btn_layout.addWidget(btn)
+    layout.addLayout(btn_layout)
+
+    win.setLayout(layout)
+    win.show()
+    app.exec()
+
+
+if "--safe-mode" in sys.argv:
+    try:
+        temp_dir = os.path.join(WORK_DIR, "temp")
+        os.makedirs(temp_dir, exist_ok=True)
+        error_logs = sorted(glob.glob(os.path.join(temp_dir, "error_*.log")))
+        print("Launching safe mode (manual initiation)")
+        launch_safe_mode_gui(error_logs)
+    except Exception as e:
+        print(f"Error: {e}")
+        launch_safe_mode_gui([])
+else:
+    if "--skip-safe-mode" not in sys.argv:
+        try:
+            temp_dir = os.path.join(WORK_DIR, "temp")
+            os.makedirs(temp_dir, exist_ok=True)
+            error_logs = sorted(glob.glob(os.path.join(temp_dir, "error_*.log"))) if sorted(glob.glob(os.path.join(temp_dir, "error_*.log"))) else []
+
+            if len(error_logs) >= 3:
+                print(f"Found {len(error_logs)} previous crash log(s). Launching Safe Mode GUI.")
+                launch_safe_mode_gui(error_logs)
+        except Exception as e:
+            print(f"Could not check or show Safe Mode: {e}")
+
 
 
 print("======== SolsScope ========")
@@ -214,9 +406,13 @@ if not os.path.exists(PATH_DIR):
 if not os.path.isfile(f"{WORK_DIR}\\settings.json") and os.path.isfile(f"{LEGACY_DIR}\\settings.json"):
     os.system(f"xcopy {LEGACY_DIR}\\settings.json {WORK_DIR}")
 elif not os.path.isfile(f"{WORK_DIR}\\settings.json"):
-    _temp = open(f"{WORK_DIR}\\settings.json", "w")
-    _temp.write("{}")
-    _temp.close()
+    try:
+        _temp = open(f"{WORK_DIR}\\settings.json", "w")
+        _temp.write("{\"__version__\" : \"__VER__\"}".replace("__VER__", MAIN_VER))
+    except Exception as e:
+        print(f"Error writing config: {e}")
+    finally:
+        _temp.close()
     if messagebox.askyesno("SolsScope", "As this is your first time using SolsScope, would you like to watch a video guide on how to use it?"):
         try:
             video = requests.get(VIDEO_URL, timeout=10)
@@ -235,7 +431,7 @@ try:
     LATEST_VERSION = data["name"]   
     print(f"The latest version is {LATEST_VERSION}")
 except Exception as e:
-    LATEST_VERSION = "2.0.2"
+    LATEST_VERSION = "2.0.3"
 
 
 UPDATE = False
@@ -252,10 +448,23 @@ try:
         
         if parse_version(MAIN_VER) > parse_version(_tempsettings.get("__version__", "1.0.0")):
             UPDATE = True
-            print("Macro update detected, redownloading required libraries...")
-            download_folder(LIBS_API_URL, LIB_DIR)
-            download_folder(PATH_API_URL, PATH_DIR)
-            download_folder(ASSETS_API_URL, ASSET_DIR)
+            print("Macro update detected (launcher ver > local ver), redownloading required libraries...")
+            if IS_EXE:
+                try:
+                    shutil.copytree(resource_path("data/lib"), LIB_DIR, dirs_exist_ok=True)
+                    shutil.copytree(resource_path("data/assets"), ASSET_DIR, dirs_exist_ok=True)
+                    shutil.copytree(resource_path("data/path"), PATH_DIR, dirs_exist_ok=True)
+                    print("Successfully extracted data.")
+                    EXTRACTED_DATA = True
+                except Exception as e:
+                    print(f"Error occured copying data: {e}")
+                    download_folder(LIBS_API_URL, LIB_DIR)
+                    download_folder(PATH_API_URL, PATH_DIR)
+                    download_folder(ASSETS_API_URL, ASSET_DIR)
+            else:
+                download_folder(LIBS_API_URL, LIB_DIR)
+                download_folder(PATH_API_URL, PATH_DIR)
+                download_folder(ASSETS_API_URL, ASSET_DIR)
             print("All required libraries were updated, proceeding...")
             _tempsettings["__version__"] = MAIN_VER
             with open(f"{WORK_DIR}\\settings.json", "w", encoding="utf-8") as f:
@@ -264,7 +473,7 @@ try:
         elif parse_version(LATEST_VERSION) > parse_version(_tempsettings.get("__version__", "1.0.0")):
             UPDATE = True
             if messagebox.askyesno("SolsScope", f"A new version ({LATEST_VERSION}) of SolsScope has been detected, would you like to download it?"):
-                print("Macro update detected, redownloading required libraries...")
+                print("Macro update detected (github ver > local ver), redownloading required libraries...")
                 download_folder(LIBS_API_URL, LIB_DIR)
                 download_folder(PATH_API_URL, PATH_DIR)
                 download_folder(ASSETS_API_URL, ASSET_DIR)
@@ -441,14 +650,6 @@ def run_initial_setup(logger):
     if migrate_settings_from_legacy_location():
         logger.write_log("Settings migrated from legacy location (./settings.json).")
 
-    print("Clearing temp directory")
-    for file in os.listdir(f"{MACROPATH}/temp"):
-        try:
-            os.remove(f"{MACROPATH}/temp/{file}")
-            print(f"Delete: {MACROPATH}/temp/{file}")
-        except Exception as e:
-            print(f"Error deleting {file}: {e}")
-
     logger.write_log("Loading settings...")
     settings = load_settings()
 
@@ -608,7 +809,13 @@ def run_initial_setup(logger):
             messagebox.showerror("Monitor Error", "Could not detect any monitors. Cannot calculate coordinates.")
             return False
         
-        
+        print("Clearing temp directory")
+        for file in os.listdir(f"{MACROPATH}/temp"):
+            try:
+                os.remove(f"{MACROPATH}/temp/{file}")
+                print(f"Delete: {MACROPATH}/temp/{file}")
+            except Exception as e:
+                print(f"Error deleting {file}: {e}")
 
     except Exception as e:
         logger.write_log(f"Error during screen detection or coordinate calculation: {e}")

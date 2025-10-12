@@ -203,10 +203,10 @@ def equip_aura(aura_name, unequip, mkey, kb, settings: dict, ignore_next_detecti
     full_aura_name = resolve_full_aura_name(aura_name, auras)
     _ = None
 
-    while _ is None or _ == "":
+    while _ is None:
         _ = get_latest_equipped_aura()
         try:
-            if _ or _ != "":
+            if isinstance(_, str) and isinstance(full_aura_name, str):
                 if _.lower() == full_aura_name.lower():
                     if not unequip:
                         logger.write_log(f"Aura {full_aura_name} is already equipped.")

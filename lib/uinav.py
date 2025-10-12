@@ -20,7 +20,7 @@ from constants import MACROPATH
 try:
     with open(f"{MACROPATH}\\settings.json", "r", encoding="utf-8") as f:
         _ = json.load(f)
-        TGIFRIDAY = _["use_alternate_uinav"]
+        TGIFRIDAY = _.get("use_alternate_uinav", True)
 except Exception as e:
     print(f"Error loading alt paths option: {e}")
     TGIFRIDAY =  True

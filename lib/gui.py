@@ -164,7 +164,8 @@ class MainWindow(QMainWindow):
         self.settings = load_settings()
 
         # Apply custom styling first
-        self.setup_custom_styling()
+        if "--no-theme" not in sys.argv:
+            self.setup_custom_styling()
 
         self.logger = get_logger()
 
@@ -203,8 +204,9 @@ class MainWindow(QMainWindow):
         self.setGeometry(100, 100, 900, 650)  # Made slightly larger for better appearance
 
         # Remove window frame and add custom styling
-        self.setWindowFlags(Qt.WindowType.FramelessWindowHint)
-        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+        if "--no-theme" not in sys.argv:
+            self.setWindowFlags(Qt.WindowType.FramelessWindowHint)
+            self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
 
         # Create main container with rounded corners
         self.main_container = QWidget()
@@ -212,25 +214,27 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(self.main_container)
         
         # Add drop shadow effect
-        shadow = QGraphicsDropShadowEffect()
-        shadow.setBlurRadius(20)
-        shadow.setColor(QColor(0, 0, 0, 160))
-        shadow.setOffset(0, 5)
-        self.main_container.setGraphicsEffect(shadow)
+        if "--no-theme" not in sys.argv:
+            shadow = QGraphicsDropShadowEffect()
+            shadow.setBlurRadius(20)
+            shadow.setColor(QColor(0, 0, 0, 160))
+            shadow.setOffset(0, 5)
+            self.main_container.setGraphicsEffect(shadow)
 
         main_layout = QVBoxLayout(self.main_container)
         main_layout.setContentsMargins(20, 20, 20, 20)
         main_layout.setSpacing(15)
 
         # Add custom title bar
-        self.create_title_bar(main_layout)
+        if "--no-theme" not in sys.argv:
+            self.create_title_bar(main_layout)
 
         icon_path = os.path.join(MACROPATH, "icon.ico")
         if os.path.exists(icon_path):
             self.setWindowIcon(QIcon(icon_path))
 
         if self.settings.get("always_on_top", False):
-            self.setWindowFlag(Qt.WindowType.WindowStaysOnTopHint) 
+            self.setWindowFlag(Qt.WindowType.WindowStaysOnTopHint)
 
         self.tab_widget = QTabWidget()
         self.tab_widget.setObjectName("customTabWidget")
@@ -246,7 +250,10 @@ class MainWindow(QMainWindow):
 
         self.plugin_settings = {}
 
-        self.load_plugins() 
+        if "--no-plugins" not in sys.argv:
+            self.load_plugins()
+        else:
+            self.logger.write_log("Plugins skipped loading (--no-plugins).")
 
         self.start_key_listener()
 
@@ -1241,7 +1248,7 @@ class MainWindow(QMainWindow):
                     auras_data = json.load(f)
                     _auras = []
                     for aura in auras_data:
-                        if "★" in aura or "\u00e2\u02dc\u2026" in aura or aura in DONOTACCEPTRESET or ":" in aura:
+                        if "★" in aura or "\u00e2\u02dc\u2026" in aura or aura in DONOTACCEPTRESET or ":" in aura or "__TIMESTAMP__" in aura:
                             continue
                         _auras.append(aura)
                 widget = QComboBox()

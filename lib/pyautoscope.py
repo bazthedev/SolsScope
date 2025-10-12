@@ -745,7 +745,7 @@ def calibrate_buttons(client_key: str):
         "autocraft_second_add": [autocraft_second_add_x, autocraft_second_add_y],
         "autocraft_second_amt": [autocraft_second_amt_x, autocraft_second_amt_y],
         "autocraft_third_add": [autocraft_third_add_x, autocraft_third_add_y],
-        "autocraft_third_add": [autocraft_third_amt_x, autocraft_third_amt_y],
+        "autocraft_third_amt": [autocraft_third_amt_x, autocraft_third_amt_y],
 
         "autocraft_first_scrolled_add": [autocraft_first_scrolled_add_x, autocraft_first_scrolled_add_y],
         "autocraft_first_scrolled_amt": [autocraft_first_scrolled_amt_x, autocraft_first_scrolled_amt_y],

@@ -9,7 +9,7 @@ import sys
 import os
 sys.path.insert(1, os.path.expandvars(r"%localappdata%/SolsScope/lib"))
 import json
-from PyQt6.QtWidgets import QLabel, QLineEdit, QCheckBox, QMessageBox
+from PyQt6.QtWidgets import QLabel, QLineEdit, QCheckBox, QMessageBox, QPushButton, QHBoxLayout, QSizePolicy
 from PyQt6.QtCore import Qt
 from packaging.version import parse as parse_version
 import screeninfo as si
@@ -19,6 +19,7 @@ import discord
 from discord.ext import commands, tasks
 import time
 import pyautogui as pag
+import webbrowser
 
 from uinav import load_delay
 from utils import create_discord_file_from_path
@@ -50,12 +51,13 @@ class Plugin:
     
     def __init__(self, macro):
         self.name = "Remote Bot"
-        self.version = "1.0.4"
+        self.version = "1.0.5"
         self.authors = ["bazthedev"]
         self.requires = "2.0.0"
         self.requirements = []
         self.autocraft_compatible = True
         self.macro = macro
+        self.silent = False
         
         self.MACROPATH = os.path.expandvars(r"%localappdata%\SolsScope")
         self.config_path = os.path.join(
@@ -126,6 +128,25 @@ class Plugin:
                 label_text += f" {author}."
             else:
                 label_text += f" {author},"
+
+        button_layout = QHBoxLayout()
+
+        guide_button = QPushButton("Open Tutorial")
+        guide_button.setToolTip("Click to open the Remote Bot Plugin setup guide.")
+        guide_button.clicked.connect(lambda: webbrowser.open("https://www.youtube.com/watch?v=e8o1PAPZasE"))
+
+        discord_dev_button = QPushButton("Open Discord Dev Portal")
+        discord_dev_button.setToolTip("Click to open the Discord Developer Portal.")
+        discord_dev_button.clicked.connect(lambda: webbrowser.open("https://discord.com/developers/applications"))
+
+        for btn in (guide_button, discord_dev_button):
+            btn.setFixedHeight(26)
+            btn.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+            button_layout.addWidget(btn)
+
+        button_layout.setSpacing(8)
+
+        parent_layout.addLayout(button_layout)
 
         info_label = QLabel(
             f"<i>{label_text}</i>"

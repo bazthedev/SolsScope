@@ -2,7 +2,7 @@
     "Remote Bot" : {
         "name" : "Remote Bot",
         "description" : "Control SolsScope remotely via a discord bot. Request screenshots and make the macro perform certain actions remotely.",
-        "version" : "1.0.4",
+        "version" : "1.0.5",
         "authors" : ["bazthedev"],
         "requires_version" : "2.0.0",
         "plugin_requirements" : [],
@@ -20,4 +20,5 @@
         "download_url" : "/SolsScope/refs/heads/main/plugins/clipping.py"
     }
 }
+
 

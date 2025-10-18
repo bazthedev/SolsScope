@@ -97,5 +97,29 @@
         "display_name" : "Another Realm",
         "start_identifier" : "unknown",
         "end_identifier" : "anotherrealm"
+    },
+    "pumpkin moon" : {
+        "colour" : "#d55f09",
+        "multiplier" : 1,
+        "rare" : false,
+        "event" : true,
+        "img_url" : "https://raw.githubusercontent.com/bazthedev/SolsScope/refs/heads/main/img/biome/PUMPKIN_MOON.png",
+        "enabled" : true
+    },
+    "graveyard" : {
+        "colour" : "#444d5c",
+        "multiplier" : 1,
+        "rare" : false,
+        "event" : true,
+        "img_url" : "https://raw.githubusercontent.com/bazthedev/SolsScope/refs/heads/main/img/biome/GRAVEYARD.png",
+        "enabled" : true
+    },
+    "blood rain" : {
+        "colour" : "#ff0000",
+        "multiplier" : 1,
+        "rare" : false,
+        "event" : true,
+        "img_url" : "https://raw.githubusercontent.com/bazthedev/SolsScope/refs/heads/main/img/biome/BLOOD_RAIN.png",
+        "enabled" : true
     }
 }

@@ -279,13 +279,13 @@
         "emb_colour": "#4b8bff",
         "rarity": "2500000",
         "img_url": "https://static.wikia.nocookie.net/sol-rng/images/8/88/VirtualReworkCollection.gif/revision/latest",
-        "native_biome": ""
+        "native_biome": "Cyberspace"
     },
     "virtual: fatal error": {
         "emb_colour": "#5b7cff",
         "rarity": "40413000",
         "img_url": "https://static.wikia.nocookie.net/sol-rng/images/e/e3/VirtualFatalErrorColl.gif/revision/latest",
-        "native_biome": ""
+        "native_biome": "Cyberspace"
     },
     "savior": {
         "emb_colour": "#ff5582",
@@ -453,19 +453,19 @@
         "emb_colour": "#5bffb0",
         "rarity": "50000000",
         "img_url": "https://static.wikia.nocookie.net/sol-rng/images/9/97/MatrixCollectionEon1.gif/revision/latest",
-        "native_biome": ""
+        "native_biome": "Cyberspace"
     },
     "matrix: overdrive": {
         "emb_colour": "#d31e21",
         "rarity": "503000000",
         "img_url": "https://static.wikia.nocookie.net/sol-rng/images/e/e4/MatrixOverdriveCollection.gif/revision/latest",
-        "native_biome": ""
+        "native_biome": "Cyberspace"
     },
     "matrix: reality": {
         "emb_colour": "#444444",
         "rarity": "601020102",
         "img_url": "https://static.wikia.nocookie.net/sol-rng/images/a/a0/Matrix_but_real.gif/revision/latest",
-        "native_biome": ""
+        "native_biome": "Cyberspace"
     },
     "sentinel": {
         "emb_colour": "#768ff2",
@@ -561,13 +561,13 @@
         "emb_colour": "#3151ff",
         "rarity": "825000000",
         "img_url": "https://static.wikia.nocookie.net/sol-rng/images/a/ab/AegisCollection.gif/revision/latest",
-        "native_biome": ""
+        "native_biome": "Cyberspace"
     },
     "pixelation" : {
         "emb_colour" : "#9d3cff",
         "rarity" : "1073741824",
         "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/6/61/Pixelation_In-Game.gif/revision/latest",
-        "native_biome" : ""
+        "native_biome" : "Cyberspace"
     },
     "luminosity": {
         "emb_colour": "#c2deff",
@@ -843,7 +843,7 @@
         "emb_colour" : "#c2c2c2",
         "rarity" : "87500000",
         "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/5/5e/WorldWide_Collection.gif/revision/latest",
-        "native_biome" : ""
+        "native_biome" : "Cyberspace"
     },
     "twilight: withering grace" : {
         "emb_colour" : "#f9fdff",
@@ -874,5 +874,12 @@
         "rarity" : "570000000",
         "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/d/d6/Sophyra_Collection.gif/revision/latest",
         "native_biome" : ""
+    },
+    "illusionary" : {
+        "emb_colour" : "",
+        "rarity" : "10000000",
+        "img_url" : "https://static.wikia.nocookie.net/sol-rng/images/7/7f/Illusionary_collection.gif/revision/latest",
+        "native_biome" : "Cyberspace",
+        "ignore_biome_multiplier" : true
     }
 }

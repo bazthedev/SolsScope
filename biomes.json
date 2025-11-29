@@ -121,5 +121,13 @@
         "event" : true,
         "img_url" : "https://raw.githubusercontent.com/bazthedev/SolsScope/refs/heads/main/img/biome/BLOOD_RAIN.png",
         "enabled" : true
+    },
+    "cyberspace" : {
+        "colour" : "#2c55b5",
+        "multiplier" : 2,
+        "rare" : true,
+        "event" : false,
+        "img_url" : "https://raw.githubusercontent.com/bazthedev/SolsScope/refs/heads/main/img/biome/CYBERSPACE.png",
+        "enabled" : true
     }
 }
